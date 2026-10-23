@@ -56,6 +56,8 @@ export const en = {
     submitLogin: "Sign in",
     submitRegister: "Create account",
     haveAccount: "Already have an account? Sign in",
+    inviteCode: "Invite code",
+    inviteHint: "This test site is invite-only. Ask the person who shared it.",
     noAccount: "New here? Create an account",
     privacyNote:
       "Your records are private by default. Nothing is shared with anyone unless you explicitly create a share link and both people consent.",
@@ -64,6 +66,7 @@ export const en = {
     generic: "Something went wrong. Please try again.",
     invalid_input: "Please check the form.",
     invalid_credentials: "Email or password is incorrect.",
+    invite_required: "The invite code is missing or incorrect.",
     email_taken: "An account with this email already exists.",
     rate_limited: "Too many attempts. Please wait a while and try again.",
     not_found: "Not found.",

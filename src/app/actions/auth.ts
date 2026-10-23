@@ -11,7 +11,7 @@ export async function registerAction(form: FormData) {
   const next = safeNext(str(form, "next"));
   const r = await attempt("register", async () =>
     register(
-      { email: str(form, "email"), password: str(form, "password"), displayName: str(form, "displayName"), locale: str(form, "locale") || "en" },
+      { email: str(form, "email"), password: str(form, "password"), displayName: str(form, "displayName"), locale: str(form, "locale") || "en", inviteCode: str(form, "inviteCode") },
       await clientKey(),
     ),
   );

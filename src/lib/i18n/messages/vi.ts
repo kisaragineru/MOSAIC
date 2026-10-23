@@ -58,6 +58,8 @@ export const vi: Dict = {
     submitLogin: "Đăng nhập",
     submitRegister: "Tạo tài khoản",
     haveAccount: "Đã có tài khoản? Đăng nhập",
+    inviteCode: "Mã mời",
+    inviteHint: "Trang thử nghiệm này chỉ dành cho người được mời. Hãy hỏi người đã chia sẻ trang.",
     noAccount: "Lần đầu đến đây? Tạo tài khoản",
     privacyNote:
       "Mọi ghi chép mặc định là riêng tư. Không có gì được chia sẻ trừ khi bạn tự tạo liên kết chia sẻ và cả hai người cùng đồng ý.",
@@ -66,6 +68,7 @@ export const vi: Dict = {
     generic: "Đã có lỗi xảy ra. Vui lòng thử lại.",
     invalid_input: "Vui lòng kiểm tra lại thông tin.",
     invalid_credentials: "Email hoặc mật khẩu không đúng.",
+    invite_required: "Mã mời bị thiếu hoặc không đúng.",
     email_taken: "Email này đã có tài khoản.",
     rate_limited: "Thử quá nhiều lần. Vui lòng đợi một lúc rồi thử lại.",
     not_found: "Không tìm thấy.",

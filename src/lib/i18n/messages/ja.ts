@@ -58,6 +58,8 @@ export const ja: Dict = {
     submitLogin: "ログイン",
     submitRegister: "アカウントを作成",
     haveAccount: "アカウントをお持ちの方はログイン",
+    inviteCode: "招待コード",
+    inviteHint: "このテスト用サイトは招待制です。共有してくれた人にコードを聞いてください。",
     noAccount: "はじめての方はアカウントを作成",
     privacyNote:
       "記録は初期設定で非公開です。あなたが共有リンクを作り、相手とあなたの両方が同意しない限り、誰とも共有されません。",
@@ -66,6 +68,7 @@ export const ja: Dict = {
     generic: "問題が発生しました。もう一度お試しください。",
     invalid_input: "入力内容を確認してください。",
     invalid_credentials: "メールアドレスまたはパスワードが正しくありません。",
+    invite_required: "招待コードが入力されていないか、正しくありません。",
     email_taken: "このメールアドレスのアカウントはすでにあります。",
     rate_limited: "試行回数が多すぎます。しばらく待ってからお試しください。",
     not_found: "見つかりません。",

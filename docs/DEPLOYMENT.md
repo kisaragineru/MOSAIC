@@ -18,6 +18,8 @@ Use **separate databases and separate role passwords** for development, test, E2
 | `APP_ORIGIN` | yes | Public origin, e.g. `https://mosaic.example.com`. Used for share links, cookie `Secure`/`__Host-` prefix, HSTS, export CSRF check. |
 | `TRUST_PROXY` | recommended | `1` when behind a proxy that overwrites `X-Forwarded-For`; enables per-IP login/register limits (per-account limits always apply). |
 | `RATE_LIMIT_SALT` | recommended | Random secret mixed into hashed rate-limit keys. |
+| `CLIENT_IP_HEADER` | no | With `TRUST_PROXY=1`: read the client IP only from this platform-set header instead of `X-Forwarded-For` (Netlify: `x-nf-client-connection-ip`, because Netlify appends to a client-supplied `X-Forwarded-For`). |
+| `REGISTRATION_CODE` | no | When set, sign-up requires this invite code (for test deployments reachable by anyone with the URL). |
 | `DATABASE_POOL_MAX` | no | Pool size (default 10). |
 | `ANTHROPIC_API_KEY` | no | Enables optional AI reflections (users must also opt in). Unset → deterministic output only. |
 | `ANTHROPIC_MODEL` | no | Defaults to `claude-opus-5-5`. |
@@ -48,6 +50,20 @@ DATABASE_URL=… APP_ORIGIN=https://… TRUST_PROXY=1 pnpm start   # next start,
 Any Node host works (VM, container, Render, Fly, Railway…). Serverless platforms work too, but use
 a pooled Postgres endpoint (PgBouncer in transaction mode is compatible: identity is set with
 `set_config(..., true)` inside each transaction).
+
+### Netlify + Neon (test deployment)
+Verified so far: migrations, seed and `next build` through `netlify build` (local); the
+Netlify-side deploy itself must be checked on the first real deploy.
+1. Neon: create a project, open the SQL editor on `neondb`, run `scripts/neon-bootstrap.sql`
+   with two long random passwords. (Tested against a simulated non-superuser admin with
+   `CREATEROLE CREATEDB`; Neon's real admin role is not verified.)
+2. Netlify: import the Git repository; `netlify.toml` runs `db:migrate`, `db:seed`, `build`.
+3. Environment variables (Netlify UI → Project configuration → Environment variables):
+   - `MIGRATION_DATABASE_URL` = owner URL on the **direct** host, scope **Builds only**
+   - `DATABASE_URL` = app URL on the **`-pooler`** host, scope Functions/Runtime, `?sslmode=require`
+   - `APP_ORIGIN` = `https://<site>.netlify.app`, `RATE_LIMIT_SALT`, `REGISTRATION_CODE`,
+     `TRUST_PROXY=1`, `CLIENT_IP_HEADER=x-nf-client-connection-ip`, `DATABASE_POOL_MAX=3`
+4. Free plans cannot password-protect the site: keep `REGISTRATION_CODE` set and use test data only.
 
 Deploy order for upgrades: backup → `db:migrate` → `db:seed` → deploy new build.
 

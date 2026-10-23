@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, ne, sql } from "drizzle-orm";
 import { z } from "zod";
-import { randomToken, sha256 } from "../auth/crypto";
+import { randomToken, safeEqual, sha256 } from "../auth/crypto";
 import { dummyPasswordHash, hashPassword, PASSWORD_MAX, PASSWORD_MIN, verifyPassword } from "../auth/password";
 import { enforceRateLimit } from "../auth/rate-limit";
 import { notificationPreferences, profiles, sessions, users } from "../db/schema";
@@ -17,7 +17,13 @@ export const registerSchema = z.object({
   password: z.string().min(PASSWORD_MIN).max(PASSWORD_MAX),
   displayName: z.string().trim().min(1).max(80),
   locale: z.enum(SUPPORTED_LOCALES).default("en"),
+  inviteCode: z.string().max(200).optional(),
 });
+
+/** When REGISTRATION_CODE is set (e.g. a public test deployment), sign-up requires that code. */
+export function registrationCodeRequired(): boolean {
+  return !!process.env.REGISTRATION_CODE;
+}
 
 export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
@@ -41,6 +47,11 @@ async function createSession(tx: Parameters<Parameters<typeof withUser>[1]>[0], 
 export async function register(input: unknown, clientKey: string | null): Promise<NewSession> {
   const data = registerSchema.parse(input);
   await enforceRateLimit("register", clientKey ?? "unknown-client");
+  const expected = process.env.REGISTRATION_CODE;
+  // Compare digests so the comparison is constant-time regardless of input length.
+  if (expected && !safeEqual(sha256(data.inviteCode?.trim() ?? ""), sha256(expected))) {
+    throw new AppError("invite_required", 403);
+  }
   const taken = await withAnon(async (tx) => {
     const r = await tx.execute<{ taken: boolean }>(sql`select auth_email_taken(${data.email}) as taken`);
     return r.rows[0]?.taken === true;

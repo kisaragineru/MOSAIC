@@ -1,0 +1,10 @@
+# Netlify (test/staging deployment). Secrets are set in the Netlify UI/API, never here.
+# Migrations and the catalog seed run on Netlify's build machine with MIGRATION_DATABASE_URL,
+# which must be scoped to "Builds" only so the owner credential never reaches the functions.
+[build]
+  command = "pnpm db:migrate && pnpm db:seed && pnpm build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  PNPM_VERSION = "10.28.0"

@@ -37,10 +37,14 @@ export async function requireUser(): Promise<string> {
 /**
  * Client IP for rate limiting. Only trusted when TRUST_PROXY=1 (deployed behind a proxy that
  * overwrites X-Forwarded-For). Returns null otherwise; per-account limits still apply.
+ * CLIENT_IP_HEADER names a single header the platform sets itself and clients cannot forge
+ * (Netlify: x-nf-client-connection-ip); it is used instead of X-Forwarded-For.
  */
 export async function clientKey(): Promise<string | null> {
   if (process.env.TRUST_PROXY !== "1") return null;
   const h = await headers();
+  const named = process.env.CLIENT_IP_HEADER;
+  if (named) return h.get(named)?.trim() || null;
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip");
   return ip || null;
 }
