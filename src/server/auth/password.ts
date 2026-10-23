@@ -1,7 +1,8 @@
-import { hash, verify, Algorithm } from "@node-rs/argon2";
+import { hash, verify } from "@node-rs/argon2";
 
 // OWASP Password Storage Cheat Sheet (argon2id, m=19 MiB, t=2, p=1).
-const OPTIONS = { algorithm: Algorithm.Argon2id, memoryCost: 19456, timeCost: 2, parallelism: 1 } as const;
+// algorithm 2 = Argon2id (the package exports it as an ambient const enum).
+const OPTIONS = { algorithm: 2, memoryCost: 19456, timeCost: 2, parallelism: 1 } as const;
 
 export const PASSWORD_MIN = 10;
 export const PASSWORD_MAX = 200;

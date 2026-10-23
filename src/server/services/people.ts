@@ -102,7 +102,7 @@ export async function addPreference(userId: string, input: unknown, opts: { allo
           sql`lower(${preferenceItems.label}) = lower(${d.label})`,
         ),
       );
-    const item =
+    const item: typeof preferenceItems.$inferSelect =
       existing ??
       (await tx
         .insert(preferenceItems)

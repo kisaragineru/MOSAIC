@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ADD COLUMN "ai_opt_in" boolean DEFAULT false NOT NULL;

@@ -29,6 +29,13 @@
       "when": 1792736045173,
       "tag": "0003_question_max_choices",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792736762840,
+      "tag": "0004_profile_ai_opt_in",
+      "breakpoints": true
     }
   ]
 }
