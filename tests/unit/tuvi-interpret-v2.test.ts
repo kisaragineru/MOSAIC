@@ -74,4 +74,30 @@ describe("Tử Vi interpretation v2", () => {
     expect(palaceDetails(chart, "en").every((d) => d.related.length === 0 && d.role === "")).toBe(true);
     expect(interpret(chart, "en").map((s) => s.section)).toEqual(["personality"]);
   });
+
+  it("dates each 10-year stage: lunar years from the nominal age, Gregorian dates from Lunar New Year", () => {
+    const stages = lifeStages(chartOf(base), "ja", 37);
+    const first = stages[0]!;
+    // Born in lunar year 1990 (Canh Ngọ): nominal age 5 is lived in lunar year 1994.
+    expect([first.from, first.yearFrom, first.yearTo]).toEqual([5, 1994, 2003]);
+    expect(first.startDate).toBe("1994-02-10"); // Tết Giáp Tuất
+    expect(first.endDate).toBe("2004-01-21"); // eve of Tết Giáp Thân (2004-01-22)
+    for (let i = 1; i < stages.length; i++) {
+      const prev = new Date(`${stages[i - 1]!.endDate}T00:00:00Z`);
+      prev.setUTCDate(prev.getUTCDate() + 1);
+      if (stages[i]!.startDate) expect(stages[i]!.startDate).toBe(prev.toISOString().slice(0, 10));
+    }
+    const last = stages[stages.length - 1]!;
+    expect(last.yearTo).toBe(2113);
+    expect(stages.every((x) => x.startDate && x.endDate)).toBe(true);
+  });
+
+  it("gives every stage a theme name, hints from its stars and its three supporting palaces", () => {
+    for (const st of lifeStages(chartOf(base), "en", 37)) {
+      expect(st.short).not.toBe("");
+      expect(st.hints.strengths.length).toBeGreaterThan(0);
+      expect(st.hints.strengths.length).toBe(st.hints.cautions.length);
+      expect(st.hints.support).toHaveLength(3);
+    }
+  });
 });

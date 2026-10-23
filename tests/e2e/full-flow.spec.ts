@@ -86,6 +86,19 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   // 10-year stages: exactly one is marked as now.
   await expect(pa.getByRole("heading", { name: "Your life in 10-year stages" })).toBeVisible();
   await expect(pa.locator("#stages").getByText("Now", { exact: true })).toHaveCount(1);
+  // Life map, decade hints and the link to the user's own records / a letter to the future.
+  await expect(pa.getByText("Your life map")).toBeVisible();
+  await expect(pa.locator("#stages").getByText("Hints for this decade")).toBeVisible();
+  await expect(pa.locator("#stages").getByText("Your pieces from this time")).toBeVisible();
+  await expect(pa.locator("#stages").getByRole("link", { name: /Open them|Write a memory from this time/ }).first()).toHaveAttribute("href", /\/memories/);
+  await pa.locator('#stages [role="group"] button').last().click();
+  const letter = pa.getByRole("link", { name: /Write a letter for this decade/ });
+  await expect(letter).toHaveAttribute("href", /kind=letter_to_future&reveal=\d{4}-\d{2}-\d{2}/);
+  await letter.click();
+  await pa.waitForURL(/\/memories\/new/);
+  await expect(pa.locator('select[name="kind"]')).toHaveValue("letter_to_future");
+  await expect(pa.locator('input[name="revealOn"]')).toHaveValue(/^\d{4}-\d{2}-\d{2}$/);
+  await pa.goto("/tuvi");
   // Tapping a palace shows what it stands for.
   await pa.getByTestId("tuvi-chart").getByRole("button", { name: /^Quan Lộc/ }).click();
   await expect(pa.getByText("work, career and your role in society")).toBeVisible();

@@ -107,3 +107,19 @@ export const PALACE_SHORT_EN: Record<PalaceId, string> = {
   menh: "Self", phu_mau: "Parents", phuc_duc: "Fortune", dien_trach: "Home", quan_loc: "Career", no_boc: "Friends",
   thien_di: "Travel", tat_ach: "Health", tai_bach: "Wealth", tu_tuc: "Children", phu_the: "Partner", huynh_de: "Siblings",
 };
+
+/** Short name of each palace's theme, for the life map and stage chips. */
+export const PALACE_SHORT: Record<PalaceId, T> = {
+  menh: { en: "Self", vi: "Bản thân", ja: "自分" },
+  phu_mau: { en: "Elders", vi: "Cha mẹ", ja: "親・師" },
+  phuc_duc: { en: "Inner life", vi: "Phúc đức", ja: "心・ルーツ" },
+  dien_trach: { en: "Home", vi: "Nhà cửa", ja: "住まい" },
+  quan_loc: { en: "Work", vi: "Công việc", ja: "仕事" },
+  no_boc: { en: "Friends", vi: "Bạn bè", ja: "仲間" },
+  thien_di: { en: "Outside world", vi: "Bên ngoài", ja: "外の世界" },
+  tat_ach: { en: "Health", vi: "Sức khỏe", ja: "健康" },
+  tai_bach: { en: "Money", vi: "Tiền bạc", ja: "お金" },
+  tu_tuc: { en: "Children", vi: "Con cái", ja: "子ども・創造" },
+  phu_the: { en: "Partner", vi: "Bạn đời", ja: "パートナー" },
+  huynh_de: { en: "Siblings", vi: "Anh em", ja: "きょうだい" },
+};

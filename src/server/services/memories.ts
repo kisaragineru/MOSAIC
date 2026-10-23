@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, inArray, lte, gte, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
-import { escapeLike, optionalDate, optionalText, tagList, todayIn, uuid } from "@/lib/validation/common";
+import { escapeLike, isoDate, optionalDate, optionalText, tagList, todayIn, uuid } from "@/lib/validation/common";
 import { MEMORY_KINDS, memoryEntries, memoryEntryVersions, memoryPeople, memoryTags, people, profiles } from "../db/schema";
 import { withUser, type Tx } from "../db/tx";
 import { invalid, notFound } from "../errors";
@@ -279,3 +279,19 @@ export async function listTags(userId: string) {
   });
 }
 
+
+/** How many memories fall in each date range (by their timeline date), in one query. */
+export async function countMemoriesInRanges(userId: string, ranges: { from: string; to: string }[]): Promise<number[]> {
+  const valid = z.array(z.object({ from: isoDate, to: isoDate })).max(24).parse(ranges);
+  if (valid.length === 0) return [];
+  return withUser(userId, async (tx) => {
+    const cols = valid.map(
+      (r, i) => sql`count(*) filter (where ${effectiveDate} between ${r.from}::date and ${r.to}::date) as ${sql.raw(`c${i}`)}`,
+    );
+    const res = await tx.execute<Record<string, string>>(
+      sql`select ${sql.join(cols, sql`, `)} from ${memoryEntries} where ${memoryEntries.userId} = ${userId}`,
+    );
+    const row = res.rows[0] ?? {};
+    return valid.map((_, i) => Number(row[`c${i}`] ?? 0));
+  });
+}

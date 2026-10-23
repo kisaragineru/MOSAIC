@@ -7,9 +7,10 @@
  * is not computed by the engine, no text depends on miếu/vượng/đắc/hãm.
  */
 import type { Locale } from "@/lib/i18n/locales";
+import { lunarToSolar } from "./calendar";
 import { BRANCHES } from "./canchi";
 import type { Chart, Palace } from "./engine";
-import { MAIN_EXTRA, PALACE_JA, PALACE_ROLE } from "./interpret-detail";
+import { MAIN_EXTRA, PALACE_JA, PALACE_ROLE, PALACE_SHORT } from "./interpret-detail";
 import { HOA_INFO, PALACE_INFO, STAR_INFO, type AuxStarId, type HoaId, type MainStarId, type PalaceId } from "./stars";
 
 export const INTERPRETATION_VERSION = "interp-2";
@@ -453,6 +454,37 @@ export interface LifeStage {
   keywords: string[];
   hoa: string[];
   state: "past" | "current" | "future" | "unknown";
+  palace: PalaceId | null;
+  /** One- or two-word name of the period's theme (e.g. "Work"). */
+  short: string;
+  /** Lunar years of the period: nominal age n is lived in lunar year (birth lunar year + n − 1). */
+  yearFrom: number;
+  yearTo: number;
+  /** Gregorian dates of the period (Lunar New Year to the eve of the next one), when inside the calendar range. */
+  startDate: string | null;
+  endDate: string | null;
+  hints: {
+    strengths: string[];
+    cautions: string[];
+    notes: string[];
+    /** The period's related palaces (tam phương tứ chính) and their main stars. */
+    support: { label: string; stars: string[] }[];
+  };
+}
+
+const iso = (d: { year: number; month: number; day: number }) =>
+  `${String(d.year).padStart(4, "0")}-${String(d.month).padStart(2, "0")}-${String(d.day).padStart(2, "0")}`;
+
+/** Gregorian date of Lunar New Year (Vietnamese calendar), or null outside the supported range. */
+function lunarNewYear(year: number): string | null {
+  const d = lunarToSolar({ year, month: 1, day: 1, leap: false });
+  return d ? iso(d) : null;
+}
+
+function dayBefore(isoDate: string): string {
+  const d = new Date(`${isoDate}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
 }
 
 /** The 10-year Đại Hạn periods in order, for the timeline view. Empty when they are not computable. */
@@ -464,6 +496,28 @@ export function lifeStages(chart: Chart, locale: Locale, currentAge?: number | n
       const { from, to } = p.daiHan!;
       const mains = p.mainStars.map((s) => s.id as MainStarId);
       const state = currentAge == null ? "unknown" : currentAge > to ? "past" : currentAge >= from ? "current" : "future";
+      const yearFrom = chart.lunar.year + from - 1;
+      const yearTo = chart.lunar.year + to - 1;
+      const next = lunarNewYear(yearTo + 1);
+      // Advice comes from the period's own main stars, or (vô chính diệu) those of the opposite palace.
+      const voice = mains.length ? mains : chart.palaces[(p.branch + 6) % 12]!.mainStars.map((s) => s.id as MainStarId);
+      const { trine, opposite } = relatedBranches(p.branch);
+      const notes = [
+        ...[...p.mainStars, ...p.auxStars].filter((s) => s.hoa).map((s) => pick(HOA_NOTES[s.hoa!], locale)),
+        ...p.auxStars.map((s) => AUX_NOTES[s.id as AuxStarId]).filter((n): n is T => !!n).map((n) => pick(n, locale)),
+      ];
+      if (chart.tuan.includes(p.branch) || chart.triet.includes(p.branch)) {
+        notes.push(
+          pick(
+            {
+              vi: "Cung của giai đoạn này có Tuần/Triệt; theo truyền thống, ảnh hưởng của các sao được xem là giảm bớt.",
+              en: "This period's palace holds Tuần/Triệt; traditionally, the influence of its stars is considered softened.",
+              ja: "この10年の宮にはTuần／Triệtがあり、伝統的に星の影響は和らぐとされます。",
+            },
+            locale,
+          ),
+        );
+      }
       return {
         from,
         to,
@@ -475,6 +529,21 @@ export function lifeStages(chart: Chart, locale: Locale, currentAge?: number | n
         keywords: mains.map((m) => MAIN[m].keywords[locale]),
         hoa: [...p.mainStars, ...p.auxStars].filter((s) => s.hoa).map((s) => `${HOA_INFO[s.hoa!].vi} · ${STAR_INFO[s.id].vi}`),
         state,
+        palace: p.palace,
+        short: p.palace ? pick(PALACE_SHORT[p.palace], locale) : BRANCHES[p.branch]!,
+        yearFrom,
+        yearTo,
+        startDate: lunarNewYear(yearFrom),
+        endDate: next ? dayBefore(next) : null,
+        hints: {
+          strengths: voice.map((m) => pick(MAIN_EXTRA[m].strength, locale)),
+          cautions: voice.map((m) => pick(MAIN_EXTRA[m].caution, locale)),
+          notes,
+          support: [...trine, opposite].map((b) => {
+            const q = chart.palaces[b]!;
+            return { label: palaceLabel(q.palace, q.branch, locale), stars: q.mainStars.map((x) => STAR_INFO[x.id].vi) };
+          }),
+        },
       };
     });
 }

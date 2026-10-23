@@ -2,7 +2,7 @@ import { deleteBirthAction, saveBirthAction } from "@/app/actions/tuvi";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
 import { TuviChart, type ChartCenter } from "@/components/tuvi-chart";
-import { TuviStages } from "@/components/tuvi-stages";
+import { TuviStages, type StageView } from "@/components/tuvi-stages";
 import { TuviThemes } from "@/components/tuvi-themes";
 import { Button, Card, Checkbox, Field, Input, Notice, Page, Select } from "@/components/ui";
 import { BRANCHES } from "@/lib/tuvi/canchi";
@@ -11,6 +11,7 @@ import { PALACE_JA, PALACE_SHORT_EN } from "@/lib/tuvi/interpret-detail";
 import { STAR_INFO } from "@/lib/tuvi/stars";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
+import { countMemoriesInRanges } from "@/server/services/memories";
 import { exploreHours, getTuvi } from "@/server/services/tuvi";
 
 const ZONES = Intl.supportedValuesOf("timeZone");
@@ -33,7 +34,28 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
         ageText: d.daiHan ? ui.ageRange(d.daiHan.from, d.daiHan.to) : null,
       }))
     : [];
-  const stages = c ? lifeStages(c, locale, v.currentAge).map((x) => ({ ...x, ageText: ui.ageRange(x.from, x.to) })) : [];
+  const rawStages = c ? lifeStages(c, locale, v.currentAge) : [];
+  // D. Lived decades link to the user's own records from that time; decades ahead invite a letter.
+  const lived = rawStages.map((x) => (x.state === "past" || x.state === "current") && !!x.startDate && !!x.endDate);
+  const counts = await countMemoriesInRanges(uid, rawStages.filter((_, i) => lived[i]).map((x) => ({ from: x.startDate!, to: x.endDate! })));
+  let k = 0;
+  const stages: StageView[] = rawStages.map((x, i) => {
+    const count = lived[i] ? counts[k++]! : 0;
+    return {
+      ...x,
+      ageText: ui.ageRange(x.from, x.to),
+      yearText: ui.yearsAbout(x.yearFrom, x.yearTo),
+      records: lived[i]
+        ? {
+            count,
+            countText: ui.recordsCount(count),
+            href: `/memories?from=${x.startDate}&to=${x.endDate}`,
+            writeHref: `/memories/new?occurred=${x.startDate}`,
+          }
+        : null,
+      letterHref: x.state === "future" && x.startDate ? `/memories/new?kind=letter_to_future&reveal=${x.startDate}` : null,
+    };
+  });
   const now = stages.find((x) => x.state === "current");
   const menh = c && c.menh !== null ? details.find((d) => d.branch === c.menh) : undefined;
   const ORDER = ["personality", "love", "career", "family", "wealth", "relationships"];
@@ -92,7 +114,32 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
       {c && c.menh !== null && (
         <div id="stages" className="scroll-mt-16">
           <Card title={ui.stagesTitle}>
-            {stages.length > 0 ? <TuviStages stages={stages} labels={{ help: ui.stagesHelp, state: ui.stateLabel }} /> : <Notice kind="info">{ui.stagesUnavailable}</Notice>}
+            {stages.length > 0 ? (
+              <TuviStages
+                stages={stages}
+                currentAge={v.currentAge}
+                labels={{
+                  help: ui.stagesHelp,
+                  state: ui.stateLabel,
+                  mapTitle: ui.mapTitle,
+                  mapHelp: ui.mapHelp,
+                  hintsTitle: ui.hintsTitle,
+                  strength: ui.strength,
+                  caution: ui.caution,
+                  starNotes: ui.starNotes,
+                  support: ui.support,
+                  recordsTitle: ui.recordsTitle,
+                  recordsOpen: ui.recordsOpen,
+                  recordsNone: ui.recordsNone,
+                  recordsWrite: ui.recordsWrite,
+                  letterTitle: ui.letterTitle,
+                  letterHelp: ui.letterHelp,
+                  letterCta: ui.letterCta,
+                }}
+              />
+            ) : (
+              <Notice kind="info">{ui.stagesUnavailable}</Notice>
+            )}
           </Card>
         </div>
       )}

@@ -6,6 +6,9 @@ import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { listPeople } from "@/server/services/people";
 
+/** Prefill only well-formed dates (links from the Tử Vi life stages). */
+const dateParam = (v: string | undefined) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
+
 export default async function NewMemoryPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
   const sp = await searchParams;
@@ -15,7 +18,7 @@ export default async function NewMemoryPage({ searchParams }: { searchParams: Pr
     <Page title={t.memories.new} back="/memories">
       <Flash t={t} sp={sp} />
       <Card>
-        <MemoryForm t={t} action={createMemoryAction} people={people} back="/memories/new" d={{ kind: sp.kind }} submitLabel={t.common.save} />
+        <MemoryForm t={t} action={createMemoryAction} people={people} back="/memories/new" d={{ kind: sp.kind, revealOn: dateParam(sp.reveal), occurredOn: dateParam(sp.occurred) }} submitLabel={t.common.save} />
       </Card>
     </Page>
   );
