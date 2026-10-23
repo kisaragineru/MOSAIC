@@ -14,7 +14,6 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
   const { t } = await getT();
   const shares = await listShares(uid);
   const comps = await listComparisons(uid);
-  const now = Date.now();
   return (
     <Page title={t.share.title}>
       <Flash t={t} sp={sp} />
@@ -56,7 +55,7 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
         ) : (
           <ul className="space-y-2">
             {shares.map((s) => {
-              const status = s.revokedAt ? "revoked" : s.expiresAt.getTime() <= now ? "expired" : s.maxUses !== null && s.useCount >= s.maxUses ? "used_up" : "active";
+              const status = s.status;
               return (
                 <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-stone-200 p-2 text-sm">
                   <div>

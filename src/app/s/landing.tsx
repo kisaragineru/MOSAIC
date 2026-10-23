@@ -1,9 +1,20 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { lookupShareAction, openComparisonAction } from "@/app/actions/sharing";
 
 const KEY = "mosaic_share_token";
+
+/** Moves a token from the URL fragment into sessionStorage (idempotent) and returns it. */
+function readToken(): string | null {
+  const fromHash = window.location.hash.slice(1);
+  if (fromHash) {
+    sessionStorage.setItem(KEY, fromHash);
+    history.replaceState(null, "", window.location.pathname);
+  }
+  return sessionStorage.getItem(KEY);
+}
+const noopSubscribe = () => () => {};
 
 export interface LandingText {
   title: string;
@@ -25,17 +36,8 @@ export interface LandingText {
  */
 export function Landing({ tx, signedIn }: { tx: LandingText; signedIn: boolean }) {
   const router = useRouter();
-  const [token, setToken] = useState<string | null>(null);
+  const token = useSyncExternalStore(noopSubscribe, readToken, () => null);
   const [state, setState] = useState<{ owner?: string; own?: boolean; error?: string; busy?: boolean }>({});
-
-  useEffect(() => {
-    const fromHash = window.location.hash.slice(1);
-    if (fromHash) {
-      sessionStorage.setItem(KEY, fromHash);
-      history.replaceState(null, "", window.location.pathname);
-    }
-    setToken(sessionStorage.getItem(KEY));
-  }, []);
 
   useEffect(() => {
     if (!signedIn || !token) return;

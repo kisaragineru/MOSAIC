@@ -6,9 +6,13 @@ import { buildExport } from "@/server/services/export";
 
 /** POST-only, same-origin download of the user's full data export. */
 export async function POST(req: NextRequest) {
+  // CSRF: require a same-origin request (Origin header, or Fetch Metadata when Origin is null).
   const origin = req.headers.get("origin");
   const expected = new URL(process.env.APP_ORIGIN ?? req.nextUrl.origin).origin;
-  if (origin !== expected) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  const sameSite = req.headers.get("sec-fetch-site") === "same-origin";
+  if (origin !== expected && !((origin === null || origin === "null") && sameSite)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
   const uid = await currentUserId();
   if (!uid) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   try {

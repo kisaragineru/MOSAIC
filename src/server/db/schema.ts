@@ -40,11 +40,9 @@ const updatedAt = () => ts("updated_at").notNull().defaultNow();
  * Composite FK (childCol, user_id) → parent(id, user_id). Foreign-key checks bypass RLS,
  * so this is what prevents a user from attaching rows to another user's parent row.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ownedFk = (name: string, cols: [any, any], parent: { id: any; userId: any }) =>
   foreignKey({ name, columns: cols, foreignColumns: [parent.id, parent.userId] }).onDelete("cascade");
 const ownerUq = (name: string, t: { id: unknown; userId: unknown }) =>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   unique(name).on(t.id as any, t.userId as any);
 
 const userRef = () =>

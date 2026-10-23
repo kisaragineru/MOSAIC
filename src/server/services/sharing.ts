@@ -101,6 +101,11 @@ export async function listShares(userId: string) {
         useCount: profileShares.useCount,
         revokedAt: profileShares.revokedAt,
         createdAt: profileShares.createdAt,
+        status: sql<"active" | "revoked" | "expired" | "used_up">`case
+          when ${profileShares.revokedAt} is not null then 'revoked'
+          when ${profileShares.expiresAt} <= now() then 'expired'
+          when ${profileShares.maxUses} is not null and ${profileShares.useCount} >= ${profileShares.maxUses} then 'used_up'
+          else 'active' end`,
       })
       .from(profileShares)
       .where(eq(profileShares.userId, userId))
