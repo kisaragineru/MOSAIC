@@ -31,7 +31,7 @@ export function TuviStages({
           const active = i === selected;
           const tone =
             x.state === "current"
-              ? "border-amber-400 bg-amber-50"
+              ? "border-amber-200 bg-linear-to-br from-amber-50 to-orange-50"
               : x.state === "past"
                 ? "border-stone-200 bg-stone-50 text-stone-500"
                 : "border-stone-200 bg-white";
@@ -42,19 +42,19 @@ export function TuviStages({
               type="button"
               onClick={() => setSelected(i)}
               aria-pressed={active}
-              className={`relative w-32 shrink-0 snap-center rounded-xl border p-2 text-left transition-all motion-reduce:transition-none ${tone} ${active ? "-translate-y-0.5 ring-2 ring-teal-600 shadow-md" : "hover:-translate-y-0.5"}`}
+              className={`relative w-32 shrink-0 snap-center rounded-2xl border p-2.5 text-left transition-all motion-reduce:transition-none ${tone} ${active ? "-translate-y-0.5 ring-2 ring-teal-300 shadow-md" : "hover:-translate-y-0.5"}`}
             >
               <span className="block text-[11px] font-semibold text-amber-800">{x.ageText}</span>
               <span className="mt-0.5 block line-clamp-2 text-xs font-semibold text-stone-900">{x.label}</span>
               <span className="mt-0.5 block truncate text-[11px] text-rose-800">{x.stars.join("・") || "—"}</span>
               {labels.state[x.state] && (
-                <span className={`mt-1 inline-block rounded-full px-1.5 text-[10px] ${x.state === "current" ? "bg-amber-500 text-white" : "bg-stone-200 text-stone-600"}`}>{labels.state[x.state]}</span>
+                <span className={`mt-1 inline-block rounded-full px-1.5 text-[10px] ${x.state === "current" ? "bg-amber-100 font-bold text-amber-800" : "bg-stone-100 text-stone-600"}`}>{labels.state[x.state]}</span>
               )}
             </button>
           );
         })}
       </div>
-      <div key={s.branch} className="animate-[fadeUp_.2s_ease-out] rounded-xl border border-stone-200 bg-white p-3 text-sm motion-reduce:animate-none">
+      <div key={s.branch} className="animate-[fadeUp_.2s_ease-out] rounded-3xl border border-stone-200/80 bg-white/80 p-4 text-sm motion-reduce:animate-none">
         <p className="text-xs font-semibold text-amber-800">{s.ageText}</p>
         <p className="mt-0.5 font-semibold text-stone-900">{s.label}</p>
         {s.theme && <p className="mt-2 leading-relaxed text-stone-800">{s.theme}</p>}

@@ -89,6 +89,10 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   // Tapping a palace shows what it stands for.
   await pa.getByTestId("tuvi-chart").getByRole("button", { name: /^Quan Lộc/ }).click();
   await expect(pa.getByText("work, career and your role in society")).toBeVisible();
+  // The tapped palace and its three related palaces are shown enlarged.
+  await expect(pa.getByText("Quan Lộc and the palaces read with it")).toBeVisible();
+  await expect(pa.getByRole("button", { name: /^Trine/ })).toHaveCount(2);
+  await expect(pa.getByRole("button", { name: /^Opposite/ })).toHaveCount(1);
   // The related palaces are drawn on the board, and the detailed view lists every star.
   await expect(pa.locator("svg polygon")).toHaveCount(1);
   await expect(pa.getByTestId("tuvi-chart").getByText("Lộc Tồn")).toHaveCount(0);

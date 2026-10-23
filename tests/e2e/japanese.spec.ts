@@ -33,7 +33,7 @@ test("Japanese UI end to end: auto-detected, registration, question, Tử Vi, gi
   await page.getByRole("tab", { name: /恋愛・パートナー/ }).click();
   await expect(page.getByRole("tabpanel").getByText("活かし方")).toBeVisible();
   await expect(page.getByRole("heading", { name: "10年ごとの人生ステージ" })).toBeVisible();
-  await page.getByRole("button", { name: /数え5〜14歳/ }).click();
+  await page.locator("#stages").getByRole("button", { name: /数え5〜14歳/ }).click();
   await expect(page.getByText(/伝統的に、この10年は「/)).toBeVisible();
 
   await page.goto("/people");

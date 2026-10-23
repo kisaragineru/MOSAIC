@@ -20,7 +20,7 @@ export function Page({ title, children, back, actions }: { title: string; childr
 
 export function Card({ children, className = "", title }: { children: ReactNode; className?: string; title?: ReactNode }) {
   return (
-    <section className={`rounded-2xl border border-stone-200 bg-white p-4 shadow-sm ${className}`}>
+    <section className={`rounded-3xl border border-white/80 bg-white/85 p-5 shadow-[0_8px_30px_-14px_rgba(110,80,50,0.22)] backdrop-blur-sm ${className}`}>
       {title && <h2 className="mb-3 text-base font-semibold text-stone-800">{title}</h2>}
       {children}
     </section>
@@ -30,22 +30,22 @@ export function Card({ children, className = "", title }: { children: ReactNode;
 export function Button({ variant = "primary", className = "", ...props }: ComponentProps<"button"> & { variant?: "primary" | "secondary" | "danger" | "ghost" }) {
   const styles = {
     primary: "bg-teal-700 text-white hover:bg-teal-800",
-    secondary: "border border-stone-300 bg-white text-stone-800 hover:bg-stone-100",
+    secondary: "border border-stone-200 bg-white/90 text-stone-800 hover:bg-stone-50",
     danger: "bg-rose-700 text-white hover:bg-rose-800",
     ghost: "text-stone-600 hover:bg-stone-100",
   }[variant];
   return (
     <button
       {...props}
-      className={`inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2 text-sm font-medium transition disabled:opacity-50 ${styles} ${className}`}
+      className={`inline-flex min-h-10 items-center justify-center rounded-full px-5 py-2 text-sm font-medium transition active:scale-[0.98] disabled:opacity-50 ${styles} ${className}`}
     />
   );
 }
 
 export function LinkButton({ href, children, variant = "secondary" }: { href: string; children: ReactNode; variant?: "primary" | "secondary" }) {
-  const styles = variant === "primary" ? "bg-teal-700 text-white hover:bg-teal-800" : "border border-stone-300 bg-white text-stone-800 hover:bg-stone-100";
+  const styles = variant === "primary" ? "bg-teal-700 text-white hover:bg-teal-800" : "border border-stone-200 bg-white/90 text-stone-800 hover:bg-stone-50";
   return (
-    <Link href={href} className={`inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2 text-sm font-medium ${styles}`}>
+    <Link href={href} className={`inline-flex min-h-10 items-center justify-center rounded-full px-5 py-2 text-sm font-medium transition active:scale-[0.98] ${styles}`}>
       {children}
     </Link>
   );
@@ -62,7 +62,7 @@ export function Field({ label, children, hint }: { label: string; children: Reac
 }
 
 const inputCls =
-  "w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-base text-stone-900 placeholder:text-stone-500 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20";
+  "w-full rounded-2xl border border-stone-200 bg-white/90 px-3.5 py-2 text-base text-stone-900 placeholder:text-stone-500 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20";
 
 export function Input(props: ComponentProps<"input">) {
   return <input {...props} className={`${inputCls} ${props.className ?? ""}`} />;
@@ -91,7 +91,7 @@ export function Notice({ kind = "info", children }: { kind?: "info" | "error" | 
     warning: "border-amber-200 bg-amber-50 text-amber-900",
   }[kind];
   return (
-    <div role={kind === "error" ? "alert" : "status"} className={`rounded-xl border px-3 py-2 text-sm ${styles}`}>
+    <div role={kind === "error" ? "alert" : "status"} className={`rounded-2xl border px-4 py-2.5 text-sm ${styles}`}>
       {children}
     </div>
   );
@@ -109,7 +109,7 @@ export function Pill({ children, tone = "stone" }: { children: ReactNode; tone?:
 }
 
 export function Empty({ children }: { children: ReactNode }) {
-  return <p className="rounded-xl border border-dashed border-stone-300 p-6 text-center text-sm text-stone-500">{children}</p>;
+  return <p className="rounded-3xl border border-dashed border-stone-300 p-6 text-center text-sm text-stone-500">{children}</p>;
 }
 
 /** Two or more sibling views shown as one switch, e.g. "Today | History". Plain links, so it works without JS. */

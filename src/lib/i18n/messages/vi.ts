@@ -226,6 +226,10 @@ export const vi: Dict = {
   },
   tuvi: {
     ui: {
+      focusTitle: "{x} và các cung tam phương tứ chính",
+      focusSelf: "Bản cung",
+      focusTrine: "Tam hợp",
+      focusOpposite: "Xung chiếu",
       chartSimple: "Gọn",
       chartDetailed: "Chi tiết",
       badgeMenh: "Mệnh",

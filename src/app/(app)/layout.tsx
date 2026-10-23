@@ -11,7 +11,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const initial = Array.from(acc.profile.displayName.trim())[0]?.toUpperCase() ?? "?";
   return (
     <>
-      <header className="sticky top-0 z-10 border-b border-stone-200 bg-[#faf8f5]/90 backdrop-blur">
+      <header className="sticky top-0 z-10 border-b border-white/60 bg-[#fbf7f3]/75 backdrop-blur-md">
         <div className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-2">
           <Link href="/home" className="flex items-center gap-2">
             <span className="mosaic-mark h-6 w-6 rounded-md" aria-hidden />
@@ -35,7 +35,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               href="/me"
               aria-label={t.nav.profileMenu}
               title={t.nav.profileMenu}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-stone-800 text-sm font-semibold text-white ring-2 ring-transparent transition hover:ring-teal-500"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-teal-200 to-violet-200 text-sm font-bold text-teal-900 ring-2 ring-white transition hover:ring-teal-300"
             >
               {initial}
             </Link>

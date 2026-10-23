@@ -59,25 +59,25 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
       <Flash t={t} sp={sp} />
       {v.error && <Flash t={t} sp={{ e: v.error }} />}
       {c && (
-        <section className="overflow-hidden rounded-2xl bg-linear-to-br from-teal-800 via-teal-700 to-violet-800 p-5 text-white shadow-md">
-          <p className="text-xs uppercase tracking-[0.2em] text-teal-100">{ui.heroEyebrow}</p>
-          <p className="mt-1 text-sm text-teal-50">{c.yearPillar.name} · {t.tuvi.napAm} {c.napAm.name}</p>
+        <section className="overflow-hidden rounded-3xl bg-linear-to-br from-teal-100 via-sky-50 to-violet-200 p-5 text-teal-950 shadow-[0_10px_30px_-14px_rgba(91,70,160,0.35)]">
+          <p className="text-xs uppercase tracking-[0.2em] text-teal-700">{ui.heroEyebrow}</p>
+          <p className="mt-1 text-sm text-teal-900/80">{c.yearPillar.name} · {t.tuvi.napAm} {c.napAm.name}</p>
           {menh ? (
             <>
-              <p className="mt-3 text-xs text-teal-100">{ui.menhStars}</p>
+              <p className="mt-3 text-xs text-teal-700">{ui.menhStars}</p>
               <p className="text-2xl font-semibold tracking-tight">{menh.mains.map((m) => m.name).join(" · ") || "—"}</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
-                {menh.mains.map((m) => <span key={m.name} className="rounded-full bg-white/15 px-2.5 py-0.5 text-xs">{m.keywords}</span>)}
+                {menh.mains.map((m) => <span key={m.name} className="rounded-full bg-white/70 px-2.5 py-0.5 text-xs text-violet-900">{m.keywords}</span>)}
               </div>
             </>
           ) : (
-            <p className="mt-3 text-sm text-teal-50">{v.sections[0]?.paragraphs[0]?.text}</p>
+            <p className="mt-3 text-sm text-teal-900/80">{v.sections[0]?.paragraphs[0]?.text}</p>
           )}
           {now && (
-            <a href="#stages" className="mt-4 block rounded-xl bg-white/10 p-3 text-sm transition-colors hover:bg-white/20">
-              <span className="block text-xs text-amber-200">{ui.nowStage} · {now.ageText}</span>
+            <a href="#stages" className="mt-4 block rounded-2xl bg-white/60 p-3 text-sm transition-colors hover:bg-white/80">
+              <span className="block text-xs text-amber-700">{ui.nowStage} · {now.ageText}</span>
               <span className="font-semibold">{now.label}</span>
-              {now.role && <span className="block text-teal-50">{now.role}</span>}
+              {now.role && <span className="block text-teal-900/80">{now.role}</span>}
             </a>
           )}
         </section>
@@ -121,6 +121,10 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
               lucky: ui.lucky,
               malefic: ui.malefic,
               noMain: ui.noMain,
+              focusTitle: ui.focusTitle,
+              self: ui.focusSelf,
+              trine: ui.focusTrine,
+              opposite: ui.focusOpposite,
             }}
           />
           {v.currentAge !== null && <p className="mt-2 text-xs text-stone-500">{t.tuvi.currentAge(v.currentAge)}</p>}

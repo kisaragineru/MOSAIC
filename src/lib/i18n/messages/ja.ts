@@ -226,6 +226,10 @@ export const ja: Dict = {
   },
   tuvi: {
     ui: {
+      focusTitle: "{x}と合わせて読む宮",
+      focusSelf: "本宮",
+      focusTrine: "三合",
+      focusOpposite: "対宮",
       chartSimple: "シンプル",
       chartDetailed: "くわしく",
       badgeMenh: "命",

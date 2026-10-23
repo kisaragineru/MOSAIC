@@ -8,7 +8,12 @@
 }
 
 body {
-  background: #faf8f5;
+  /* Soft peach and lavender light behind everything. */
+  background:
+    radial-gradient(900px 520px at -10% -8%, #fde8da 0%, transparent 60%),
+    radial-gradient(760px 520px at 112% 6%, #ebe5fb 0%, transparent 58%),
+    radial-gradient(700px 600px at 50% 110%, #dff3ee 0%, transparent 60%),
+    #fbf7f3;
   color: #1c1917;
   -webkit-font-smoothing: antialiased;
 }
@@ -30,3 +35,8 @@ body {
 
 .scrollbar-none { scrollbar-width: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
+
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: none; }
+}

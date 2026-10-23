@@ -224,6 +224,10 @@ export const en = {
   },
   tuvi: {
     ui: {
+      focusTitle: "{x} and the palaces read with it",
+      focusSelf: "This palace",
+      focusTrine: "Trine",
+      focusOpposite: "Opposite",
       chartSimple: "Simple",
       chartDetailed: "Detailed",
       badgeMenh: "Mệnh",

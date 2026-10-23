@@ -33,24 +33,24 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       <Flash t={t} sp={sp} />
       <Link
         href="/tuvi"
-        className="group block overflow-hidden rounded-2xl bg-linear-to-br from-teal-800 via-teal-700 to-violet-800 p-4 text-white shadow-md transition-transform hover:-translate-y-0.5 motion-reduce:transition-none"
+        className="group block overflow-hidden rounded-3xl bg-linear-to-br from-teal-100 via-sky-50 to-violet-200 p-5 text-teal-950 shadow-[0_10px_30px_-14px_rgba(91,70,160,0.35)] transition-transform hover:-translate-y-0.5 motion-reduce:transition-none"
       >
-        <span className="text-xs uppercase tracking-[0.2em] text-teal-100">{t.tuvi.ui.homeTitle}</span>
+        <span className="text-xs uppercase tracking-[0.2em] text-teal-700">{t.tuvi.ui.homeTitle}</span>
         {chart ? (
           <>
             <span className="mt-1 block text-xl font-semibold">{menhStars.join(" · ") || chart.yearPillar.name}</span>
             {nowStage && (
-              <span className="mt-1 block text-sm text-teal-50">
+              <span className="mt-1 block text-sm text-teal-900/80">
                 {t.tuvi.ui.nowStage} · {t.tuvi.ui.ageRange(nowStage.from, nowStage.to)} · {nowStage.label}
-                {nowStage.role && <span className="block text-teal-100">{nowStage.role}</span>}
+                {nowStage.role && <span className="block text-teal-700">{nowStage.role}</span>}
               </span>
             )}
-            <span className="mt-3 inline-block rounded-full bg-white/15 px-3 py-1 text-sm font-semibold group-hover:bg-white/25">{t.tuvi.ui.homeOpen} →</span>
+            <span className="mt-3 inline-block rounded-full bg-white/80 px-3 py-1 text-sm font-semibold text-teal-800 group-hover:bg-white">{t.tuvi.ui.homeOpen} →</span>
           </>
         ) : (
           <>
-            <span className="mt-1 block text-sm text-teal-50">{t.tuvi.ui.homeEmpty}</span>
-            <span className="mt-3 inline-block rounded-full bg-white px-3 py-1 text-sm font-semibold text-teal-800">{t.tuvi.ui.homeStart} →</span>
+            <span className="mt-1 block text-sm text-teal-900/80">{t.tuvi.ui.homeEmpty}</span>
+            <span className="mt-3 inline-block rounded-full bg-teal-700 px-3 py-1 text-sm font-semibold text-white">{t.tuvi.ui.homeStart} →</span>
           </>
         )}
       </Link>

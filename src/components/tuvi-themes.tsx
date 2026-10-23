@@ -21,7 +21,7 @@ const ICON: Record<string, string> = {
 function Toggle({ title, children }: { title: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-xl border border-stone-200">
+    <div className="rounded-2xl border border-stone-200/80 bg-white/70">
       <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-stone-700">
         {title}
         <span aria-hidden className={`text-stone-400 transition-transform motion-reduce:transition-none ${open ? "rotate-180" : ""}`}>⌄</span>
@@ -57,7 +57,7 @@ export function TuviThemes({ sections, labels }: { sections: InterpretationSecti
               aria-selected={active}
               onClick={() => setCurrent(x.section)}
               className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-all motion-reduce:transition-none ${
-                active ? "border-teal-700 bg-teal-700 font-semibold text-white shadow-sm" : "border-stone-300 bg-white text-stone-700 hover:border-teal-500"
+                active ? "border-teal-300 bg-teal-50 font-bold text-teal-800 shadow-sm" : "border-stone-200 bg-white/80 text-stone-700 hover:border-teal-300"
               }`}
             >
               <span aria-hidden>{ICON[x.section] ?? "•"}</span>
@@ -70,18 +70,18 @@ export function TuviThemes({ sections, labels }: { sections: InterpretationSecti
         {s.summary && <p className="text-sm font-semibold text-stone-900">{s.summary}</p>}
         {s.keywords && s.keywords.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
-            {s.keywords.map((k) => <span key={k} className="rounded-full bg-violet-50 px-2.5 py-0.5 text-xs text-violet-800">{k}</span>)}
+            {s.keywords.map((k) => <span key={k} className="rounded-full bg-violet-100/70 px-2.5 py-0.5 text-xs text-violet-800">{k}</span>)}
           </div>
         )}
         <div className="text-sm leading-relaxed text-stone-800"><Lines items={by("core")} /></div>
         {by("strength").length > 0 && (
-          <div className="rounded-xl bg-teal-50 p-3 text-sm text-teal-950">
+          <div className="rounded-2xl bg-linear-to-br from-teal-50 to-emerald-50 p-4 text-sm text-teal-950">
             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-teal-700">{labels.strength}</p>
             <Lines items={by("strength")} />
           </div>
         )}
         {by("caution").length > 0 && (
-          <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-950">
+          <div className="rounded-2xl bg-linear-to-br from-amber-50 to-orange-50 p-4 text-sm text-amber-950">
             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-amber-700">{labels.caution}</p>
             <Lines items={by("caution")} />
           </div>

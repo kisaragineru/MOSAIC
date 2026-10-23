@@ -38,7 +38,7 @@ const PATHS: Record<NavIcon, React.ReactNode> = {
 export function BottomNav({ items }: { items: { href: string; label: string; icon: NavIcon }[] }) {
   const path = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-stone-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+    <nav className="fixed inset-x-0 bottom-0 z-20 rounded-t-3xl border-t border-white/70 bg-white/85 pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_24px_-14px_rgba(110,80,50,0.25)] backdrop-blur-md">
       {/* A class, not an inline style: the CSP blocks style attributes in server-rendered HTML. */}
       <ul className="mx-auto grid max-w-2xl grid-cols-6">
         {items.map((it) => {
@@ -50,15 +50,15 @@ export function BottomNav({ items }: { items: { href: string; label: string; ico
                 href={it.href}
                 aria-current={active ? "page" : undefined}
                 className={`group flex flex-col items-center gap-0.5 pb-1.5 pt-1 text-[10.5px] leading-none transition-colors ${
-                  active ? "font-bold text-teal-800" : "text-stone-500 hover:text-stone-800"
+                  active ? "font-bold text-teal-800" : "text-stone-500 hover:text-stone-700"
                 }`}
               >
                 <span
                   className={`relative flex h-7 w-12 items-center justify-center rounded-full transition-all duration-200 motion-reduce:transition-none ${
                     active
                       ? special
-                        ? "bg-linear-to-br from-teal-600 to-violet-700 text-white shadow-md shadow-teal-900/20"
-                        : "bg-teal-100 text-teal-800"
+                        ? "bg-linear-to-br from-teal-100 to-violet-200 text-violet-800 shadow-sm"
+                        : "bg-teal-100/80 text-teal-800"
                       : special
                         ? "text-violet-700 group-hover:bg-stone-100"
                         : "group-hover:bg-stone-100"
