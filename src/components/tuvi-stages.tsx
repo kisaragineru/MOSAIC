@@ -14,19 +14,25 @@ export function TuviStages({
   const rail = useRef<HTMLDivElement>(null);
   const cards = useRef<(HTMLButtonElement | null)[]>([]);
 
+  const first = useRef(true);
   useEffect(() => {
-    // Bring the current stage into view once, without moving the page itself.
-    const el = cards.current[start];
+    // Centre the selected stage in the rail (instantly on first render, smoothly after a tap),
+    // scrolling only the rail, never the page.
+    const el = cards.current[selected];
     const box = rail.current;
-    if (el && box) box.scrollLeft = el.offsetLeft - box.clientWidth / 2 + el.clientWidth / 2;
-  }, [start]);
+    if (!el || !box) return;
+    const left = el.offsetLeft - box.clientWidth / 2 + el.clientWidth / 2;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    box.scrollTo({ left, behavior: first.current || reduce ? "auto" : "smooth" });
+    first.current = false;
+  }, [selected]);
 
   const s = stages[selected];
   if (!s) return null;
   return (
     <div className="space-y-3">
       <p className="text-xs text-stone-500">{labels.help}</p>
-      <div ref={rail} className="scrollbar-none -mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-2">
+      <div ref={rail} className="scrollbar-none -mx-5 flex snap-x scroll-px-5 gap-2 overflow-x-auto px-5 pb-4 pt-2">
         {stages.map((x, i) => {
           const active = i === selected;
           const tone =

@@ -46,7 +46,7 @@ export function TuviThemes({ sections, labels }: { sections: InterpretationSecti
   const by = (k: InterpretationParagraph["kind"]) => s.paragraphs.filter((p) => (p.kind ?? "core") === k);
   return (
     <div className="space-y-3">
-      <div role="tablist" className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+      <div role="tablist" className="scrollbar-none -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 pt-0.5">
         {sections.map((x) => {
           const active = x.section === s.section;
           return (
