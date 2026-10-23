@@ -1,0 +1,62 @@
+import { randomUUID } from "node:crypto";
+import { expect, test, type Browser } from "@playwright/test";
+
+async function user(browser: Browser, name: string) {
+  const ctx = await browser.newContext({ locale: "ja-JP", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9" } });
+  const page = await ctx.newPage();
+  await page.goto("/register");
+  await page.getByLabel("なんと呼べばいいですか？").fill(name);
+  await page.getByLabel("メールアドレス").fill(`${randomUUID().slice(0, 8)}@example.test`);
+  await page.getByLabel(/^パスワード/).fill("e2e correct horse battery");
+  await page.getByRole("button", { name: "アカウントを作成" }).click();
+  await expect(page.getByRole("heading", { name: `こんにちは、${name}さん` })).toBeVisible();
+  await page.goto("/discover/q/f.drink");
+  await page.getByLabel("お茶", { exact: true }).check();
+  await page.getByRole("checkbox", { name: /この回答を使うことを許可/ }).check();
+  await page.getByRole("button", { name: "回答を保存" }).click();
+  await expect(page.getByText(/回答を保存しました/)).toBeVisible();
+  return page;
+}
+
+test("QR connection: preview of what others see, who is waiting, results first", async ({ browser }) => {
+  const a = await user(browser, "ハナ");
+  const b = await user(browser, "ソラ");
+
+  // The profile shows what another person could see, before anyone connects.
+  await a.goto("/me");
+  await a.getByRole("link", { name: /相手からの見え方/ }).click();
+  await expect(a.getByText("「ハナさんから比較の招待が届いています。」— 表示名だけです。")).toBeVisible();
+  await expect(a.getByText("いつもの飲みものは？")).toBeVisible();
+  await expect(a.getByText("命盤をまだ作っていないため、表示されません。")).toBeVisible();
+
+  await a.goto("/share");
+  await a.getByRole("button", { name: "リンクを作成" }).click();
+  const url = await a.getByTestId("share-url").inputValue();
+
+  await b.goto(url.replace(/^https?:\/\/[^/]+/, ""));
+  await expect(b.getByText("ハナさんから比較の招待が届いています。")).toBeVisible();
+  await b.getByRole("button", { name: "続ける" }).click();
+  await b.waitForURL(/\/compare\//);
+  await b.getByRole("checkbox", { name: /^好み/ }).check();
+  await b.locator('input[name="agree"]').check();
+  await b.getByRole("button", { name: "同意する" }).click();
+  await b.goto("/share");
+  await expect(b.getByText("相手の同意待ち")).toBeVisible();
+
+  // The link owner is told on Home that someone is waiting for their choice.
+  await a.goto("/home");
+  await expect(a.getByText(/ソラさんがあなたのQRから比較を始めました/)).toBeVisible();
+  await a.goto("/share");
+  await expect(a.getByText("あなたの同意待ち")).toBeVisible();
+  await a.getByRole("link", { name: /ソラさんとの比較/ }).click();
+  await a.getByRole("checkbox", { name: /^好み/ }).check();
+  await a.locator('input[name="agree"]').check();
+  await a.getByRole("button", { name: "同意する" }).click();
+
+  // Once both agree the results come first; the consent form folds away.
+  await expect(a.getByText("ハナ: お茶 · ソラ: お茶")).toBeVisible();
+  await expect(a.getByText("同意した内容を見る・変える")).toBeVisible();
+  await expect(a.getByRole("button", { name: "同意内容を更新" })).toBeHidden();
+  await a.goto("/home");
+  await expect(a.getByText(/ソラさんがあなたのQRから比較を始めました/)).toHaveCount(0);
+});

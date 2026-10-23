@@ -8,6 +8,7 @@ import { getAccount, getNotificationPrefs } from "@/server/services/account";
 import { getDaily } from "@/server/services/discovery";
 import { listMemories } from "@/server/services/memories";
 import { upcomingDates } from "@/server/services/people";
+import { listComparisons } from "@/server/services/sharing";
 import { getTuvi } from "@/server/services/tuvi";
 import { lifeStages } from "@/lib/tuvi/interpret";
 import { STAR_INFO } from "@/lib/tuvi/stars";
@@ -27,10 +28,18 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const tv = await getTuvi(uid, locale);
   const chart = tv.chart;
   const menhStars = chart && chart.menh !== null ? chart.palaces[chart.menh]!.mainStars.map((s) => STAR_INFO[s.id].vi) : [];
+  const waiting = (await listComparisons(uid)).filter((c) => c.waitingOn === "you");
   const nowStage = chart ? lifeStages(chart, locale, tv.currentAge).find((x) => x.state === "current") : undefined;
   return (
     <Page title={t.home.hello(account.profile.displayName)}>
       <Flash t={t} sp={sp} />
+      {waiting.map((c) => (
+        <Link key={c.id} href={`/compare/${c.id}`} className="flex items-center gap-3 rounded-3xl border border-rose-200 bg-rose-50/80 p-4 text-sm text-rose-950 transition hover:shadow-md">
+          <span aria-hidden className="text-xl">🔗</span>
+          <span className="flex-1">{t.home.connectionPending(c.otherName)}</span>
+          <span className="shrink-0 rounded-full bg-white px-3 py-1 font-semibold text-rose-800">{t.home.review} →</span>
+        </Link>
+      ))}
       <Link
         href="/tuvi"
         className="group block overflow-hidden rounded-3xl bg-linear-to-br from-teal-100 via-sky-50 to-violet-200 p-5 text-teal-950 shadow-[0_10px_30px_-14px_rgba(91,70,160,0.35)] transition-transform hover:-translate-y-0.5 motion-reduce:transition-none"

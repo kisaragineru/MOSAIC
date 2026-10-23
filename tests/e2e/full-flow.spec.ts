@@ -199,7 +199,7 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   await expect(items.getByText("How much do you enjoy spicy food?")).toHaveCount(0);
   await expect(pa.getByText(/Answered by only one of you/)).toBeVisible();
   // B has no Tử Vi chart → not compared, no guess
-  await expect(pa.getByText(/Tử Vi can't be compared/)).toBeVisible();
+  await expect(pa.getByText(/the other person has not made their chart yet/)).toBeVisible();
   // Private data never appears
   const html = await pa.content();
   for (const secret of ["1990-06-07", "06:30", "Family comes first", "Film camera", "Linh"]) expect(html).not.toContain(secret);

@@ -31,28 +31,6 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
         <Notice kind="warning">{t.compare.ended}</Notice>
       ) : (
         <>
-          <Card title={t.compare.consentTitle}>
-            <p className="mb-3 text-sm text-stone-600">{PURPOSE_TEXT[locale]}</p>
-            {v.myConsent && <p className="mb-2 text-sm"><Pill tone="teal">✓</Pill> {t.compare.yourConsent(scopeNames(v.myConsent.scopes))}</p>}
-            <p className="mb-3 text-sm">{v.otherConsented ? `✓ ${t.compare.otherConsented}` : `⏳ ${t.compare.waiting}`}</p>
-            <form action={consentAction} className="space-y-2">
-              <input type="hidden" name="sessionId" value={v.id} />
-              <fieldset className="space-y-2">
-                <legend className="text-sm font-medium">{t.compare.scopes}</legend>
-                {SCOPES.map((s) => (
-                  <Checkbox
-                    key={s}
-                    name="scopes"
-                    value={s}
-                    defaultChecked={v.myConsent?.scopes.includes(s)}
-                    label={<><b>{t.compare.scopeNames[s]}</b> — <span className="text-stone-600">{SCOPE_DESCRIPTIONS[s][locale]}</span></>}
-                  />
-                ))}
-              </fieldset>
-              <Checkbox name="agree" required label={t.compare.agree} />
-              <Button type="submit">{v.myConsent ? t.compare.update : t.compare.give}</Button>
-            </form>
-          </Card>
           {r && names && (
             <>
               <Notice>{tr(r.disclaimer)}</Notice>
@@ -62,7 +40,11 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                   {r.tuvi.available ? (
                     <ul className="list-disc space-y-1 pl-5 text-sm">{r.tuvi.observations.map((o) => <li key={o.ruleId}>{tr(o.text)}</li>)}</ul>
                   ) : (
-                    <Notice kind="warning">{t.compare.tuviMissing}</Notice>
+                    <Notice kind="warning">
+                      {r.tuvi.missing.includes(v.myRole) ? (
+                        <>{t.compare.tuviMissingYou} <a href="/tuvi" className="underline">{t.tuvi.ui.homeStart} →</a></>
+                      ) : r.tuvi.missing.length > 0 ? t.compare.tuviMissingThem : t.compare.tuviMissing}
+                    </Notice>
                   )}
                 </Card>
               )}
@@ -96,14 +78,68 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                   )}
                 </Card>
               )}
-              <Card title={t.compare.hints}>
-                <ul className="list-disc space-y-1 pl-5 text-sm">{r.hints.map((h) => <li key={h.ruleId}>{tr(h.text)}</li>)}</ul>
-              </Card>
+              {r.hints.length > 0 && (
+                <Card title={t.compare.hints}>
+                  <ul className="list-disc space-y-1 pl-5 text-sm">{r.hints.map((h) => <li key={h.ruleId}>{tr(h.text)}</li>)}</ul>
+                </Card>
+              )}
               <form action={recomputeAction}>
                 <input type="hidden" name="sessionId" value={v.id} />
                 <Button variant="secondary">{t.compare.recompute}</Button>
               </form>
             </>
+          )}
+          {r ? (
+            <details className="rounded-3xl border border-stone-200/80 bg-white/70 p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-stone-700">{t.compare.changeConsent}</summary>
+              <div className="mt-3">
+          <div>
+            <p className="mb-3 text-sm text-stone-600">{PURPOSE_TEXT[locale]}</p>
+            {v.myConsent && <p className="mb-2 text-sm"><Pill tone="teal">✓</Pill> {t.compare.yourConsent(scopeNames(v.myConsent.scopes))}</p>}
+            <p className="mb-3 text-sm">{v.otherConsented ? `✓ ${t.compare.otherConsented}` : `⏳ ${t.compare.waiting}`}</p>
+            <form action={consentAction} className="space-y-2">
+              <input type="hidden" name="sessionId" value={v.id} />
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium">{t.compare.scopes}</legend>
+                {SCOPES.map((s) => (
+                  <Checkbox
+                    key={s}
+                    name="scopes"
+                    value={s}
+                    defaultChecked={v.myConsent?.scopes.includes(s)}
+                    label={<><b>{t.compare.scopeNames[s]}</b> — <span className="text-stone-600">{SCOPE_DESCRIPTIONS[s][locale]}</span></>}
+                  />
+                ))}
+              </fieldset>
+              <Checkbox name="agree" required label={t.compare.agree} />
+              <Button type="submit">{v.myConsent ? t.compare.update : t.compare.give}</Button>
+            </form>
+          </div>
+              </div>
+            </details>
+          ) : (
+          <Card title={t.compare.consentTitle}>
+            <p className="mb-3 text-sm text-stone-600">{PURPOSE_TEXT[locale]}</p>
+            {v.myConsent && <p className="mb-2 text-sm"><Pill tone="teal">✓</Pill> {t.compare.yourConsent(scopeNames(v.myConsent.scopes))}</p>}
+            <p className="mb-3 text-sm">{v.otherConsented ? `✓ ${t.compare.otherConsented}` : `⏳ ${t.compare.waiting}`}</p>
+            <form action={consentAction} className="space-y-2">
+              <input type="hidden" name="sessionId" value={v.id} />
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium">{t.compare.scopes}</legend>
+                {SCOPES.map((s) => (
+                  <Checkbox
+                    key={s}
+                    name="scopes"
+                    value={s}
+                    defaultChecked={v.myConsent?.scopes.includes(s)}
+                    label={<><b>{t.compare.scopeNames[s]}</b> — <span className="text-stone-600">{SCOPE_DESCRIPTIONS[s][locale]}</span></>}
+                  />
+                ))}
+              </fieldset>
+              <Checkbox name="agree" required label={t.compare.agree} />
+              <Button type="submit">{v.myConsent ? t.compare.update : t.compare.give}</Button>
+            </form>
+          </Card>
           )}
           <form action={endComparisonAction}>
             <input type="hidden" name="sessionId" value={v.id} />

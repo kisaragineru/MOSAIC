@@ -43,14 +43,14 @@ export const SCOPE_DESCRIPTIONS: Record<Scope, I18nText> = {
     ja: "Tử Vi：生まれ年の干支、納音の五行、命宮の地支。生年月日・出生時刻や命盤全体は決して共有しません。",
   },
   preferences: {
-    en: "Preferences: your latest answers to food, travel, music, hobby and lifestyle questions that you marked “allow in comparisons”.",
+    en: "Preferences: your latest answers to food, travel, music, hobby and lifestyle questions that you marked “allowed in comparisons”.",
     vi: "Sở thích: câu trả lời mới nhất về ăn uống, du lịch, âm nhạc, sở thích và lối sống mà bạn đã đánh dấu “cho phép so sánh”.",
-    ja: "好み：食べもの・旅行・音楽・趣味・暮らしに関する質問への最新の回答のうち、あなたが「比較への利用を許可」したもの。",
+    ja: "好み：食べもの・旅行・音楽・趣味・暮らしに関する質問への最新の回答のうち、あなたが「比較に使用可」にしたもの。",
   },
   values: {
-    en: "Values: your latest answers to values questions that you marked “allow in comparisons”.",
+    en: "Values: your latest answers to values questions that you marked “allowed in comparisons”.",
     vi: "Giá trị sống: câu trả lời mới nhất về giá trị sống mà bạn đã đánh dấu “cho phép so sánh”.",
-    ja: "価値観：価値観に関する質問への最新の回答のうち、あなたが「比較への利用を許可」したもの。",
+    ja: "価値観：価値観に関する質問への最新の回答のうち、あなたが「比較に使用可」にしたもの。",
   },
 };
 
@@ -344,14 +344,59 @@ export async function listComparisons(userId: string) {
     const out = [];
     for (const s of sessions) {
       const parts = await tx.execute<{ user_id: string; display_name: string }>(sql`select * from comparison_participants(${s.id})`);
+      const [mine] = await tx
+        .select({ id: comparisonConsents.id })
+        .from(comparisonConsents)
+        .where(and(eq(comparisonConsents.sessionId, s.id), eq(comparisonConsents.userId, userId), sql`${comparisonConsents.withdrawnAt} is null`));
       out.push({
         id: s.id,
         status: s.status,
+        /** Pending sessions split by whose consent is missing (the other side's state is not shown in detail). */
+        waitingOn: s.status !== "pending" ? null : mine ? ("them" as const) : ("you" as const),
         otherName: parts.rows.find((p) => p.user_id !== userId)?.display_name ?? "?",
         createdAt: s.createdAt,
         revokedAt: s.revokedAt,
       });
     }
     return out;
+  });
+}
+
+export interface SharedPreview {
+  displayName: string;
+  /** The summary a comparison reads when Tử Vi is agreed (null without a chart). */
+  tuvi: { yearStem: number; yearBranch: number; napAmElement: Element; menhBranch: number | null } | null;
+  /** Latest answers the user marked "allow in comparisons", by the scope that would share them. */
+  answers: { questionId: string; scope: "preferences" | "values"; answer: Answer }[];
+}
+
+/**
+ * What another person could see of this user, read from the user's own rows with the same
+ * rules the comparison functions apply (latest answered response, marked comparable, on a
+ * comparable question). Nothing here is shared until both people consent to a scope.
+ */
+export async function sharedPreview(userId: string): Promise<SharedPreview> {
+  return withUser(userId, async (tx) => {
+    const name = await tx.execute<{ display_name: string }>(sql`select display_name from profiles where user_id = ${userId}`);
+    const chart = await tx.execute<{ year_stem: number; year_branch: number; nap_am_element: string; menh_branch: number | null }>(
+      sql`select year_stem, year_branch, nap_am_element, menh_branch from tuvi_charts where user_id = ${userId} and is_current limit 1`,
+    );
+    const rows = await tx.execute<{ question_id: string; answer: Answer; scope: "preferences" | "values" }>(sql`
+      with latest as (
+        select distinct on (r.question_id) r.*
+        from question_responses r
+        where r.user_id = ${userId}
+        order by r.question_id, r.answered_at desc, r.id desc
+      )
+      select l.question_id, l.answer, case when q.category = 'values' then 'values' else 'preferences' end as scope
+      from latest l join question_definitions q on q.id = l.question_id
+      where l.status = 'answered' and l.privacy = 'comparable' and q.comparable
+      order by q.category, l.question_id`);
+    const c = chart.rows[0];
+    return {
+      displayName: name.rows[0]?.display_name ?? "",
+      tuvi: c ? { yearStem: c.year_stem, yearBranch: c.year_branch, napAmElement: c.nap_am_element as Element, menhBranch: c.menh_branch } : null,
+      answers: rows.rows.map((r) => ({ questionId: r.question_id, scope: r.scope, answer: r.answer })),
+    };
   });
 }

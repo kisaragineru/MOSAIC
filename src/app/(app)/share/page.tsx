@@ -42,7 +42,9 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
               <li key={c.id}>
                 <Link href={`/compare/${c.id}`} className="flex items-center justify-between py-2">
                   <span>{t.share.with(c.otherName)}</span>
-                  <Pill tone={c.status === "active" ? "teal" : c.status === "pending" ? "amber" : "stone"}>{t.share.compStatus[c.status as keyof typeof t.share.compStatus]}</Pill>
+                  <Pill tone={c.status === "active" ? "teal" : c.waitingOn === "you" ? "rose" : c.status === "pending" ? "amber" : "stone"}>
+                    {t.share.compStatus[c.waitingOn ? (`awaiting_${c.waitingOn}` as const) : (c.status as "active" | "revoked")]}
+                  </Pill>
                 </Link>
               </li>
             ))}

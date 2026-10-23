@@ -20,10 +20,14 @@ export default async function MePage({ searchParams }: { searchParams: Promise<R
     <Page title={acc.profile.displayName}>
       <Flash t={t} sp={sp} />
       <p className="text-xs text-stone-500">{t.me.joined(acc.createdAt.toISOString().slice(0, 10))}</p>
+      <Link href="/me/preview" className="flex items-center justify-between rounded-3xl bg-linear-to-br from-teal-50 to-violet-50 px-5 py-4 font-semibold text-teal-900 shadow-sm transition hover:shadow-md">
+        <span>👁 {t.me.preview}</span><span aria-hidden>→</span>
+      </Link>
       <Card title={t.settings.bio}>
         <form action={updateProfileAction} className="space-y-2">
           <input type="hidden" name="back" value="/me" />
           <Field label={t.settings.bio}><Textarea name="bio" defaultValue={acc.profile.bio ?? ""} maxLength={2000} rows={3} /></Field>
+          <p className="text-xs text-stone-500">🔒 {t.me.bioPrivate}</p>
           <Button type="submit" variant="secondary">{t.common.save}</Button>
         </form>
       </Card>
