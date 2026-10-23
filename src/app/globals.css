@@ -2,6 +2,9 @@
 
 :root {
   color-scheme: light;
+  /* Keep focused or scrolled-to elements clear of the sticky header and the fixed bottom tabs. */
+  scroll-padding-top: 4rem;
+  scroll-padding-bottom: 6rem;
 }
 
 body {
@@ -19,3 +22,11 @@ body {
     linear-gradient(315deg, #6d28d9 25%, #faf8f5 25%);
   background-size: 12px 12px;
 }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }

@@ -9,9 +9,10 @@
 import type { Locale } from "@/lib/i18n/locales";
 import { BRANCHES } from "./canchi";
 import type { Chart, Palace } from "./engine";
-import { PALACE_INFO, STAR_INFO, type AuxStarId, type HoaId, type MainStarId, type PalaceId } from "./stars";
+import { MAIN_EXTRA, PALACE_JA, PALACE_ROLE } from "./interpret-detail";
+import { HOA_INFO, PALACE_INFO, STAR_INFO, type AuxStarId, type HoaId, type MainStarId, type PalaceId } from "./stars";
 
-export const INTERPRETATION_VERSION = "interp-1";
+export const INTERPRETATION_VERSION = "interp-2";
 
 type T = { en: string; vi: string; ja: string };
 type Domain = "personality" | "love" | "career" | "wealth";
@@ -169,22 +170,29 @@ const HOA_NOTES: Record<HoaId, T> = {
   ky: { en: "With Hóa Kỵ here, this area is traditionally seen as one needing extra care and patience.", vi: "Có Hóa Kỵ ở đây, lĩnh vực này theo truyền thống cần thêm sự cẩn trọng và kiên nhẫn.", ja: "Hóa Kỵ（化忌）があるため、この領域は伝統的に特に注意と忍耐が必要とされます。" },
 };
 
-const DOMAIN_OF: Record<Exclude<Section, "cycles">, Domain | null> = {
+const DOMAIN_OF: Record<Exclude<Section, "cycles">, Domain | "family" | null> = {
   personality: "personality",
   love: "love",
   career: "career",
   wealth: "wealth",
   relationships: null,
-  family: null,
+  family: "family",
 };
 
+export type ParagraphKind = "core" | "related" | "strength" | "caution" | "note";
 export interface InterpretationParagraph {
   ruleIds: string[];
   text: string;
+  /** How the UI groups the paragraph; absent on paragraphs stored before interp-2. */
+  kind?: ParagraphKind;
 }
 export interface InterpretationSection {
   section: Section;
   title: string;
+  /** One-line headline: the primary palace and its main stars. */
+  summary?: string;
+  /** Short traditional keywords of the primary palace's main stars. */
+  keywords?: string[];
   paragraphs: InterpretationParagraph[];
 }
 
@@ -199,17 +207,13 @@ function starsText(stars: MainStarId[], locale: Locale) {
   return stars.map((s) => STAR_INFO[s].vi).join(locale === "ja" ? "、" : ", ");
 }
 
-const PALACE_JA: Record<PalaceId, string> = {
-  menh: "命宮", phu_mau: "父母宮", phuc_duc: "福徳宮", dien_trach: "田宅宮", quan_loc: "官禄宮", no_boc: "奴僕宮",
-  thien_di: "遷移宮", tat_ach: "疾厄宮", tai_bach: "財帛宮", tu_tuc: "子女宮", phu_the: "夫妻宮", huynh_de: "兄弟宮",
-};
 /** "Phu Thê（夫妻宮）" for Japanese, the Vietnamese name otherwise. */
 function palaceLabel(id: PalaceId | null, branch: number, locale: Locale) {
   if (!id) return BRANCHES[branch]!;
   return locale === "ja" ? `${PALACE_INFO[id].vi}（${PALACE_JA[id]}）` : PALACE_INFO[id].vi;
 }
 
-function palaceParagraphs(chart: Chart, palaceId: PalaceId, domain: Domain | null, locale: Locale): InterpretationParagraph[] {
+function palaceParagraphs(chart: Chart, palaceId: PalaceId, domain: Domain | "family" | null, locale: Locale): InterpretationParagraph[] {
   const p = palaceOf(chart, palaceId);
   if (!p) return [];
   const out: InterpretationParagraph[] = [];
@@ -222,6 +226,7 @@ function palaceParagraphs(chart: Chart, palaceId: PalaceId, domain: Domain | nul
     borrowed = true;
     out.push({
       ruleIds: [`${palaceId}.vo_chinh_dieu`],
+      kind: "core",
       text: pick(
         {
           vi: `Cung ${palaceName} (${BRANCHES[p.branch]}) vô chính diệu; theo truyền thống, xem các chính tinh xung chiếu từ cung đối diện: ${starsText(mains, locale) || "—"}.`,
@@ -233,7 +238,9 @@ function palaceParagraphs(chart: Chart, palaceId: PalaceId, domain: Domain | nul
     });
   }
   for (const s of mains) {
-    const text = domain
+    const text = domain === "family"
+      ? pick(MAIN_EXTRA[s].family, locale)
+      : domain
       ? pick(MAIN[s][domain], locale)
       : pick(
           {
@@ -243,19 +250,20 @@ function palaceParagraphs(chart: Chart, palaceId: PalaceId, domain: Domain | nul
           },
           locale,
         );
-    out.push({ ruleIds: [`${palaceId}.main.${s}${borrowed ? ".borrowed" : ""}`], text });
+    out.push({ ruleIds: [`${palaceId}.main.${s}${borrowed ? ".borrowed" : ""}`], text, kind: "core" });
   }
   for (const s of [...p.mainStars, ...p.auxStars]) {
-    if (s.hoa) out.push({ ruleIds: [`${palaceId}.hoa.${s.hoa}`], text: pick(HOA_NOTES[s.hoa], locale) });
+    if (s.hoa) out.push({ ruleIds: [`${palaceId}.hoa.${s.hoa}`], text: pick(HOA_NOTES[s.hoa], locale), kind: "note" });
   }
   for (const s of p.auxStars) {
     const note = AUX_NOTES[s.id as AuxStarId];
-    if (note) out.push({ ruleIds: [`${palaceId}.aux.${s.id}`], text: pick(note, locale) });
+    if (note) out.push({ ruleIds: [`${palaceId}.aux.${s.id}`], text: pick(note, locale), kind: "note" });
   }
   if (chart.tuan.includes(p.branch) || chart.triet.includes(p.branch)) {
     const which = [chart.tuan.includes(p.branch) ? "Tuần" : null, chart.triet.includes(p.branch) ? "Triệt" : null].filter(Boolean).join(", ");
     out.push({
       ruleIds: [`${palaceId}.tuan_triet`],
+      kind: "note",
       text: pick(
         {
           vi: `Cung này có ${which}; theo truyền thống, ảnh hưởng của các sao trong cung được xem là giảm bớt.`,
@@ -267,6 +275,55 @@ function palaceParagraphs(chart: Chart, palaceId: PalaceId, domain: Domain | nul
     });
   }
   return out;
+}
+
+/** Main stars that speak for a palace: its own, or (vô chính diệu) those of the opposite palace. */
+function mainsOf(chart: Chart, palaceId: PalaceId): { palace: Palace; mains: MainStarId[]; borrowed: boolean } | null {
+  const p = palaceOf(chart, palaceId);
+  if (!p) return null;
+  const own = p.mainStars.map((s) => s.id as MainStarId);
+  if (own.length) return { palace: p, mains: own, borrowed: false };
+  return { palace: p, mains: chart.palaces[(p.branch + 6) % 12]!.mainStars.map((s) => s.id as MainStarId), borrowed: true };
+}
+
+/** Tam phương tứ chính: a palace is traditionally read together with its two trine palaces and the opposite one. */
+export function relatedBranches(branch: number): { trine: [number, number]; opposite: number } {
+  return { trine: [(branch + 4) % 12, (branch + 8) % 12], opposite: (branch + 6) % 12 };
+}
+
+function relatedParagraphs(chart: Chart, palaceId: PalaceId, locale: Locale): InterpretationParagraph[] {
+  const p = palaceOf(chart, palaceId);
+  if (!p) return [];
+  const { trine, opposite } = relatedBranches(p.branch);
+  const parts = [...trine, opposite].map((b) => {
+    const q = chart.palaces[b]!;
+    const mains = q.mainStars.map((s) => s.id as MainStarId);
+    return `${palaceLabel(q.palace, q.branch, locale)} ${mains.length ? starsText(mains, locale) : "—"}`;
+  });
+  const sep = locale === "ja" ? "／" : " · ";
+  return [
+    {
+      ruleIds: [`${palaceId}.tam_phuong_tu_chinh`],
+      kind: "related",
+      text: pick(
+        {
+          vi: `Tam phương tứ chính của cung ${PALACE_INFO[palaceId].vi}: ${parts.join(sep)}. Theo truyền thống, các cung này được xem cùng nhau như những ảnh hưởng hỗ trợ.`,
+          en: `The related palaces (tam phương tứ chính) of ${PALACE_INFO[palaceId].vi}: ${parts.join(sep)}. Traditionally they are read together as supporting influences.`,
+          ja: `${palaceLabel(palaceId, p.branch, "ja")}の三方四正（tam phương tứ chính）：${parts.join(sep)}。伝統的に、これらの宮も合わせて読み、支える影響とみなします。`,
+        },
+        locale,
+      ),
+    },
+  ];
+}
+
+function adviceParagraphs(chart: Chart, palaceId: PalaceId, locale: Locale): InterpretationParagraph[] {
+  const head = mainsOf(chart, palaceId);
+  if (!head) return [];
+  return head.mains.flatMap((m) => [
+    { ruleIds: [`${palaceId}.strength.${m}`], kind: "strength" as const, text: pick(MAIN_EXTRA[m].strength, locale) },
+    { ruleIds: [`${palaceId}.caution.${m}`], kind: "caution" as const, text: pick(MAIN_EXTRA[m].caution, locale) },
+  ]);
 }
 
 /** Build all sections for a chart. Partial charts (unknown hour) only get what is computable. */
@@ -299,6 +356,7 @@ export function interpret(chart: Chart, locale: Locale, currentAge?: number): In
       const tp = chart.palaces[chart.than]!;
       paragraphs.push({
         ruleIds: ["than.location"],
+        kind: "note",
         text: pick(
           {
             vi: `Thân cư cung ${tp.palace ? PALACE_INFO[tp.palace].vi : BRANCHES[tp.branch]}: theo truyền thống, nửa sau cuộc đời chú trọng nhiều hơn đến lĩnh vực này.`,
@@ -311,6 +369,7 @@ export function interpret(chart: Chart, locale: Locale, currentAge?: number): In
     } else if (section === "personality" && chart.than === chart.menh) {
       paragraphs.push({
         ruleIds: ["than.menh_same"],
+        kind: "note",
         text: pick(
           {
             vi: "Mệnh Thân đồng cung: theo truyền thống, tính cách được xem là nhất quán suốt đời.",
@@ -321,7 +380,16 @@ export function interpret(chart: Chart, locale: Locale, currentAge?: number): In
         ),
       });
     }
-    sections.push({ section, title: pick(SECTION_TITLES[section], locale), paragraphs });
+    const primary = SECTION_PALACES[section][0]!;
+    paragraphs.push(...relatedParagraphs(chart, primary, locale), ...adviceParagraphs(chart, primary, locale));
+    const head = mainsOf(chart, primary);
+    sections.push({
+      section,
+      title: pick(SECTION_TITLES[section], locale),
+      summary: head ? `${palaceLabel(primary, head.palace.branch, locale)}: ${starsText(head.mains, locale) || "—"}` : undefined,
+      keywords: head ? head.mains.map((m) => MAIN[m].keywords[locale]) : undefined,
+      paragraphs,
+    });
   }
   sections.push({ section: "cycles", title: pick(SECTION_TITLES.cycles, locale), paragraphs: cycleParagraphs(chart, locale, currentAge) });
   return sections;
@@ -357,7 +425,98 @@ function cycleParagraphs(chart: Chart, locale: Locale, currentAge?: number): Int
       },
       locale,
     );
-    return { ruleIds: [`cycles.dai_han.${p.branch}`], text };
+    return { ruleIds: [`cycles.dai_han.${p.branch}`], text: p.palace ? `${text} ${decadeTheme(p.palace, locale)}` : text, kind: "core" as const };
+  });
+}
+
+function decadeTheme(palace: PalaceId, locale: Locale) {
+  const role = PALACE_ROLE[palace];
+  return pick(
+    {
+      vi: `Theo truyền thống, chủ đề của giai đoạn này là ${role.vi}.`,
+      en: `Traditionally, the theme of this period is ${role.en}.`,
+      ja: `伝統的に、この10年は「${role.ja}」が主題になりやすい時期と読まれます。`,
+    },
+    locale,
+  );
+}
+
+export interface LifeStage {
+  from: number;
+  to: number;
+  branch: number;
+  label: string;
+  /** What the palace of this period stands for. */
+  role: string;
+  theme: string;
+  stars: string[];
+  keywords: string[];
+  hoa: string[];
+  state: "past" | "current" | "future" | "unknown";
+}
+
+/** The 10-year Đại Hạn periods in order, for the timeline view. Empty when they are not computable. */
+export function lifeStages(chart: Chart, locale: Locale, currentAge?: number | null): LifeStage[] {
+  return chart.palaces
+    .filter((p) => p.daiHan)
+    .sort((a, b) => a.daiHan!.from - b.daiHan!.from)
+    .map((p) => {
+      const { from, to } = p.daiHan!;
+      const mains = p.mainStars.map((s) => s.id as MainStarId);
+      const state = currentAge == null ? "unknown" : currentAge > to ? "past" : currentAge >= from ? "current" : "future";
+      return {
+        from,
+        to,
+        branch: p.branch,
+        label: palaceLabel(p.palace, p.branch, locale),
+        role: p.palace ? pick(PALACE_ROLE[p.palace], locale) : "",
+        theme: p.palace ? decadeTheme(p.palace, locale) : "",
+        stars: mains.map((m) => STAR_INFO[m].vi),
+        keywords: mains.map((m) => MAIN[m].keywords[locale]),
+        hoa: [...p.mainStars, ...p.auxStars].filter((s) => s.hoa).map((s) => `${HOA_INFO[s.hoa!].vi} · ${STAR_INFO[s.id].vi}`),
+        state,
+      };
+    });
+}
+
+export interface PalaceDetail {
+  branch: number;
+  label: string;
+  role: string;
+  mains: { name: string; keywords: string; hoa: string | null }[];
+  borrowedFrom: string | null;
+  aux: string[];
+  notes: string[];
+  daiHan: { from: number; to: number } | null;
+  related: number[];
+}
+
+/** Everything the interactive chart shows when a palace is tapped. */
+export function palaceDetails(chart: Chart, locale: Locale): PalaceDetail[] {
+  return chart.palaces.map((p) => {
+    const own = p.mainStars;
+    const opposite = chart.palaces[(p.branch + 6) % 12]!;
+    const shown = own.length ? own : opposite.mainStars;
+    const { trine, opposite: opp } = relatedBranches(p.branch);
+    const notes = [
+      ...[...p.mainStars, ...p.auxStars].filter((s) => s.hoa).map((s) => pick(HOA_NOTES[s.hoa!], locale)),
+      ...p.auxStars.map((s) => AUX_NOTES[s.id as AuxStarId]).filter((n): n is T => !!n).map((n) => pick(n, locale)),
+    ];
+    return {
+      branch: p.branch,
+      label: palaceLabel(p.palace, p.branch, locale),
+      role: p.palace ? pick(PALACE_ROLE[p.palace], locale) : "",
+      mains: shown.map((s) => ({
+        name: STAR_INFO[s.id].vi,
+        keywords: MAIN[s.id as MainStarId].keywords[locale],
+        hoa: s.hoa ? HOA_INFO[s.hoa].vi : null,
+      })),
+      borrowedFrom: own.length || chart.menh === null ? null : palaceLabel(opposite.palace, opposite.branch, locale),
+      aux: p.auxStars.map((s) => STAR_INFO[s.id].vi),
+      notes,
+      daiHan: p.daiHan,
+      related: chart.menh === null ? [] : [...trine, opp],
+    };
   });
 }
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { deleteResponseAction, privacyAction } from "@/app/actions/discovery";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
-import { Button, Card, Empty, Page, Pill } from "@/components/ui";
+import { Button, Card, Empty, Page, Pill, SegmentedTabs } from "@/components/ui";
 import { answerLabel } from "@/lib/discovery/format";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
@@ -14,7 +14,8 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
   const { t, locale } = await getT();
   const items = await getHistory(uid);
   return (
-    <Page title={t.history.title} back="/discover">
+    <Page title={t.discover.title}>
+      <SegmentedTabs current="/discover/history" items={[{ href: "/discover", label: t.nav.todayQuestions }, { href: "/discover/history", label: t.nav.history }]} />
       <Flash t={t} sp={sp} />
       {items.length === 0 && <Empty>{t.history.empty}</Empty>}
       {items.map((h) => (

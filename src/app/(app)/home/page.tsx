@@ -8,6 +8,9 @@ import { getAccount, getNotificationPrefs } from "@/server/services/account";
 import { getDaily } from "@/server/services/discovery";
 import { listMemories } from "@/server/services/memories";
 import { upcomingDates } from "@/server/services/people";
+import { getTuvi } from "@/server/services/tuvi";
+import { lifeStages } from "@/lib/tuvi/interpret";
+import { STAR_INFO } from "@/lib/tuvi/stars";
 
 export default async function HomePage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
@@ -21,9 +24,36 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const due = dates.filter((d) => d.reminderDue);
   const np = await getNotificationPrefs(uid);
   const questionReminder = np.dailyQuestion && !!first && !first.doneToday;
+  const tv = await getTuvi(uid, locale);
+  const chart = tv.chart;
+  const menhStars = chart && chart.menh !== null ? chart.palaces[chart.menh]!.mainStars.map((s) => STAR_INFO[s.id].vi) : [];
+  const nowStage = chart ? lifeStages(chart, locale, tv.currentAge).find((x) => x.state === "current") : undefined;
   return (
     <Page title={t.home.hello(account.profile.displayName)}>
       <Flash t={t} sp={sp} />
+      <Link
+        href="/tuvi"
+        className="group block overflow-hidden rounded-2xl bg-linear-to-br from-teal-800 via-teal-700 to-violet-800 p-4 text-white shadow-md transition-transform hover:-translate-y-0.5 motion-reduce:transition-none"
+      >
+        <span className="text-xs uppercase tracking-[0.2em] text-teal-100">{t.tuvi.ui.homeTitle}</span>
+        {chart ? (
+          <>
+            <span className="mt-1 block text-xl font-semibold">{menhStars.join(" · ") || chart.yearPillar.name}</span>
+            {nowStage && (
+              <span className="mt-1 block text-sm text-teal-50">
+                {t.tuvi.ui.nowStage} · {t.tuvi.ui.ageRange(nowStage.from, nowStage.to)} · {nowStage.label}
+                {nowStage.role && <span className="block text-teal-100">{nowStage.role}</span>}
+              </span>
+            )}
+            <span className="mt-3 inline-block rounded-full bg-white/15 px-3 py-1 text-sm font-semibold group-hover:bg-white/25">{t.tuvi.ui.homeOpen} →</span>
+          </>
+        ) : (
+          <>
+            <span className="mt-1 block text-sm text-teal-50">{t.tuvi.ui.homeEmpty}</span>
+            <span className="mt-3 inline-block rounded-full bg-white px-3 py-1 text-sm font-semibold text-teal-800">{t.tuvi.ui.homeStart} →</span>
+          </>
+        )}
+      </Link>
       {(due.length > 0 || questionReminder) && (
         <Card title={t.home.reminders} className="border-amber-200 bg-amber-50">
           <ul className="space-y-1 text-sm">

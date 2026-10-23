@@ -77,9 +77,18 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   await pa.getByRole("button", { name: "Save & calculate" }).click();
   await expect(pa.getByTestId("tuvi-chart")).toBeVisible();
   await expect(pa.getByTestId("tuvi-chart").getByText("Canh Ngọ")).toBeVisible();
-  await expect(pa.getByText("Lộ Bàng Thổ")).toBeVisible();
+  await expect(pa.getByTestId("tuvi-chart").getByText(/Lộ Bàng Thổ/)).toBeVisible();
   await expect(pa.getByText(/Ruleset vn-ttl-2026\.1/)).toBeVisible();
-  await expect(pa.getByRole("heading", { name: "Life cycles (Đại Hạn)" })).toBeVisible();
+  // Theme tabs: switching shows that theme's reading with its advice blocks.
+  await pa.getByRole("tab", { name: /Love & partnership/ }).click();
+  await expect(pa.getByRole("tabpanel").getByText(/^Phu Thê:/)).toBeVisible();
+  await expect(pa.getByRole("tabpanel").getByText("Making the most of it")).toBeVisible();
+  // 10-year stages: exactly one is marked as now.
+  await expect(pa.getByRole("heading", { name: "Your life in 10-year stages" })).toBeVisible();
+  await expect(pa.locator("#stages").getByText("Now", { exact: true })).toHaveCount(1);
+  // Tapping a palace shows what it stands for.
+  await pa.getByTestId("tuvi-chart").getByRole("button", { name: /^Quan Lộc/ }).click();
+  await expect(pa.getByText("work, career and your role in society")).toBeVisible();
 
   // Daily question flow: answer today's question generically or skip
   await pa.goto("/discover");

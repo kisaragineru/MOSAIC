@@ -2,7 +2,7 @@ import Link from "next/link";
 import { anotherQuestionAction, changeKindAction } from "@/app/actions/discovery";
 import { Flash } from "@/components/flash";
 import { QuestionForm } from "@/components/question-form";
-import { Button, Card, Notice, Page, Pill } from "@/components/ui";
+import { Button, Card, Notice, Page, Pill, SegmentedTabs } from "@/components/ui";
 import { answerLabel } from "@/lib/discovery/format";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
@@ -32,7 +32,8 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Pro
   }
 
   return (
-    <Page title={t.discover.title} actions={<Link href="/discover/history" className="text-sm text-teal-700 underline">{t.nav.history}</Link>}>
+    <Page title={t.discover.title}>
+      <SegmentedTabs current="/discover" items={[{ href: "/discover", label: t.nav.todayQuestions }, { href: "/discover/history", label: t.nav.history }]} />
       <p className="text-sm text-stone-600">{t.discover.intro}</p>
       <Flash t={t} sp={sp} />
       {changed && (

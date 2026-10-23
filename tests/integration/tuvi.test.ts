@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import { describe, expect, it } from "vitest";
+import { INTERPRETATION_VERSION } from "@/lib/tuvi/interpret";
 import { chartHistory, deleteBirthProfile, exploreHours, getTuvi, saveBirthProfile, storedInterpretations } from "@/server/services/tuvi";
 import { makeUser } from "../helpers/factory";
 import { TEST_MIGRATION_DATABASE_URL } from "../helpers/test-env";
@@ -27,7 +28,7 @@ describe("Tử Vi service", () => {
     expect(v.sections.at(-1)!.paragraphs.some((p) => p.text.startsWith("▶"))).toBe(true);
     const stored = await storedInterpretations(u.userId, v.chart!.id, "en");
     expect(stored.length).toBe(7);
-    expect(stored[0]!.ruleIds[0]).toBe("interp-1");
+    expect(stored[0]!.ruleIds[0]).toBe(INTERPRETATION_VERSION);
   });
 
   it("recomputes and keeps chart history when birth data changes", async () => {

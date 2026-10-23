@@ -111,3 +111,24 @@ export function Pill({ children, tone = "stone" }: { children: ReactNode; tone?:
 export function Empty({ children }: { children: ReactNode }) {
   return <p className="rounded-xl border border-dashed border-stone-300 p-6 text-center text-sm text-stone-500">{children}</p>;
 }
+
+/** Two or more sibling views shown as one switch, e.g. "Today | History". Plain links, so it works without JS. */
+export function SegmentedTabs({ items, current }: { items: { href: string; label: string }[]; current: string }) {
+  return (
+    <nav className="flex rounded-full bg-stone-200/70 p-1 text-sm">
+      {items.map((it) => {
+        const active = it.href === current;
+        return (
+          <Link
+            key={it.href}
+            href={it.href}
+            aria-current={active ? "page" : undefined}
+            className={`flex-1 rounded-full px-3 py-1.5 text-center transition-all ${active ? "bg-white font-semibold text-teal-800 shadow-sm" : "text-stone-600 hover:text-stone-900"}`}
+          >
+            {it.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}

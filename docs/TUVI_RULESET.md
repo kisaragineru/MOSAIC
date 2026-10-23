@@ -83,13 +83,20 @@ Branch indices Tý=0 … Hợi=11; months/hours counted as in the classical text
 - Tiểu Hạn, Lưu niên stars, Đẩu Quân, Thai Phụ/Phong Cáo, Quốc Ấn/Đường Phù, Thiên Quan/Thiên Phúc,
   Lưu Hà/Thiên Trù, Thiên Đức/Nguyệt Đức.
 
-## 3. Interpretation (`interp-1`)
+## 3. Interpretation (`interp-2`)
 - Sections: personality (Mệnh + Thân), friends & siblings (Nô Bộc, Huynh Đệ), love (Phu Thê),
   career (Quan Lộc), money (Tài Bạch), family & home (Phụ Mẫu, Điền Trạch, Tử Tức), cycles (Đại Hạn).
 - Each paragraph carries rule ids (e.g. `menh.main.thien_co`, `phu_the.hoa.ky`, `menh.vo_chinh_dieu`);
   stored in `tuvi_interpretations.rule_ids`.
 - Vô chính diệu palaces are read through the opposite palace (stated explicitly).
 - No text depends on brightness; nothing predicts events; everything is phrased as tradition.
+- `interp-2` adds, per theme: the related palaces of the primary palace (tam phương tứ chính:
+  the two trine palaces at +4/+8 and the opposite at +6, rule id `<palace>.tam_phuong_tu_chinh`),
+  a strength and a caution line per main star (`<palace>.strength.<star>`, `<palace>.caution.<star>`),
+  star-specific family readings, and a theme for each 10-year Đại Hạn taken from the role of the
+  palace it falls in (e.g. a period in Quan Lộc reads as work-focused). These are interpretive
+  texts in the same "traditionally associated" register; they are **not reviewed by a practitioner**
+  (same open item as section 4). Content tables: `src/lib/tuvi/interpret-detail.ts`.
 
 ## 4. Reference checks still needed before calling the engine “verified by practitioners”
 The engine is verified against an **independent implementation** (iztro, MIT) and against

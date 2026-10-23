@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { logoutAction } from "@/app/actions/auth";
 import { updateProfileAction } from "@/app/actions/settings";
 import { Flash } from "@/components/flash";
 import { PreferenceSection } from "@/components/preferences";
@@ -29,11 +30,24 @@ export default async function MePage({ searchParams }: { searchParams: Promise<R
       <Card title={t.me.selfPreferences}>
         <PreferenceSection t={t} locale={locale} prefs={prefs} categories={categories} personId={null} back="/me" />
       </Card>
-      <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/insights" className="text-teal-700 underline">{t.me.tendencies} →</Link>
-        <Link href="/tuvi" className="text-teal-700 underline">{t.nav.tuvi} →</Link>
-        <Link href="/discover/history" className="text-teal-700 underline">{t.nav.history} →</Link>
-      </div>
+      <Card>
+        <ul className="divide-y divide-stone-100">
+          {([
+            ["/settings", t.nav.settings],
+            ["/share", t.nav.share],
+            ["/discover/history", t.nav.history],
+          ] as const).map(([href, label]) => (
+            <li key={href}>
+              <Link href={href} className="flex items-center justify-between py-3 text-stone-800 transition-colors hover:text-teal-700">
+                {label}<span aria-hidden className="text-stone-400">→</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </Card>
+      <form action={logoutAction}>
+        <Button variant="secondary" className="w-full">{t.nav.logout}</Button>
+      </form>
     </Page>
   );
 }

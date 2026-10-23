@@ -29,9 +29,12 @@ test("Japanese UI end to end: auto-detected, registration, question, Tử Vi, gi
   await page.getByLabel("伝統的な計算で使う性別").selectOption("male");
   await page.getByRole("button", { name: "保存して計算" }).click();
   await expect(page.getByTestId("tuvi-chart")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "恋愛・パートナー" })).toBeVisible();
   await expect(page.getByText(/命宮のThiên Cơ（天機）は、伝統的に/)).toBeVisible();
-  await expect(page.getByText(/数え年 5〜14歳：大限は/)).toBeVisible();
+  await page.getByRole("tab", { name: /恋愛・パートナー/ }).click();
+  await expect(page.getByRole("tabpanel").getByText("活かし方")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "10年ごとの人生ステージ" })).toBeVisible();
+  await page.getByRole("button", { name: /数え5〜14歳/ }).click();
+  await expect(page.getByText(/伝統的に、この10年は「/)).toBeVisible();
 
   await page.goto("/people");
   await page.getByLabel("名前・呼び名").fill("ユキ");
