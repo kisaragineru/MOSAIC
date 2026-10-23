@@ -26,6 +26,24 @@ const HOA_CHIP: Record<HoaId, string> = {
 };
 // Classes rather than inline styles: the CSP blocks style attributes in server-rendered HTML.
 const DELAY = ["[animation-delay:0ms]", "[animation-delay:70ms]", "[animation-delay:140ms]", "[animation-delay:210ms]"];
+// Floating cards stay anchored at their palace and grow toward the middle of the board,
+// so the four cards of a palace and its related palaces never cover each other.
+const ANCHOR: Record<number, string> = {
+  5: "left-0 top-0 origin-top-left", 6: "left-[25%] top-0 origin-top-left",
+  7: "right-[25%] top-0 origin-top-right", 8: "right-0 top-0 origin-top-right",
+  4: "left-0 top-[25%] origin-top-left", 9: "right-0 top-[25%] origin-top-right",
+  3: "left-0 bottom-[25%] origin-bottom-left", 10: "right-0 bottom-[25%] origin-bottom-right",
+  2: "left-0 bottom-0 origin-bottom-left", 1: "left-[25%] bottom-0 origin-bottom-left",
+  0: "right-[25%] bottom-0 origin-bottom-right", 11: "right-0 bottom-0 origin-bottom-right",
+};
+/** Centre of each floating card in a 0–100 box (card: 35% wide, 32% tall). */
+const FLOAT_CENTER: Record<number, [number, number]> = Object.fromEntries(
+  Object.entries(POS).map(([b, [c, r]]) => [Number(b), [c < 2 ? c * 25 + 17.5 : 100 - (3 - c) * 25 - 17.5, r < 2 ? r * 25 + 16 : 100 - (3 - r) * 25 - 16]]),
+);
+// Two related palaces can sit on either side of a corner (e.g. Mão and Sửu around Dần); their cards
+// then share a small corner. The card whose text-bearing left side is in that corner goes on top.
+const FLOAT_Z: Record<number, string> = { 6: "z-20", 1: "z-20", 9: "z-20", 10: "z-20" };
+const FLOAT_DELAY = ["[animation-delay:0ms]", "[animation-delay:160ms]", "[animation-delay:320ms]", "[animation-delay:480ms]"];
 // Where the enlarged view grows from: the centre of the tapped palace on the 4×4 board.
 const ORIGIN: Record<number, string> = {
   5: "origin-[12.5%_12.5%]", 6: "origin-[37.5%_12.5%]", 7: "origin-[62.5%_12.5%]", 8: "origin-[87.5%_12.5%]",
@@ -60,6 +78,8 @@ export interface ChartLabels {
   trine: string;
   opposite: string;
   close: string;
+  back: string;
+  tapForDetails: string;
 }
 
 export interface ChartCenter {
@@ -88,7 +108,12 @@ export function TuviChart({
 }) {
   const [selected, setSelected] = useState<number | null>(null);
   const [detailed, setDetailed] = useState(false);
-  const pick = (b: number | null) => setSelected(b);
+  // Floating view first; tapping the centre card opens the full details of that palace.
+  const [detail, setDetail] = useState(false);
+  const pick = (b: number | null) => {
+    setSelected(b);
+    setDetail(false);
+  };
   useEffect(() => {
     if (selected === null) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setSelected(null); };
@@ -97,9 +122,8 @@ export function TuviChart({
   }, [selected]);
   const sel = selected === null ? null : details.find((d) => d.branch === selected) ?? null;
   const related = new Set(sel?.related ?? []);
-  const trine = sel && sel.related.length === 3 ? [sel.branch, sel.related[0]!, sel.related[1]!] : null;
-  const opposite = sel && sel.related.length === 3 ? sel.related[2]! : null;
-  const center4 = (b: number) => `${POS[b]![0] + 0.5},${POS[b]![1] + 0.5}`;
+  const floatTrine = sel && sel.related.length === 3 ? [sel.branch, sel.related[0]!, sel.related[1]!] : null;
+  const floatOpp = sel && sel.related.length === 3 ? sel.related[2]! : null;
 
   return (
     <div className="space-y-3">
@@ -215,31 +239,107 @@ export function TuviChart({
             </div>
           </div>
         </div>
-        {trine && opposite !== null && (
-          // Tam phương tứ chính of the selected palace: the trine triangle and the line to the opposite palace.
-          <svg viewBox="0 0 4 4" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 z-20 h-full w-full" aria-hidden>
-            <polygon points={trine.map(center4).join(" ")} fill="rgb(167 139 250 / 0.08)" stroke="rgb(139 92 246 / 0.55)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-            <line
-              x1={POS[sel!.branch]![0] + 0.5}
-              y1={POS[sel!.branch]![1] + 0.5}
-              x2={POS[opposite]![0] + 0.5}
-              y2={POS[opposite]![1] + 0.5}
-              stroke="rgb(139 92 246 / 0.55)"
-              strokeWidth="1.5"
-              strokeDasharray="5 4"
-              vectorEffect="non-scaling-stroke"
+        {sel && !detail && (
+          // Floating view: the tapped palace and its tam phương tứ chính lift out of the board in place.
+          <div key={sel.branch} role="dialog" aria-label={labels.focusTitle.replace("{x}", sel.label)} className="absolute inset-0 z-30">
+            <button
+              type="button"
+              tabIndex={-1}
+              aria-hidden
+              onClick={() => pick(null)}
+              className="absolute inset-0 animate-[fadeIn_.5s_ease-out] cursor-default rounded-3xl bg-white/45 motion-reduce:animate-none"
             />
-          </svg>
+            {floatTrine && floatOpp !== null && (
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+                <polygon
+                  points={floatTrine.map((b) => FLOAT_CENTER[b]!.join(",")).join(" ")}
+                  pathLength={1}
+                  fill="rgb(167 139 250 / 0.10)"
+                  stroke="rgb(139 92 246 / 0.7)"
+                  strokeWidth="2"
+                  strokeLinejoin="round"
+                  vectorEffect="non-scaling-stroke"
+                  className="animate-[draw_1.2s_ease-out_.4s_both] [stroke-dasharray:1] motion-reduce:animate-none"
+                />
+                <line
+                  x1={FLOAT_CENTER[sel.branch]![0]}
+                  y1={FLOAT_CENTER[sel.branch]![1]}
+                  x2={FLOAT_CENTER[floatOpp]![0]}
+                  y2={FLOAT_CENTER[floatOpp]![1]}
+                  stroke="rgb(139 92 246 / 0.7)"
+                  strokeWidth="2"
+                  strokeDasharray="6 5"
+                  vectorEffect="non-scaling-stroke"
+                  className="animate-[fadeIn_.7s_ease-out_.9s_both] motion-reduce:animate-none"
+                />
+              </svg>
+            )}
+            {[sel.branch, ...sel.related].map((b, i) => {
+              const d = details.find((x) => x.branch === b);
+              const pal = chart.palaces[b]!;
+              if (!d) return null;
+              const self = i === 0;
+              return (
+                <button
+                  key={b}
+                  type="button"
+                  onClick={() => (self ? setDetail(true) : pick(b))}
+                  className={`${ANCHOR[b]} ${FLOAT_DELAY[i]} ${FLOAT_Z[b] ?? "z-10"} absolute flex h-[32%] w-[35%] animate-[floatIn_.8s_cubic-bezier(.2,.8,.2,1)_both] flex-col overflow-hidden rounded-3xl border p-2.5 text-left transition-transform hover:-translate-y-0.5 motion-reduce:animate-none ${
+                    self
+                      ? "border-teal-200 bg-linear-to-br from-teal-50 via-white to-teal-100 shadow-[0_18px_40px_-16px_rgba(15,118,110,0.55)]"
+                      : "border-violet-100 bg-linear-to-br from-white to-violet-50 shadow-[0_16px_36px_-18px_rgba(91,70,160,0.55)]"
+                  }`}
+                >
+                  <span className="flex min-w-0 items-center gap-1">
+                    <span className={`shrink-0 whitespace-nowrap rounded-full px-1.5 py-0.5 text-[10px] font-bold ${self ? "bg-teal-100 text-teal-800" : "bg-violet-100 text-violet-800"}`}>
+                      {self ? labels.self : i < 3 ? labels.trine : labels.opposite}
+                    </span>
+                    {d.ageText && <span className="min-w-0 truncate text-[10px] font-semibold text-amber-800">{d.ageText}</span>}
+                  </span>
+                  <span className="mt-1 block text-[14px] font-bold leading-tight text-stone-900">
+                    {pal.palace ? PALACE_INFO[pal.palace].vi : BRANCHES[b]}
+                    {localNames[b] && <span className="ml-1 inline-block whitespace-nowrap text-[10px] font-normal text-stone-500">{localNames[b]}</span>}
+                  </span>
+                  <span className="mt-1 block space-y-0.5">
+                    {pal.mainStars.length === 0 && <span className="block text-[11px] italic text-stone-400">{labels.noMain}</span>}
+                    {pal.mainStars.map((st) => (
+                      <span key={st.id} className="flex flex-wrap items-center gap-0.5">
+                        <span className="text-[14px] font-bold leading-tight text-rose-800">{STAR_INFO[st.id].vi}</span>
+                        {st.hoa && <span className={`rounded-full px-1 text-[9px] font-semibold ${HOA_CHIP[st.hoa]}`}>{HOA_SHORT[st.hoa]}</span>}
+                      </span>
+                    ))}
+                  </span>
+                  {d.role && <span className="mt-1 line-clamp-2 block text-[10.5px] leading-snug text-stone-600">{d.role}</span>}
+                  {self && <span className="mt-auto block pt-1 text-[10px] font-semibold text-teal-700">{labels.tapForDetails} →</span>}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => pick(null)}
+              aria-label={labels.close}
+              className="absolute left-1/2 top-1/2 z-30 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 animate-[fadeIn_.5s_ease-out_.5s_both] items-center justify-center rounded-full bg-white text-xl leading-none text-stone-600 shadow-md ring-1 ring-stone-200 hover:text-stone-900 motion-reduce:animate-none"
+            >
+              ×
+            </button>
+          </div>
         )}
-        {sel && (
+        {sel && detail && (
           <div
-            key={sel.branch}
+            key={`detail-${sel.branch}`}
             role="dialog"
             aria-label={labels.focusTitle.replace("{x}", sel.label)}
-            onClick={(e) => { if (e.target === e.currentTarget) pick(null); }}
-            className={`${ORIGIN[sel.branch]} absolute inset-0 z-30 flex animate-[zoomFrom_.3s_cubic-bezier(.2,.8,.2,1)] flex-col gap-2 rounded-3xl bg-white/65 p-2 backdrop-blur-md motion-reduce:animate-none`}
+            className={`${ORIGIN[sel.branch]} absolute inset-0 z-30 flex animate-[zoomFrom_.5s_cubic-bezier(.2,.8,.2,1)] flex-col gap-2 rounded-3xl bg-white/70 p-2 backdrop-blur-md motion-reduce:animate-none`}
           >
             <div className="flex shrink-0 items-center gap-2 px-1">
+              <button
+                type="button"
+                onClick={() => setDetail(false)}
+                aria-label={labels.back}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-base leading-none text-stone-600 shadow-sm ring-1 ring-stone-200 hover:text-stone-900"
+              >
+                ←
+              </button>
               <p className="min-w-0 flex-1 truncate text-xs font-semibold text-stone-600">{labels.focusTitle.replace("{x}", sel.label)}</p>
               <button
                 type="button"
@@ -276,38 +376,6 @@ export function TuviChart({
                 </ul>
               )}
             </div>
-            {sel.related.length === 3 && (
-              <div className="grid shrink-0 grid-cols-3 gap-2">
-                {sel.related.map((b, i) => {
-                  const d = details.find((x) => x.branch === b);
-                  const pal = chart.palaces[b]!;
-                  if (!d) return null;
-                  return (
-                    <button
-                      key={b}
-                      type="button"
-                      onClick={() => pick(b)}
-                      className={`${DELAY[i + 1]} animate-[zoomIn_.3s_ease-out_both] rounded-3xl border border-violet-100 bg-linear-to-br from-white to-violet-50 p-2 text-left shadow-[0_6px_20px_-14px_rgba(91,70,160,0.5)] transition-transform hover:-translate-y-0.5 motion-reduce:animate-none`}
-                    >
-                      <span className="rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-bold text-violet-800">{i < 2 ? labels.trine : labels.opposite}</span>
-                      <span className="mt-1.5 block text-[13px] font-bold leading-tight text-stone-900">{pal.palace ? PALACE_INFO[pal.palace].vi : BRANCHES[b]}</span>
-                      {localNames[b] && <span className="block text-[10px] text-stone-500">{localNames[b]}</span>}
-                      <span className="mt-1 block space-y-0.5">
-                        {pal.mainStars.length === 0 && <span className="block text-[11px] italic text-stone-400">{labels.noMain}</span>}
-                        {pal.mainStars.map((st) => (
-                          <span key={st.id} className="flex flex-wrap items-center gap-0.5">
-                            <span className="text-[13px] font-bold leading-tight text-rose-800">{STAR_INFO[st.id].vi}</span>
-                            {st.hoa && <span className={`rounded-full px-1 text-[9px] font-semibold ${HOA_CHIP[st.hoa]}`}>{HOA_SHORT[st.hoa]}</span>}
-                          </span>
-                        ))}
-                      </span>
-                      {d.role && <span className="mt-1 line-clamp-2 block text-[10.5px] leading-snug text-stone-600">{d.role}</span>}
-                      {d.ageText && <span className="mt-0.5 block text-[10px] font-semibold text-amber-800">{d.ageText}</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
           </div>
         )}
       </div>

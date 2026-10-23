@@ -226,6 +226,8 @@ export const ja: Dict = {
   },
   tuvi: {
     ui: {
+      back: "戻る",
+      tapForDetails: "タップで詳しく",
       close: "閉じる",
       focusTitle: "{x}と合わせて読む宮",
       focusSelf: "本宮",

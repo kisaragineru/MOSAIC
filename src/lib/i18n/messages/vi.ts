@@ -226,6 +226,8 @@ export const vi: Dict = {
   },
   tuvi: {
     ui: {
+      back: "Quay lại",
+      tapForDetails: "Chạm để xem chi tiết",
       close: "Đóng",
       focusTitle: "{x} và các cung tam phương tứ chính",
       focusSelf: "Bản cung",

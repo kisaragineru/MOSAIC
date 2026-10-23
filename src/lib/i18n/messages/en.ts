@@ -224,6 +224,8 @@ export const en = {
   },
   tuvi: {
     ui: {
+      back: "Back",
+      tapForDetails: "Tap for details",
       close: "Close",
       focusTitle: "{x} and the palaces read with it",
       focusSelf: "This palace",
