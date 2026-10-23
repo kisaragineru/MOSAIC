@@ -224,6 +224,17 @@ export const en = {
   },
   tuvi: {
     ui: {
+      chartSimple: "Simple",
+      chartDetailed: "Detailed",
+      badgeMenh: "Mệnh",
+      badgeThan: "Thân",
+      menhName: "Self (Mệnh)",
+      thanName: "Body (Thân)",
+      now: "Now",
+      relatedLegend: "Read together",
+      lucky: "Lucky stars",
+      malefic: "Challenging stars",
+      noMain: "no main star",
       heroEyebrow: "Your Tử Vi chart",
       menhStars: "Main stars of your Mệnh",
       nowStage: "This decade",

@@ -226,6 +226,17 @@ export const vi: Dict = {
   },
   tuvi: {
     ui: {
+      chartSimple: "Gọn",
+      chartDetailed: "Chi tiết",
+      badgeMenh: "Mệnh",
+      badgeThan: "Thân",
+      menhName: "cung Mệnh",
+      thanName: "cung Thân",
+      now: "Hiện tại",
+      relatedLegend: "Tam phương tứ chính",
+      lucky: "Cát tinh",
+      malefic: "Sát tinh",
+      noMain: "vô chính diệu",
       heroEyebrow: "Lá số Tử Vi của bạn",
       menhStars: "Chính tinh cung Mệnh",
       nowStage: "Đại Hạn hiện tại",

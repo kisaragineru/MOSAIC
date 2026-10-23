@@ -101,3 +101,9 @@ export const PALACE_JA: Record<PalaceId, string> = {
   menh: "命宮", phu_mau: "父母宮", phuc_duc: "福徳宮", dien_trach: "田宅宮", quan_loc: "官禄宮", no_boc: "奴僕宮",
   thien_di: "遷移宮", tat_ach: "疾厄宮", tai_bach: "財帛宮", tu_tuc: "子女宮", phu_the: "夫妻宮", huynh_de: "兄弟宮",
 };
+
+/** Short English palace names for chart cells. */
+export const PALACE_SHORT_EN: Record<PalaceId, string> = {
+  menh: "Self", phu_mau: "Parents", phuc_duc: "Fortune", dien_trach: "Home", quan_loc: "Career", no_boc: "Friends",
+  thien_di: "Travel", tat_ach: "Health", tai_bach: "Wealth", tu_tuc: "Children", phu_the: "Partner", huynh_de: "Siblings",
+};

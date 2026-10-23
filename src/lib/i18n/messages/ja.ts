@@ -226,6 +226,17 @@ export const ja: Dict = {
   },
   tuvi: {
     ui: {
+      chartSimple: "シンプル",
+      chartDetailed: "くわしく",
+      badgeMenh: "命",
+      badgeThan: "身",
+      menhName: "命宮",
+      thanName: "身宮",
+      now: "いま",
+      relatedLegend: "合わせて読む宮",
+      lucky: "吉星",
+      malefic: "凶星",
+      noMain: "主星なし",
       heroEyebrow: "あなたの命盤",
       menhStars: "命宮の主星",
       nowStage: "いまの10年",
