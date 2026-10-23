@@ -119,6 +119,26 @@ Branch indices Tý=0 … Hợi=11; months/hours counted as in the classical text
   - A period without main stars says so and names the opposite palace whose stars are used
     (vô chính diệu), instead of borrowing them silently.
 
+## 3b. Readings for two connected people (`pair-1`)
+
+Shown only when both people agreed to the `tuvi_detail` scope (whole chart). Source:
+`src/lib/compare/tuvi-pair.ts`. No score and no verdict; every reading sets two facts side by side.
+
+- **Lenses** (MOSAIC's presentation, not a fixed rule): a relationship palace of one chart is read
+  as the kind of person one is drawn to in that relationship and set beside the other person's
+  Mệnh palace — partners: Phu Thê; friends: Nô Bộc; close collaborators: Huynh Đệ. Both directions
+  are shown. Main stars the two palaces share are named ("can be read as close to the person one
+  pictures"); no shared star is worded as a chance to discover new sides, never as a bad sign.
+- **Mệnh to Mệnh**: main stars both Mệnh palaces hold.
+- **Timing**: each person's current Đại Hạn (from interp-3 `lifeStages`) and the years until it
+  changes; when both are in the same palace's decade, that is pointed out.
+- Palaces without main stars are read through the opposite palace and say so.
+- Not used, on purpose: star-element relations between the two charts (school-dependent for some
+  stars) and any numeric compatibility.
+- The shared chart (`src/lib/tuvi/shared-chart.ts`) drops the birth date, birth time, day pillar
+  and leap-month handling; the consent text says a full chart can still narrow down birth month,
+  day and hour, and that the Đại Hạn direction shows the sex entered for the calculation.
+
 ## 4. Reference checks still needed before calling the engine “verified by practitioners”
 The engine is verified against an **independent implementation** (iztro, MIT) and against
 **hand derivations from the classical rules**. It has **not** yet been compared with charts

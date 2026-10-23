@@ -9,8 +9,17 @@ import { answerLabel } from "@/lib/discovery/format";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { getComparison, listComparisons, PURPOSE_TEXT, SCOPE_DESCRIPTIONS } from "@/server/services/sharing";
+import { currentLunarYearFor } from "@/server/services/tuvi";
+import { TuviChart } from "@/components/tuvi-chart";
+import { TuviPair } from "@/components/tuvi-pair";
+import { TuviThemes } from "@/components/tuvi-themes";
+import { pairReadings } from "@/lib/compare/tuvi-pair";
+import { chartView } from "@/lib/tuvi/chart-view";
+import { nominalAge } from "@/lib/tuvi/engine";
+import { interpret } from "@/lib/tuvi/interpret";
+import { fromSharedChart } from "@/lib/tuvi/shared-chart";
 
-const SCOPES = ["tuvi", "preferences", "values"] as const;
+const SCOPES = ["tuvi", "tuvi_detail", "preferences", "values"] as const;
 const QMETA = new Map(LOCALIZED_BANK.map((q) => [q.id, q]));
 
 export default async function ComparePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
@@ -26,6 +35,26 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
   const scopeNames = (s: string[]) => s.map((x) => t.compare.scopeNames[x as (typeof SCOPES)[number]] ?? x).join(", ");
   const r = v.result;
   const names = r ? { a: r.participants.a, b: r.participants.b } : null;
+  // Whole charts (scope tuvi_detail): read from this viewer's side, me first.
+  const detail = r?.tuviDetail ?? null;
+  const mineShared = detail ? (v.myRole === "a" ? detail.a : detail.b) : null;
+  const theirsShared = detail ? (v.myRole === "a" ? detail.b : detail.a) : null;
+  let together = null;
+  if (names && mineShared && theirsShared) {
+    const lunarYear = await currentLunarYearFor(uid);
+    const mine = fromSharedChart(mineShared);
+    const theirs = fromSharedChart(theirsShared);
+    const theirAge = nominalAge(theirsShared.lunarYear, lunarYear);
+    const myName = v.myRole === "a" ? names.a : names.b;
+    const ORDER = ["personality", "love", "career", "family", "wealth", "relationships"];
+    together = {
+      pair: pairReadings(mine, theirs, [myName, v.otherName], [nominalAge(mineShared.lunarYear, lunarYear), theirAge], locale),
+      theirs,
+      theirAge,
+      view: chartView(theirs, locale, t, { birth: false }),
+      themes: interpret(theirs, locale, theirAge).filter((x) => x.section !== "cycles").sort((x, y) => ORDER.indexOf(x.section) - ORDER.indexOf(y.section)),
+    };
+  }
   return (
     <Page title={t.compare.title(v.otherName)} back="/share">
       <Flash t={t} sp={sp} />
@@ -64,6 +93,37 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                     </Notice>
                   )}
                 </Card>
+              )}
+              {detail && !together && (
+                <Notice kind="warning">
+                  {!mineShared ? (
+                    <>{t.compare.detailMissingYou} <a href="/tuvi" className="underline">{t.tuvi.ui.homeStart} →</a></>
+                  ) : t.compare.detailMissingThem}
+                </Notice>
+              )}
+              {together && (
+                <>
+                  <Card title={`✦ ${t.compare.pairTitle}`} className="border-rose-200 bg-linear-to-br from-white to-rose-50/60">
+                    <p className="mb-3 text-xs text-stone-500">{t.compare.pairNote}</p>
+                    <TuviPair
+                      readings={together.pair}
+                      labels={{
+                        lenses: t.compare.lenses,
+                        menhPalace: t.compare.menhPalace,
+                        prompts: t.compare.pairPrompts,
+                        menhTitle: t.compare.menhTitle,
+                        timingTitle: t.compare.timingTitle,
+                        noMain: t.tuvi.ui.noMain,
+                      }}
+                    />
+                  </Card>
+                  <Card title={t.compare.partnerReading(v.otherName)}>
+                    <TuviThemes sections={together.themes} labels={{ related: t.tuvi.ui.related, strength: t.tuvi.ui.strength, caution: t.tuvi.ui.caution, notes: t.tuvi.ui.notes }} />
+                  </Card>
+                  <Card title={t.compare.partnerChart(v.otherName)}>
+                    <TuviChart chart={together.theirs} details={together.view.details} center={together.view.center} currentAge={together.theirAge} localNames={together.view.localNames} labels={together.view.labels} />
+                  </Card>
+                </>
               )}
               {r.preferences && (
                 <Card title={t.compare.prefTitle}>

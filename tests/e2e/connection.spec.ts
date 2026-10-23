@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { expect, test, type Browser } from "@playwright/test";
 
 async function user(browser: Browser, name: string) {
-  const ctx = await browser.newContext({ locale: "ja-JP", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9" } });
+  const ctx = await browser.newContext({ locale: "ja-JP", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.9.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
   const page = await ctx.newPage();
   await page.goto("/register");
   await page.getByLabel("なんと呼べばいいですか？").fill(name);
@@ -31,7 +31,7 @@ test("QR connection: preview of what others see, who is waiting, results first",
   await expect(a.getByText("「ハナさんからつながりの招待が届いています。」— 表示名だけです。")).toBeVisible();
   await expect(a.getByText("いつもの飲みものは？")).toBeVisible();
   await expect(a.getByText("お茶と散歩が好きです。")).toBeVisible();
-  await expect(a.getByText("命盤をまだ作っていないため、表示されません。")).toBeVisible();
+  await expect(a.getByText("命盤をまだ作っていないため、表示されません。").first()).toBeVisible();
 
   await a.goto("/share");
   await a.getByRole("button", { name: "QRを表示" }).click();

@@ -641,7 +641,7 @@ export const profileShares = pgTable(
   (t) => [uniqueIndex("profile_shares_token_uq").on(t.tokenHash), index("profile_shares_user_idx").on(t.userId)],
 );
 
-export const COMPARISON_SCOPES = ["tuvi", "preferences", "values"] as const;
+export const COMPARISON_SCOPES = ["tuvi", "tuvi_detail", "preferences", "values"] as const;
 
 export const comparisonSessions = pgTable(
   "comparison_sessions",

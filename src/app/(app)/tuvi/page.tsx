@@ -1,13 +1,13 @@
 import { deleteBirthAction, saveBirthAction } from "@/app/actions/tuvi";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
-import { TuviChart, type ChartCenter } from "@/components/tuvi-chart";
+import { TuviChart } from "@/components/tuvi-chart";
 import { TuviStages, type StageView } from "@/components/tuvi-stages";
 import { TuviThemes } from "@/components/tuvi-themes";
 import { Button, Card, Checkbox, Field, Input, Notice, Page, Select } from "@/components/ui";
 import { BRANCHES } from "@/lib/tuvi/canchi";
-import { lifeStages, palaceDetails } from "@/lib/tuvi/interpret";
-import { PALACE_JA, PALACE_SHORT_EN } from "@/lib/tuvi/interpret-detail";
+import { chartView } from "@/lib/tuvi/chart-view";
+import { lifeStages } from "@/lib/tuvi/interpret";
 import { STAR_INFO } from "@/lib/tuvi/stars";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
@@ -27,13 +27,8 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
   const needsLeap = v.needs.includes("leap_month_rule") || !!p?.leapMonthRule;
   const ui = t.tuvi.ui;
   const c = v.chart;
-  const details = c
-    ? palaceDetails(c, locale).map((d) => ({
-        ...d,
-        borrowedText: d.borrowedFrom ? ui.borrowedFrom(d.borrowedFrom) : null,
-        ageText: d.daiHan ? ui.ageRange(d.daiHan.from, d.daiHan.to) : null,
-      }))
-    : [];
+  const view = c ? chartView(c, locale, t, { birth: true }) : null;
+  const details = view?.details ?? [];
   const rawStages = c ? lifeStages(c, locale, v.currentAge) : [];
   // D. Lived decades link to the user's own records from that time; decades ahead invite a letter.
   const lived = rawStages.map((x) => (x.state === "past" || x.state === "current") && !!x.startDate && !!x.endDate);
@@ -61,22 +56,6 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
   const menh = c && c.menh !== null ? details.find((d) => d.branch === c.menh) : undefined;
   const ORDER = ["personality", "love", "career", "family", "wealth", "relationships"];
   const themes = v.sections.filter((x) => x.section !== "cycles").sort((a, b) => ORDER.indexOf(a.section) - ORDER.indexOf(b.section));
-  const center: ChartCenter = c
-    ? {
-        pillar: c.yearPillar.name,
-        lines: [
-          `${t.tuvi.lunarDate}: ${c.lunar.day}/${c.lunar.month}${c.lunar.leap ? " (nhuận)" : ""}/${c.lunar.year}`,
-          `${t.tuvi.hour}: ${c.hourBranch !== null ? BRANCHES[c.hourBranch] : "?"}`,
-          `${t.tuvi.napAm}: ${c.napAm.name}`,
-          ...(c.cuc ? [`${t.tuvi.cuc}: ${c.cuc.number}`] : []),
-          ...(c.yinYangSex ? [t.tuvi.yinYang[c.yinYangSex]] : []),
-        ],
-        hoa: (["loc", "quyen", "khoa", "ky"] as const).map((h) => ({ kind: h, star: STAR_INFO[c.hoaTargets[h]].vi })),
-      }
-    : { pillar: "", lines: [], hoa: [] };
-  const localNames = c
-    ? c.palaces.map((x) => (!x.palace || locale === "vi" ? null : locale === "ja" ? PALACE_JA[x.palace] : PALACE_SHORT_EN[x.palace]))
-    : [];
   return (
     <Page title={t.tuvi.title}>
       <Flash t={t} sp={sp} />
@@ -150,38 +129,7 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
       )}
       {c && (
         <Card title={t.tuvi.chart}>
-          <TuviChart
-            chart={c}
-            details={details}
-            center={center}
-            currentAge={v.currentAge}
-            localNames={localNames}
-            labels={{
-              help: ui.chartHelp,
-              palaceRole: ui.palaceRole,
-              mainStars: ui.mainStars,
-              auxStars: ui.auxStars,
-              decade: ui.decade,
-              simple: ui.chartSimple,
-              detailed: ui.chartDetailed,
-              menh: ui.badgeMenh,
-              than: ui.badgeThan,
-              menhName: ui.menhName,
-              thanName: ui.thanName,
-              now: ui.now,
-              related: ui.relatedLegend,
-              lucky: ui.lucky,
-              malefic: ui.malefic,
-              noMain: ui.noMain,
-              focusTitle: ui.focusTitle,
-              self: ui.focusSelf,
-              trine: ui.focusTrine,
-              opposite: ui.focusOpposite,
-              close: ui.close,
-              back: ui.back,
-              tapForDetails: ui.tapForDetails,
-            }}
-          />
+          <TuviChart chart={c} details={details} center={view!.center} currentAge={v.currentAge} localNames={view!.localNames} labels={view!.labels} />
           {v.currentAge !== null && <p className="mt-2 text-xs text-stone-500">{t.tuvi.currentAge(v.currentAge)}</p>}
           {c.warnings.length > 0 && (
             <ul className="mt-3 space-y-1">

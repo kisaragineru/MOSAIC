@@ -24,6 +24,8 @@ import {
   type QuestionMeta,
 } from "@/lib/compare/compare";
 import type { Element } from "@/lib/tuvi/canchi";
+import type { Chart } from "@/lib/tuvi/engine";
+import { toSharedChart, type SharedChart } from "@/lib/tuvi/shared-chart";
 import { uuid } from "@/lib/validation/common";
 import { randomToken, sha256 } from "../auth/crypto";
 import { enforceRateLimit } from "../auth/rate-limit";
@@ -32,8 +34,9 @@ import { withUser, type Tx } from "../db/tx";
 import { AppError, invalid, mapDbError, notFound } from "../errors";
 import { audit } from "./audit";
 
-// Bumped when consenting started to also show the bio (connection_bio ignores older consents).
-export const CONSENT_TEXT_VERSION = "consent-2026-10-bio";
+// Bumped when the consent text changes: -bio added the bio (connection_bio ignores older consents),
+// -detail added the full-chart scope.
+export const CONSENT_TEXT_VERSION = "consent-2026-10-detail";
 export type Scope = (typeof COMPARISON_SCOPES)[number];
 
 /** What each scope shares with the other participant (shown before consenting). */
@@ -42,6 +45,11 @@ export const SCOPE_DESCRIPTIONS: Record<Scope, I18nText> = {
     en: "Tử Vi: your birth-year stem & branch, Nạp Âm element and Mệnh palace branch. Never your birth date, time or full chart.",
     vi: "Tử Vi: can chi năm sinh, ngũ hành nạp âm và chi của cung Mệnh. Không bao giờ chia sẻ ngày giờ sinh hay toàn bộ lá số.",
     ja: "Tử Vi：生まれ年の干支、納音の五行、命宮の地支。生年月日・出生時刻や命盤全体は決して共有しません。",
+  },
+  tuvi_detail: {
+    en: "Tử Vi chart in full: the 12 palaces with their stars, Mệnh/Thân, Cục and 10-year periods, with the readings built on them, and a reading for the two of you. Your birth date and time are not shared, but a full chart can let someone narrow down your birth month, day and hour, and its direction shows the sex entered for the traditional calculation.",
+    vi: "Toàn bộ lá số Tử Vi: 12 cung và các sao, Mệnh/Thân, Cục, các Đại Hạn cùng lời luận giải, và phần đọc cho hai người. Ngày giờ sinh không được chia sẻ, nhưng từ lá số đầy đủ có thể đoán gần đúng tháng, ngày và giờ sinh; chiều Đại Hạn cũng cho biết giới tính đã nhập để tính theo truyền thống.",
+    ja: "Tử Viの命盤の全体：12宮とその星、命宮・身宮、局、10年ごとの大限と、それにもとづく読み、そしてお二人のための相性の読み。生年月日・出生時刻そのものは共有しませんが、命盤全体から生まれた月・日・時刻がある程度推測できる場合があります。また大限の向きから、伝統的な計算のために入力した性別が分かります。",
   },
   preferences: {
     en: "Preferences: your latest answers to food, travel, music, hobby and lifestyle questions that you marked “allowed in comparisons”.",
@@ -164,7 +172,7 @@ export async function openComparison(userId: string, token: unknown): Promise<st
 }
 
 const consentSchema = z.object({
-  scopes: z.array(z.enum(COMPARISON_SCOPES)).min(1).max(3),
+  scopes: z.array(z.enum(COMPARISON_SCOPES)).min(1).max(COMPARISON_SCOPES.length),
   agree: z.literal(true),
 });
 
@@ -205,6 +213,8 @@ export interface ComparisonResult {
   agreedScopes: Scope[];
   participants: { a: string; b: string };
   tuvi: { available: boolean; observations: Observation[]; missing: ("a" | "b")[] } | null;
+  /** Both full charts without birth date/time (scope tuvi_detail); readings are built when shown. */
+  tuviDetail: { a: SharedChart | null; b: SharedChart | null } | null;
   preferences: (PreferenceComparison & { questions: Record<string, QuestionMeta> }) | null;
   hints: Observation[];
   disclaimer: I18nText;
@@ -247,6 +257,16 @@ async function computeInTx(tx: Tx, sessionId: string): Promise<ComparisonResult 
         : { available: false, missing, observations: [] };
   }
 
+  let tuviDetail: ComparisonResult["tuviDetail"] = null;
+  if (agreed.includes("tuvi_detail")) {
+    const rows = await tx.execute<{ user_id: string; chart: Chart }>(sql`select * from comparison_tuvi_details(${sessionId})`);
+    const of = (uid: string) => {
+      const r = rows.rows.find((x) => x.user_id === uid);
+      return r ? toSharedChart(r.chart) : null;
+    };
+    tuviDetail = { a: of(session.userA), b: of(session.userB) };
+  }
+
   let preferences: ComparisonResult["preferences"] = null;
   let hints: Observation[] = [];
   if (agreed.includes("preferences") || agreed.includes("values")) {
@@ -265,6 +285,7 @@ async function computeInTx(tx: Tx, sessionId: string): Promise<ComparisonResult 
     agreedScopes: agreed,
     participants: { a: names[0], b: names[1] },
     tuvi,
+    tuviDetail,
     preferences,
     hints,
     disclaimer: {

@@ -209,7 +209,7 @@ function starsText(stars: MainStarId[], locale: Locale) {
 }
 
 /** "Phu Thê（夫妻宮）" for Japanese, the Vietnamese name otherwise. */
-function palaceLabel(id: PalaceId | null, branch: number, locale: Locale) {
+export function palaceLabel(id: PalaceId | null, branch: number, locale: Locale) {
   if (!id) return BRANCHES[branch]!;
   return locale === "ja" ? `${PALACE_INFO[id].vi}（${PALACE_JA[id]}）` : PALACE_INFO[id].vi;
 }
@@ -279,7 +279,7 @@ function palaceParagraphs(chart: Chart, palaceId: PalaceId, domain: Domain | "fa
 }
 
 /** Main stars that speak for a palace: its own, or (vô chính diệu) those of the opposite palace. */
-function mainsOf(chart: Chart, palaceId: PalaceId): { palace: Palace; mains: MainStarId[]; borrowed: boolean } | null {
+export function mainsOf(chart: Chart, palaceId: PalaceId): { palace: Palace; mains: MainStarId[]; borrowed: boolean } | null {
   const p = palaceOf(chart, palaceId);
   if (!p) return null;
   const own = p.mainStars.map((s) => s.id as MainStarId);
@@ -288,6 +288,11 @@ function mainsOf(chart: Chart, palaceId: PalaceId): { palace: Palace; mains: Mai
 }
 
 /** Tam phương tứ chính: a palace is traditionally read together with its two trine palaces and the opposite one. */
+/** Traditional keywords of a main star. */
+export function mainKeywords(id: MainStarId, locale: Locale): string {
+  return MAIN[id].keywords[locale];
+}
+
 export function relatedBranches(branch: number): { trine: [number, number]; opposite: number } {
   return { trine: [(branch + 4) % 12, (branch + 8) % 12], opposite: (branch + 6) % 12 };
 }
@@ -486,7 +491,7 @@ function decadeTheme(palace: PalaceId, phase: LifePhase, locale: Locale) {
 }
 
 /** A few short traits for a question: two from a single star, or the first of each when there are two. */
-function traitWords(stars: MainStarId[], locale: Locale): string[] {
+export function traitWords(stars: MainStarId[], locale: Locale): string[] {
   const split = (k: string) => k.split(locale === "ja" ? "、" : /,\s*(?:and\s+|và\s+)?|\s+(?:and|và)\s+/);
   return stars.length === 1 ? split(MAIN[stars[0]!].keywords[locale]).slice(0, 2) : stars.map((m) => split(MAIN[m].keywords[locale])[0]!);
 }

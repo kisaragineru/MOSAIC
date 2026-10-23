@@ -29,6 +29,10 @@ export default defineConfig({
       APP_ORIGIN: `http://localhost:${PORT}`,
       ANTHROPIC_API_KEY: "",
       RATE_LIMIT_SALT: "e2e",
+      // Specs that register several people send their own client IP, so the per-IP registration
+      // limit applies per simulated device rather than to the whole suite.
+      TRUST_PROXY: "1",
+      CLIENT_IP_HEADER: "x-e2e-client-ip",
     },
   },
 });

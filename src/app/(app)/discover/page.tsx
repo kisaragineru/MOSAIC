@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { anotherQuestionAction, changeKindAction } from "@/app/actions/discovery";
 import { Flash } from "@/components/flash";
 import { QuestionForm } from "@/components/question-form";

@@ -155,6 +155,15 @@ export interface TuviView {
   currentLunarYear: number;
 }
 
+/** The current lunar year in the user's time zone (for nominal ages). */
+export async function currentLunarYearFor(userId: string, now = new Date()): Promise<number> {
+  return withUser(userId, async (tx) => {
+    const [p] = await tx.select({ tz: profiles.timeZone }).from(profiles).where(eq(profiles.userId, userId));
+    const [y, m, d] = todayIn(p?.tz ?? "Asia/Ho_Chi_Minh", now).split("-").map(Number) as [number, number, number];
+    return solarToLunar({ year: y, month: m, day: d }, DEFAULT_RULESET.calendarTimeZone).year;
+  });
+}
+
 export async function getTuvi(userId: string, locale: Locale, now = new Date()): Promise<TuviView> {
   return withUser(userId, async (tx) => {
     const [profile] = await tx.select().from(birthProfiles).where(eq(birthProfiles.userId, userId));

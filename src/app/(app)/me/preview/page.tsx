@@ -59,6 +59,19 @@ export default async function PreviewPage() {
               <p className="text-sm text-stone-500">{t.preview.tuviNone}</p>
             )}
           </section>
+          <section>
+            <p className="mb-1 flex items-center gap-2 text-sm font-semibold text-stone-800">
+              <Pill tone="violet">{t.compare.scopeNames.tuvi_detail}</Pill>
+              <span className="text-xs font-normal text-stone-500">{t.preview.detailTitle}</span>
+            </p>
+            {p.tuvi ? (
+              <p className="text-sm text-stone-700">
+                {t.preview.detailText} <Link href="/tuvi" className="text-teal-700 underline">{t.preview.detailLink} →</Link>
+              </p>
+            ) : (
+              <p className="text-sm text-stone-500">{t.preview.tuviNone}</p>
+            )}
+          </section>
           {scopes.map(({ scope, items }) => (
             <section key={scope}>
               <p className="mb-1 flex items-center gap-2 text-sm font-semibold text-stone-800">

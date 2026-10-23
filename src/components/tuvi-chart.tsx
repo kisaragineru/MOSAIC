@@ -24,8 +24,6 @@ const HOA_CHIP: Record<HoaId, string> = {
   khoa: "bg-sky-100 text-sky-800 ring-1 ring-inset ring-sky-300",
   ky: "bg-stone-200 text-stone-800 ring-1 ring-inset ring-stone-400",
 };
-// Classes rather than inline styles: the CSP blocks style attributes in server-rendered HTML.
-const DELAY = ["[animation-delay:0ms]", "[animation-delay:70ms]", "[animation-delay:140ms]", "[animation-delay:210ms]"];
 // Floating cards stay anchored at their palace and grow toward the middle of the board,
 // so the four cards of a palace and its related palaces never cover each other.
 const ANCHOR: Record<number, string> = {

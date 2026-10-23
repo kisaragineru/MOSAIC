@@ -50,6 +50,13 @@
       "when": 1792778225804,
       "tag": "0006_connection_bio",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792779140531,
+      "tag": "0007_tuvi_detail_scope",
+      "breakpoints": true
     }
   ]
 }
