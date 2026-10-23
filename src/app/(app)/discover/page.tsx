@@ -1,4 +1,5 @@
 import { anotherQuestionAction, changeKindAction } from "@/app/actions/discovery";
+import { DayWatcher } from "@/components/day-watcher";
 import { Flash } from "@/components/flash";
 import { QuestionForm } from "@/components/question-form";
 import { Button, Card, Notice, Page, Pill, SegmentedTabs } from "@/components/ui";
@@ -32,6 +33,7 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Pro
 
   return (
     <Page title={t.discover.title}>
+      <DayWatcher day={daily.day} timeZone={daily.timeZone} />
       <SegmentedTabs current="/discover" items={[{ href: "/discover", label: t.nav.todayQuestions }, { href: "/discover/history", label: t.nav.history }]} />
       <p className="text-sm text-stone-600">{t.discover.intro}</p>
       <Flash t={t} sp={sp} />

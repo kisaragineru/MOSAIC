@@ -123,6 +123,8 @@ export interface DailySlot {
 }
 
 export interface DailyState {
+  /** The user's time zone, in which `day` is today. */
+  timeZone: string;
   day: string;
   slots: DailySlot[];
   /** Follow-up question unlocked by a recent answer and not yet answered. */
@@ -194,6 +196,7 @@ export async function getDaily(userId: string, now = new Date()): Promise<DailyS
     const followUp = await pendingFollowUp(tx, userId, tz, day);
     return {
       day,
+      timeZone: tz,
       slots,
       followUp,
       canRequestMore: rows.length < MAX_DAILY_SLOTS && slots.every((s) => s.doneToday),

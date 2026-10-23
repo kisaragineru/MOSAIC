@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createMemoryAction } from "@/app/actions/memories";
+import { DayWatcher } from "@/components/day-watcher";
 import { Flash } from "@/components/flash";
 import { Button, Card, LinkButton, Page, Pill, Textarea } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
@@ -80,7 +81,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           </ul>
         </Card>
       )}
-      <Card title={t.home.todayQuestion}>
+      <DayWatcher day={daily.day} timeZone={daily.timeZone} />
+      <Card title={`${t.home.todayQuestion} · ${new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", weekday: "short", timeZone: "UTC" }).format(new Date(`${daily.day}T00:00:00Z`))}`}>
         {first ? (
           <div className="space-y-3">
             <p className="text-lg text-stone-900">{first.question.prompt[locale]}</p>
