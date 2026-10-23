@@ -83,10 +83,10 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
                   <li key={i} className="rounded-xl border border-stone-200 p-2">
                     <div className="flex flex-wrap items-center gap-1">
                       <Pill tone={c.strength === "strong" ? "teal" : c.strength === "moderate" ? "stone" : "amber"}>{t.gifts.strength[c.strength]}</Pill>
-                      <span className="font-medium">{c.idea}</span>
+                      <span className="font-medium">{c.idea[locale]}</span>
                     </div>
                     <p className="text-sm text-stone-700">{c.reason[locale]}</p>
-                    <p className="text-xs text-stone-500">{t.gifts.evidence}: {c.evidence.map((e) => e.label).join("; ")}</p>
+                    <p className="text-xs text-stone-500">{t.gifts.evidence}: {c.evidence.map((e) => (e.sentiment ? `${e.label} (${t.people.sentiments[e.sentiment as keyof typeof t.people.sentiments] ?? e.sentiment})` : e.label)).join("; ")}</p>
                     {c.caveats.map((cv, j) => <p key={j} className="text-xs text-amber-800">⚠ {cv[locale]}</p>)}
                   </li>
                 ))}

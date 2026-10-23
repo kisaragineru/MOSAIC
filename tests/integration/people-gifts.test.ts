@@ -109,13 +109,17 @@ describe("gift suggestions", () => {
     await addImportantDate(u.userId, { personId: pid, label: "Birthday", kind: "birthday", month: 11, day: 5 });
 
     const s = await suggestGifts(u.userId, pid, { budget: "500000", currency: "VND" }, new Date("2026-10-23T02:00:00Z"));
-    const ideas = s.candidates.map((c) => c.idea);
+    const ideas = s.candidates.map((c) => c.idea.en);
     expect(ideas[0]).toBe("Film camera"); // strongest: they said so
     expect(ideas).not.toContain("Headphones"); // owned
     expect(ideas).not.toContain("Scarf"); // already given
     expect(ideas).not.toContain("Lavender candle"); // conflicts with "avoid"
     expect(ideas).toContain("Cooking class in Hội An");
-    const kindle = s.candidates.find((c) => c.idea === "Kindle")!;
+    const kindle = s.candidates.find((c) => c.idea.en === "Kindle")!;
+    // Generated idea text is localised (regression: Vietnamese UI showed English text).
+    const music = s.candidates.find((c) => c.kind === "related_to_like")!;
+    expect(music.idea.vi).toBe("món liên quan đến Đen Vâu (vé nhạc, đĩa, đồ lưu niệm)");
+    expect(music.idea.en).toBe("something related to Đen Vâu (concert, record, merch)");
     expect(kindle.strength).toBe("weak");
     expect(kindle.caveats.length).toBe(1);
     for (const c of s.candidates) expect(c.evidence.length).toBeGreaterThan(0);

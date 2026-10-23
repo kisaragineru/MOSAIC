@@ -18,12 +18,15 @@ export interface Evidence {
   type: "preference" | "gift" | "entry" | "date";
   id: string;
   label: string;
+  /** Preference sentiment key (rendered localised by the UI). */
+  sentiment?: string;
   source?: string;
   recordedAt?: string;
 }
 
 export interface GiftCandidate {
-  idea: string;
+  /** Localised idea text (the user's own labels are kept verbatim inside it). */
+  idea: I18nText;
   kind: "wished_item" | "related_to_like" | "experience_together" | "similar_to_loved_gift";
   strength: "strong" | "moderate" | "weak";
   reason: I18nText;
@@ -115,7 +118,8 @@ export async function suggestGifts(userId: string, personId: string, opts: unkno
     const prefEvidence = (p: PreferenceView): Evidence => ({
       type: "preference",
       id: p.itemId,
-      label: `${p.label} (${p.current.sentiment})`,
+      label: p.label,
+      sentiment: p.current.sentiment,
       source: p.current.source,
       recordedAt: p.current.recordedAt.toISOString().slice(0, 10),
     });
@@ -127,7 +131,7 @@ export async function suggestGifts(userId: string, personId: string, opts: unkno
       if (owned.has(f) || given.has(f) || conflictsWithDislike(p.label)) continue;
       const src = SOURCE_LABEL[p.current.source] ?? SOURCE_LABEL.unverified!;
       candidates.push({
-        idea: p.label,
+        idea: { en: p.label, vi: p.label },
         kind: "wished_item",
         strength: SOURCE_STRENGTH[p.current.source] ?? "weak",
         reason: {
@@ -141,7 +145,7 @@ export async function suggestGifts(userId: string, personId: string, opts: unkno
     // 2. Experiences you both want to do.
     for (const e of entries.filter((x) => x.kind === "wish_together")) {
       candidates.push({
-        idea: e.body,
+        idea: { en: e.body, vi: e.body },
         kind: "experience_together",
         strength: e.source === "person_stated" ? "strong" : "moderate",
         reason: {
@@ -157,7 +161,7 @@ export async function suggestGifts(userId: string, personId: string, opts: unkno
       if (conflictsWithDislike(p.label)) continue;
       const tmpl = RELATED_IDEA[p.categoryId] ?? RELATED_IDEA.other!;
       candidates.push({
-        idea: tmpl.en.replace("{x}", p.label),
+        idea: { en: tmpl.en.replace("{x}", p.label), vi: tmpl.vi.replace("{x}", p.label) },
         kind: "related_to_like",
         strength: p.current.sentiment === "love" && p.current.source === "person_stated" ? "moderate" : "weak",
         reason: {
@@ -171,7 +175,7 @@ export async function suggestGifts(userId: string, personId: string, opts: unkno
     // 4. Similar to past gifts they loved (but not the same item).
     for (const g of gifts.filter((x) => x.reaction === "loved")) {
       candidates.push({
-        idea: `something in the spirit of "${g.item}"`,
+        idea: { en: `something in the spirit of "${g.item}"`, vi: `món quà theo tinh thần "${g.item}"` },
         kind: "similar_to_loved_gift",
         strength: "moderate",
         reason: {
