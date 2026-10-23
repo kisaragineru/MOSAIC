@@ -3,18 +3,22 @@ import { consentAction, endComparisonAction, recomputeAction } from "@/app/actio
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
 import { Button, Card, Checkbox, Notice, Page, Pill } from "@/components/ui";
+import { LOCALIZED_BANK } from "@/content/questions-i18n";
 import { answerLabel } from "@/lib/discovery/format";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { getComparison, PURPOSE_TEXT, SCOPE_DESCRIPTIONS } from "@/server/services/sharing";
 
 const SCOPES = ["tuvi", "preferences", "values"] as const;
+const QMETA = new Map(LOCALIZED_BANK.map((q) => [q.id, q]));
 
 export default async function ComparePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
   const { id } = await params;
   const sp = await searchParams;
   const { t, locale } = await getT();
+  // Stored results may predate a UI language: fall back to English rather than show nothing.
+  const tr = (x: Partial<Record<string, string>> | undefined) => x?.[locale] ?? x?.en ?? "";
   const v = await getComparison(uid, id).catch(() => null);
   if (!v) notFound();
   const scopeNames = (s: string[]) => s.map((x) => t.compare.scopeNames[x as (typeof SCOPES)[number]] ?? x).join(", ");
@@ -51,12 +55,12 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
           </Card>
           {r && names && (
             <>
-              <Notice>{r.disclaimer[locale]}</Notice>
+              <Notice>{tr(r.disclaimer)}</Notice>
               <p className="text-xs text-stone-500">{t.compare.agreed(scopeNames(r.agreedScopes))}{v.computedAt && ` · ${t.compare.computedAt(v.computedAt.toISOString().slice(0, 16).replace("T", " "))}`}</p>
               {r.tuvi && (
                 <Card title={t.compare.tuviTitle}>
                   {r.tuvi.available ? (
-                    <ul className="list-disc space-y-1 pl-5 text-sm">{r.tuvi.observations.map((o) => <li key={o.ruleId}>{o.text[locale]}</li>)}</ul>
+                    <ul className="list-disc space-y-1 pl-5 text-sm">{r.tuvi.observations.map((o) => <li key={o.ruleId}>{tr(o.text)}</li>)}</ul>
                   ) : (
                     <Notice kind="warning">{t.compare.tuviMissing}</Notice>
                   )}
@@ -69,13 +73,14 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                   ) : (
                     <ul className="space-y-2" data-testid="pref-items">
                       {r.preferences.items.map((i) => {
-                        const q = r.preferences!.questions[i.questionId];
+                        // Display text from the current catalog (stored results may predate a language).
+                        const q = QMETA.get(i.questionId) ?? r.preferences!.questions[i.questionId];
                         return (
                           <li key={i.questionId} className="rounded-xl border border-stone-200 p-2 text-sm">
                             <Pill tone={i.kind === "same" ? "teal" : i.kind === "partly_shared" ? "amber" : "violet"}>
                               {i.kind === "same" ? t.compare.same : i.kind === "partly_shared" ? t.compare.partly : t.compare.different}
                             </Pill>{" "}
-                            {q?.prompt[locale] ?? i.questionId}
+                            {q ? tr(q.prompt) : i.questionId}
                             <p className="text-xs text-stone-600">
                               {names.a}: {answerLabel(q?.options ?? null, i.a, locale)} · {names.b}: {answerLabel(q?.options ?? null, i.b, locale)}
                             </p>
@@ -86,13 +91,13 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                   )}
                   {(r.preferences.onlyA.length > 0 || r.preferences.onlyB.length > 0) && (
                     <p className="mt-2 text-xs text-stone-500">
-                      {t.compare.onlyOne}: {[...r.preferences.onlyA, ...r.preferences.onlyB].map((q) => r.preferences!.questions[q]?.prompt[locale] ?? q).join(" · ")}
+                      {t.compare.onlyOne}: {[...r.preferences.onlyA, ...r.preferences.onlyB].map((q) => { const m = QMETA.get(q) ?? r.preferences!.questions[q]; return m ? tr(m.prompt) : q; }).join(" · ")}
                     </p>
                   )}
                 </Card>
               )}
               <Card title={t.compare.hints}>
-                <ul className="list-disc space-y-1 pl-5 text-sm">{r.hints.map((h) => <li key={h.ruleId}>{h.text[locale]}</li>)}</ul>
+                <ul className="list-disc space-y-1 pl-5 text-sm">{r.hints.map((h) => <li key={h.ruleId}>{tr(h.text)}</li>)}</ul>
               </Card>
               <form action={recomputeAction}>
                 <input type="hidden" name="sessionId" value={v.id} />

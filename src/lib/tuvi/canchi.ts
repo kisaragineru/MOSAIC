@@ -7,12 +7,12 @@ export const BRANCH_ANIMALS_EN = [
 ] as const;
 
 export type Element = "kim" | "thuy" | "moc" | "hoa" | "tho";
-export const ELEMENT_NAMES: Record<Element, { vi: string; en: string }> = {
-  kim: { vi: "Kim", en: "Metal" },
-  thuy: { vi: "Thủy", en: "Water" },
-  moc: { vi: "Mộc", en: "Wood" },
-  hoa: { vi: "Hỏa", en: "Fire" },
-  tho: { vi: "Thổ", en: "Earth" },
+export const ELEMENT_NAMES: Record<Element, { vi: string; en: string; ja: string }> = {
+  kim: { ja: "金", vi: "Kim", en: "Metal" },
+  thuy: { ja: "水", vi: "Thủy", en: "Water" },
+  moc: { ja: "木", vi: "Mộc", en: "Wood" },
+  hoa: { ja: "火", vi: "Hỏa", en: "Fire" },
+  tho: { ja: "土", vi: "Thổ", en: "Earth" },
 };
 
 export const mod = (n: number, m: number) => ((n % m) + m) % m;

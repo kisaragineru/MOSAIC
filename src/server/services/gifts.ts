@@ -63,33 +63,33 @@ const SOURCE_STRENGTH: Record<string, GiftCandidate["strength"]> = {
 };
 
 const SOURCE_LABEL: Record<string, I18nText> = {
-  person_stated: { en: "they said so", vi: "họ đã nói" },
-  observed: { en: "you observed it", vi: "bạn quan sát được" },
-  guess: { en: "your guess", vi: "bạn đoán" },
-  unverified: { en: "unverified", vi: "chưa xác minh" },
-  ai_suggested: { en: "AI suggestion you saved", vi: "gợi ý AI bạn đã lưu" },
-  self_stated: { en: "you noted it", vi: "bạn ghi lại" },
+  person_stated: { en: "they said so", vi: "họ đã nói", ja: "本人が言っていた" },
+  observed: { en: "you observed it", vi: "bạn quan sát được", ja: "あなたが観察した" },
+  guess: { en: "your guess", vi: "bạn đoán", ja: "あなたの推測" },
+  unverified: { en: "unverified", vi: "chưa xác minh", ja: "未確認" },
+  ai_suggested: { en: "AI suggestion you saved", vi: "gợi ý AI bạn đã lưu", ja: "保存したAIの提案" },
+  self_stated: { en: "you noted it", vi: "bạn ghi lại", ja: "あなたが記録した" },
 };
 
 function caveatsFor(source: string): I18nText[] {
   if (source === "guess" || source === "unverified" || source === "ai_suggested") {
-    return [{ en: `Based on ${SOURCE_LABEL[source]!.en} — worth confirming first.`, vi: `Dựa trên ${SOURCE_LABEL[source]!.vi} — nên xác nhận trước.` }];
+    return [{ en: `Based on ${SOURCE_LABEL[source]!.en} — worth confirming first.`, vi: `Dựa trên ${SOURCE_LABEL[source]!.vi} — nên xác nhận trước.`, ja: `根拠は「${SOURCE_LABEL[source]!.ja}」です。先に確認するのがおすすめです。` }];
   }
   return [];
 }
 
 const RELATED_IDEA: Record<string, I18nText> = {
-  food: { en: "a treat or meal featuring {x}", vi: "món quà/bữa ăn có {x}" },
-  music: { en: "something related to {x} (concert, record, merch)", vi: "món liên quan đến {x} (vé nhạc, đĩa, đồ lưu niệm)" },
-  hobby: { en: "a gift for their interest in {x}", vi: "món quà cho sở thích {x}" },
-  travel: { en: "a trip or experience at {x}", vi: "chuyến đi/trải nghiệm ở {x}" },
-  brand: { en: "something from {x}", vi: "món đồ của {x}" },
-  color: { en: "something in {x}", vi: "món đồ màu {x}" },
-  scent: { en: "something with a {x} scent", vi: "món có hương {x}" },
-  book_film: { en: "something related to {x}", vi: "món liên quan đến {x}" },
-  item: { en: "{x}", vi: "{x}" },
-  experience: { en: "the experience: {x}", vi: "trải nghiệm: {x}" },
-  other: { en: "something related to {x}", vi: "món liên quan đến {x}" },
+  food: { en: "a treat or meal featuring {x}", vi: "món quà/bữa ăn có {x}", ja: "{x}を使ったお菓子や食事" },
+  music: { en: "something related to {x} (concert, record, merch)", vi: "món liên quan đến {x} (vé nhạc, đĩa, đồ lưu niệm)", ja: "{x}に関するもの（ライブ、CD・レコード、グッズ）" },
+  hobby: { en: "a gift for their interest in {x}", vi: "món quà cho sở thích {x}", ja: "趣味の{x}に使える贈り物" },
+  travel: { en: "a trip or experience at {x}", vi: "chuyến đi/trải nghiệm ở {x}", ja: "{x}への旅行や体験" },
+  brand: { en: "something from {x}", vi: "món đồ của {x}", ja: "{x}のアイテム" },
+  color: { en: "something in {x}", vi: "món đồ màu {x}", ja: "{x}色のもの" },
+  scent: { en: "something with a {x} scent", vi: "món có hương {x}", ja: "{x}の香りのもの" },
+  book_film: { en: "something related to {x}", vi: "món liên quan đến {x}", ja: "{x}に関するもの" },
+  item: { en: "{x}", vi: "{x}", ja: "{x}" },
+  experience: { en: "the experience: {x}", vi: "trải nghiệm: {x}", ja: "体験：{x}" },
+  other: { en: "something related to {x}", vi: "món liên quan đến {x}", ja: "{x}に関するもの" },
 };
 
 const budgetSchema = z.object({
@@ -131,12 +131,13 @@ export async function suggestGifts(userId: string, personId: string, opts: unkno
       if (owned.has(f) || given.has(f) || conflictsWithDislike(p.label)) continue;
       const src = SOURCE_LABEL[p.current.source] ?? SOURCE_LABEL.unverified!;
       candidates.push({
-        idea: { en: p.label, vi: p.label },
+        idea: { en: p.label, vi: p.label, ja: p.label },
         kind: "wished_item",
         strength: SOURCE_STRENGTH[p.current.source] ?? "weak",
         reason: {
           en: `On their wish list (${src.en}, recorded ${p.current.recordedAt.toISOString().slice(0, 10)}). Not recorded as owned or already given.`,
           vi: `Có trong danh sách mong muốn (${src.vi}, ghi ngày ${p.current.recordedAt.toISOString().slice(0, 10)}). Chưa ghi là đã có hoặc đã tặng.`,
+          ja: `欲しいものリストにあります（${src.ja}、${p.current.recordedAt.toISOString().slice(0, 10)}に記録）。持っている・贈ったという記録はありません。`,
         },
         evidence: [prefEvidence(p)],
         caveats: caveatsFor(p.current.source),
@@ -145,12 +146,13 @@ export async function suggestGifts(userId: string, personId: string, opts: unkno
     // 2. Experiences you both want to do.
     for (const e of entries.filter((x) => x.kind === "wish_together")) {
       candidates.push({
-        idea: { en: e.body, vi: e.body },
+        idea: { en: e.body, vi: e.body, ja: e.body },
         kind: "experience_together",
         strength: e.source === "person_stated" ? "strong" : "moderate",
         reason: {
           en: "Something you noted wanting to do together — a shared experience can be a gift.",
           vi: "Điều bạn ghi là muốn cùng làm — một trải nghiệm chung cũng có thể là món quà.",
+          ja: "「一緒にしたいこと」として記録したものです。一緒に過ごす体験も贈り物になります。",
         },
         evidence: [{ type: "entry", id: e.id, label: e.body.slice(0, 80), source: e.source }],
         caveats: caveatsFor(e.source),
@@ -161,12 +163,13 @@ export async function suggestGifts(userId: string, personId: string, opts: unkno
       if (conflictsWithDislike(p.label)) continue;
       const tmpl = RELATED_IDEA[p.categoryId] ?? RELATED_IDEA.other!;
       candidates.push({
-        idea: { en: tmpl.en.replace("{x}", p.label), vi: tmpl.vi.replace("{x}", p.label) },
+        idea: { en: tmpl.en.replace("{x}", p.label), vi: tmpl.vi.replace("{x}", p.label), ja: tmpl.ja.replace("{x}", p.label) },
         kind: "related_to_like",
         strength: p.current.sentiment === "love" && p.current.source === "person_stated" ? "moderate" : "weak",
         reason: {
           en: `They ${p.current.sentiment} ${p.label} (${(SOURCE_LABEL[p.current.source] ?? SOURCE_LABEL.unverified!).en}).`,
           vi: `Họ ${p.current.sentiment === "love" ? "rất thích" : "thích"} ${p.label} (${(SOURCE_LABEL[p.current.source] ?? SOURCE_LABEL.unverified!).vi}).`,
+          ja: `${p.label}が${p.current.sentiment === "love" ? "大好き" : "好き"}です（${(SOURCE_LABEL[p.current.source] ?? SOURCE_LABEL.unverified!).ja}）。`,
         },
         evidence: [prefEvidence(p)],
         caveats: caveatsFor(p.current.source),
@@ -175,12 +178,13 @@ export async function suggestGifts(userId: string, personId: string, opts: unkno
     // 4. Similar to past gifts they loved (but not the same item).
     for (const g of gifts.filter((x) => x.reaction === "loved")) {
       candidates.push({
-        idea: { en: `something in the spirit of "${g.item}"`, vi: `món quà theo tinh thần "${g.item}"` },
+        idea: { en: `something in the spirit of "${g.item}"`, vi: `món quà theo tinh thần "${g.item}"`, ja: `「${g.item}」に通じる贈り物` },
         kind: "similar_to_loved_gift",
         strength: "moderate",
         reason: {
           en: `They loved "${g.item}"${g.givenOn ? ` (${g.givenOn})` : ""}. Avoid giving the same thing again.`,
           vi: `Họ rất thích "${g.item}"${g.givenOn ? ` (${g.givenOn})` : ""}. Tránh tặng trùng lại.`,
+          ja: `「${g.item}」${g.givenOn ? `（${g.givenOn}）` : ""}をとても喜んでくれました。同じものは避けましょう。`,
         },
         evidence: [{ type: "gift", id: g.id, label: g.item }],
         caveats: [],
@@ -201,18 +205,21 @@ export async function suggestGifts(userId: string, personId: string, opts: unkno
       questionsToAsk.push({
         en: `Has ${person.nickname} mentioned wanting anything recently? Add it as "wants" with the source "they said".`,
         vi: `Gần đây ${person.nickname} có nhắc muốn món gì không? Hãy thêm với trạng thái "muốn có" và nguồn "họ đã nói".`,
+        ja: `最近、${person.nickname}さんが欲しいと言っていたものはありますか？「欲しい」「本人が言っていた」として追加してください。`,
       });
     }
     if (!prefs.some((p) => p.current.sentiment === "love" || p.current.sentiment === "like")) {
       questionsToAsk.push({
         en: `What does ${person.nickname} enjoy (food, music, hobbies)? Record a few likes first.`,
         vi: `${person.nickname} thích gì (món ăn, âm nhạc, sở thích)? Hãy ghi lại vài điều họ thích trước.`,
+        ja: `${person.nickname}さんの好きなもの（食べもの、音楽、趣味）は？まずいくつか記録してみてください。`,
       });
     }
     if (disliked.length === 0) {
       questionsToAsk.push({
         en: `Is there anything ${person.nickname} dislikes or can't use (allergies, colours, scents)?`,
         vi: `Có điều gì ${person.nickname} không thích hoặc không dùng được (dị ứng, màu sắc, mùi hương) không?`,
+        ja: `${person.nickname}さんが苦手なもの・使えないもの（アレルギー、色、香り）はありますか？`,
       });
     }
 
@@ -231,6 +238,7 @@ export async function suggestGifts(userId: string, personId: string, opts: unkno
               note: {
                 en: "Prices are not recorded for wish-list items, so candidates were NOT filtered by budget. Check prices yourself.",
                 vi: "Giá của các món mong muốn chưa được ghi lại nên gợi ý CHƯA được lọc theo ngân sách. Hãy tự kiểm tra giá.",
+                ja: "欲しいものの価格は記録されていないため、候補は予算で絞り込んでいません。価格はご自身で確認してください。",
               },
             }
           : null,

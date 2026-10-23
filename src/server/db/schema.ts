@@ -326,7 +326,7 @@ export const questionVersions = pgTable(
       .references(() => questionDefinitions.id),
     version: integer("version").notNull(),
     format: text("format").notNull(),
-    /** {"en": "...", "vi": "..."} */
+    /** {"en": "...", "vi": "..."} — Japanese display text lives in src/content/questions-ja.ts */
     prompt: jsonb("prompt").notNull(),
     /** [{value, label:{en,vi}}] for choice formats. */
     options: jsonb("options"),

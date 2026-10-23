@@ -1,6 +1,6 @@
 import { and, asc, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import type { Locale } from "@/lib/i18n/locales";
+import { SUPPORTED_LOCALES, type Locale } from "@/lib/i18n/locales";
 import { solarToLunar } from "@/lib/tuvi/calendar";
 import { canonicalJson, computeChart, isValidTimeZone, nominalAge, type BirthInput, type Chart, type NeedsDecision } from "@/lib/tuvi/engine";
 import { interpret, INTERPRETATION_VERSION, type InterpretationSection } from "@/lib/tuvi/interpret";
@@ -129,7 +129,7 @@ async function computeAndStore(tx: Tx, userId: string, profile: typeof birthProf
       isCurrent: true,
     })
     .returning();
-  for (const locale of ["en", "vi"] as const) {
+  for (const locale of SUPPORTED_LOCALES) {
     const sections = interpret(chart, locale);
     const rows = sections.map((s) => ({
       userId,

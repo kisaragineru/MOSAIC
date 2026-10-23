@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { tendencyFeedbackAction } from "@/app/actions/discovery";
 import { Flash } from "@/components/flash";
 import { Button, Card, Checkbox, Empty, Input, Notice, Page, Pill, Select } from "@/components/ui";
-import { QUESTION_BANK } from "@/content/questions";
+import { LOCALIZED_BANK } from "@/content/questions-i18n";
 import { answerLabel } from "@/lib/discovery/format";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
@@ -10,7 +10,7 @@ import { listPeople } from "@/server/services/people";
 import { reflect, REFLECTION_KINDS, REFLECTION_QUESTIONS, type Reflection } from "@/server/services/reflection";
 import { listTendencies } from "@/server/services/tendencies";
 
-const QMAP = new Map(QUESTION_BANK.map((q) => [q.id, q]));
+const QMAP = new Map(LOCALIZED_BANK.map((q) => [q.id, q]));
 
 export default async function InsightsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();

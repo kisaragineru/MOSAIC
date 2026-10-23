@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
-import { TENDENCY_KEYS, TENDENCY_TEXT, type Signal, type TendencyKey } from "@/content/questions";
+import { TENDENCY_KEYS, TENDENCY_TEXT, type I18nText, type Signal, type TendencyKey } from "@/content/questions";
 import { signalsFor, type Answer } from "@/lib/discovery/answers";
 import { computeClaims, MIN_EVIDENCE, MODEL_VERSION, AGREEMENT_THRESHOLD } from "@/lib/discovery/tendency-model";
 import { uuid } from "@/lib/validation/common";
@@ -103,7 +103,7 @@ export interface ClaimView {
   id: string;
   claimKey: TendencyKey;
   direction: 1 | -1;
-  statement: { en: string; vi: string };
+  statement: I18nText;
   state: ClaimState;
   confidence: number;
   evidenceCount: number;

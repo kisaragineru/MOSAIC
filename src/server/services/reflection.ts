@@ -9,7 +9,8 @@
  */
 import { and, asc, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
-import { QUESTION_BANK, type I18nText } from "@/content/questions";
+import type { I18nText } from "@/content/questions";
+import { LOCALIZED_BANK } from "@/content/questions-i18n";
 import type { Answer } from "@/lib/discovery/answers";
 import type { Locale } from "@/lib/i18n/locales";
 import { uuid } from "@/lib/validation/common";
@@ -33,11 +34,11 @@ export const REFLECTION_KINDS = ["changes", "values", "patterns", "past_beliefs"
 export type ReflectionKind = (typeof REFLECTION_KINDS)[number];
 
 export const REFLECTION_QUESTIONS: Record<ReflectionKind, I18nText> = {
-  changes: { en: "What has changed compared to before?", vi: "So với trước đây, điều gì đã thay đổi?" },
-  values: { en: "What have I been valuing?", vi: "Mình đã và đang coi trọng điều gì?" },
-  patterns: { en: "Are there worries or behaviours I keep repeating?", vi: "Có nỗi lo hay hành vi nào mình hay lặp lại không?" },
-  past_beliefs: { en: "What did my past self believe?", vi: "Mình của ngày trước đã tin vào điều gì?" },
-  relationship: { en: "How has my relationship with this person changed?", vi: "Mối quan hệ của mình với người này đã thay đổi thế nào?" },
+  changes: { en: "What has changed compared to before?", vi: "So với trước đây, điều gì đã thay đổi?", ja: "以前と比べて、何が変わった？" },
+  values: { en: "What have I been valuing?", vi: "Mình đã và đang coi trọng điều gì?", ja: "自分が大切にしてきたものは何？" },
+  patterns: { en: "Are there worries or behaviours I keep repeating?", vi: "Có nỗi lo hay hành vi nào mình hay lặp lại không?", ja: "繰り返している悩みや行動パターンはある？" },
+  past_beliefs: { en: "What did my past self believe?", vi: "Mình của ngày trước đã tin vào điều gì?", ja: "過去の自分は何を信じていた？" },
+  relationship: { en: "How has my relationship with this person changed?", vi: "Mối quan hệ của mình với người này đã thay đổi thế nào?", ja: "この人との関係はどう変わってきた？" },
 };
 
 export interface EvidenceItem {
@@ -59,7 +60,20 @@ export interface Reflection {
   aiUnavailableReason: AiFailure | "not_opted_in" | "not_requested" | null;
 }
 
-const QMAP = new Map(QUESTION_BANK.map((q) => [q.id, q]));
+const QMAP = new Map(LOCALIZED_BANK.map((q) => [q.id, q]));
+const KIND_LABEL: Record<string, I18nText> = {
+  thought: { en: "thought", vi: "suy nghĩ", ja: "考え" },
+  feeling: { en: "feeling", vi: "cảm xúc", ja: "気持ち" },
+  memory: { en: "memory", vi: "kỷ niệm", ja: "思い出" },
+  decision: { en: "decision", vi: "quyết định", ja: "決断" },
+  goal: { en: "goal", vi: "mục tiêu", ja: "目標" },
+  dream: { en: "dream", vi: "ước mơ", ja: "夢" },
+  regret: { en: "regret", vi: "hối tiếc", ja: "後悔" },
+  achievement: { en: "achievement", vi: "thành tựu", ja: "達成" },
+  value: { en: "value", vi: "giá trị", ja: "価値観" },
+  letter_to_future: { en: "letter to the future", vi: "thư gửi tương lai", ja: "未来への手紙" },
+};
+const kindLabel = (k: string) => KIND_LABEL[k] ?? { en: k, vi: k, ja: k };
 const MAX_EXCERPT = 280;
 const clip = (s: string) => (s.length > MAX_EXCERPT ? `${s.slice(0, MAX_EXCERPT)}…` : s);
 const day = (d: Date | string) => (typeof d === "string" ? d : d.toISOString().slice(0, 10));
@@ -116,12 +130,13 @@ async function gather(tx: Tx, userId: string, kind: ReflectionKind, locale: Loca
       const prompt = q?.prompt[locale] ?? r.questionId;
       const before = bag.add({ recordType: "response", recordId: prev.id, date: day(prev.answeredAt), excerpt: `${prompt} → ${answerText(r.questionId, prev.answer as Answer, locale)}` });
       const after = bag.add({ recordType: "response", recordId: r.id, date: day(r.answeredAt), excerpt: `${prompt} → ${answerText(r.questionId, r.answer as Answer, locale)}` });
-      const why = r.changeKind === "correction" ? { en: " (you marked this as a correction)", vi: " (bạn đánh dấu là sửa lỗi)" } : r.changeKind === "changed_mind" ? { en: " (you said your view changed)", vi: " (bạn cho biết suy nghĩ đã thay đổi)" } : { en: "", vi: "" };
+      const why = r.changeKind === "correction" ? { en: " (you marked this as a correction)", vi: " (bạn đánh dấu là sửa lỗi)", ja: "（訂正として記録）" } : r.changeKind === "changed_mind" ? { en: " (you said your view changed)", vi: " (bạn cho biết suy nghĩ đã thay đổi)", ja: "（考えが変わったと回答）" } : { en: "", vi: "", ja: "" };
       findings.push({
         refs: [before, after],
         text: {
-          en: `“${prompt}”: ${answerText(r.questionId, prev.answer as Answer, "en")} (${day(prev.answeredAt)}) → ${answerText(r.questionId, r.answer as Answer, "en")} (${day(r.answeredAt)})${why.en}.`,
+          en: `“${q?.prompt.en ?? r.questionId}”: ${answerText(r.questionId, prev.answer as Answer, "en")} (${day(prev.answeredAt)}) → ${answerText(r.questionId, r.answer as Answer, "en")} (${day(r.answeredAt)})${why.en}.`,
           vi: `“${q?.prompt.vi ?? r.questionId}”: ${answerText(r.questionId, prev.answer as Answer, "vi")} (${day(prev.answeredAt)}) → ${answerText(r.questionId, r.answer as Answer, "vi")} (${day(r.answeredAt)})${why.vi}.`,
+          ja: `「${q?.prompt.ja ?? r.questionId}」：${answerText(r.questionId, prev.answer as Answer, "ja")}（${day(prev.answeredAt)}）→ ${answerText(r.questionId, r.answer as Answer, "ja")}（${day(r.answeredAt)}）${why.ja}`,
         },
       });
     }
@@ -141,6 +156,7 @@ async function gather(tx: Tx, userId: string, kind: ReflectionKind, locale: Loca
         text: {
           en: `You rewrote an entry ${vs.length - 1} time(s): first on ${day(first.createdAt)}, latest on ${day(last.createdAt)}.`,
           vi: `Bạn đã viết lại một ghi chép ${vs.length - 1} lần: lần đầu ${day(first.createdAt)}, gần nhất ${day(last.createdAt)}.`,
+          ja: `ある記録を${vs.length - 1}回書き直しました（最初 ${day(first.createdAt)}、最新 ${day(last.createdAt)}）。`,
         },
       });
     }
@@ -154,11 +170,11 @@ async function gather(tx: Tx, userId: string, kind: ReflectionKind, locale: Loca
       if (r.status !== "answered" || QMAP.get(r.question_id)?.category !== "values") continue;
       const q = QMAP.get(r.question_id)!;
       const ref = bag.add({ recordType: "response", recordId: r.id, date: day(new Date(r.answered_at)), excerpt: `${q.prompt[locale]} → ${answerText(r.question_id, r.answer, locale)}` });
-      findings.push({ refs: [ref], text: { en: `${q.prompt.en} → ${answerText(r.question_id, r.answer, "en")}`, vi: `${q.prompt.vi} → ${answerText(r.question_id, r.answer, "vi")}` } });
+      findings.push({ refs: [ref], text: { en: `${q.prompt.en} → ${answerText(r.question_id, r.answer, "en")}`, vi: `${q.prompt.vi} → ${answerText(r.question_id, r.answer, "vi")}`, ja: `${q.prompt.ja} → ${answerText(r.question_id, r.answer, "ja")}` } });
     }
     for (const { e, v } of await currentMemories(tx, userId, { kinds: ["value", "decision"] })) {
       const ref = bag.add({ recordType: "memory", recordId: e.id, date: e.occurredOn ?? day(e.createdAt), excerpt: `${v.title ? `${v.title}: ` : ""}${v.body}${v.reason ? ` — ${v.reason}` : ""}` });
-      findings.push({ refs: [ref], text: { en: `You wrote (${e.kind}): “${clip(v.title ?? v.body)}”`, vi: `Bạn đã viết (${e.kind}): “${clip(v.title ?? v.body)}”` } });
+      findings.push({ refs: [ref], text: { en: `You wrote (${kindLabel(e.kind).en}): “${clip(v.title ?? v.body)}”`, vi: `Bạn đã viết (${kindLabel(e.kind).vi}): “${clip(v.title ?? v.body)}”`, ja: `あなたの記録（${kindLabel(e.kind).ja}）：「${clip(v.title ?? v.body)}」` } });
     }
   }
 
@@ -173,18 +189,18 @@ async function gather(tx: Tx, userId: string, kind: ReflectionKind, locale: Loca
       const mems = await currentMemories(tx, userId, { ids: t.ids });
       const refs = mems.map(({ e, v }) => bag.add({ recordType: "memory", recordId: e.id, date: e.occurredOn ?? day(e.createdAt), excerpt: v.body }));
       if (refs.length < 3) continue;
-      findings.push({ refs, text: { en: `The tag “${t.tag}” appears in ${refs.length} entries.`, vi: `Thẻ “${t.tag}” xuất hiện trong ${refs.length} ghi chép.` } });
+      findings.push({ refs, text: { en: `The tag “${t.tag}” appears in ${refs.length} entries.`, vi: `Thẻ “${t.tag}” xuất hiện trong ${refs.length} ghi chép.`, ja: `タグ「${t.tag}」が${refs.length}件の記録に出てきます。` } });
     }
     const hard = await currentMemories(tx, userId, { kinds: ["feeling", "regret", "thought"] });
     const low = hard.filter(({ v }) => v.mood !== null && v.mood <= 2);
     if (low.length >= 2) {
       const refs = low.map(({ e, v }) => bag.add({ recordType: "memory", recordId: e.id, date: e.occurredOn ?? day(e.createdAt), excerpt: v.body }));
-      findings.push({ refs, text: { en: `${low.length} entries were written on low-mood days (mood 1–2).`, vi: `${low.length} ghi chép được viết vào những ngày tâm trạng thấp (1–2).` } });
+      findings.push({ refs, text: { en: `${low.length} entries were written on low-mood days (mood 1–2).`, vi: `${low.length} ghi chép được viết vào những ngày tâm trạng thấp (1–2).`, ja: `気分が低い日（1〜2）に書いた記録が${low.length}件あります。` } });
     }
     const regrets = hard.filter(({ e }) => e.kind === "regret");
     if (regrets.length >= 2) {
       const refs = regrets.map(({ e, v }) => bag.add({ recordType: "memory", recordId: e.id, date: e.occurredOn ?? day(e.createdAt), excerpt: v.body }));
-      findings.push({ refs, text: { en: `You recorded ${regrets.length} regrets.`, vi: `Bạn đã ghi lại ${regrets.length} điều hối tiếc.` } });
+      findings.push({ refs, text: { en: `You recorded ${regrets.length} regrets.`, vi: `Bạn đã ghi lại ${regrets.length} điều hối tiếc.`, ja: `後悔を${regrets.length}件記録しています。` } });
     }
   }
 
@@ -211,7 +227,7 @@ async function gather(tx: Tx, userId: string, kind: ReflectionKind, locale: Loca
       push(d, bag.add({ recordType: "relationship_entry", recordId: en.id, date: d, excerpt: `[${en.kind}] ${en.body}` }));
     }
     for (const [y, refs] of [...byYear].sort(([a], [b]) => a.localeCompare(b))) {
-      findings.push({ refs, text: { en: `${y}: ${refs.length} record(s) involving ${p.nickname}.`, vi: `${y}: ${refs.length} ghi chép liên quan đến ${p.nickname}.` } });
+      findings.push({ refs, text: { en: `${y}: ${refs.length} record(s) involving ${p.nickname}.`, vi: `${y}: ${refs.length} ghi chép liên quan đến ${p.nickname}.`, ja: `${y}年：${p.nickname}さんに関する記録が${refs.length}件。` } });
     }
   }
   return { evidence: bag.items, findings };
@@ -254,7 +270,7 @@ export async function reflect(
   if (!optIn) return { ...base, aiUnavailableReason: "not_opted_in" };
   await enforceRateLimit("ai", userId);
   const userMsg = [
-    `Language: ${input.locale === "vi" ? "Vietnamese" : "English"}`,
+    `Language: ${{ vi: "Vietnamese", en: "English", ja: "Japanese" }[input.locale]}`,
     `Question: ${REFLECTION_QUESTIONS[kind][input.locale]}`,
     "Evidence (the person's own records):",
     ...evidence.map((e) => `${e.ref} [${e.recordType}, ${e.date}]: ${e.excerpt}`),

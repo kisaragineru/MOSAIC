@@ -5,6 +5,7 @@ import { safeNext } from "@/app/actions/util";
 import { AuthShell } from "@/components/auth-shell";
 import { Flash } from "@/components/flash";
 import { Button, Card, Field, Input, Notice, Select } from "@/components/ui";
+import { LOCALE_NAMES, SUPPORTED_LOCALES } from "@/lib/i18n/locales";
 import { getT } from "@/lib/i18n/server";
 import { currentUserId } from "@/server/auth/session";
 
@@ -30,8 +31,7 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
           </Field>
           <Field label={t.common.language}>
             <Select name="locale" defaultValue={locale}>
-              <option value="vi">Tiếng Việt</option>
-              <option value="en">English</option>
+              {SUPPORTED_LOCALES.map((l) => <option key={l} value={l}>{LOCALE_NAMES[l]}</option>)}
             </Select>
           </Field>
           <Notice>{t.auth.privacyNote}</Notice>

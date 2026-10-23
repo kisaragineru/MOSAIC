@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
-import type { I18nText, QuestionOption, Signal } from "@/content/questions";
+import type { BankText, I18nText, Signal } from "@/content/questions";
+import { localizeQuestionContent } from "@/content/questions-i18n";
 import { followUpFor, normalizeAnswer, sameAnswer, type Answer } from "@/lib/discovery/answers";
 import { selectQuestion, type HistoryEvent } from "@/lib/discovery/select";
 import { todayIn, uuid } from "@/lib/validation/common";
@@ -25,7 +26,7 @@ export interface QuestionView {
   comparable: boolean;
   format: "single" | "multi" | "scale" | "short" | "free";
   prompt: I18nText;
-  options: QuestionOption[] | null;
+  options: { value: string; label: I18nText }[] | null;
   maxChoices: number | null;
   scale: { min: number; max: number; minLabel: I18nText; maxLabel: I18nText } | null;
   followUps: { whenValue: string; questionId: string }[] | null;
@@ -45,6 +46,11 @@ async function loadQuestion(tx: Tx, questionId: string, version?: number): Promi
     );
   const r = rows[0];
   if (!r) return null;
+  const text = localizeQuestionContent(r.d.id, {
+    prompt: r.v.prompt as BankText,
+    options: r.v.options as { value: string; label: BankText }[] | null,
+    scale: r.v.scale as { min: number; max: number; minLabel: BankText; maxLabel: BankText } | null,
+  });
   return {
     id: r.d.id,
     version: r.v.version,
@@ -52,10 +58,10 @@ async function loadQuestion(tx: Tx, questionId: string, version?: number): Promi
     sensitivity: r.d.sensitivity as QuestionView["sensitivity"],
     comparable: r.d.comparable,
     format: r.v.format as QuestionView["format"],
-    prompt: r.v.prompt as I18nText,
-    options: r.v.options as QuestionOption[] | null,
+    prompt: text.prompt,
+    options: text.options,
     maxChoices: r.v.maxChoices,
-    scale: r.v.scale as QuestionView["scale"],
+    scale: text.scale,
     followUps: r.v.followUps as QuestionView["followUps"],
     signals: r.v.signals as Signal[] | null,
   };

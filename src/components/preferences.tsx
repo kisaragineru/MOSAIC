@@ -22,7 +22,10 @@ export function PreferenceSection({
   personId: string | null;
   back: string;
 }) {
-  const catLabel = (id: string) => ((categories.find((c) => c.id === id)?.label ?? {}) as Record<string, string>)[locale] ?? id;
+  const catLabel = (id: string) => {
+    const l = (categories.find((c) => c.id === id)?.label ?? {}) as Record<string, string>;
+    return l[locale] ?? l.en ?? id;
+  };
   return (
     <div className="space-y-3">
       {prefs.length > 0 && (

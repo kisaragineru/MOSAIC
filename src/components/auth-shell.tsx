@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { setLocaleCookieAction } from "@/app/actions/auth";
-import type { Locale } from "@/lib/i18n/locales";
+import { LOCALE_NAMES, SUPPORTED_LOCALES, type Locale } from "@/lib/i18n/locales";
 import type { Dict } from "@/lib/i18n/messages/en";
 
 export function AuthShell({ t, locale, back, children }: { t: Dict; locale: Locale; back: string; children: ReactNode }) {
@@ -15,9 +15,9 @@ export function AuthShell({ t, locale, back, children }: { t: Dict; locale: Loca
       {children}
       <form action={setLocaleCookieAction} className="mt-6 flex items-center justify-center gap-2 text-sm">
         <input type="hidden" name="back" value={back} />
-        {(["vi", "en"] as const).map((l) => (
+        {SUPPORTED_LOCALES.map((l) => (
           <button key={l} name="locale" value={l} className={`rounded-lg px-2 py-1 ${l === locale ? "bg-stone-200 font-semibold" : "text-stone-500"}`}>
-            {l === "vi" ? "Tiếng Việt" : "English"}
+            {LOCALE_NAMES[l]}
           </button>
         ))}
       </form>

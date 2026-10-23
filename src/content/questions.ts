@@ -22,11 +22,14 @@ export type QuestionCategory =
   | "future"
   | "change";
 
-export type I18nText = { en: string; vi: string };
+/** Text stored in versioned question content (English + Vietnamese; Japanese lives in questions-ja.ts). */
+export type BankText = { en: string; vi: string };
+/** Display text in every supported UI language. Adding a locale here makes the compiler list every missing translation. */
+export type I18nText = { en: string; vi: string; ja: string };
 
 export interface QuestionOption {
   value: string;
-  label: I18nText;
+  label: BankText;
 }
 
 export interface Signal {
@@ -47,10 +50,10 @@ export interface QuestionDef {
   followUpOnly?: boolean;
   active?: boolean;
   format: "single" | "multi" | "scale" | "short" | "free";
-  prompt: I18nText;
+  prompt: BankText;
   options?: QuestionOption[];
   maxChoices?: number;
-  scale?: { min: number; max: number; minLabel: I18nText; maxLabel: I18nText };
+  scale?: { min: number; max: number; minLabel: BankText; maxLabel: BankText };
   followUps?: { whenValue: string; questionId: string }[];
   signals?: Signal[];
 }
@@ -70,36 +73,36 @@ export type TendencyKey = (typeof TENDENCY_KEYS)[number];
 /** Human-readable statement for each pole of a tendency. */
 export const TENDENCY_TEXT: Record<TendencyKey, { pos: I18nText; neg: I18nText }> = {
   planning: {
-    pos: { en: "You often prefer to plan ahead.", vi: "Bạn thường thích lên kế hoạch trước." },
-    neg: { en: "You often prefer to keep things open and spontaneous.", vi: "Bạn thường thích để mọi thứ linh hoạt, tùy hứng." },
+    pos: { en: "You often prefer to plan ahead.", vi: "Bạn thường thích lên kế hoạch trước." , ja: "先に計画を立てるのを好むことが多いようです。" },
+    neg: { en: "You often prefer to keep things open and spontaneous.", vi: "Bạn thường thích để mọi thứ linh hoạt, tùy hứng." , ja: "予定を決めず、その場に合わせるのを好むことが多いようです。" },
   },
   social_energy: {
-    pos: { en: "Time with other people often recharges you.", vi: "Ở bên người khác thường giúp bạn nạp lại năng lượng." },
-    neg: { en: "Time alone often recharges you.", vi: "Thời gian một mình thường giúp bạn nạp lại năng lượng." },
+    pos: { en: "Time with other people often recharges you.", vi: "Ở bên người khác thường giúp bạn nạp lại năng lượng." , ja: "人と過ごす時間で元気が戻ることが多いようです。" },
+    neg: { en: "Time alone often recharges you.", vi: "Thời gian một mình thường giúp bạn nạp lại năng lượng." , ja: "一人の時間で元気が戻ることが多いようです。" },
   },
   risk: {
-    pos: { en: "You are often comfortable taking chances.", vi: "Bạn thường thoải mái với việc chấp nhận rủi ro." },
-    neg: { en: "You often prefer safety and stability.", vi: "Bạn thường ưu tiên sự an toàn và ổn định." },
+    pos: { en: "You are often comfortable taking chances.", vi: "Bạn thường thoải mái với việc chấp nhận rủi ro." , ja: "思い切って挑戦することに抵抗が少ないようです。" },
+    neg: { en: "You often prefer safety and stability.", vi: "Bạn thường ưu tiên sự an toàn và ổn định." , ja: "安全や安定を優先することが多いようです。" },
   },
   decision_style: {
-    pos: { en: "You often decide by analysing facts.", vi: "Bạn thường quyết định dựa trên phân tích dữ kiện." },
-    neg: { en: "You often decide by feeling and intuition.", vi: "Bạn thường quyết định dựa trên cảm xúc và trực giác." },
+    pos: { en: "You often decide by analysing facts.", vi: "Bạn thường quyết định dựa trên phân tích dữ kiện." , ja: "事実を分析して決めることが多いようです。" },
+    neg: { en: "You often decide by feeling and intuition.", vi: "Bạn thường quyết định dựa trên cảm xúc và trực giác." , ja: "気持ちや直感で決めることが多いようです。" },
   },
   novelty: {
-    pos: { en: "You are often drawn to new experiences.", vi: "Bạn thường bị cuốn hút bởi trải nghiệm mới." },
-    neg: { en: "You often find comfort in the familiar.", vi: "Bạn thường thấy yên tâm với những điều quen thuộc." },
+    pos: { en: "You are often drawn to new experiences.", vi: "Bạn thường bị cuốn hút bởi trải nghiệm mới." , ja: "新しい体験に惹かれることが多いようです。" },
+    neg: { en: "You often find comfort in the familiar.", vi: "Bạn thường thấy yên tâm với những điều quen thuộc." , ja: "慣れ親しんだものに安心することが多いようです。" },
   },
   conflict: {
-    pos: { en: "You tend to address disagreements directly.", vi: "Bạn có xu hướng nói thẳng khi có bất đồng." },
-    neg: { en: "You tend to calm things down before talking about disagreements.", vi: "Bạn có xu hướng làm dịu tình hình trước khi nói về bất đồng." },
+    pos: { en: "You tend to address disagreements directly.", vi: "Bạn có xu hướng nói thẳng khi có bất đồng." , ja: "意見の違いには率直に向き合う傾向があるようです。" },
+    neg: { en: "You tend to calm things down before talking about disagreements.", vi: "Bạn có xu hướng làm dịu tình hình trước khi nói về bất đồng." , ja: "意見の違いは、まず場を落ち着かせてから話す傾向があるようです。" },
   },
   saving: {
-    pos: { en: "You often lean toward saving for later.", vi: "Bạn thường nghiêng về tiết kiệm cho sau này." },
-    neg: { en: "You often lean toward enjoying money now.", vi: "Bạn thường nghiêng về tận hưởng tiền bạc hiện tại." },
+    pos: { en: "You often lean toward saving for later.", vi: "Bạn thường nghiêng về tiết kiệm cho sau này." , ja: "将来のために貯めることに気持ちが傾きやすいようです。" },
+    neg: { en: "You often lean toward enjoying money now.", vi: "Bạn thường nghiêng về tận hưởng tiền bạc hiện tại." , ja: "いまお金を楽しむことに気持ちが傾きやすいようです。" },
   },
   expressiveness: {
-    pos: { en: "You often share your feelings openly.", vi: "Bạn thường chia sẻ cảm xúc một cách cởi mở." },
-    neg: { en: "You often keep your feelings to yourself.", vi: "Bạn thường giữ cảm xúc cho riêng mình." },
+    pos: { en: "You often share your feelings openly.", vi: "Bạn thường chia sẻ cảm xúc một cách cởi mở." , ja: "気持ちを率直に伝えることが多いようです。" },
+    neg: { en: "You often keep your feelings to yourself.", vi: "Bạn thường giữ cảm xúc cho riêng mình." , ja: "気持ちを自分の中にしまっておくことが多いようです。" },
   },
 };
 
@@ -521,15 +524,15 @@ export const QUESTION_BANK: QuestionDef[] = [
 ];
 
 export const QUESTION_CATEGORIES: { id: QuestionCategory; label: I18nText }[] = [
-  { id: "personality", label: { en: "Personality", vi: "Tính cách" } },
-  { id: "values", label: { en: "Values", vi: "Giá trị sống" } },
-  { id: "relationships", label: { en: "Relationships", vi: "Các mối quan hệ" } },
-  { id: "food", label: { en: "Food", vi: "Ăn uống" } },
-  { id: "travel", label: { en: "Travel", vi: "Du lịch" } },
-  { id: "music", label: { en: "Music", vi: "Âm nhạc" } },
-  { id: "hobbies", label: { en: "Hobbies", vi: "Sở thích" } },
-  { id: "money_work", label: { en: "Money & work", vi: "Tiền bạc & công việc" } },
-  { id: "past", label: { en: "The past", vi: "Quá khứ" } },
-  { id: "future", label: { en: "The future", vi: "Tương lai" } },
-  { id: "change", label: { en: "Change", vi: "Sự thay đổi" } },
+  { id: "personality", label: { en: "Personality", vi: "Tính cách", ja: "性格" } },
+  { id: "values", label: { en: "Values", vi: "Giá trị sống", ja: "価値観" } },
+  { id: "relationships", label: { en: "Relationships", vi: "Các mối quan hệ", ja: "人間関係" } },
+  { id: "food", label: { en: "Food", vi: "Ăn uống", ja: "食べもの" } },
+  { id: "travel", label: { en: "Travel", vi: "Du lịch", ja: "旅行" } },
+  { id: "music", label: { en: "Music", vi: "Âm nhạc", ja: "音楽" } },
+  { id: "hobbies", label: { en: "Hobbies", vi: "Sở thích", ja: "趣味" } },
+  { id: "money_work", label: { en: "Money & work", vi: "Tiền bạc & công việc", ja: "お金と仕事" } },
+  { id: "past", label: { en: "The past", vi: "Quá khứ", ja: "過去" } },
+  { id: "future", label: { en: "The future", vi: "Tương lai", ja: "未来" } },
+  { id: "change", label: { en: "Change", vi: "Sự thay đổi", ja: "変化" } },
 ];

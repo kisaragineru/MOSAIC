@@ -2,6 +2,7 @@ import { aiOptInAction, changePasswordAction, deleteAccountAction, notifications
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
 import { Button, Card, Checkbox, Field, Input, Page, Select } from "@/components/ui";
+import { LOCALE_NAMES, SUPPORTED_LOCALES } from "@/lib/i18n/locales";
 import { getT } from "@/lib/i18n/server";
 import { DEFAULT_RULESET, ENGINE_VERSION } from "@/lib/tuvi/ruleset";
 import { requireUser } from "@/server/auth/session";
@@ -24,8 +25,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <Field label={t.settings.displayName}><Input name="displayName" defaultValue={acc.profile.displayName} required maxLength={80} /></Field>
           <Field label={t.common.language}>
             <Select name="locale" defaultValue={acc.profile.locale}>
-              <option value="vi">Tiếng Việt</option>
-              <option value="en">English</option>
+              {SUPPORTED_LOCALES.map((l) => <option key={l} value={l}>{LOCALE_NAMES[l]}</option>)}
             </Select>
           </Field>
           <Field label={t.settings.timeZone}>

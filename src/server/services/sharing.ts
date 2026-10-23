@@ -11,7 +11,8 @@
  */
 import { and, desc, eq, or, sql } from "drizzle-orm";
 import { z } from "zod";
-import { QUESTION_BANK, type I18nText } from "@/content/questions";
+import type { I18nText } from "@/content/questions";
+import { LOCALIZED_BANK } from "@/content/questions-i18n";
 import type { Answer } from "@/lib/discovery/answers";
 import {
   compareTuvi,
@@ -39,20 +40,24 @@ export const SCOPE_DESCRIPTIONS: Record<Scope, I18nText> = {
   tuvi: {
     en: "Tử Vi: your birth-year stem & branch, Nạp Âm element and Mệnh palace branch. Never your birth date, time or full chart.",
     vi: "Tử Vi: can chi năm sinh, ngũ hành nạp âm và chi của cung Mệnh. Không bao giờ chia sẻ ngày giờ sinh hay toàn bộ lá số.",
+    ja: "Tử Vi：生まれ年の干支、納音の五行、命宮の地支。生年月日・出生時刻や命盤全体は決して共有しません。",
   },
   preferences: {
     en: "Preferences: your latest answers to food, travel, music, hobby and lifestyle questions that you marked “allow in comparisons”.",
     vi: "Sở thích: câu trả lời mới nhất về ăn uống, du lịch, âm nhạc, sở thích và lối sống mà bạn đã đánh dấu “cho phép so sánh”.",
+    ja: "好み：食べもの・旅行・音楽・趣味・暮らしに関する質問への最新の回答のうち、あなたが「比較への利用を許可」したもの。",
   },
   values: {
     en: "Values: your latest answers to values questions that you marked “allow in comparisons”.",
     vi: "Giá trị sống: câu trả lời mới nhất về giá trị sống mà bạn đã đánh dấu “cho phép so sánh”.",
+    ja: "価値観：価値観に関する質問への最新の回答のうち、あなたが「比較への利用を許可」したもの。",
   },
 };
 
 export const PURPOSE_TEXT: I18nText = {
   en: "Purpose: to show the two of you traditional Tử Vi associations, what you have in common and where you differ, and conversation ideas. No overall score is calculated. Diaries, notes about people and free-text answers are never used.",
   vi: "Mục đích: cho hai bạn thấy các liên hệ Tử Vi truyền thống, điểm chung, điểm khác và gợi ý trò chuyện. Không tính điểm tổng. Nhật ký, ghi chú về người khác và câu trả lời tự do không bao giờ được sử dụng.",
+    ja: "目的：お二人に、Tử Viの伝統的な関係、共通点、違い、会話のヒントを示すことです。総合スコアは計算しません。日記、他の人についてのメモ、自由記述の回答は一切使いません。",
 };
 
 function appOrigin() {
@@ -205,7 +210,7 @@ export interface ComparisonResult {
 }
 
 const QUESTION_META = new Map<string, QuestionMeta>(
-  QUESTION_BANK.map((q) => [q.id, { id: q.id, category: q.category, prompt: q.prompt, format: q.format, options: q.options ?? null }]),
+  LOCALIZED_BANK.map((q) => [q.id, { id: q.id, category: q.category, prompt: q.prompt, format: q.format, options: q.options ?? null }]),
 );
 
 async function computeInTx(tx: Tx, sessionId: string): Promise<ComparisonResult | null> {
@@ -264,6 +269,7 @@ async function computeInTx(tx: Tx, sessionId: string): Promise<ComparisonResult 
     disclaimer: {
       en: "Tử Vi observations are traditional interpretations, not scientific facts or predictions. No compatibility score is calculated.",
       vi: "Nhận định Tử Vi là diễn giải truyền thống, không phải sự thật khoa học hay lời tiên đoán. Không tính điểm hợp nhau.",
+    ja: "Tử Viの内容は伝統的な解釈であり、科学的な事実や予言ではありません。相性スコアは計算しません。",
     },
   };
   await tx
