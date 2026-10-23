@@ -72,5 +72,18 @@ test("Japanese UI end to end: auto-detected, registration, question, Tử Vi, gi
   const ideas = page.getByTestId("gift-ideas");
   await expect(ideas.getByText(/欲しいものリストにあります（本人が言っていた/)).toBeVisible();
   await expect(ideas.getByText("根拠: フィルムカメラ (欲しい)")).toBeVisible();
+
+  // Saved items can be edited in place, not only deleted.
+  await page.locator("li", { hasText: "フィルムカメラ" }).getByRole("link", { name: /編集/ }).click();
+  const editPref = page.locator('form:has(input[name="itemId"]):has(button:text("保存"))');
+  await editPref.locator('input[name="label"]').fill("フィルムカメラ（中古）");
+  await editPref.locator('select[name="sentiment"]').selectOption("love");
+  await editPref.getByRole("button", { name: "保存" }).click();
+  await expect(page.getByText("フィルムカメラ（中古）")).toBeVisible();
+  await expect(page.getByText("履歴 (2)")).toBeVisible();
+  await page.locator("li", { hasText: "14日前からホームでお知らせ" }).getByRole("link", { name: /編集/ }).click();
+  await page.locator('form:has(input[name="kind"][value="date"])').getByLabel("日", { exact: true }).fill("21");
+  await page.locator('form:has(input[name="kind"][value="date"])').getByRole("button", { name: "保存" }).click();
+  await expect(page.getByText(/次は \d{4}年7月21日（/)).toBeVisible();
   await ctx.close();
 });

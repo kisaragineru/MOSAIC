@@ -8,6 +8,7 @@ import {
   deletePersonAction,
   deleteRecordAction,
   updatePersonAction,
+  updateRecordAction,
 } from "@/app/actions/people";
 import { linkPersonAction, unlinkPersonAction } from "@/app/actions/sharing";
 import { ConfirmButton } from "@/components/confirm-button";
@@ -36,6 +37,31 @@ function DeleteRecord({ kind, id, back, label }: { kind: string; id: string; bac
   );
 }
 
+/** Edit (opens the item's form in place via ?edit=) and delete, side by side. */
+function RecordActions({ kind, id, back, t }: { kind: string; id: string; back: string; t: { edit: string; delete: string } }) {
+  return (
+    <div className="mt-1 flex items-center gap-3">
+      <Link href={`${back}?edit=${id}#r-${id}`} scroll={false} className="text-xs text-teal-700 underline">✎ {t.edit}</Link>
+      <DeleteRecord kind={kind} id={id} back={back} label={t.delete} />
+    </div>
+  );
+}
+
+function EditForm({ kind, id, personId, back, t, className, children }: { kind: string; id: string; personId: string; back: string; t: { save: string; cancel: string }; className?: string; children: React.ReactNode }) {
+  return (
+    <form action={updateRecordAction} className={`space-y-2 rounded-xl bg-teal-50/70 p-2 ring-1 ring-teal-200 ${className ?? ""}`}>
+      <input type="hidden" name="kind" value={kind} />
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="personId" value={personId} />
+      {children}
+      <div className="flex items-center gap-3">
+        <Button type="submit">{t.save}</Button>
+        <Link href={`${back}#r-${id}`} className="text-sm text-stone-600 underline">{t.cancel}</Link>
+      </div>
+    </form>
+  );
+}
+
 export default async function PersonPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
   const { id } = await params;
@@ -51,6 +77,9 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
   const fmt = (y: number, m: number, d: number, withYear = true) =>
     new Intl.DateTimeFormat(locale, { ...(withYear ? { year: "numeric" } : {}), month: "long", day: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(y, m - 1, d)));
   const back = `/people/${person.id}`;
+  const editing = sp.edit ?? null;
+  const acts = { edit: t.common.edit, delete: t.common.delete };
+  const formT = { save: t.common.save, cancel: t.common.cancel };
   const showGifts = sp.gifts === "1";
   const ideas = showGifts ? await suggestGifts(uid, person.id, { budget: sp.budget ?? "", currency: sp.currency ?? "" }).catch(() => null) : null;
   return (
@@ -158,7 +187,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
       </Card>
 
       <Card title={t.people.preferences}>
-        <PreferenceSection t={t} locale={locale} prefs={preferences} categories={categories} personId={person.id} back={back} />
+        <PreferenceSection t={t} locale={locale} prefs={preferences} categories={categories} personId={person.id} back={back} editing={editing} />
       </Card>
 
       <Card title={t.people.notes}>
@@ -178,14 +207,31 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
         </form>
         <ul className="mt-3 space-y-2">
           {entries.map((e) => (
-            <li key={e.id} className="rounded-xl border border-stone-200 p-2 text-sm">
-              <div className="flex flex-wrap gap-1">
-                <Pill>{t.people.entryKinds[e.kind as keyof typeof t.people.entryKinds]}</Pill>
-                <Pill tone="amber">{t.people.sources[e.source as keyof typeof t.people.sources]}</Pill>
-                {e.occurredOn && <span className="text-xs text-stone-500">{e.occurredOn}</span>}
-              </div>
-              <p className="mt-1 whitespace-pre-line">{e.body}</p>
-              <DeleteRecord kind="entry" id={e.id} back={back} label={t.common.delete} />
+            <li key={e.id} id={`r-${e.id}`} className="scroll-mt-24 rounded-xl border border-stone-200 p-2 text-sm">
+              {editing === e.id ? (
+                <EditForm kind="entry" id={e.id} personId={person.id} back={back} t={formT}>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Select name="entryKind" defaultValue={e.kind} aria-label={t.people.notes}>
+                      {(["conversation", "joy", "wish_together", "note"] as const).map((k) => <option key={k} value={k}>{t.people.entryKinds[k]}</option>)}
+                    </Select>
+                    <Select name="source" defaultValue={e.source} aria-label={t.people.sourceLabel}>
+                      {(["person_stated", "observed", "guess", "unverified"] as const).map((x) => <option key={x} value={x}>{t.people.sources[x]}</option>)}
+                    </Select>
+                  </div>
+                  <Textarea name="body" required rows={3} maxLength={5000} defaultValue={e.body} aria-label={t.people.note} />
+                  <Input type="date" name="occurredOn" defaultValue={e.occurredOn ?? ""} aria-label={t.common.date} />
+                </EditForm>
+              ) : (
+                <>
+                  <div className="flex flex-wrap gap-1">
+                    <Pill>{t.people.entryKinds[e.kind as keyof typeof t.people.entryKinds]}</Pill>
+                    <Pill tone="amber">{t.people.sources[e.source as keyof typeof t.people.sources]}</Pill>
+                    {e.occurredOn && <span className="text-xs text-stone-500">{e.occurredOn}</span>}
+                  </div>
+                  <p className="mt-1 whitespace-pre-line">{e.body}</p>
+                  <RecordActions kind="entry" id={e.id} back={back} t={acts} />
+                </>
+              )}
             </li>
           ))}
         </ul>
@@ -204,10 +250,23 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
         </form>
         <ul className="mt-3 space-y-2">
           {events.map((e) => (
-            <li key={e.id} className="text-sm">
-              <b>{e.title}</b>{e.place && ` · ${e.place}`}{e.occurredOn && ` · ${e.occurredOn}`}
-              {e.description && <p className="text-stone-600">{e.description}</p>}
-              <DeleteRecord kind="event" id={e.id} back={back} label={t.common.delete} />
+            <li key={e.id} id={`r-${e.id}`} className="scroll-mt-24 rounded-xl border border-stone-200 p-2 text-sm">
+              {editing === e.id ? (
+                <EditForm kind="event" id={e.id} personId={person.id} back={back} t={formT}>
+                  <Field label={t.people.eventTitle}><Input name="title" required maxLength={200} defaultValue={e.title} /></Field>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label={t.people.place}><Input name="place" maxLength={200} defaultValue={e.place ?? ""} /></Field>
+                    <Field label={t.common.date}><Input type="date" name="occurredOn" defaultValue={e.occurredOn ?? ""} /></Field>
+                  </div>
+                  <Textarea name="description" rows={3} maxLength={5000} defaultValue={e.description ?? ""} aria-label={t.people.note} />
+                </EditForm>
+              ) : (
+                <>
+                  <b>{e.title}</b>{e.place && ` · ${e.place}`}{e.occurredOn && ` · ${e.occurredOn}`}
+                  {e.description && <p className="whitespace-pre-line text-stone-600">{e.description}</p>}
+                  <RecordActions kind="event" id={e.id} back={back} t={acts} />
+                </>
+              )}
             </li>
           ))}
         </ul>
@@ -230,12 +289,31 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           </div>
           <div className="col-span-2"><Button type="submit">{t.common.add}</Button></div>
         </form>
-        <ul className="mt-3 space-y-1 text-sm">
+        <ul className="mt-3 space-y-2 text-sm">
           {gifts.map((g) => (
-            <li key={g.id}>
-              🎁 <b>{g.item}</b>{g.occasion && ` · ${g.occasion}`}{g.givenOn && ` · ${g.givenOn}`}
-              {g.priceAmount !== null && ` · ${g.priceAmount.toLocaleString(locale)} ${g.priceCurrency ?? ""}`} · {t.people.reactions[g.reaction as keyof typeof t.people.reactions]}{" "}
-              <DeleteRecord kind="gift" id={g.id} back={back} label={t.common.delete} />
+            <li key={g.id} id={`r-${g.id}`} className="scroll-mt-24 rounded-xl border border-stone-200 p-2">
+              {editing === g.id ? (
+                <EditForm kind="gift" id={g.id} personId={person.id} back={back} t={formT}>
+                  <Field label={t.people.giftItem}><Input name="item" required maxLength={200} defaultValue={g.item} /></Field>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label={t.people.occasion}><Input name="occasion" maxLength={120} defaultValue={g.occasion ?? ""} /></Field>
+                    <Field label={t.people.givenOn}><Input type="date" name="givenOn" defaultValue={g.givenOn ?? ""} /></Field>
+                    <Field label={t.people.price}><Input type="number" name="priceAmount" min={0} defaultValue={g.priceAmount ?? ""} /></Field>
+                    <Field label={t.people.currency}><Input name="priceCurrency" maxLength={3} defaultValue={g.priceCurrency ?? ""} /></Field>
+                  </div>
+                  <Field label={t.people.reaction}>
+                    <Select name="reaction" defaultValue={g.reaction}>
+                      {(["loved", "liked", "neutral", "disliked", "unknown"] as const).map((r) => <option key={r} value={r}>{t.people.reactions[r]}</option>)}
+                    </Select>
+                  </Field>
+                </EditForm>
+              ) : (
+                <>
+                  🎁 <b>{g.item}</b>{g.occasion && ` · ${g.occasion}`}{g.givenOn && ` · ${g.givenOn}`}
+                  {g.priceAmount !== null && ` · ${g.priceAmount.toLocaleString(locale)} ${g.priceCurrency ?? ""}`} · {t.people.reactions[g.reaction as keyof typeof t.people.reactions]}
+                  <RecordActions kind="gift" id={g.id} back={back} t={acts} />
+                </>
+              )}
             </li>
           ))}
         </ul>
@@ -261,7 +339,24 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
             const next = nextOccurrence(d.month, d.day, today);
             const [ny, nm, nd] = next.date.split("-").map(Number) as [number, number, number];
             return (
-              <li key={d.id} className="rounded-xl border border-stone-200 p-2">
+              <li key={d.id} id={`r-${d.id}`} className="scroll-mt-24 rounded-xl border border-stone-200 p-2">
+                {editing === d.id ? (
+                  <EditForm kind="date" id={d.id} personId={person.id} back={back} t={formT}>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="col-span-2"><Field label={t.people.dateLabel}><Input name="label" required maxLength={120} defaultValue={d.label} /></Field></div>
+                      <Field label={t.people.dateKind}>
+                        <Select name="dateKind" defaultValue={d.kind}>
+                          {(["birthday", "anniversary", "custom"] as const).map((k) => <option key={k} value={k}>{t.people.dateKinds[k]}</option>)}
+                        </Select>
+                      </Field>
+                      <Field label={t.people.day}><Input type="number" name="day" min={1} max={31} required defaultValue={d.day} /></Field>
+                      <Field label={t.people.month}><Input type="number" name="month" min={1} max={12} required defaultValue={d.month} /></Field>
+                      <Field label={t.people.year}><Input type="number" name="year" min={1900} max={2200} defaultValue={d.year ?? ""} /></Field>
+                    </div>
+                    <Field label={t.people.remind}><Input type="number" name="remindDaysBefore" min={0} max={60} defaultValue={d.remindDaysBefore ?? ""} /></Field>
+                  </EditForm>
+                ) : (
+                <>
                 <div className="flex flex-wrap items-center gap-1">
                   <Pill>{t.people.dateKinds[d.kind as keyof typeof t.people.dateKinds]}</Pill>
                   <span className="font-medium">{d.label}</span>
@@ -272,7 +367,9 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
                   {d.year !== null && d.kind !== "custom" && ` · ${t.people.turns(next.year - d.year, d.kind === "birthday")}`}
                 </p>
                 {d.remindDaysBefore !== null && <p className="text-xs text-stone-600">🔔 {t.people.remindAt(d.remindDaysBefore)}</p>}
-                <DeleteRecord kind="date" id={d.id} back={back} label={t.common.delete} />
+                <RecordActions kind="date" id={d.id} back={back} t={acts} />
+                </>
+                )}
               </li>
             );
           })}

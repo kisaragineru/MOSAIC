@@ -32,7 +32,7 @@ export default async function MePage({ searchParams }: { searchParams: Promise<R
         </form>
       </Card>
       <Card title={t.me.selfPreferences}>
-        <PreferenceSection t={t} locale={locale} prefs={prefs} categories={categories} personId={null} back="/me" />
+        <PreferenceSection t={t} locale={locale} prefs={prefs} categories={categories} personId={null} back="/me" editing={sp.edit ?? null} />
       </Card>
       <Card>
         <ul className="divide-y divide-stone-100">

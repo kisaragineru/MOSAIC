@@ -13,6 +13,8 @@ import {
   deletePersonRecord,
   deletePreferenceItem,
   updatePerson,
+  updatePersonRecord,
+  updatePreference,
 } from "@/server/services/people";
 import { attempt, safeNext, str, withParam } from "./util";
 
@@ -125,4 +127,45 @@ export async function deleteRecordAction(form: FormData) {
   const back = safeNext(str(form, "back"), "/people");
   const r = await attempt("people.record.delete", () => deletePersonRecord(uid, str(form, "kind"), str(form, "id")));
   await done(back, r, "deleted");
+}
+
+export async function updatePreferenceAction(form: FormData) {
+  const uid = await requireUser();
+  const personId = str(form, "personId") || null;
+  const back = safeNext(str(form, "back"), personId ? `/people/${personId}` : "/me");
+  const r = await attempt("pref.update", () =>
+    updatePreference(uid, str(form, "itemId"), {
+      categoryId: str(form, "categoryId"),
+      label: str(form, "label"),
+      sentiment: str(form, "sentiment"),
+      source: personId ? str(form, "source") : "self_stated",
+      note: str(form, "note"),
+    }),
+  );
+  await done(back, r);
+}
+
+/** Edits a note, event, gift or date; the form carries the same fields as the matching add form. */
+export async function updateRecordAction(form: FormData) {
+  const uid = await requireUser();
+  const personId = str(form, "personId");
+  const kind = str(form, "kind");
+  const input =
+    kind === "entry"
+      ? { kind: str(form, "entryKind"), body: str(form, "body"), source: str(form, "source") || "observed", occurredOn: str(form, "occurredOn") }
+      : kind === "event"
+        ? { title: str(form, "title"), description: str(form, "description"), place: str(form, "place"), occurredOn: str(form, "occurredOn") }
+        : kind === "gift"
+          ? {
+              item: str(form, "item"),
+              occasion: str(form, "occasion"),
+              givenOn: str(form, "givenOn"),
+              priceAmount: str(form, "priceAmount"),
+              priceCurrency: str(form, "priceCurrency").toUpperCase(),
+              reaction: str(form, "reaction") || "unknown",
+            }
+          : { personId, label: str(form, "label"), kind: str(form, "dateKind"), month: str(form, "month"), day: str(form, "day"), year: str(form, "year"), remindDaysBefore: str(form, "remindDaysBefore") };
+  const r = await attempt("people.record.update", () => updatePersonRecord(uid, kind, str(form, "id"), input));
+  if (kind === "date") revalidatePath("/home");
+  await done(`/people/${personId}`, r);
 }
