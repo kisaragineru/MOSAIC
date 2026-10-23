@@ -11,7 +11,11 @@ import {
   sharedPreview,
   unlinkPerson,
 } from "@/server/services/sharing";
+import { Pool } from "pg";
 import { answerQuestion } from "@/server/services/discovery";
+import { getAccount, updateProfile } from "@/server/services/account";
+import { giveConsent } from "@/server/services/sharing";
+import { TEST_MIGRATION_DATABASE_URL } from "../helpers/test-env";
 import { makeUser } from "../helpers/factory";
 
 async function connected() {
@@ -74,5 +78,39 @@ describe("shared preview", () => {
     expect(p.displayName).toBe("An");
     expect(p.answers.map((x) => x.questionId)).toEqual(["f.drink"]);
     expect(p.tuvi).toBeNull();
+  });
+});
+
+describe("bio between connected people", () => {
+  async function setBio(userId: string, bio: string) {
+    const acc = await getAccount(userId);
+    await updateProfile(userId, { displayName: acc.profile.displayName, bio, locale: acc.profile.locale, timeZone: acc.profile.timeZone });
+  }
+
+  it("is hidden on a fresh connection and shown once its writer agrees, until the connection ends", async () => {
+    const { a, b, sessionId } = await connected();
+    await setBio(a.userId, "BIO-OF-AN");
+    expect((await getComparison(b.userId, sessionId)).otherBio).toBeNull();
+    await giveConsent(b.userId, sessionId, { scopes: ["preferences"], agree: true });
+    // B agreeing does not reveal A's bio: only A's own consent does.
+    expect((await getComparison(b.userId, sessionId)).otherBio).toBeNull();
+    await giveConsent(a.userId, sessionId, { scopes: ["preferences"], agree: true });
+    expect((await getComparison(b.userId, sessionId)).otherBio).toBe("BIO-OF-AN");
+    expect((await getComparison(a.userId, sessionId)).otherBio).toBeNull(); // B wrote none
+    await revokeComparison(a.userId, sessionId);
+    expect((await getComparison(b.userId, sessionId)).otherBio).toBeNull();
+  });
+
+  it("ignores consents given before the consent text mentioned the bio", async () => {
+    const { a, b, sessionId } = await connected();
+    await setBio(a.userId, "BIO-OF-AN");
+    await giveConsent(a.userId, sessionId, { scopes: ["preferences"], agree: true });
+    const pool = new Pool({ connectionString: TEST_MIGRATION_DATABASE_URL });
+    try {
+      await pool.query("update comparison_consents set consent_text_version = 'consent-2026-10' where session_id = $1", [sessionId]);
+    } finally {
+      await pool.end();
+    }
+    expect((await getComparison(b.userId, sessionId)).otherBio).toBeNull();
   });
 });

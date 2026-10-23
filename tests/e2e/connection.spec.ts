@@ -24,9 +24,13 @@ test("QR connection: preview of what others see, who is waiting, results first",
 
   // The profile shows what another person could see, before anyone connects.
   await a.goto("/me");
+  await a.locator('textarea[name="bio"]').fill("お茶と散歩が好きです。");
+  await a.getByRole("button", { name: "保存", exact: true }).click();
+  await expect(a.getByText("保存しました。")).toBeVisible();
   await a.getByRole("link", { name: /相手からの見え方/ }).click();
   await expect(a.getByText("「ハナさんからつながりの招待が届いています。」— 表示名だけです。")).toBeVisible();
   await expect(a.getByText("いつもの飲みものは？")).toBeVisible();
+  await expect(a.getByText("お茶と散歩が好きです。")).toBeVisible();
   await expect(a.getByText("命盤をまだ作っていないため、表示されません。")).toBeVisible();
 
   await a.goto("/share");
@@ -40,6 +44,8 @@ test("QR connection: preview of what others see, who is waiting, results first",
   await b.getByRole("checkbox", { name: /^好み/ }).check();
   await b.locator('input[name="agree"]').check();
   await b.getByRole("button", { name: "同意する" }).click();
+  // Before ハナ agrees, ソラ does not see her bio.
+  await expect(b.getByText("お茶と散歩が好きです。")).toHaveCount(0);
   await b.goto("/share");
   await expect(b.getByText("相手の同意待ち")).toBeVisible();
 
@@ -55,6 +61,10 @@ test("QR connection: preview of what others see, who is waiting, results first",
 
   // Once both agree the results come first; the consent form folds away.
   await expect(a.getByText("ハナ: お茶 · ソラ: お茶")).toBeVisible();
+  const compareUrl = a.url();
+  await b.goto(compareUrl.replace(/^https?:\/\/[^/]+/, "").split("?")[0]!);
+  await expect(b.getByRole("heading", { name: "ハナさんの自己紹介" })).toBeVisible();
+  await expect(b.getByText("お茶と散歩が好きです。")).toBeVisible();
   await expect(a.getByText("同意した内容を見る・変える")).toBeVisible();
   await expect(a.getByRole("button", { name: "同意内容を更新" })).toBeHidden();
   await a.goto("/home");

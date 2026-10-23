@@ -60,6 +60,9 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
       {connection && (
         <div className="space-y-2 rounded-3xl border border-teal-200 bg-linear-to-br from-teal-50 to-sky-50 p-4 text-sm">
           <p className="font-semibold text-teal-900">{t.people.connectionCard(connection.otherName)}</p>
+          {connection.otherBio && connection.status !== "revoked" && (
+            <p className="whitespace-pre-line rounded-2xl bg-white/80 px-3 py-2 text-stone-800">{connection.otherBio}</p>
+          )}
           {connection.status === "revoked" ? (
             <p className="text-stone-600">{t.people.connectionEnded}</p>
           ) : (

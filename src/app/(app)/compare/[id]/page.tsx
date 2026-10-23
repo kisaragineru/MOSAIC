@@ -29,6 +29,11 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
   return (
     <Page title={t.compare.title(v.otherName)} back="/share">
       <Flash t={t} sp={sp} />
+      {v.otherBio && v.status !== "revoked" && (
+        <Card title={t.compare.bioTitle(v.otherName)}>
+          <p className="whitespace-pre-line text-sm leading-relaxed text-stone-800">{v.otherBio}</p>
+        </Card>
+      )}
       {personId ? (
         <Link href={`/people/${personId}`} className="block text-sm font-medium text-teal-700 underline">♡ {t.compare.personLink} →</Link>
       ) : (
@@ -124,6 +129,7 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                 ))}
               </fieldset>
               <Checkbox name="agree" required label={t.compare.agree} />
+              <p className="text-xs text-stone-500">{t.compare.bioNote}</p>
               <Button type="submit">{v.myConsent ? t.compare.update : t.compare.give}</Button>
             </form>
           </div>
@@ -149,6 +155,7 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                 ))}
               </fieldset>
               <Checkbox name="agree" required label={t.compare.agree} />
+              <p className="text-xs text-stone-500">{t.compare.bioNote}</p>
               <Button type="submit">{v.myConsent ? t.compare.update : t.compare.give}</Button>
             </form>
           </Card>

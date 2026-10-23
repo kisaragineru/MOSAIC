@@ -27,7 +27,7 @@ export default async function MePage({ searchParams }: { searchParams: Promise<R
         <form action={updateProfileAction} className="space-y-2">
           <input type="hidden" name="back" value="/me" />
           <Field label={t.settings.bio}><Textarea name="bio" defaultValue={acc.profile.bio ?? ""} maxLength={2000} rows={3} /></Field>
-          <p className="text-xs text-stone-500">🔒 {t.me.bioPrivate}</p>
+          <p className="text-xs text-stone-500">🔗 {t.me.bioShared}</p>
           <Button type="submit" variant="secondary">{t.common.save}</Button>
         </form>
       </Card>

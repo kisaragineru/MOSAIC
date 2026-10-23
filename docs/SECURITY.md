@@ -36,6 +36,12 @@ keys, anonymous access, role privilege escalation, and identity leakage across p
   comparisons"; only derived Tử Vi fields (never birth date/time). Diaries, people notes and free
   text are never read. Unanswered ≠ different. No total score.
 - Results readable by the two participants only, and only while active; revocation deletes them.
+- A participant's bio is shown to the other participant (`connection_bio`) only after that
+  participant has consented in the connection under the consent text that mentions it
+  (`consent-2026-10-bio` or later), and never once the connection has ended. The invite itself
+  still shows only the display name.
+- Linking a connection to an entry in "people" (`people.connection_session_id`) is stored on the
+  owner's row only; the other participant never sees it or any notes about them.
 
 ## Web security
 - Nonce-based CSP (`script-src 'nonce-…' 'strict-dynamic'`, `frame-ancestors 'none'`,

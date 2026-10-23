@@ -30,6 +30,17 @@ export default async function PreviewPage() {
       <Card title={`2. ${t.preview.step2}`}>
         <div className="space-y-4">
           <section>
+            <p className="mb-1 flex items-center gap-2 text-sm font-semibold text-stone-800">
+              <Pill tone="rose">{t.preview.bioTitle}</Pill>
+              <span className="text-xs font-normal text-stone-500">{t.preview.bioWhen}</span>
+            </p>
+            {p.bio ? (
+              <p className="whitespace-pre-line rounded-xl border border-stone-200 px-3 py-2 text-sm text-stone-800">{p.bio}</p>
+            ) : (
+              <p className="text-sm text-stone-500"><Link href="/me" className="underline">{t.preview.bioNone}</Link></p>
+            )}
+          </section>
+          <section>
             <p className="mb-1 flex items-center gap-2 text-sm font-semibold text-stone-800"><Pill tone="violet">Tử Vi</Pill></p>
             {p.tuvi ? (
               <dl className="grid grid-cols-3 gap-1.5 text-center">

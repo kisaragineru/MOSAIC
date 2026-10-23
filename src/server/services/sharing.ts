@@ -32,7 +32,8 @@ import { withUser, type Tx } from "../db/tx";
 import { AppError, invalid, mapDbError, notFound } from "../errors";
 import { audit } from "./audit";
 
-export const CONSENT_TEXT_VERSION = "consent-2026-10";
+// Bumped when consenting started to also show the bio (connection_bio ignores older consents).
+export const CONSENT_TEXT_VERSION = "consent-2026-10-bio";
 export type Scope = (typeof COMPARISON_SCOPES)[number];
 
 /** What each scope shares with the other participant (shown before consenting). */
@@ -284,6 +285,8 @@ export interface ComparisonView {
   status: "pending" | "active" | "revoked";
   myRole: "a" | "b";
   otherName: string;
+  /** Shown once the other person has consented in this connection (see connection_bio). */
+  otherBio: string | null;
   myConsent: { scopes: string[]; consentedAt: Date } | null;
   otherConsented: boolean;
   otherScopes: string[] | null;
@@ -301,6 +304,7 @@ export async function getComparison(userId: string, sessionId: string, opts: { r
     const myRole = s.userA === userId ? "a" : "b";
     const parts = await tx.execute<{ user_id: string; display_name: string }>(sql`select * from comparison_participants(${id})`);
     const other = parts.rows.find((p) => p.user_id !== userId);
+    const bio = await tx.execute<{ bio: string }>(sql`select bio from connection_bio(${id})`);
     const consents = await tx
       .select()
       .from(comparisonConsents)
@@ -324,6 +328,7 @@ export async function getComparison(userId: string, sessionId: string, opts: { r
       status: s.status as ComparisonView["status"],
       myRole,
       otherName: other?.display_name ?? "?",
+      otherBio: bio.rows[0]?.bio ?? null,
       myConsent: mine ? { scopes: mine.scopes, consentedAt: mine.consentedAt } : null,
       otherConsented: !!theirs,
       otherScopes: theirs ? theirs.scopes : null,
@@ -368,6 +373,7 @@ export async function listComparisons(userId: string) {
 
 export interface SharedPreview {
   displayName: string;
+  bio: string | null;
   /** The summary a comparison reads when Tử Vi is agreed (null without a chart). */
   tuvi: { yearStem: number; yearBranch: number; napAmElement: Element; menhBranch: number | null } | null;
   /** Latest answers the user marked "allow in comparisons", by the scope that would share them. */
@@ -381,7 +387,7 @@ export interface SharedPreview {
  */
 export async function sharedPreview(userId: string): Promise<SharedPreview> {
   return withUser(userId, async (tx) => {
-    const name = await tx.execute<{ display_name: string }>(sql`select display_name from profiles where user_id = ${userId}`);
+    const name = await tx.execute<{ display_name: string; bio: string | null }>(sql`select display_name, bio from profiles where user_id = ${userId}`);
     const chart = await tx.execute<{ year_stem: number; year_branch: number; nap_am_element: string; menh_branch: number | null }>(
       sql`select year_stem, year_branch, nap_am_element, menh_branch from tuvi_charts where user_id = ${userId} and is_current limit 1`,
     );
@@ -399,6 +405,7 @@ export async function sharedPreview(userId: string): Promise<SharedPreview> {
     const c = chart.rows[0];
     return {
       displayName: name.rows[0]?.display_name ?? "",
+      bio: name.rows[0]?.bio?.trim() || null,
       tuvi: c ? { yearStem: c.year_stem, yearBranch: c.year_branch, napAmElement: c.nap_am_element as Element, menhBranch: c.menh_branch } : null,
       answers: rows.rows.map((r) => ({ questionId: r.question_id, scope: r.scope, answer: r.answer })),
     };
@@ -420,7 +427,8 @@ async function ownConnection(tx: Tx, userId: string, sessionId: string) {
     .where(and(eq(comparisonSessions.id, id), or(eq(comparisonSessions.userA, userId), eq(comparisonSessions.userB, userId))));
   if (!s) throw notFound();
   const parts = await tx.execute<{ user_id: string; display_name: string }>(sql`select * from comparison_participants(${id})`);
-  return { id, status: s.status, otherName: parts.rows.find((p) => p.user_id !== userId)?.display_name ?? "?" };
+  const bio = await tx.execute<{ bio: string }>(sql`select bio from connection_bio(${id})`);
+  return { id, status: s.status, otherName: parts.rows.find((p) => p.user_id !== userId)?.display_name ?? "?", otherBio: bio.rows[0]?.bio ?? null };
 }
 
 export async function linkPersonToConnection(userId: string, personId: string, sessionId: string) {
