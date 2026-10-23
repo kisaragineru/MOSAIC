@@ -125,6 +125,7 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
               self: ui.focusSelf,
               trine: ui.focusTrine,
               opposite: ui.focusOpposite,
+              close: ui.close,
             }}
           />
           {v.currentAge !== null && <p className="mt-2 text-xs text-stone-500">{t.tuvi.currentAge(v.currentAge)}</p>}

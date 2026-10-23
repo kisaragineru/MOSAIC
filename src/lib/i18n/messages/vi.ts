@@ -226,6 +226,7 @@ export const vi: Dict = {
   },
   tuvi: {
     ui: {
+      close: "Đóng",
       focusTitle: "{x} và các cung tam phương tứ chính",
       focusSelf: "Bản cung",
       focusTrine: "Tam hợp",
@@ -255,7 +256,7 @@ export const vi: Dict = {
       stagesHelp: "Vuốt ngang và chạm vào một giai đoạn. Giai đoạn được tô màu là hiện tại.",
       stagesUnavailable: "Theo phép truyền thống, chiều Đại Hạn cần giới tính. Hãy thêm ở “Sửa thông tin ngày sinh” để xem.",
       stateLabel: { past: "Đã qua", current: "Hiện tại", future: "Sắp tới", unknown: "" },
-      chartHelp: "Chạm vào một cung để xem ý nghĩa. Các cung tam phương tứ chính sẽ sáng lên.",
+      chartHelp: "Chạm vào một cung: cung đó và các cung tam phương tứ chính sẽ phóng to ngay trên lá số.",
       palaceRole: "Cung này nói về",
       mainStars: "Chính tinh",
       borrowedFrom: (x: string) => `Vô chính diệu; xem qua các sao của ${x}.`,

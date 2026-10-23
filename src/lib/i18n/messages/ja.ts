@@ -226,6 +226,7 @@ export const ja: Dict = {
   },
   tuvi: {
     ui: {
+      close: "閉じる",
       focusTitle: "{x}と合わせて読む宮",
       focusSelf: "本宮",
       focusTrine: "三合",
@@ -255,7 +256,7 @@ export const ja: Dict = {
       stagesHelp: "横にスワイプして、気になる時期をタップ。色がついているのが今です。",
       stagesUnavailable: "伝統的な方法では、10年ごとのステージの進む向きに性別が必要です。「出生情報を編集」で性別を入れると表示されます。",
       stateLabel: { past: "これまで", current: "いま", future: "これから", unknown: "" },
-      chartHelp: "宮をタップすると意味が表示され、合わせて読む宮が光ります。",
+      chartHelp: "宮をタップすると、その宮と合わせて読む宮が命盤の上に大きく表示されます。",
       palaceRole: "この宮が表すもの",
       mainStars: "主星",
       borrowedFrom: (x: string) => `主星がないため、${x}の星で読みます。`,

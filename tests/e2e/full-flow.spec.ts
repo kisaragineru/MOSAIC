@@ -98,6 +98,12 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   await expect(pa.getByTestId("tuvi-chart").getByText("Lộc Tồn")).toHaveCount(0);
   await pa.getByRole("button", { name: "Detailed" }).click();
   await expect(pa.getByTestId("tuvi-chart").getByText(/Lộc Tồn/)).toBeVisible();
+  // The enlarged view sits over the chart and closes with Escape or its close button.
+  await expect(pa.getByRole("dialog", { name: "Quan Lộc and the palaces read with it" })).toBeVisible();
+  await pa.getByRole("button", { name: /^Opposite/ }).click();
+  await expect(pa.getByRole("dialog", { name: /^Phu Thê and the palaces/ })).toBeVisible();
+  await pa.keyboard.press("Escape");
+  await expect(pa.getByRole("dialog")).toHaveCount(0);
 
   // Daily question flow: answer today's question generically or skip
   await pa.goto("/discover");

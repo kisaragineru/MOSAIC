@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { BRANCHES, STEMS } from "@/lib/tuvi/canchi";
 import type { Chart } from "@/lib/tuvi/engine";
 import type { PalaceDetail } from "@/lib/tuvi/interpret";
@@ -26,6 +26,13 @@ const HOA_CHIP: Record<HoaId, string> = {
 };
 // Classes rather than inline styles: the CSP blocks style attributes in server-rendered HTML.
 const DELAY = ["[animation-delay:0ms]", "[animation-delay:70ms]", "[animation-delay:140ms]", "[animation-delay:210ms]"];
+// Where the enlarged view grows from: the centre of the tapped palace on the 4×4 board.
+const ORIGIN: Record<number, string> = {
+  5: "origin-[12.5%_12.5%]", 6: "origin-[37.5%_12.5%]", 7: "origin-[62.5%_12.5%]", 8: "origin-[87.5%_12.5%]",
+  4: "origin-[12.5%_37.5%]", 9: "origin-[87.5%_37.5%]",
+  3: "origin-[12.5%_62.5%]", 10: "origin-[87.5%_62.5%]",
+  2: "origin-[12.5%_87.5%]", 1: "origin-[37.5%_87.5%]", 0: "origin-[62.5%_87.5%]", 11: "origin-[87.5%_87.5%]",
+};
 const MENH_BADGE = "rounded-full bg-teal-100 px-1.5 text-[9px] font-bold text-teal-800";
 const THAN_BADGE = "rounded-full bg-violet-100 px-1.5 text-[9px] font-bold text-violet-800";
 const GROUP_TEXT = { lucky: "text-teal-700", malefic: "text-red-700", other: "text-stone-600", main: "text-rose-800" } as const;
@@ -52,6 +59,7 @@ export interface ChartLabels {
   self: string;
   trine: string;
   opposite: string;
+  close: string;
 }
 
 export interface ChartCenter {
@@ -78,20 +86,15 @@ export function TuviChart({
   labels: ChartLabels;
   currentAge: number | null;
 }) {
-  const [selected, setSelected] = useState<number | null>(chart.menh);
+  const [selected, setSelected] = useState<number | null>(null);
   const [detailed, setDetailed] = useState(false);
-  // Scroll to the enlarged palaces only after a tap, never on first render.
-  const [tapped, setTapped] = useState(0);
-  const focusRef = useRef<HTMLDivElement>(null);
+  const pick = (b: number | null) => setSelected(b);
   useEffect(() => {
-    if (!tapped || !focusRef.current) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    focusRef.current.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-  }, [tapped]);
-  const pick = (b: number | null) => {
-    setSelected(b);
-    if (b !== null) setTapped((n) => n + 1);
-  };
+    if (selected === null) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setSelected(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected]);
   const sel = selected === null ? null : details.find((d) => d.branch === selected) ?? null;
   const related = new Set(sel?.related ?? []);
   const trine = sel && sel.related.length === 3 ? [sel.branch, sel.related[0]!, sel.related[1]!] : null;
@@ -143,9 +146,7 @@ export function TuviChart({
                     ? "z-10 bg-teal-50 ring-2 ring-inset ring-teal-400"
                     : isRel
                       ? "bg-violet-50"
-                      : selected !== null
-                        ? "bg-white/90 opacity-50 hover:opacity-100"
-                        : "bg-white hover:bg-stone-50"
+                      : "bg-white hover:bg-stone-50"
                 }`}
               >
                 {now && <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-amber-300" />}
@@ -230,6 +231,85 @@ export function TuviChart({
             />
           </svg>
         )}
+        {sel && (
+          <div
+            key={sel.branch}
+            role="dialog"
+            aria-label={labels.focusTitle.replace("{x}", sel.label)}
+            onClick={(e) => { if (e.target === e.currentTarget) pick(null); }}
+            className={`${ORIGIN[sel.branch]} absolute inset-0 z-30 flex animate-[zoomFrom_.3s_cubic-bezier(.2,.8,.2,1)] flex-col gap-2 rounded-3xl bg-white/65 p-2 backdrop-blur-md motion-reduce:animate-none`}
+          >
+            <div className="flex shrink-0 items-center gap-2 px-1">
+              <p className="min-w-0 flex-1 truncate text-xs font-semibold text-stone-600">{labels.focusTitle.replace("{x}", sel.label)}</p>
+              <button
+                type="button"
+                onClick={() => pick(null)}
+                aria-label={labels.close}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-lg leading-none text-stone-600 shadow-sm ring-1 ring-stone-200 hover:text-stone-900"
+              >
+                ×
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto rounded-3xl border border-teal-200 bg-linear-to-br from-teal-50 via-white to-violet-50 p-3 text-sm shadow-[0_8px_24px_-14px_rgba(15,118,110,0.5)]">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-bold text-teal-800">{labels.self}</span>
+                <p className="text-base font-bold text-stone-900">{sel.label}</p>
+                {sel.ageText && <span className="text-[11px] font-semibold text-amber-800">{sel.ageText}</span>}
+              </div>
+              {sel.role && <p className="mt-1.5 text-stone-700">{sel.role}</p>}
+              {sel.borrowedText && <p className="mt-1.5 text-xs text-stone-600">{sel.borrowedText}</p>}
+              {sel.mains.length > 0 && (
+                <ul className="mt-2 space-y-1.5">
+                  {sel.mains.map((m) => (
+                    <li key={m.name}>
+                      <span className="text-lg font-bold leading-tight text-rose-800">{m.name}</span>
+                      {m.hoa && <span className="ml-1.5 rounded-full bg-violet-100 px-1.5 text-[11px] text-violet-800">{m.hoa}</span>}
+                      <span className="block text-[13px] text-stone-700">{m.keywords}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {sel.aux.length > 0 && <p className="mt-2 text-xs text-stone-600"><span className="block text-stone-500">{labels.auxStars}</span>{sel.aux.join(", ")}</p>}
+              {sel.notes.length > 0 && (
+                <ul className="mt-2 list-disc space-y-0.5 pl-4 text-xs text-stone-700">
+                  {sel.notes.map((n, i) => <li key={i}>{n}</li>)}
+                </ul>
+              )}
+            </div>
+            {sel.related.length === 3 && (
+              <div className="grid shrink-0 grid-cols-3 gap-2">
+                {sel.related.map((b, i) => {
+                  const d = details.find((x) => x.branch === b);
+                  const pal = chart.palaces[b]!;
+                  if (!d) return null;
+                  return (
+                    <button
+                      key={b}
+                      type="button"
+                      onClick={() => pick(b)}
+                      className={`${DELAY[i + 1]} animate-[zoomIn_.3s_ease-out_both] rounded-3xl border border-violet-100 bg-linear-to-br from-white to-violet-50 p-2 text-left shadow-[0_6px_20px_-14px_rgba(91,70,160,0.5)] transition-transform hover:-translate-y-0.5 motion-reduce:animate-none`}
+                    >
+                      <span className="rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-bold text-violet-800">{i < 2 ? labels.trine : labels.opposite}</span>
+                      <span className="mt-1.5 block text-[13px] font-bold leading-tight text-stone-900">{pal.palace ? PALACE_INFO[pal.palace].vi : BRANCHES[b]}</span>
+                      {localNames[b] && <span className="block text-[10px] text-stone-500">{localNames[b]}</span>}
+                      <span className="mt-1 block space-y-0.5">
+                        {pal.mainStars.length === 0 && <span className="block text-[11px] italic text-stone-400">{labels.noMain}</span>}
+                        {pal.mainStars.map((st) => (
+                          <span key={st.id} className="flex flex-wrap items-center gap-0.5">
+                            <span className="text-[13px] font-bold leading-tight text-rose-800">{STAR_INFO[st.id].vi}</span>
+                            {st.hoa && <span className={`rounded-full px-1 text-[9px] font-semibold ${HOA_CHIP[st.hoa]}`}>{HOA_SHORT[st.hoa]}</span>}
+                          </span>
+                        ))}
+                      </span>
+                      {d.role && <span className="mt-1 line-clamp-2 block text-[10.5px] leading-snug text-stone-600">{d.role}</span>}
+                      {d.ageText && <span className="mt-0.5 block text-[10px] font-semibold text-amber-800">{d.ageText}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-stone-600">
@@ -244,70 +324,6 @@ export function TuviChart({
         ))}
       </ul>
 
-      {sel && (
-        <div ref={focusRef} key={sel.branch} className="scroll-mt-20 space-y-3" aria-live="polite">
-          <p className="text-xs text-stone-500">{labels.focusTitle.replace("{x}", sel.label)}</p>
-          <div className="grid grid-cols-2 gap-2">
-            {[sel.branch, ...sel.related].map((b, i) => {
-              const d = details.find((x) => x.branch === b);
-              const pal = chart.palaces[b]!;
-              if (!d) return null;
-              const self = i === 0;
-              return (
-                <button
-                  key={b}
-                  type="button"
-                  onClick={() => !self && pick(b)}
-                  aria-pressed={self}
-                  className={`${DELAY[i]} animate-[zoomIn_.3s_ease-out_both] rounded-3xl border p-3 text-left transition-transform motion-reduce:animate-none ${
-                    self
-                      ? "border-teal-200 bg-linear-to-br from-teal-50 via-white to-teal-100/60 shadow-[0_8px_24px_-14px_rgba(15,118,110,0.5)]"
-                      : "border-violet-100 bg-linear-to-br from-white to-violet-50 shadow-[0_6px_20px_-14px_rgba(91,70,160,0.5)] hover:-translate-y-0.5"
-                  }`}
-                >
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${self ? "bg-teal-100 text-teal-800" : "bg-violet-100 text-violet-800"}`}>
-                    {self ? labels.self : i < 3 ? labels.trine : labels.opposite}
-                  </span>
-                  <span className="mt-2 block text-[15px] font-bold leading-tight text-stone-900">{pal.palace ? PALACE_INFO[pal.palace].vi : BRANCHES[b]}</span>
-                  {localNames[b] && <span className="block text-[11px] text-stone-500">{localNames[b]}</span>}
-                  <span className="mt-2 block space-y-1">
-                    {pal.mainStars.length === 0 && <span className="block text-xs italic text-stone-400">{labels.noMain}</span>}
-                    {pal.mainStars.map((st) => (
-                      <span key={st.id} className="flex flex-wrap items-center gap-1">
-                        <span className="text-base font-bold leading-tight text-rose-800">{STAR_INFO[st.id].vi}</span>
-                        {st.hoa && <span className={`rounded-full px-1.5 text-[10px] font-semibold ${HOA_CHIP[st.hoa]}`}>{HOA_SHORT[st.hoa]}</span>}
-                      </span>
-                    ))}
-                  </span>
-                  {d.role && <span className="mt-2 block text-[11.5px] leading-snug text-stone-600">{d.role}</span>}
-                  {d.ageText && <span className="mt-1.5 block text-[11px] font-semibold text-amber-800">{d.ageText}</span>}
-                </button>
-              );
-            })}
-          </div>
-          <div className="animate-[fadeUp_.3s_ease-out] rounded-3xl border border-stone-200/70 bg-white/80 p-4 text-sm motion-reduce:animate-none">
-            <p className="font-bold text-stone-900">{sel.label}</p>
-            {sel.borrowedText && <p className="mt-1 text-xs text-stone-600">{sel.borrowedText}</p>}
-            {sel.mains.length > 0 && (
-              <ul className="mt-2 space-y-1">
-                {sel.mains.map((m) => (
-                  <li key={m.name}>
-                    <span className="font-semibold text-rose-800">{m.name}</span>
-                    {m.hoa && <span className="ml-1 rounded-full bg-violet-100 px-1.5 text-xs text-violet-800">{m.hoa}</span>}
-                    <span className="text-stone-700"> — {m.keywords}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {sel.aux.length > 0 && <p className="mt-2 text-xs text-stone-600"><span className="block text-stone-500">{labels.auxStars}</span>{sel.aux.join(", ")}</p>}
-            {sel.notes.length > 0 && (
-              <ul className="mt-2 list-disc space-y-0.5 pl-4 text-xs text-stone-700">
-                {sel.notes.map((n, i) => <li key={i}>{n}</li>)}
-              </ul>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

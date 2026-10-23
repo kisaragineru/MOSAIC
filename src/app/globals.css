@@ -40,3 +40,8 @@ body {
   from { opacity: 0; transform: scale(0.94); }
   to { opacity: 1; transform: none; }
 }
+
+@keyframes zoomFrom {
+  from { opacity: 0; transform: scale(0.25); }
+  to { opacity: 1; transform: none; }
+}

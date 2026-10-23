@@ -224,6 +224,7 @@ export const en = {
   },
   tuvi: {
     ui: {
+      close: "Close",
       focusTitle: "{x} and the palaces read with it",
       focusSelf: "This palace",
       focusTrine: "Trine",
@@ -253,7 +254,7 @@ export const en = {
       stagesHelp: "Swipe and tap a stage. The highlighted one is now.",
       stagesUnavailable: "The 10-year stages need your sex for their direction in the traditional method. Add it under “Edit birth details” to see them.",
       stateLabel: { past: "Past", current: "Now", future: "Ahead", unknown: "" },
-      chartHelp: "Tap a palace to see what it stands for. Its related palaces light up.",
+      chartHelp: "Tap a palace: it and the palaces read with it open enlarged over the chart.",
       palaceRole: "Stands for",
       mainStars: "Main stars",
       borrowedFrom: (x: string) => `No main star here; read through ${x}.`,
