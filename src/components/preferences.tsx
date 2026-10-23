@@ -28,6 +28,36 @@ export function PreferenceSection({
   };
   return (
     <div className="space-y-3">
+      <form action={addPreferenceAction} className="grid grid-cols-2 gap-2 rounded-xl bg-stone-50 p-2">
+        {personId && <input type="hidden" name="personId" value={personId} />}
+        <input type="hidden" name="back" value={back} />
+        <div className="col-span-2">
+          <Field label={t.people.item}><Input name="label" required maxLength={200} /></Field>
+        </div>
+        <Field label={t.people.category}>
+          <Select name="categoryId" defaultValue="food">
+            {categories.map((c) => <option key={c.id} value={c.id}>{catLabel(c.id)}</option>)}
+          </Select>
+        </Field>
+        <Field label="—">
+          <Select name="sentiment" defaultValue="like" aria-label="sentiment">
+            {PREFERENCE_SENTIMENTS.map((s) => <option key={s} value={s}>{t.people.sentiments[s]}</option>)}
+          </Select>
+        </Field>
+        {personId && (
+          <div className="col-span-2">
+            <Field label={t.people.sourceLabel}>
+              <Select name="source" defaultValue="person_stated">
+                {(["person_stated", "observed", "guess", "unverified"] as const).map((s) => <option key={s} value={s}>{t.people.sources[s]}</option>)}
+              </Select>
+            </Field>
+          </div>
+        )}
+        <div className="col-span-2">
+          <Field label={`${t.people.note} (${t.common.optional})`}><Input name="note" maxLength={1000} /></Field>
+        </div>
+        <div className="col-span-2"><Button type="submit">{t.common.add}</Button></div>
+      </form>
       {prefs.length > 0 && (
         <ul className="space-y-2">
           {prefs.map((p) => (
@@ -62,36 +92,6 @@ export function PreferenceSection({
           ))}
         </ul>
       )}
-      <form action={addPreferenceAction} className="grid grid-cols-2 gap-2 rounded-xl bg-stone-50 p-2">
-        {personId && <input type="hidden" name="personId" value={personId} />}
-        <input type="hidden" name="back" value={back} />
-        <div className="col-span-2">
-          <Field label={t.people.item}><Input name="label" required maxLength={200} /></Field>
-        </div>
-        <Field label={t.people.category}>
-          <Select name="categoryId" defaultValue="food">
-            {categories.map((c) => <option key={c.id} value={c.id}>{catLabel(c.id)}</option>)}
-          </Select>
-        </Field>
-        <Field label="—">
-          <Select name="sentiment" defaultValue="like" aria-label="sentiment">
-            {PREFERENCE_SENTIMENTS.map((s) => <option key={s} value={s}>{t.people.sentiments[s]}</option>)}
-          </Select>
-        </Field>
-        {personId && (
-          <div className="col-span-2">
-            <Field label={t.people.sourceLabel}>
-              <Select name="source" defaultValue="person_stated">
-                {(["person_stated", "observed", "guess", "unverified"] as const).map((s) => <option key={s} value={s}>{t.people.sources[s]}</option>)}
-              </Select>
-            </Field>
-          </div>
-        )}
-        <div className="col-span-2">
-          <Field label={`${t.people.note} (${t.common.optional})`}><Input name="note" maxLength={1000} /></Field>
-        </div>
-        <div className="col-span-2"><Button type="submit">{t.common.add}</Button></div>
-      </form>
     </div>
   );
 }

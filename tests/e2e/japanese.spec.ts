@@ -45,6 +45,22 @@ test("Japanese UI end to end: auto-detected, registration, question, Tử Vi, gi
   await page.getByLabel("名前・呼び名").fill("ユキ");
   await page.getByRole("button", { name: "追加" }).click();
   await expect(page.getByRole("heading", { name: "ユキ" })).toBeVisible();
+  // Long notes are read clamped, and edited in an auto-growing field behind 編集.
+  await page.getByText("✎ 編集").click();
+  await page.locator('textarea[name="note"]').fill(Array.from({ length: 8 }, (_, i) => `メモの${i + 1}行目`).join("\n"));
+  await page.getByRole("button", { name: "保存", exact: true }).click();
+  await page.getByRole("button", { name: "続きを読む" }).click();
+  await expect(page.getByRole("button", { name: "閉じる" })).toBeVisible();
+  // A date with a past year repeats yearly and says when it comes next.
+  const dateForm = page.locator('form:has(input[name="remindDaysBefore"])');
+  await dateForm.getByLabel("名前").fill("誕生日");
+  await dateForm.getByLabel("日", { exact: true }).fill("20");
+  await dateForm.getByLabel("月", { exact: true }).fill("7");
+  await dateForm.getByLabel("年（任意）").fill("2001");
+  await dateForm.getByLabel("何日前に知らせるか").fill("14");
+  await dateForm.getByRole("button", { name: "追加" }).click();
+  await expect(page.getByText(/次は \d{4}年7月20日（/)).toBeVisible();
+  await expect(page.getByText("14日前からホームでお知らせ")).toBeVisible();
   const prefForm = page.locator('form:has(select[name="sentiment"])');
   await prefForm.locator('input[name="label"]').fill("フィルムカメラ");
   await prefForm.locator('select[name="categoryId"]').selectOption("item");

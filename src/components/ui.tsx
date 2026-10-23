@@ -68,7 +68,7 @@ export function Input(props: ComponentProps<"input">) {
   return <input {...props} className={`${inputCls} ${props.className ?? ""}`} />;
 }
 export function Textarea(props: ComponentProps<"textarea">) {
-  return <textarea rows={4} {...props} className={`${inputCls} ${props.className ?? ""}`} />;
+  return <textarea rows={4} {...props} className={`${inputCls} field-sizing-content min-h-20 max-h-[60vh] ${props.className ?? ""}`} />;
 }
 export function Select(props: ComponentProps<"select">) {
   return <select {...props} className={`${inputCls} ${props.className ?? ""}`} />;
