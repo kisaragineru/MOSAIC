@@ -6,6 +6,7 @@ import { TuviStages, type StageView } from "@/components/tuvi-stages";
 import { TuviThemes } from "@/components/tuvi-themes";
 import { Button, Card, Checkbox, Field, Input, Notice, Page, Select } from "@/components/ui";
 import { BRANCHES } from "@/lib/tuvi/canchi";
+import { timeZoneOptions, preferredZone } from "@/lib/timezones";
 import { chartView } from "@/lib/tuvi/chart-view";
 import { lifeStages } from "@/lib/tuvi/interpret";
 import { STAR_INFO } from "@/lib/tuvi/stars";
@@ -14,7 +15,6 @@ import { requireUser } from "@/server/auth/session";
 import { countMemoriesInRanges } from "@/server/services/memories";
 import { exploreHours, getTuvi } from "@/server/services/tuvi";
 
-const ZONES = Intl.supportedValuesOf("timeZone");
 
 export default async function TuviPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
@@ -185,8 +185,8 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
             <Checkbox name="timeKnown" defaultChecked={p ? p.timeKnown : true} label={t.tuvi.timeKnown} />
             <Field label={t.tuvi.time}><Input type="time" name="birthTime" defaultValue={p?.birthTime?.slice(0, 5) ?? ""} /></Field>
             <Field label={t.tuvi.timeZone}>
-              <Select name="timeZone" defaultValue={p?.timeZone ?? "Asia/Ho_Chi_Minh"}>
-                {ZONES.map((z) => <option key={z} value={z}>{z}</option>)}
+              <Select name="timeZone" defaultValue={preferredZone(p?.timeZone ?? "Asia/Ho_Chi_Minh")}>
+                {timeZoneOptions(preferredZone(p?.timeZone ?? "Asia/Ho_Chi_Minh")).map((z) => <option key={z} value={z}>{z}</option>)}
               </Select>
             </Field>
             <Field label={t.tuvi.place}><Input name="placeLabel" defaultValue={p?.placeLabel ?? ""} maxLength={120} /></Field>

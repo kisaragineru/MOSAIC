@@ -71,7 +71,9 @@ export async function anotherQuestionAction() {
 export async function privacyAction(form: FormData) {
   const uid = await requireUser();
   const r = await attempt("discover.privacy", () => setResponsePrivacy(uid, str(form, "responseId"), str(form, "privacy")));
-  redirect(r.ok ? "/discover/history?ok=saved" : `/discover/history?e=${r.error}`);
+  const back = safeNext(str(form, "back"), "/discover/history");
+  revalidatePath(back);
+  redirect(withParam(back, r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
 }
 
 export async function deleteResponseAction(form: FormData) {

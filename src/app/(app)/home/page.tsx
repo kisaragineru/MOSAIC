@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createMemoryAction } from "@/app/actions/memories";
 import { DayWatcher } from "@/components/day-watcher";
 import { Flash } from "@/components/flash";
+import { TimeZoneNotice } from "@/components/time-zone-notice";
 import { Button, Card, LinkButton, Page, Pill, Textarea } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
@@ -82,6 +83,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </Card>
       )}
       <DayWatcher day={daily.day} timeZone={daily.timeZone} />
+      <TimeZoneNotice saved={daily.timeZone} text={t.home.tzMismatch} action={t.home.tzFix} />
       <Card title={`${t.home.todayQuestion} · ${new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", weekday: "short", timeZone: "UTC" }).format(new Date(`${daily.day}T00:00:00Z`))}`}>
         {first ? (
           <div className="space-y-3">

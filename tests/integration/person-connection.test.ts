@@ -77,6 +77,8 @@ describe("shared preview", () => {
     const p = await sharedPreview(a.userId);
     expect(p.displayName).toBe("An");
     expect(p.answers.map((x) => x.questionId)).toEqual(["f.drink"]);
+    // Every comparable answer is listed for switching, with its current setting.
+    expect(p.choices.map((x) => [x.questionId, x.shared])).toEqual([["f.drink", true], ["f.spicy", false]]);
     expect(p.tuvi).toBeNull();
   });
 });

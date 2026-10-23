@@ -17,6 +17,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
     <Page title={t.discover.title}>
       <SegmentedTabs current="/discover/history" items={[{ href: "/discover", label: t.nav.todayQuestions }, { href: "/discover/history", label: t.nav.history }]} />
       <Flash t={t} sp={sp} />
+      <Link href="/me/preview" className="inline-block text-sm text-teal-700 underline">{t.discover.privacyLink} →</Link>
       {items.length === 0 && <Empty>{t.history.empty}</Empty>}
       {items.map((h) => (
         <Card key={h.question.id} title={h.question.prompt[locale]}>

@@ -1,7 +1,9 @@
 import { aiOptInAction, changePasswordAction, deleteAccountAction, notificationsAction, updateProfileAction } from "@/app/actions/settings";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
+import { TimeZoneSelect } from "@/components/time-zone-select";
 import { Button, Card, Checkbox, Field, Input, Page, Select } from "@/components/ui";
+import { preferredZone, timeZoneOptions } from "@/lib/timezones";
 import { LOCALE_NAMES, SUPPORTED_LOCALES } from "@/lib/i18n/locales";
 import { getT } from "@/lib/i18n/server";
 import { DEFAULT_RULESET, ENGINE_VERSION } from "@/lib/tuvi/ruleset";
@@ -9,7 +11,6 @@ import { requireUser } from "@/server/auth/session";
 import { aiConfigured } from "@/server/ai/claude";
 import { getAccount, getNotificationPrefs } from "@/server/services/account";
 
-const ZONES = Intl.supportedValuesOf("timeZone");
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
@@ -29,7 +30,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             </Select>
           </Field>
           <Field label={t.settings.timeZone}>
-            <Select name="timeZone" defaultValue={acc.profile.timeZone}>{ZONES.map((z) => <option key={z} value={z}>{z}</option>)}</Select>
+            <TimeZoneSelect name="timeZone" defaultValue={preferredZone(acc.profile.timeZone)} options={timeZoneOptions(preferredZone(acc.profile.timeZone))} useDevice={t.settings.useDeviceZone} />
           </Field>
           <Button type="submit">{t.common.save}</Button>
         </form>

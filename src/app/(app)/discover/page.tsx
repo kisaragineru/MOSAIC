@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { anotherQuestionAction, changeKindAction } from "@/app/actions/discovery";
 import { DayWatcher } from "@/components/day-watcher";
 import { Flash } from "@/components/flash";
@@ -36,6 +37,7 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Pro
       <DayWatcher day={daily.day} timeZone={daily.timeZone} />
       <SegmentedTabs current="/discover" items={[{ href: "/discover", label: t.nav.todayQuestions }, { href: "/discover/history", label: t.nav.history }]} />
       <p className="text-sm text-stone-600">{t.discover.intro}</p>
+      <Link href="/me/preview" className="inline-block text-sm text-teal-700 underline">{t.discover.privacyLink} →</Link>
       <Flash t={t} sp={sp} />
       {changed && (
         <Card title={t.discover.changedTitle} className="border-amber-200 bg-amber-50">

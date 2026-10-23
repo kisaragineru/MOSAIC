@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, Page, Pill } from "@/components/ui";
 import { LOCALIZED_BANK } from "@/content/questions-i18n";
+import { privacyAction } from "@/app/actions/discovery";
 import { answerLabel } from "@/lib/discovery/format";
 import { getT } from "@/lib/i18n/server";
 import { BRANCHES, ELEMENT_NAMES, STEMS } from "@/lib/tuvi/canchi";
@@ -15,7 +16,7 @@ export default async function PreviewPage() {
   const { t, locale } = await getT();
   const p = await sharedPreview(uid);
   const initial = Array.from(p.displayName.trim())[0]?.toUpperCase() ?? "?";
-  const scopes = (["preferences", "values"] as const).map((scope) => ({ scope, items: p.answers.filter((a) => a.scope === scope) }));
+  const scopes = (["preferences", "values"] as const).map((scope) => ({ scope, items: p.choices.filter((a) => a.scope === scope) }));
   return (
     <Page title={t.preview.title} back="/me">
       <p className="text-sm text-stone-600">{t.preview.intro}</p>
@@ -72,22 +73,38 @@ export default async function PreviewPage() {
               <p className="text-sm text-stone-500">{t.preview.tuviNone}</p>
             )}
           </section>
+          <p className="text-xs text-stone-500">{t.preview.choicesHelp}</p>
           {scopes.map(({ scope, items }) => (
             <section key={scope}>
               <p className="mb-1 flex items-center gap-2 text-sm font-semibold text-stone-800">
                 <Pill tone={scope === "values" ? "amber" : "teal"}>{t.compare.scopeNames[scope]}</Pill>
-                {items.length > 0 && <span className="text-xs font-normal text-stone-500">{t.preview.answers(items.length)}</span>}
+                {items.length > 0 && <span className="text-xs font-normal text-stone-500">{t.preview.sharedCount(items.filter((a) => a.shared).length, items.length)}</span>}
               </p>
               {items.length === 0 ? (
-                <p className="text-sm text-stone-500">{t.preview.noAnswers}</p>
+                <p className="text-sm text-stone-500">
+                  {t.preview.noAnswers} <Link href="/discover" className="text-teal-700 underline">{t.preview.answerMore} →</Link>
+                </p>
               ) : (
                 <ul className="space-y-1.5">
                   {items.map((a) => {
                     const q = QMETA.get(a.questionId);
                     return (
-                      <li key={a.questionId} className="rounded-xl border border-stone-200 px-3 py-2 text-sm">
-                        <p className="text-stone-600">{q ? q.prompt[locale] : a.questionId}</p>
-                        <p className="font-medium text-stone-900">{answerLabel(q?.options ?? null, a.answer, locale)}</p>
+                      <li key={a.questionId} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${a.shared ? "border-teal-200 bg-teal-50/50" : "border-stone-200 bg-white/60"}`}>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-stone-600">{q ? q.prompt[locale] : a.questionId}</p>
+                          <p className="font-medium text-stone-900">{answerLabel(q?.options ?? null, a.answer, locale)}</p>
+                        </div>
+                        <form action={privacyAction} className="shrink-0">
+                          <input type="hidden" name="responseId" value={a.responseId} />
+                          <input type="hidden" name="privacy" value={a.shared ? "private" : "comparable"} />
+                          <input type="hidden" name="back" value="/me/preview" />
+                          <button
+                            aria-label={`${q ? q.prompt[locale] : a.questionId}: ${a.shared ? t.preview.makeHidden : t.preview.makeShown}`}
+                            className={`rounded-full px-3 py-1 text-xs font-semibold ${a.shared ? "bg-teal-700 text-white" : "border border-stone-300 bg-white text-stone-600"}`}
+                          >
+                            {a.shared ? `👁 ${t.preview.shown}` : `🔒 ${t.preview.hidden}`}
+                          </button>
+                        </form>
                       </li>
                     );
                   })}
@@ -95,7 +112,6 @@ export default async function PreviewPage() {
               )}
             </section>
           ))}
-          <Link href="/discover/history" className="inline-block text-sm text-teal-700 underline">{t.preview.changeAnswers} →</Link>
         </div>
       </Card>
 

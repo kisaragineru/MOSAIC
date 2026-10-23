@@ -399,6 +399,8 @@ export interface SharedPreview {
   tuvi: { yearStem: number; yearBranch: number; napAmElement: Element; menhBranch: number | null } | null;
   /** Latest answers the user marked "allow in comparisons", by the scope that would share them. */
   answers: { questionId: string; scope: "preferences" | "values"; answer: Answer }[];
+  /** Every latest answer to a comparable question, shared or not, for changing its setting. */
+  choices: { responseId: string; questionId: string; scope: "preferences" | "values"; answer: Answer; shared: boolean }[];
 }
 
 /**
@@ -412,23 +414,24 @@ export async function sharedPreview(userId: string): Promise<SharedPreview> {
     const chart = await tx.execute<{ year_stem: number; year_branch: number; nap_am_element: string; menh_branch: number | null }>(
       sql`select year_stem, year_branch, nap_am_element, menh_branch from tuvi_charts where user_id = ${userId} and is_current limit 1`,
     );
-    const rows = await tx.execute<{ question_id: string; answer: Answer; scope: "preferences" | "values" }>(sql`
+    const rows = await tx.execute<{ id: string; question_id: string; answer: Answer; scope: "preferences" | "values"; privacy: string }>(sql`
       with latest as (
         select distinct on (r.question_id) r.*
         from question_responses r
         where r.user_id = ${userId}
         order by r.question_id, r.answered_at desc, r.id desc
       )
-      select l.question_id, l.answer, case when q.category = 'values' then 'values' else 'preferences' end as scope
+      select l.id, l.question_id, l.answer, l.privacy, case when q.category = 'values' then 'values' else 'preferences' end as scope
       from latest l join question_definitions q on q.id = l.question_id
-      where l.status = 'answered' and l.privacy = 'comparable' and q.comparable
+      where l.status = 'answered' and q.comparable
       order by q.category, l.question_id`);
     const c = chart.rows[0];
     return {
       displayName: name.rows[0]?.display_name ?? "",
       bio: name.rows[0]?.bio?.trim() || null,
       tuvi: c ? { yearStem: c.year_stem, yearBranch: c.year_branch, napAmElement: c.nap_am_element as Element, menhBranch: c.menh_branch } : null,
-      answers: rows.rows.map((r) => ({ questionId: r.question_id, scope: r.scope, answer: r.answer })),
+      answers: rows.rows.filter((r) => r.privacy === "comparable").map((r) => ({ questionId: r.question_id, scope: r.scope, answer: r.answer })),
+      choices: rows.rows.map((r) => ({ responseId: r.id, questionId: r.question_id, scope: r.scope, answer: r.answer, shared: r.privacy === "comparable" })),
     };
   });
 }
