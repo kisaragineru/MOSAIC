@@ -110,7 +110,7 @@ export const en = {
     quickNotePlaceholder: "A thought, a feeling, a moment…",
     reminders: "Reminders",
     upcoming: "Coming up",
-    noUpcoming: "No dates in the next 60 days.",
+    noUpcoming: "No dates in the next year.",
     recent: "Recent entries",
     connectionPending: (n: string) => `${n} connected with you through your QR. Nothing is shared until you choose what to compare.`,
     review: "Review",

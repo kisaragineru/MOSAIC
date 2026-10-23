@@ -112,7 +112,7 @@ export const ja: Dict = {
     quickNotePlaceholder: "思ったこと、気持ち、ちょっとした出来事…",
     reminders: "リマインダー",
     upcoming: "これからの予定",
-    noUpcoming: "60日以内の予定はありません。",
+    noUpcoming: "1年以内の予定はありません。",
     recent: "最近の記録",
     connectionPending: (n: string) => `${n}さんがあなたのQRからつながりました。比べる内容を選ぶまで、何も共有されません。`,
     review: "確認する",

@@ -112,7 +112,7 @@ export const vi: Dict = {
     quickNotePlaceholder: "Một suy nghĩ, một cảm xúc, một khoảnh khắc…",
     reminders: "Nhắc nhở",
     upcoming: "Sắp tới",
-    noUpcoming: "Không có ngày nào trong 60 ngày tới.",
+    noUpcoming: "Không có ngày nào trong một năm tới.",
     recent: "Ghi chép gần đây",
     connectionPending: (n: string) => `${n} đã kết nối với bạn qua mã QR. Chưa có gì được chia sẻ cho đến khi bạn chọn nội dung so sánh.`,
     review: "Xem",

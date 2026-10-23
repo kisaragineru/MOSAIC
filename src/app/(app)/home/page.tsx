@@ -19,7 +19,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const { t, locale } = await getT();
   const account = await getAccount(uid);
   const daily = await getDaily(uid);
-  const dates = await upcomingDates(uid, 60);
+  // A year ahead (366 days, so a date just passed still shows its next occurrence in a leap year).
+  const dates = await upcomingDates(uid, 366);
   const recent = await listMemories(uid, { limit: 5 });
   const first = daily.slots[0];
   const due = dates.filter((d) => d.reminderDue);
@@ -109,7 +110,9 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             {dates.map((d) => (
               <li key={d.id} className="flex justify-between gap-2">
                 <span>{d.label}{d.personName ? ` · ${d.personName}` : ""} {d.years !== null && t.home.turning(d.years)}</span>
-                <span className="shrink-0 text-stone-500">{t.home.inDays(d.daysUntil)}</span>
+                <span className="shrink-0 text-stone-500">
+                  {new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${d.date}T00:00:00Z`))} · {t.home.inDays(d.daysUntil)}
+                </span>
               </li>
             ))}
           </ul>

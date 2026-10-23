@@ -85,5 +85,9 @@ test("Japanese UI end to end: auto-detected, registration, question, Tử Vi, gi
   await page.locator('form:has(input[name="kind"][value="date"])').getByLabel("日", { exact: true }).fill("21");
   await page.locator('form:has(input[name="kind"][value="date"])').getByRole("button", { name: "保存" }).click();
   await expect(page.getByText(/次は \d{4}年7月21日（/)).toBeVisible();
+  // Home lists dates up to a year ahead, so this birthday shows even when months away.
+  await page.goto("/home");
+  await expect(page.getByText("1年以内の予定はありません。")).toHaveCount(0);
+  await expect(page.locator("li", { hasText: "ユキ" }).filter({ hasText: "誕生日" })).toBeVisible();
   await ctx.close();
 });
