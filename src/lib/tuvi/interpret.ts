@@ -13,7 +13,7 @@ import type { Chart, Palace } from "./engine";
 import { MAIN_EXTRA, PALACE_JA, PALACE_ROLE, PALACE_SHORT } from "./interpret-detail";
 import { HOA_INFO, PALACE_INFO, STAR_INFO, type AuxStarId, type HoaId, type MainStarId, type PalaceId } from "./stars";
 
-export const INTERPRETATION_VERSION = "interp-2";
+export const INTERPRETATION_VERSION = "interp-3";
 
 type T = { en: string; vi: string; ja: string };
 type Domain = "personality" | "love" | "career" | "wealth";
@@ -426,20 +426,63 @@ function cycleParagraphs(chart: Chart, locale: Locale, currentAge?: number): Int
       },
       locale,
     );
-    return { ruleIds: [`cycles.dai_han.${p.branch}`], text: p.palace ? `${text} ${decadeTheme(p.palace, locale)}` : text, kind: "core" as const };
+    const phase = lifePhase(p.daiHan!.from, p.daiHan!.to);
+    return { ruleIds: [`cycles.dai_han.${p.branch}`], text: p.palace ? `${text} ${decadeTheme(p.palace, phase, locale)}` : text, kind: "core" as const };
   });
 }
 
-function decadeTheme(palace: PalaceId, locale: Locale) {
+export type LifePhase = "childhood" | "youth" | "adult" | "later" | "beyond";
+
+/**
+ * Life phase of a 10-year period by its middle age. This is MOSAIC's own reading guide (not a Tử Vi
+ * rule): it decides how a period is worded, so a childhood decade is not read like an adult one and
+ * the last periods of the 12-period chart are shown for reference only.
+ */
+export function lifePhase(from: number, to: number): LifePhase {
+  const mid = (from + to) / 2;
+  return mid < 13 ? "childhood" : mid < 25 ? "youth" : mid < 65 ? "adult" : mid < 95 ? "later" : "beyond";
+}
+
+/** Fact first (which natal palace the period falls in), then a softened, age-aware reading of it. */
+function decadeTheme(palace: PalaceId, phase: LifePhase, locale: Locale) {
   const role = PALACE_ROLE[palace];
-  return pick(
+  const name = PALACE_INFO[palace].vi;
+  const fact = pick(
     {
-      vi: `Theo truyền thống, chủ đề của giai đoạn này là ${role.vi}.`,
-      en: `Traditionally, the theme of this period is ${role.en}.`,
-      ja: `伝統的に、この10年は「${role.ja}」が主題になりやすい時期と読まれます。`,
+      vi: `Đại Hạn của giai đoạn này đi vào cung ${name} của lá số; cung này vốn nói về ${role.vi}.`,
+      en: `This period's Đại Hạn falls in the natal ${name} palace, which stands for ${role.en}.`,
+      ja: `この10年の大限は、命盤の${palaceLabel(palace, 0, "ja")}に入ります。この宮は本来「${role.ja}」を表す宮です。`,
     },
     locale,
   );
+  const reading: Record<LifePhase, T> = {
+    childhood: {
+      vi: "Vì đây là thời thơ ấu, những ý nghĩa này nên được đọc qua môi trường lớn lên và những người xung quanh hơn là qua hành động của chính mình.",
+      en: "As this is childhood, these meanings are better read through the surroundings you grew up in and the people around you than through your own actions.",
+      ja: "子どもの時期なので、本人の行動というより、育った環境や周りの人を通じて表れやすい時期として読むのが自然です。",
+    },
+    youth: {
+      vi: "Theo một cách đọc thường gặp, lĩnh vực của cung mà Đại Hạn đi vào dễ được chú ý trong giai đoạn này.",
+      en: "In one common reading, the area of the palace the Đại Hạn enters tends to come to the fore in this period.",
+      ja: "よく知られた読み方の一つとして、大限が入った宮の分野が意識されやすい時期とも言われます。",
+    },
+    adult: {
+      vi: "Theo một cách đọc thường gặp, lĩnh vực của cung mà Đại Hạn đi vào dễ được chú ý trong giai đoạn này.",
+      en: "In one common reading, the area of the palace the Đại Hạn enters tends to come to the fore in this period.",
+      ja: "よく知られた読み方の一つとして、大限が入った宮の分野が意識されやすい時期とも言われます。",
+    },
+    later: {
+      vi: "Theo một cách đọc thường gặp, lĩnh vực của cung này dễ được chú ý; ở tuổi này có thể đọc nó như những gì mình đã vun đắp và trao lại.",
+      en: "In one common reading, this palace's area tends to come to the fore; at this age it can be read as what you have built up and pass on.",
+      ja: "よく知られた読み方では、この宮の分野が意識されやすい時期とされます。この年代では、これまで育ててきたものや次へ手渡すものとして読むのが自然です。",
+    },
+    beyond: {
+      vi: "Lá số truyền thống luôn ghi đủ 12 Đại Hạn; giai đoạn này chỉ để tham khảo.",
+      en: "A traditional chart always lists all 12 periods; this one is shown for reference only.",
+      ja: "伝統的な命盤は12の大限をすべて示します。この年代は参考としてご覧ください。",
+    },
+  };
+  return `${fact} ${pick(reading[phase], locale)}`;
 }
 
 export interface LifeStage {
@@ -455,6 +498,9 @@ export interface LifeStage {
   hoa: string[];
   state: "past" | "current" | "future" | "unknown";
   palace: PalaceId | null;
+  phase: LifePhase;
+  /** Set when the palace has no main star and is read through the opposite palace (vô chính diệu). */
+  borrowedFrom: string | null;
   /** One- or two-word name of the period's theme (e.g. "Work"). */
   short: string;
   /** Lunar years of the period: nominal age n is lived in lunar year (birth lunar year + n − 1). */
@@ -464,8 +510,11 @@ export interface LifeStage {
   startDate: string | null;
   endDate: string | null;
   hints: {
+    /** Advice only for periods still ahead (or now) in youth and adulthood. */
     strengths: string[];
     cautions: string[];
+    /** A question to look back with, for periods already lived and for childhood. */
+    reflection: string | null;
     notes: string[];
     /** The period's related palaces (tam phương tứ chính) and their main stars. */
     support: { label: string; stars: string[] }[];
@@ -499,8 +548,25 @@ export function lifeStages(chart: Chart, locale: Locale, currentAge?: number | n
       const yearFrom = chart.lunar.year + from - 1;
       const yearTo = chart.lunar.year + to - 1;
       const next = lunarNewYear(yearTo + 1);
-      // Advice comes from the period's own main stars, or (vô chính diệu) those of the opposite palace.
-      const voice = mains.length ? mains : chart.palaces[(p.branch + 6) % 12]!.mainStars.map((s) => s.id as MainStarId);
+      const phase = lifePhase(from, to);
+      // The period's own main stars, or (vô chính diệu) those of the opposite palace — said explicitly.
+      const opp = chart.palaces[(p.branch + 6) % 12]!;
+      const borrowed = mains.length === 0;
+      const voice = borrowed ? opp.mainStars.map((s) => s.id as MainStarId) : mains;
+      // Advice is written for working-age life; later and earlier periods get no advice.
+      const advise = (state === "current" || state === "future" || state === "unknown") && (phase === "youth" || phase === "adult");
+      const reflect = !advise && phase !== "beyond" && voice.length > 0;
+      const kw = voice.map((m) => MAIN[m].keywords[locale]);
+      const reflection = reflect
+        ? pick(
+            {
+              vi: `Nhìn lại thời kỳ này, bạn có nhớ đến những sự việc hay con người liên quan đến “${kw.join("”, “")}” không?`,
+              en: `Looking back on this time, do events or people connected with “${kw.join("”, “")}” come to mind?`,
+              ja: `この時期を振り返ると、「${kw.join("」「")}」に関わる出来事や人が思い当たりますか？`,
+            },
+            locale,
+          )
+        : null;
       const { trine, opposite } = relatedBranches(p.branch);
       const notes = [
         ...[...p.mainStars, ...p.auxStars].filter((s) => s.hoa).map((s) => pick(HOA_NOTES[s.hoa!], locale)),
@@ -524,20 +590,23 @@ export function lifeStages(chart: Chart, locale: Locale, currentAge?: number | n
         branch: p.branch,
         label: palaceLabel(p.palace, p.branch, locale),
         role: p.palace ? pick(PALACE_ROLE[p.palace], locale) : "",
-        theme: p.palace ? decadeTheme(p.palace, locale) : "",
-        stars: mains.map((m) => STAR_INFO[m].vi),
-        keywords: mains.map((m) => MAIN[m].keywords[locale]),
+        theme: p.palace ? decadeTheme(p.palace, phase, locale) : "",
+        stars: voice.map((m) => STAR_INFO[m].vi),
+        keywords: kw,
         hoa: [...p.mainStars, ...p.auxStars].filter((s) => s.hoa).map((s) => `${HOA_INFO[s.hoa!].vi} · ${STAR_INFO[s.id].vi}`),
         state,
         palace: p.palace,
+        phase,
+        borrowedFrom: borrowed ? palaceLabel(opp.palace, opp.branch, locale) : null,
         short: p.palace ? pick(PALACE_SHORT[p.palace], locale) : BRANCHES[p.branch]!,
         yearFrom,
         yearTo,
         startDate: lunarNewYear(yearFrom),
         endDate: next ? dayBefore(next) : null,
         hints: {
-          strengths: voice.map((m) => pick(MAIN_EXTRA[m].strength, locale)),
-          cautions: voice.map((m) => pick(MAIN_EXTRA[m].caution, locale)),
+          strengths: advise ? voice.map((m) => pick(MAIN_EXTRA[m].strength, locale)) : [],
+          cautions: advise ? voice.map((m) => pick(MAIN_EXTRA[m].caution, locale)) : [],
+          reflection,
           notes,
           support: [...trine, opposite].map((b) => {
             const q = chart.palaces[b]!;

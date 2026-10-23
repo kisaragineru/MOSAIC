@@ -44,6 +44,7 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
     return {
       ...x,
       ageText: ui.ageRange(x.from, x.to),
+      borrowedText: x.borrowedFrom ? ui.borrowedFrom(x.borrowedFrom) : null,
       yearText: ui.yearsAbout(x.yearFrom, x.yearTo),
       records: lived[i]
         ? {
@@ -53,7 +54,7 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
             writeHref: `/memories/new?occurred=${x.startDate}`,
           }
         : null,
-      letterHref: x.state === "future" && x.startDate ? `/memories/new?kind=letter_to_future&reveal=${x.startDate}` : null,
+      letterHref: x.state === "future" && x.phase !== "beyond" && x.startDate ? `/memories/new?kind=letter_to_future&reveal=${x.startDate}` : null,
     };
   });
   const now = stages.find((x) => x.state === "current");
@@ -135,6 +136,9 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
                   letterTitle: ui.letterTitle,
                   letterHelp: ui.letterHelp,
                   letterCta: ui.letterCta,
+                  reflectTitle: ui.reflectTitle,
+                  reference: ui.reference,
+                  noMain: ui.noMain,
                 }}
               />
             ) : (

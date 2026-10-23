@@ -83,7 +83,7 @@ Branch indices Tý=0 … Hợi=11; months/hours counted as in the classical text
 - Tiểu Hạn, Lưu niên stars, Đẩu Quân, Thai Phụ/Phong Cáo, Quốc Ấn/Đường Phù, Thiên Quan/Thiên Phúc,
   Lưu Hà/Thiên Trù, Thiên Đức/Nguyệt Đức.
 
-## 3. Interpretation (`interp-2`)
+## 3. Interpretation (`interp-3`)
 - Sections: personality (Mệnh + Thân), friends & siblings (Nô Bộc, Huynh Đệ), love (Phu Thê),
   career (Quan Lộc), money (Tài Bạch), family & home (Phụ Mẫu, Điền Trạch, Tử Tức), cycles (Đại Hạn).
 - Each paragraph carries rule ids (e.g. `menh.main.thien_co`, `phu_the.hoa.ky`, `menh.vo_chinh_dieu`);
@@ -97,6 +97,20 @@ Branch indices Tý=0 … Hợi=11; months/hours counted as in the classical text
   palace it falls in (e.g. a period in Quan Lộc reads as work-focused). These are interpretive
   texts in the same "traditionally associated" register; they are **not reviewed by a practitioner**
   (same open item as section 4). Content tables: `src/lib/tuvi/interpret-detail.ts`.
+- `interp-3` corrects the 10-year readings after review (`interp-2` read every period's natal
+  palace as its theme, at any age, and gave adult advice to childhood and lived periods):
+  - Each period first states the **fact**: which natal palace its Đại Hạn falls in and what that
+    palace stands for. The idea that this palace's area "comes to the fore" is presented as one
+    common, softened reading, not as a rule.
+  - Wording depends on the **life phase** of the period's middle age (MOSAIC's own guide, not a Tử Vi
+    rule): childhood (< 13) is read through surroundings and family; youth (< 25) and adulthood
+    (< 65) get the softened reading; later life (< 95) is read as what one has built and passes on;
+    periods from 95 on are shown **for reference only** (a traditional chart always lists 12).
+  - **Advice** (strength / caution per main star) appears only for current or future periods in
+    youth and adulthood. Lived periods and childhood get a reflection question instead; later life
+    and reference periods get neither.
+  - A period without main stars says so and names the opposite palace whose stars are used
+    (vô chính diệu), instead of borrowing them silently.
 
 ## 4. Reference checks still needed before calling the engine “verified by practitioners”
 The engine is verified against an **independent implementation** (iztro, MIT) and against

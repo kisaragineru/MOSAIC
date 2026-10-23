@@ -91,7 +91,7 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   await expect(pa.locator("#stages").getByText("Hints for this decade")).toBeVisible();
   await expect(pa.locator("#stages").getByText("Your pieces from this time")).toBeVisible();
   await expect(pa.locator("#stages").getByRole("link", { name: /Open them|Write a memory from this time/ }).first()).toHaveAttribute("href", /\/memories/);
-  await pa.locator('#stages [role="group"] button').last().click();
+  await pa.locator('#stages [role="group"] button').nth(4).click(); // ages 45–54, still ahead
   const letter = pa.getByRole("link", { name: /Write a letter for this decade/ });
   await expect(letter).toHaveAttribute("href", /kind=letter_to_future&reveal=\d{4}-\d{2}-\d{2}/);
   await letter.click();

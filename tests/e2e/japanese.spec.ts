@@ -34,7 +34,9 @@ test("Japanese UI end to end: auto-detected, registration, question, Tử Vi, gi
   await expect(page.getByRole("tabpanel").getByText("活かし方")).toBeVisible();
   await expect(page.getByRole("heading", { name: "10年ごとの人生ステージ" })).toBeVisible();
   await page.locator("#stages button", { hasText: "数え5〜14歳" }).click();
-  await expect(page.getByText(/伝統的に、この10年は「/)).toBeVisible();
+  await expect(page.getByText(/この10年の大限は、命盤の/).first()).toBeVisible();
+  await expect(page.getByText(/子どもの時期なので/).first()).toBeVisible();
+  await expect(page.getByText("振り返りのヒント")).toBeVisible();
 
   await page.goto("/people");
   await page.getByLabel("名前・呼び名").fill("ユキ");

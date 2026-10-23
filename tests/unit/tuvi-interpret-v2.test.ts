@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/locales";
 import { computeChart, type BirthInput } from "@/lib/tuvi/engine";
-import { interpret, INTERPRETATION_VERSION, lifeStages, palaceDetails, relatedBranches } from "@/lib/tuvi/interpret";
+import { interpret, INTERPRETATION_VERSION, lifePhase, lifeStages, palaceDetails, relatedBranches } from "@/lib/tuvi/interpret";
 import { MAIN_EXTRA, PALACE_ROLE } from "@/lib/tuvi/interpret-detail";
 import { MAIN_STARS, PALACES } from "@/lib/tuvi/stars";
 
@@ -15,7 +15,7 @@ function chartOf(input: BirthInput) {
 
 describe("Tử Vi interpretation v2", () => {
   it("bumps the interpretation version", () => {
-    expect(INTERPRETATION_VERSION).toBe("interp-2");
+    expect(INTERPRETATION_VERSION).toBe("interp-3");
   });
 
   it("has every content entry in all three languages", () => {
@@ -92,12 +92,58 @@ describe("Tử Vi interpretation v2", () => {
     expect(stages.every((x) => x.startDate && x.endDate)).toBe(true);
   });
 
-  it("gives every stage a theme name, hints from its stars and its three supporting palaces", () => {
+  it("gives every stage a theme name and its three supporting palaces", () => {
     for (const st of lifeStages(chartOf(base), "en", 37)) {
       expect(st.short).not.toBe("");
-      expect(st.hints.strengths.length).toBeGreaterThan(0);
       expect(st.hints.strengths.length).toBe(st.hints.cautions.length);
       expect(st.hints.support).toHaveLength(3);
     }
+  });
+
+  it("classifies life phases by the middle age of a period", () => {
+    expect(lifePhase(2, 11)).toBe("childhood");
+    expect(lifePhase(5, 14)).toBe("childhood");
+    expect(lifePhase(12, 21)).toBe("youth");
+    expect(lifePhase(25, 34)).toBe("adult");
+    expect(lifePhase(55, 64)).toBe("adult");
+    expect(lifePhase(64, 73)).toBe("later");
+    expect(lifePhase(85, 94)).toBe("later");
+    expect(lifePhase(94, 103)).toBe("beyond");
+    expect(lifePhase(115, 124)).toBe("beyond");
+  });
+
+  it("words each period for its age: reflection for lived ones and childhood, advice only ahead, reference only at the end", () => {
+    // Born 1990 (Thổ ngũ cục): periods 5–14, 15–24, … ; now nominal age 37.
+    const stages = lifeStages(chartOf(base), "ja", 37);
+    const at = (from: number) => stages.find((x) => x.from === from)!;
+    for (const lived of [at(5), at(15), at(25)]) {
+      expect(lived.state).toBe("past");
+      expect(lived.hints.strengths).toEqual([]);
+      expect(lived.hints.reflection).toMatch(/振り返ると/);
+    }
+    expect(at(5).theme).toMatch(/子どもの時期/);
+    expect(at(35).state).toBe("current");
+    expect(at(35).hints.strengths.length).toBeGreaterThan(0);
+    expect(at(35).hints.reflection).toBeNull();
+    for (const later of [at(65), at(75), at(85)]) {
+      expect(later.phase).toBe("later");
+      expect(later.hints.strengths).toEqual([]);
+    }
+    for (const late of [at(95), at(105), at(115)]) {
+      expect(late.phase).toBe("beyond");
+      expect(late.hints.strengths).toEqual([]);
+      expect(late.hints.reflection).toBeNull();
+      expect(late.theme).toMatch(/参考/);
+    }
+    // No period asserts its palace's domain as a fact any more.
+    expect(stages.some((x) => x.theme.includes("主題になりやすい時期と読まれます"))).toBe(false);
+  });
+
+  it("says when a period without main stars is read through the opposite palace", () => {
+    const stages = lifeStages(chartOf(base), "ja", 37);
+    const empty = stages.find((x) => x.from === 45)!; // Quan Lộc, vô chính diệu
+    expect(empty.borrowedFrom).toMatch(/Phu Thê/);
+    expect(empty.stars).toEqual(["Thái Dương", "Thái Âm"]);
+    for (const x of stages) if (!x.borrowedFrom) expect(x.stars.length).toBeGreaterThan(0);
   });
 });

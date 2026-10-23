@@ -226,8 +226,10 @@ export const vi: Dict = {
   },
   tuvi: {
     ui: {
+      reflectTitle: "Gợi ý để nhìn lại",
+      reference: "Tham khảo",
       mapTitle: "Bản đồ cuộc đời",
-      mapHelp: "Mỗi màu là chủ đề của một giai đoạn 10 năm. Chạm để chuyển đến giai đoạn đó.",
+      mapHelp: "Mỗi màu là cung mà Đại Hạn của 10 năm đó đi vào. Chạm để chuyển đến giai đoạn đó.",
       yearsAbout: (a: number, b: number) => `khoảng ${a}–${b}`,
       hintsTitle: "Gợi ý cho 10 năm này",
       starNotes: "Từ các sao của giai đoạn này",

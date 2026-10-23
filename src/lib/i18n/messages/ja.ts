@@ -226,8 +226,10 @@ export const ja: Dict = {
   },
   tuvi: {
     ui: {
+      reflectTitle: "振り返りのヒント",
+      reference: "参考",
       mapTitle: "人生の地図",
-      mapHelp: "色はそれぞれの10年の主題です。タップするとその時期に移動します。",
+      mapHelp: "色は、その10年の大限が入る宮です。タップするとその時期に移動します。",
       yearsAbout: (a: number, b: number) => `${a}〜${b}年頃`,
       hintsTitle: "この10年のヒント",
       starNotes: "この時期の星からの補足",

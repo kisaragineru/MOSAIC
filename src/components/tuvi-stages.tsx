@@ -25,6 +25,7 @@ const COL = ["col-start-1", "col-start-2", "col-start-3", "col-start-4", "col-st
 
 export type StageView = LifeStage & {
   ageText: string;
+  borrowedText: string | null;
   yearText: string;
   records: { count: number; countText: string; href: string; writeHref: string } | null;
   letterHref: string | null;
@@ -47,6 +48,9 @@ export interface StageLabels {
   letterTitle: string;
   letterHelp: string;
   letterCta: string;
+  reflectTitle: string;
+  reference: string;
+  noMain: string;
 }
 
 function Toggle({ title, children }: { title: string; children: React.ReactNode }) {
@@ -105,7 +109,7 @@ export function TuviStages({ stages, labels, currentAge }: { stages: StageView[]
                 aria-label={`${x.ageText} ${x.short}`}
                 aria-pressed={active}
                 className={`relative h-7 flex-1 rounded-md transition-all motion-reduce:transition-none ${tone(x).bar} ${
-                  x.state === "past" ? "opacity-50" : ""
+                  x.state === "past" ? "opacity-50" : x.phase === "beyond" ? "opacity-35 saturate-50" : ""
                 } ${active ? "-translate-y-0.5 ring-2 ring-teal-500 ring-offset-1" : "hover:-translate-y-0.5"}`}
               >
                 {now && (
@@ -145,14 +149,22 @@ export function TuviStages({ stages, labels, currentAge }: { stages: StageView[]
             >
               <span className="flex items-center justify-between gap-1">
                 <span className="whitespace-nowrap text-[11px] font-semibold text-amber-800">{x.ageText}</span>
-                {labels.state[x.state] && (
-                  <span className={`shrink-0 rounded-full px-1.5 text-[10px] ${x.state === "current" ? "bg-amber-100 font-bold text-amber-800" : "bg-stone-100 text-stone-600"}`}>{labels.state[x.state]}</span>
+                {x.phase === "beyond" ? (
+                  <span className="shrink-0 rounded-full bg-stone-100 px-1.5 text-[10px] text-stone-500">{labels.reference}</span>
+                ) : (
+                  labels.state[x.state] && (
+                    <span className={`shrink-0 rounded-full px-1.5 text-[10px] ${x.state === "current" ? "bg-amber-100 font-bold text-amber-800" : "bg-stone-100 text-stone-600"}`}>{labels.state[x.state]}</span>
+                  )
                 )}
               </span>
               <span className="block text-[10px] text-stone-500">{x.yearText}</span>
               <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-bold ${tone(x).chip}`}>{x.short}</span>
               <span className="mt-1 block line-clamp-2 text-xs font-semibold text-stone-900">{x.label}</span>
-              <span className="mt-0.5 block truncate text-[11px] text-rose-800">{x.stars.join("・") || "—"}</span>
+              {x.borrowedFrom ? (
+                <span className="mt-0.5 block truncate text-[11px] text-stone-500">{labels.noMain} · <span className="text-rose-800/70">{x.stars.join("・")}</span></span>
+              ) : (
+                <span className="mt-0.5 block truncate text-[11px] text-rose-800">{x.stars.join("・") || "—"}</span>
+              )}
             </button>
           );
         })}
@@ -167,6 +179,7 @@ export function TuviStages({ stages, labels, currentAge }: { stages: StageView[]
           </div>
         </div>
         {s.theme && <p className="leading-relaxed text-stone-800">{s.theme}</p>}
+        {s.borrowedText && <p className="text-xs text-stone-600">{s.borrowedText}</p>}
         {s.stars.length > 0 && (
           <ul className="space-y-0.5">
             {s.stars.map((name, i) => (
@@ -217,6 +230,12 @@ export function TuviStages({ stages, labels, currentAge }: { stages: StageView[]
           </Toggle>
         )}
 
+        {s.hints.reflection && (
+          <div className="rounded-2xl bg-linear-to-br from-violet-50 to-sky-50 p-3">
+            <p className="text-xs font-semibold text-violet-800">{labels.reflectTitle}</p>
+            <p className="mt-1 text-stone-800">{s.hints.reflection}</p>
+          </div>
+        )}
         {/* D. Your own records from this time, or a letter to the future self. */}
         {s.records && (
           <div className="rounded-2xl bg-linear-to-br from-sky-50 to-violet-50 p-3">

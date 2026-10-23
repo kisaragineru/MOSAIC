@@ -224,8 +224,10 @@ export const en = {
   },
   tuvi: {
     ui: {
+      reflectTitle: "To look back",
+      reference: "Reference",
       mapTitle: "Your life map",
-      mapHelp: "Each colour is the theme of a 10-year stage. Tap to jump to it.",
+      mapHelp: "Each colour is the natal palace a 10-year period falls in. Tap to jump to it.",
       yearsAbout: (a: number, b: number) => `${a}–${b} (approx.)`,
       hintsTitle: "Hints for this decade",
       starNotes: "From the stars of this period",
