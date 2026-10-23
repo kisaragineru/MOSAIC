@@ -10,7 +10,7 @@ import type { Locale } from "@/lib/i18n/locales";
 import { lunarToSolar } from "./calendar";
 import { BRANCHES } from "./canchi";
 import type { Chart, Palace } from "./engine";
-import { MAIN_EXTRA, PALACE_JA, PALACE_ROLE, PALACE_SHORT } from "./interpret-detail";
+import { MAIN_EXTRA, PALACE_BY_AGE, PALACE_JA, PALACE_ROLE, PALACE_SHORT } from "./interpret-detail";
 import { HOA_INFO, PALACE_INFO, STAR_INFO, type AuxStarId, type HoaId, type MainStarId, type PalaceId } from "./stars";
 
 export const INTERPRETATION_VERSION = "interp-3";
@@ -485,6 +485,98 @@ function decadeTheme(palace: PalaceId, phase: LifePhase, locale: Locale) {
   return `${fact} ${pick(reading[phase], locale)}`;
 }
 
+/** A few short traits for a question: two from a single star, or the first of each when there are two. */
+function traitWords(stars: MainStarId[], locale: Locale): string[] {
+  const split = (k: string) => k.split(locale === "ja" ? "、" : /,\s*(?:and\s+|và\s+)?|\s+(?:and|và)\s+/);
+  return stars.length === 1 ? split(MAIN[stars[0]!].keywords[locale]).slice(0, 2) : stars.map((m) => split(MAIN[m].keywords[locale])[0]!);
+}
+
+/**
+ * The question shown instead of advice. It is worded for the age of the period and the palace's
+ * domain at that age (a child's career palace is school, not a job); star keywords are only used
+ * for adult periods already lived, where they describe the person and not a child's surroundings.
+ */
+function decadeQuestion(
+  palace: PalaceId,
+  phase: LifePhase,
+  state: LifeStage["state"],
+  kw: string[],
+  locale: Locale,
+): LifeStage["hints"]["reflection"] {
+  const area = PALACE_BY_AGE[palace];
+  if (phase === "beyond") return null;
+  if (phase === "childhood") {
+    // A child using the app would not be asked to look back on the present.
+    if (state === "current" || state === "future") return null;
+    const a = area.child;
+    return {
+      mode: "back",
+      text: pick(
+        {
+          vi: `Nhớ lại ${a.vi} thời thơ ấu, có chuyện hay người nào còn đọng lại trong bạn không?`,
+          en: `Thinking back to ${a.en} in your childhood, is there a moment or a person that stays with you?`,
+          ja: `子どもの頃の「${a.ja}」を思い出すと、心に残っている出来事や人はいますか？`,
+        },
+        locale,
+      ),
+    };
+  }
+  if (phase === "later") {
+    const a = area.later;
+    if (state === "past") {
+      return {
+        mode: "back",
+        text: pick(
+          {
+            vi: `Trong ${a.vi} ở giai đoạn này, điều gì bạn đã trân trọng và muốn trao lại cho người sau?`,
+            en: `In ${a.en} during this time, what did you treasure, and what would you like to pass on?`,
+            ja: `この時期の「${a.ja}」で大切にしてきたこと、次の人に伝えたいことは何ですか？`,
+          },
+          locale,
+        ),
+      };
+    }
+    return {
+      mode: "ahead",
+      text: pick(
+        {
+          vi: `Khi đến độ tuổi này, bạn muốn trân trọng điều gì trong ${a.vi}?`,
+          en: `When you reach this age, what would you like to treasure in ${a.en}?`,
+          ja: `この年代を迎えたとき、「${a.ja}」でどんなことを大切にしていたいですか？`,
+        },
+        locale,
+      ),
+    };
+  }
+  // Youth or adulthood already lived.
+  if (state !== "past") return null;
+  const a = area.adult;
+  if (kw.length === 0) {
+    return {
+      mode: "back",
+      text: pick(
+        {
+          vi: `Nhìn lại ${a.vi} trong mười năm này, điều gì đã thay đổi với bạn?`,
+          en: `Looking back on ${a.en} over these ten years, what changed for you?`,
+          ja: `この10年の「${a.ja}」を振り返ると、どんな変化がありましたか？`,
+        },
+        locale,
+      ),
+    };
+  }
+  return {
+    mode: "back",
+    text: pick(
+      {
+        vi: `Nhìn lại ${a.vi} trong mười năm này, có lúc nào bạn thấy rõ “${kw.join("”, “")}” — ở chính mình hay ở người khác — không?`,
+        en: `Looking back on ${a.en} over these ten years, were there moments when “${kw.join("”, “")}” showed — in you or in others?`,
+        ja: `この10年の「${a.ja}」を振り返ると、「${kw.join("」「")}」が表れた場面はありましたか？ 自分のことでも、周りの人のことでも。`,
+      },
+      locale,
+    ),
+  };
+}
+
 export interface LifeStage {
   from: number;
   to: number;
@@ -513,8 +605,8 @@ export interface LifeStage {
     /** Advice only for periods still ahead (or now) in youth and adulthood. */
     strengths: string[];
     cautions: string[];
-    /** A question to look back with, for periods already lived and for childhood. */
-    reflection: string | null;
+    /** A question for periods that get no advice: looking back on lived ones, or ahead to later life. */
+    reflection: { mode: "back" | "ahead"; text: string } | null;
     notes: string[];
     /** The period's related palaces (tam phương tứ chính) and their main stars. */
     support: { label: string; stars: string[] }[];
@@ -555,18 +647,8 @@ export function lifeStages(chart: Chart, locale: Locale, currentAge?: number | n
       const voice = borrowed ? opp.mainStars.map((s) => s.id as MainStarId) : mains;
       // Advice is written for working-age life; later and earlier periods get no advice.
       const advise = (state === "current" || state === "future" || state === "unknown") && (phase === "youth" || phase === "adult");
-      const reflect = !advise && phase !== "beyond" && voice.length > 0;
       const kw = voice.map((m) => MAIN[m].keywords[locale]);
-      const reflection = reflect
-        ? pick(
-            {
-              vi: `Nhìn lại thời kỳ này, bạn có nhớ đến những sự việc hay con người liên quan đến “${kw.join("”, “")}” không?`,
-              en: `Looking back on this time, do events or people connected with “${kw.join("”, “")}” come to mind?`,
-              ja: `この時期を振り返ると、「${kw.join("」「")}」に関わる出来事や人が思い当たりますか？`,
-            },
-            locale,
-          )
-        : null;
+      const reflection = advise || !p.palace ? null : decadeQuestion(p.palace, phase, state, traitWords(voice, locale), locale);
       const { trine, opposite } = relatedBranches(p.branch);
       const notes = [
         ...[...p.mainStars, ...p.auxStars].filter((s) => s.hoa).map((s) => pick(HOA_NOTES[s.hoa!], locale)),

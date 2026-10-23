@@ -49,6 +49,7 @@ export interface StageLabels {
   letterHelp: string;
   letterCta: string;
   reflectTitle: string;
+  aheadTitle: string;
   reference: string;
   noMain: string;
 }
@@ -232,8 +233,8 @@ export function TuviStages({ stages, labels, currentAge }: { stages: StageView[]
 
         {s.hints.reflection && (
           <div className="rounded-2xl bg-linear-to-br from-violet-50 to-sky-50 p-3">
-            <p className="text-xs font-semibold text-violet-800">{labels.reflectTitle}</p>
-            <p className="mt-1 text-stone-800">{s.hints.reflection}</p>
+            <p className="text-xs font-semibold text-violet-800">{s.hints.reflection.mode === "ahead" ? labels.aheadTitle : labels.reflectTitle}</p>
+            <p className="mt-1 text-stone-800">{s.hints.reflection.text}</p>
           </div>
         )}
         {/* D. Your own records from this time, or a letter to the future self. */}

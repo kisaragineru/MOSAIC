@@ -137,6 +137,7 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
                   letterHelp: ui.letterHelp,
                   letterCta: ui.letterCta,
                   reflectTitle: ui.reflectTitle,
+                  aheadTitle: ui.aheadTitle,
                   reference: ui.reference,
                   noMain: ui.noMain,
                 }}

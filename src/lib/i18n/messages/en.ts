@@ -225,6 +225,7 @@ export const en = {
   tuvi: {
     ui: {
       reflectTitle: "To look back",
+      aheadTitle: "Something to think about",
       reference: "Reference",
       mapTitle: "Your life map",
       mapHelp: "Each colour is the natal palace a 10-year period falls in. Tap to jump to it.",

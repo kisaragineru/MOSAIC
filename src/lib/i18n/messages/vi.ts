@@ -227,6 +227,7 @@ export const vi: Dict = {
   tuvi: {
     ui: {
       reflectTitle: "Gợi ý để nhìn lại",
+      aheadTitle: "Điều để suy ngẫm",
       reference: "Tham khảo",
       mapTitle: "Bản đồ cuộc đời",
       mapHelp: "Mỗi màu là cung mà Đại Hạn của 10 năm đó đi vào. Chạm để chuyển đến giai đoạn đó.",

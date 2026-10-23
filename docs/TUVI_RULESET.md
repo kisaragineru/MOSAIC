@@ -107,8 +107,15 @@ Branch indices Tý=0 … Hợi=11; months/hours counted as in the classical text
     (< 65) get the softened reading; later life (< 95) is read as what one has built and passes on;
     periods from 95 on are shown **for reference only** (a traditional chart always lists 12).
   - **Advice** (strength / caution per main star) appears only for current or future periods in
-    youth and adulthood. Lived periods and childhood get a reflection question instead; later life
-    and reference periods get neither.
+    youth and adulthood. Other periods get a **question** instead, worded for the age and for what
+    the palace's domain means at that age (`PALACE_BY_AGE`: a child's career palace is school, not
+    a job):
+    - childhood already lived: about the child's world only; star traits are not used, since a
+      child's palace describes their surroundings more than their character;
+    - youth / adulthood already lived: the palace's adult domain plus a few of the stars' traits,
+      "in you or in others";
+    - later life: looking back if lived, "what would you like to treasure" if still ahead;
+    - reference periods (95+), and childhood for a user who is still a child: no question.
   - A period without main stars says so and names the opposite palace whose stars are used
     (vô chính diệu), instead of borrowing them silently.
 

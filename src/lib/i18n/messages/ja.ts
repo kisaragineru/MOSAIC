@@ -227,6 +227,7 @@ export const ja: Dict = {
   tuvi: {
     ui: {
       reflectTitle: "振り返りのヒント",
+      aheadTitle: "これからへの問い",
       reference: "参考",
       mapTitle: "人生の地図",
       mapHelp: "色は、その10年の大限が入る宮です。タップするとその時期に移動します。",

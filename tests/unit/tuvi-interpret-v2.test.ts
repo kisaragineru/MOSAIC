@@ -112,22 +112,29 @@ describe("Tử Vi interpretation v2", () => {
     expect(lifePhase(115, 124)).toBe("beyond");
   });
 
-  it("words each period for its age: reflection for lived ones and childhood, advice only ahead, reference only at the end", () => {
+  it("words each period for its age: age-specific questions for lived ones, childhood and later life, advice only ahead, reference only at the end", () => {
     // Born 1990 (Thổ ngũ cục): periods 5–14, 15–24, … ; now nominal age 37.
     const stages = lifeStages(chartOf(base), "ja", 37);
     const at = (from: number) => stages.find((x) => x.from === from)!;
     for (const lived of [at(5), at(15), at(25)]) {
       expect(lived.state).toBe("past");
       expect(lived.hints.strengths).toEqual([]);
-      expect(lived.hints.reflection).toMatch(/振り返ると/);
+      expect(lived.hints.reflection?.mode).toBe("back");
     }
+    // Childhood asks about the child's world, never about adult star traits.
     expect(at(5).theme).toMatch(/子どもの時期/);
+    expect(at(5).hints.reflection!.text).toMatch(/^子どもの頃の「/);
+    for (const k of at(5).keywords) expect(at(5).hints.reflection!.text).not.toContain(k);
+    // Adult periods already lived name the palace's adult domain and the stars' traits.
+    expect(at(25).hints.reflection!.text).toMatch(/^この10年の「.+」を振り返ると/);
     expect(at(35).state).toBe("current");
     expect(at(35).hints.strengths.length).toBeGreaterThan(0);
     expect(at(35).hints.reflection).toBeNull();
     for (const later of [at(65), at(75), at(85)]) {
       expect(later.phase).toBe("later");
       expect(later.hints.strengths).toEqual([]);
+      expect(later.hints.reflection?.mode).toBe("ahead");
+      expect(later.hints.reflection!.text).toMatch(/この年代を迎えたとき/);
     }
     for (const late of [at(95), at(105), at(115)]) {
       expect(late.phase).toBe("beyond");

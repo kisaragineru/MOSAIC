@@ -123,3 +123,70 @@ export const PALACE_SHORT: Record<PalaceId, T> = {
   phu_the: { en: "Partner", vi: "Bạn đời", ja: "パートナー" },
   huynh_de: { en: "Siblings", vi: "Anh em", ja: "きょうだい" },
 };
+
+/**
+ * What each palace's domain looks like at different ages, used to word the decade questions.
+ * A child's "career" palace is school and what they were absorbed in, not a job.
+ */
+export const PALACE_BY_AGE: Record<PalaceId, { child: T; adult: T; later: T }> = {
+  menh: {
+    child: { en: "who you were and what you were good at", vi: "tính cách và những điều mình giỏi", ja: "自分の性格や得意なこと" },
+    adult: { en: "your own direction in life", vi: "hướng đi của chính mình", ja: "自分の生き方や進む方向" },
+    later: { en: "living in your own way", vi: "sống theo cách của riêng mình", ja: "自分らしい生き方" },
+  },
+  phu_mau: {
+    child: { en: "your parents and teachers", vi: "cha mẹ và thầy cô", ja: "親や先生との関係" },
+    adult: { en: "your parents, elders and mentors", vi: "cha mẹ, bậc trên và người dìu dắt", ja: "親や目上の人・師との関係" },
+    later: { en: "what you received from parents and mentors", vi: "những gì nhận được từ cha mẹ và người dìu dắt", ja: "親や恩師から受け継いだもの" },
+  },
+  phuc_duc: {
+    child: { en: "the mood at home and the places where you felt at ease", vi: "không khí gia đình và nơi mình thấy bình yên", ja: "家の雰囲気や、心が落ち着く場所" },
+    adult: { en: "inner contentment and the values you hold", vi: "sự an yên trong lòng và giá trị sống", ja: "心の充足や大切にしている価値観" },
+    later: { en: "peace of mind and family roots", vi: "sự thanh thản và cội nguồn gia đình", ja: "心の穏やかさや家のルーツ" },
+  },
+  dien_trach: {
+    child: { en: "the home and neighbourhood you grew up in", vi: "ngôi nhà và khu phố nơi mình lớn lên", ja: "住んでいた家や地域" },
+    adult: { en: "your home and living environment", vi: "nhà cửa và môi trường sống", ja: "住まいや暮らしの環境" },
+    later: { en: "your home and daily surroundings", vi: "nhà cửa và nếp sống hằng ngày", ja: "住まいや日々の暮らし" },
+  },
+  quan_loc: {
+    child: { en: "school, study and the things you threw yourself into", vi: "trường lớp, việc học và những điều mình say mê", ja: "学校や勉強、打ち込んだこと" },
+    adult: { en: "work and your role in society", vi: "công việc và vai trò trong xã hội", ja: "仕事や社会での役割" },
+    later: { en: "the roles you have built up over the years", vi: "những vai trò đã vun đắp qua năm tháng", ja: "積み重ねてきた役割" },
+  },
+  no_boc: {
+    child: { en: "friends and playmates", vi: "bạn bè và bạn chơi", ja: "友だちや遊び仲間" },
+    adult: { en: "friends, colleagues and the people around you", vi: "bạn bè, đồng nghiệp và những người xung quanh", ja: "友人・同僚・人のつながり" },
+    later: { en: "friends and the connections you keep", vi: "bạn bè và những mối quan hệ còn gắn bó", ja: "友人や人とのつながり" },
+  },
+  thien_di: {
+    child: { en: "meeting the wider world: moves, trips and new places", vi: "gặp gỡ thế giới bên ngoài: chuyển nhà, đi xa, nơi mới", ja: "引っ越しや旅行など、外の世界との出会い" },
+    adult: { en: "moving, travel and how others see you", vi: "di chuyển, đi xa và cách người khác nhìn bạn", ja: "移動や外の世界、周りからの見られ方" },
+    later: { en: "your ties with the world outside", vi: "sự gắn kết với thế giới bên ngoài", ja: "外の世界との関わり" },
+  },
+  tat_ach: {
+    child: { en: "your health and how you were looked after", vi: "sức khỏe và cách mình được chăm sóc", ja: "体調や、からだを大切にしてもらったこと" },
+    adult: { en: "health and how you handle pressure", vi: "sức khỏe và cách đối diện áp lực", ja: "健康やストレスとの付き合い方" },
+    later: { en: "health and taking care of yourself", vi: "sức khỏe và việc chăm sóc bản thân", ja: "健康や自分をいたわること" },
+  },
+  tai_bach: {
+    child: { en: "pocket money and looking after your things", vi: "tiền tiêu vặt và việc giữ gìn đồ đạc", ja: "お小遣いや物を大切にすること" },
+    adult: { en: "money, income and how you use resources", vi: "tiền bạc, thu nhập và cách dùng nguồn lực", ja: "お金や収入、資源の使い方" },
+    later: { en: "savings and how you use what you have", vi: "tích lũy và cách dùng những gì mình có", ja: "蓄えや、持っているものの使い方" },
+  },
+  tu_tuc: {
+    child: { en: "younger children and the play or making you loved", vi: "các em nhỏ và những trò chơi, sáng tạo mình yêu thích", ja: "年下の子や、夢中になった遊び・ものづくり" },
+    adult: { en: "children, creative work and the next generation", vi: "con cái, sáng tạo và thế hệ sau", ja: "子どもや創造的な取り組み、次の世代" },
+    later: { en: "children, grandchildren and the next generation", vi: "con cháu và thế hệ sau", ja: "子や孫、次の世代" },
+  },
+  phu_the: {
+    child: { en: "a special close friend or someone you felt deeply connected to", vi: "một người bạn thân đặc biệt hay người mình thấy gắn bó", ja: "特に仲の良かった友だちや、深く心を通わせた人" },
+    adult: { en: "your partner and close bonds", vi: "người bạn đời và những gắn bó sâu sắc", ja: "パートナーや深いつながり" },
+    later: { en: "your partner and the person beside you", vi: "người bạn đời và người đồng hành", ja: "パートナーや、そばにいる人" },
+  },
+  huynh_de: {
+    child: { en: "siblings and children your own age", vi: "anh chị em và bạn cùng lứa", ja: "きょうだいや同じ年頃の仲間" },
+    adult: { en: "siblings and peers", vi: "anh chị em và bạn đồng trang lứa", ja: "きょうだいや同世代の仲間" },
+    later: { en: "siblings and long-time companions", vi: "anh chị em và những người bạn lâu năm", ja: "きょうだいや古くからの仲間" },
+  },
+};
