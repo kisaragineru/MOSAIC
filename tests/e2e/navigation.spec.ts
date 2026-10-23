@@ -15,7 +15,7 @@ test("bottom tabs: one row on a server-rendered page, Tử Vi first-class, clear
   await expect(tabs).toHaveCount(6);
   const ys = await tabs.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
   expect(new Set(ys).size).toBe(1);
-  await expect(page.locator('nav.fixed a[aria-current="page"]')).toHaveText("Timeline");
+  await expect(page.locator('nav.fixed a[aria-current="page"]')).toHaveText("Journal");
 
   for (const [name, path] of [["Tử Vi", "/tuvi"], ["Insights", "/insights"], ["Discover", "/discover"]] as const) {
     await page.locator("nav.fixed").getByRole("link", { name }).click();

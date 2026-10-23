@@ -51,7 +51,7 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
 
   // Quick note from Home, then a memory with an edit (version history)
   await pa.goto("/home");
-  await pa.getByLabel("Add a piece").fill("Walked by the West Lake at dawn.");
+  await pa.getByLabel("Jot something down").fill("Walked by the West Lake at dawn.");
   await pa.getByRole("button", { name: "Save" }).click();
   await expect(pa.getByText("Saved.")).toBeVisible();
   await pa.goto("/memories/new");
@@ -89,7 +89,7 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   // Life map, decade hints and the link to the user's own records / a letter to the future.
   await expect(pa.getByText("Your life map")).toBeVisible();
   await expect(pa.locator("#stages").getByText("Hints for this decade")).toBeVisible();
-  await expect(pa.locator("#stages").getByText("Your pieces from this time")).toBeVisible();
+  await expect(pa.locator("#stages").getByText("Your entries from this time")).toBeVisible();
   await expect(pa.locator("#stages").getByRole("link", { name: /Open them|Write a memory from this time/ }).first()).toHaveAttribute("href", /\/memories/);
   await pa.locator('#stages [role="group"] button').nth(4).click(); // ages 45–54, still ahead
   const letter = pa.getByRole("link", { name: /Write a letter for this decade/ });

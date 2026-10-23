@@ -40,7 +40,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
     groups.set(key, [...(groups.get(key) ?? []), m]);
   }
   return (
-    <Page title={t.memories.title} actions={<LinkButton href="/memories/new" variant="primary">+ {t.memories.new}</LinkButton>}>
+    <Page title={t.memories.title} actions={<LinkButton href="/memories/new" variant="primary">+ {t.memories.write}</LinkButton>}>
       <Flash t={t} sp={sp} />
       {filterError && <Flash t={t} sp={{ e: "invalid_input" }} />}
       <Card>

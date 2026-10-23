@@ -87,7 +87,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           <input type="hidden" name="kind" value="thought" />
           <Textarea name="body" required rows={3} placeholder={t.home.quickNotePlaceholder} aria-label={t.home.quickNote} />
           <div className="flex justify-between">
-            <Link href="/memories/new" className="text-sm text-teal-700 underline">{t.memories.new} →</Link>
+            <Link href="/memories/new" className="text-sm text-teal-700 underline">{t.home.writeMore} →</Link>
             <Button type="submit">{t.common.save}</Button>
           </div>
         </form>
