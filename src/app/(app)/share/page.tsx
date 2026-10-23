@@ -18,10 +18,12 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
     <Page title={t.share.title}>
       <Flash t={t} sp={sp} />
       <p className="text-sm text-stone-600">{t.share.intro}</p>
-      <Card title={t.share.create}>
+      <Card>
         <ShareCreator
           tx={{
             create: t.share.create,
+            advanced: t.share.advanced,
+            createCustom: t.share.createCustom,
             label: t.share.label,
             expires: t.share.expires,
             maxUses: t.share.maxUses,

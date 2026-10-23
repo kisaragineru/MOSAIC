@@ -36,6 +36,13 @@
       "when": 1792736762840,
       "tag": "0004_profile_ai_opt_in",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792776605209,
+      "tag": "0005_person_connection",
+      "breakpoints": true
     }
   ]
 }

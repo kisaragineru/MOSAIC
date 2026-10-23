@@ -3,7 +3,18 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import QRCode from "qrcode";
 import { currentUserId, requireUser } from "@/server/auth/session";
-import { createShare, getComparison, giveConsent, lookupShare, openComparison, revokeComparison, revokeShare } from "@/server/services/sharing";
+import {
+  addPersonFromConnection,
+  createShare,
+  getComparison,
+  giveConsent,
+  linkPersonToConnection,
+  lookupShare,
+  openComparison,
+  revokeComparison,
+  revokeShare,
+  unlinkPerson,
+} from "@/server/services/sharing";
 import { attempt, bool, str } from "./util";
 
 export type ShareState = { url: string; qr: string; expiresAt: string } | { error: string } | null;
@@ -64,4 +75,28 @@ export async function recomputeAction(form: FormData) {
   const id = str(form, "sessionId");
   const r = await attempt("comparison.recompute", () => getComparison(uid, id, { recompute: true }));
   redirect(r.ok ? `/compare/${id}?ok=saved` : `/compare/${id}?e=${r.error}`);
+}
+
+export async function addPersonFromConnectionAction(form: FormData) {
+  const uid = await requireUser();
+  const id = str(form, "sessionId");
+  const r = await attempt("person.fromConnection", () => addPersonFromConnection(uid, id));
+  revalidatePath("/people");
+  redirect(r.ok ? `/people/${r.value}?ok=saved` : `/compare/${id}?e=${r.error}`);
+}
+
+export async function linkPersonAction(form: FormData) {
+  const uid = await requireUser();
+  const personId = str(form, "personId");
+  const r = await attempt("person.link", () => linkPersonToConnection(uid, personId, str(form, "sessionId")));
+  revalidatePath("/people");
+  redirect(`/people/${personId}?${r.ok ? "ok=saved" : `e=${r.error}`}`);
+}
+
+export async function unlinkPersonAction(form: FormData) {
+  const uid = await requireUser();
+  const personId = str(form, "personId");
+  const r = await attempt("person.unlink", () => unlinkPerson(uid, personId));
+  revalidatePath("/people");
+  redirect(`/people/${personId}?${r.ok ? "ok=saved" : `e=${r.error}`}`);
 }

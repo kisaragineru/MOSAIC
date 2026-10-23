@@ -9,6 +9,7 @@ import {
   deleteRecordAction,
   updatePersonAction,
 } from "@/app/actions/people";
+import { linkPersonAction, unlinkPersonAction } from "@/app/actions/sharing";
 import { ConfirmButton } from "@/components/confirm-button";
 import { ExpandableText } from "@/components/expandable-text";
 import { Flash } from "@/components/flash";
@@ -20,6 +21,7 @@ import { getAccount } from "@/server/services/account";
 import { requireUser } from "@/server/auth/session";
 import { suggestGifts } from "@/server/services/gifts";
 import { getPerson, listCategories, nextOccurrence } from "@/server/services/people";
+import { connectionForPerson, listComparisons } from "@/server/services/sharing";
 
 const RELS = ["partner", "family", "friend", "colleague", "other"] as const;
 
@@ -43,6 +45,8 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
   if (!data) notFound();
   const { person, entries, events, gifts, dates, preferences } = data;
   const categories = await listCategories();
+  const connection = await connectionForPerson(uid, person.connectionSessionId);
+  const linkable = connection ? [] : (await listComparisons(uid)).filter((c) => c.status !== "revoked" && !c.personId);
   const today = todayIn((await getAccount(uid)).profile.timeZone);
   const fmt = (y: number, m: number, d: number, withYear = true) =>
     new Intl.DateTimeFormat(locale, { ...(withYear ? { year: "numeric" } : {}), month: "long", day: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(y, m - 1, d)));
@@ -53,6 +57,34 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
     <Page title={person.nickname} back="/people">
       <Flash t={t} sp={sp} />
       <p className="text-xs text-stone-500">🔒 {t.people.privateNote}</p>
+      {connection && (
+        <div className="space-y-2 rounded-3xl border border-teal-200 bg-linear-to-br from-teal-50 to-sky-50 p-4 text-sm">
+          <p className="font-semibold text-teal-900">{t.people.connectionCard(connection.otherName)}</p>
+          {connection.status === "revoked" ? (
+            <p className="text-stone-600">{t.people.connectionEnded}</p>
+          ) : (
+            <Link href={`/compare/${connection.id}`} className="inline-block rounded-full bg-teal-700 px-4 py-1.5 font-semibold text-white">{t.people.openComparison} →</Link>
+          )}
+          <p className="text-xs text-stone-600">🔒 {t.people.connectionPrivate}</p>
+          <form action={unlinkPersonAction}>
+            <input type="hidden" name="personId" value={person.id} />
+            <button className="text-xs text-stone-500 underline">{t.people.unlink}</button>
+          </form>
+        </div>
+      )}
+      {linkable.length > 0 && (
+        <details className="rounded-3xl border border-stone-200/80 bg-white/70 p-4 text-sm">
+          <summary className="cursor-pointer font-semibold text-stone-700">🔗 {t.people.linkTitle}</summary>
+          <p className="mt-2 text-xs text-stone-600">{t.people.linkHelp}</p>
+          <form action={linkPersonAction} className="mt-2 flex gap-2">
+            <input type="hidden" name="personId" value={person.id} />
+            <Select name="sessionId" aria-label={t.people.linkTitle} className="flex-1">
+              {linkable.map((c) => <option key={c.id} value={c.id}>{c.otherName}</option>)}
+            </Select>
+            <Button type="submit">{t.people.link}</Button>
+          </form>
+        </details>
+      )}
       <Card>
         <div className="flex items-center gap-2">
           <Pill tone="teal">{t.people.relationships[person.relationship as keyof typeof t.people.relationships] ?? person.relationship}</Pill>

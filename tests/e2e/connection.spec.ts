@@ -25,16 +25,16 @@ test("QR connection: preview of what others see, who is waiting, results first",
   // The profile shows what another person could see, before anyone connects.
   await a.goto("/me");
   await a.getByRole("link", { name: /相手からの見え方/ }).click();
-  await expect(a.getByText("「ハナさんから比較の招待が届いています。」— 表示名だけです。")).toBeVisible();
+  await expect(a.getByText("「ハナさんからつながりの招待が届いています。」— 表示名だけです。")).toBeVisible();
   await expect(a.getByText("いつもの飲みものは？")).toBeVisible();
   await expect(a.getByText("命盤をまだ作っていないため、表示されません。")).toBeVisible();
 
   await a.goto("/share");
-  await a.getByRole("button", { name: "リンクを作成" }).click();
+  await a.getByRole("button", { name: "QRを表示" }).click();
   const url = await a.getByTestId("share-url").inputValue();
 
   await b.goto(url.replace(/^https?:\/\/[^/]+/, ""));
-  await expect(b.getByText("ハナさんから比較の招待が届いています。")).toBeVisible();
+  await expect(b.getByText("ハナさんからつながりの招待が届いています。")).toBeVisible();
   await b.getByRole("button", { name: "続ける" }).click();
   await b.waitForURL(/\/compare\//);
   await b.getByRole("checkbox", { name: /^好み/ }).check();
@@ -45,10 +45,10 @@ test("QR connection: preview of what others see, who is waiting, results first",
 
   // The link owner is told on Home that someone is waiting for their choice.
   await a.goto("/home");
-  await expect(a.getByText(/ソラさんがあなたのQRから比較を始めました/)).toBeVisible();
+  await expect(a.getByText(/ソラさんがあなたのQRからつながりました/)).toBeVisible();
   await a.goto("/share");
   await expect(a.getByText("あなたの同意待ち")).toBeVisible();
-  await a.getByRole("link", { name: /ソラさんとの比較/ }).click();
+  await a.getByRole("link", { name: /^ソラさん/ }).click();
   await a.getByRole("checkbox", { name: /^好み/ }).check();
   await a.locator('input[name="agree"]').check();
   await a.getByRole("button", { name: "同意する" }).click();
@@ -58,5 +58,21 @@ test("QR connection: preview of what others see, who is waiting, results first",
   await expect(a.getByText("同意した内容を見る・変える")).toBeVisible();
   await expect(a.getByRole("button", { name: "同意内容を更新" })).toBeHidden();
   await a.goto("/home");
-  await expect(a.getByText(/ソラさんがあなたのQRから比較を始めました/)).toHaveCount(0);
+  await expect(a.getByText(/ソラさんがあなたのQRからつながりました/)).toHaveCount(0);
+
+  // 大切な人: the connection can be added once, is marked 🔗, and links back to the comparison.
+  await a.goto("/people");
+  await expect(a.getByText("QRでつながった人")).toBeVisible();
+  await a.getByRole("button", { name: /大切な人に追加/ }).click();
+  await expect(a.getByRole("heading", { name: "ソラ" })).toBeVisible();
+  await expect(a.getByText("🔗 ソラさんとQRでつながっています")).toBeVisible();
+  await a.getByRole("link", { name: /比較を見る/ }).click();
+  await expect(a.getByRole("link", { name: /大切な人のページを見る/ })).toBeVisible();
+  await a.goto("/people");
+  await expect(a.getByText("QRでつながった人")).toHaveCount(0);
+  await expect(a.getByRole("link", { name: /ソラ.*つながっている/ })).toBeVisible();
+  // A's entry and its link stay A's own: B still only sees the connection, not an entry.
+  await b.goto("/people");
+  await expect(b.getByText("QRでつながった人")).toBeVisible();
+  await expect(b.getByRole("link", { name: /つながっている/ })).toHaveCount(0);
 });

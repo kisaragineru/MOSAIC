@@ -1,0 +1,3 @@
+ALTER TABLE "people" ADD COLUMN "connection_session_id" uuid;--> statement-breakpoint
+ALTER TABLE "people" ADD CONSTRAINT "people_connection_session_id_comparison_sessions_id_fk" FOREIGN KEY ("connection_session_id") REFERENCES "public"."comparison_sessions"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "people_connection_uq" ON "people" USING btree ("user_id","connection_session_id");

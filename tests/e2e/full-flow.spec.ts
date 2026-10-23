@@ -152,7 +152,7 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
 
   // QR share link
   await pa.goto("/share");
-  await pa.getByRole("button", { name: "Create link" }).click();
+  await pa.getByRole("button", { name: "Show QR" }).click();
   await expect(pa.getByTestId("share-result")).toBeVisible();
   await expect(pa.getByRole("img", { name: "QR code for your share link" })).toBeVisible();
   const shareUrl = await pa.getByTestId("share-url").inputValue();
@@ -167,7 +167,7 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
 
   // B opens the link: the token is in the fragment and is removed from the address bar.
   await pb.goto(shareUrl);
-  await expect(pb.getByText("An invited you to compare.")).toBeVisible();
+  await expect(pb.getByText("An invited you to connect.")).toBeVisible();
   expect(pb.url()).not.toContain("#");
   await pb.getByRole("button", { name: "Continue" }).click();
   await expect(pb).toHaveURL(/\/compare\/[0-9a-f-]+$/);
@@ -184,7 +184,7 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
 
   // A consents → result for both
   await pa.goto("/share");
-  await pa.getByRole("link", { name: /With Binh/ }).click();
+  await pa.getByRole("link", { name: /^Binh/ }).click();
   await expect(pa.getByText("The other person has consented.")).toBeVisible();
   await pa.getByLabel(/Tử Vi —/).check();
   await pa.getByLabel(/Preferences —/).check();

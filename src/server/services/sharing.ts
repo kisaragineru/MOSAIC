@@ -27,7 +27,7 @@ import type { Element } from "@/lib/tuvi/canchi";
 import { uuid } from "@/lib/validation/common";
 import { randomToken, sha256 } from "../auth/crypto";
 import { enforceRateLimit } from "../auth/rate-limit";
-import { comparisonConsents, comparisonResults, comparisonSessions, COMPARISON_SCOPES, profileShares } from "../db/schema";
+import { comparisonConsents, comparisonResults, comparisonSessions, COMPARISON_SCOPES, people, profileShares } from "../db/schema";
 import { withUser, type Tx } from "../db/tx";
 import { AppError, invalid, mapDbError, notFound } from "../errors";
 import { audit } from "./audit";
@@ -358,7 +358,11 @@ export async function listComparisons(userId: string) {
         revokedAt: s.revokedAt,
       });
     }
-    return out;
+    const linked = await tx
+      .select({ id: people.id, sessionId: people.connectionSessionId })
+      .from(people)
+      .where(and(eq(people.userId, userId), sql`${people.connectionSessionId} is not null`));
+    return out.map((c) => ({ ...c, personId: linked.find((p) => p.sessionId === c.id)?.id ?? null }));
   });
 }
 
@@ -399,4 +403,64 @@ export async function sharedPreview(userId: string): Promise<SharedPreview> {
       answers: rows.rows.map((r) => ({ questionId: r.question_id, scope: r.scope, answer: r.answer })),
     };
   });
+}
+
+// ---------------------------------------------------------------------------
+// Linking a QR connection to one of the user's own "people" entries.
+// The link lives only on the user's own row: the other person never sees it,
+// and nothing from the user's private notes becomes part of the comparison.
+// ---------------------------------------------------------------------------
+
+/** The connection as seen by this user; not_found unless they take part in it. */
+async function ownConnection(tx: Tx, userId: string, sessionId: string) {
+  const id = uuid.parse(sessionId);
+  const [s] = await tx
+    .select()
+    .from(comparisonSessions)
+    .where(and(eq(comparisonSessions.id, id), or(eq(comparisonSessions.userA, userId), eq(comparisonSessions.userB, userId))));
+  if (!s) throw notFound();
+  const parts = await tx.execute<{ user_id: string; display_name: string }>(sql`select * from comparison_participants(${id})`);
+  return { id, status: s.status, otherName: parts.rows.find((p) => p.user_id !== userId)?.display_name ?? "?" };
+}
+
+export async function linkPersonToConnection(userId: string, personId: string, sessionId: string) {
+  const pid = uuid.parse(personId);
+  await withUser(userId, async (tx) => {
+    const c = await ownConnection(tx, userId, sessionId);
+    if (c.status === "revoked") throw new AppError("connection_ended", 409);
+    const [p] = await tx.select({ id: people.id }).from(people).where(and(eq(people.id, pid), eq(people.userId, userId)));
+    if (!p) throw notFound();
+    // One person per connection: move the link if another entry held it.
+    await tx.update(people).set({ connectionSessionId: null }).where(and(eq(people.userId, userId), eq(people.connectionSessionId, c.id)));
+    await tx.update(people).set({ connectionSessionId: c.id, updatedAt: new Date() }).where(eq(people.id, pid));
+    await audit(tx, userId, "person.linked", "person", pid);
+  });
+}
+
+export async function unlinkPerson(userId: string, personId: string) {
+  const pid = uuid.parse(personId);
+  await withUser(userId, async (tx) => {
+    const r = await tx.update(people).set({ connectionSessionId: null, updatedAt: new Date() }).where(and(eq(people.id, pid), eq(people.userId, userId))).returning({ id: people.id });
+    if (r.length === 0) throw notFound();
+    await audit(tx, userId, "person.unlinked", "person", pid);
+  });
+}
+
+/** Adds the other participant to the user's people (named as they appear), or returns the entry already linked. */
+export async function addPersonFromConnection(userId: string, sessionId: string): Promise<string> {
+  return withUser(userId, async (tx) => {
+    const c = await ownConnection(tx, userId, sessionId);
+    const [existing] = await tx.select({ id: people.id }).from(people).where(and(eq(people.userId, userId), eq(people.connectionSessionId, c.id)));
+    if (existing) return existing.id;
+    if (c.status === "revoked") throw new AppError("connection_ended", 409);
+    const [p] = await tx.insert(people).values({ userId, nickname: c.otherName.slice(0, 80), relationship: "friend", connectionSessionId: c.id }).returning({ id: people.id });
+    await audit(tx, userId, "person.linked", "person", p!.id);
+    return p!.id;
+  });
+}
+
+/** The connection linked to a person, for the person page (null when none or not visible). */
+export async function connectionForPerson(userId: string, sessionId: string | null) {
+  if (!sessionId) return null;
+  return withUser(userId, (tx) => ownConnection(tx, userId, sessionId)).catch(() => null);
 }

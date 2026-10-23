@@ -518,11 +518,14 @@ export const people = pgTable(
     nickname: text("nickname").notNull(),
     relationship: text("relationship").notNull().default("other"),
     note: text("note"),
+    /** The QR connection (comparison session) this person is linked to, if any. Only the owner sees the link. */
+    connectionSessionId: uuid("connection_session_id").references(() => comparisonSessions.id, { onDelete: "set null" }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [
     index("people_user_idx").on(t.userId),
+    uniqueIndex("people_connection_uq").on(t.userId, t.connectionSessionId),
     ownerUq("people_owner_uq", t),
     check("people_relationship_ck", sql`${t.relationship} in ('partner','family','friend','colleague','other')`),
   ],

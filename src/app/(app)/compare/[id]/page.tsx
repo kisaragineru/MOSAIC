@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { consentAction, endComparisonAction, recomputeAction } from "@/app/actions/sharing";
+import Link from "next/link";
+import { addPersonFromConnectionAction, consentAction, endComparisonAction, recomputeAction } from "@/app/actions/sharing";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
 import { Button, Card, Checkbox, Notice, Page, Pill } from "@/components/ui";
@@ -7,7 +8,7 @@ import { LOCALIZED_BANK } from "@/content/questions-i18n";
 import { answerLabel } from "@/lib/discovery/format";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
-import { getComparison, PURPOSE_TEXT, SCOPE_DESCRIPTIONS } from "@/server/services/sharing";
+import { getComparison, listComparisons, PURPOSE_TEXT, SCOPE_DESCRIPTIONS } from "@/server/services/sharing";
 
 const SCOPES = ["tuvi", "preferences", "values"] as const;
 const QMETA = new Map(LOCALIZED_BANK.map((q) => [q.id, q]));
@@ -21,12 +22,23 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
   const tr = (x: Partial<Record<string, string>> | undefined) => x?.[locale] ?? x?.en ?? "";
   const v = await getComparison(uid, id).catch(() => null);
   if (!v) notFound();
+  const personId = (await listComparisons(uid)).find((c) => c.id === v.id)?.personId ?? null;
   const scopeNames = (s: string[]) => s.map((x) => t.compare.scopeNames[x as (typeof SCOPES)[number]] ?? x).join(", ");
   const r = v.result;
   const names = r ? { a: r.participants.a, b: r.participants.b } : null;
   return (
     <Page title={t.compare.title(v.otherName)} back="/share">
       <Flash t={t} sp={sp} />
+      {personId ? (
+        <Link href={`/people/${personId}`} className="block text-sm font-medium text-teal-700 underline">♡ {t.compare.personLink} →</Link>
+      ) : (
+        v.status !== "revoked" && (
+          <form action={addPersonFromConnectionAction}>
+            <input type="hidden" name="sessionId" value={v.id} />
+            <Button type="submit" variant="secondary">♡ {t.people.addFromConnection}</Button>
+          </form>
+        )
+      )}
       {v.status === "revoked" ? (
         <Notice kind="warning">{t.compare.ended}</Notice>
       ) : (
