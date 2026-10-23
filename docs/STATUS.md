@@ -1,5 +1,7 @@
 # Implementation status (honest list)
 
+See also the pre-release audit: [AUDIT.md](AUDIT.md).
+
 ## Implemented and covered by automated tests
 - Registration, login, logout, password change, account deletion; DB-backed rate limits
 - PostgreSQL schema with RLS for the runtime role, composite ownership FKs, SECURITY DEFINER entry points
@@ -36,10 +38,12 @@
 - Application-level field encryption; admin tooling; account recovery without password
 - Public profile pages (results are participant-only; no "publish to profile" option exists)
 
+## CI
+- GitHub Actions run 39914230085 (commit 801afb7) passed typecheck, lint, unit/integration and E2E.
+
 ## Not verified
 - Tử Vi charts against published Vietnamese practitioner charts (verified against iztro + hand derivations)
 - Live Anthropic API behaviour (structured output / refusal fallback) — code typechecks against SDK 1.1.0
-- CI workflow (`.github/workflows/ci.yml`) has not been executed on GitHub
 - Deployment on a real hosting provider / managed PostgreSQL; load and performance testing
 - Accessibility audit with assistive technology; browsers other than Chromium
 

@@ -35,7 +35,7 @@ export function TuviChart({ chart, t, locale, currentAge }: { chart: Chart; t: D
             <p className="mt-0.5 text-stone-600">
               {p.auxStars.map((s) => `${STAR_INFO[s.id].vi}${s.hoa ? ` (${HOA_SHORT[s.hoa]})` : ""}`).join(", ")}
             </p>
-            <div className="mt-0.5 text-stone-400">
+            <div className="mt-0.5 text-stone-500">
               {[p.trangSinh, p.bacSi, p.thaiTue].filter(Boolean).join(" · ")}
               {chart.tuan.includes(p.branch) && <span className="ml-1 font-semibold text-stone-700">Tuần</span>}
               {chart.triet.includes(p.branch) && <span className="ml-1 font-semibold text-stone-700">Triệt</span>}
@@ -54,7 +54,7 @@ export function TuviChart({ chart, t, locale, currentAge }: { chart: Chart; t: D
         <p className="text-stone-500">
           Tứ Hóa: {(["loc", "quyen", "khoa", "ky"] as const).map((h) => `${HOA_INFO[h].vi.replace("Hóa ", "")} ${STAR_INFO[chart.hoaTargets[h]].vi}`).join(" · ")}
         </p>
-        {locale === "en" && <p className="text-stone-400">Mệnh = Self</p>}
+        {locale === "en" && <p className="text-stone-500">Mệnh = Self</p>}
       </div>
     </div>
   );

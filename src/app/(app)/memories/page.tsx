@@ -7,18 +7,30 @@ import { MEMORY_KINDS } from "@/server/db/schema";
 import { listMemories, listTags } from "@/server/services/memories";
 import { listPeople } from "@/server/services/people";
 
+const PAGE_SIZE = 50;
+
 export default async function MemoriesPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
   const sp = await searchParams;
   const { t } = await getT();
   const filters = { q: sp.q ?? "", kind: sp.kind ?? "", tag: sp.tag ?? "", personId: sp.personId ?? "", from: sp.from ?? "", to: sp.to ?? "" };
+  const page = Math.min(Math.max(Number.parseInt(sp.page ?? "0", 10) || 0, 0), 2000);
   let items: Awaited<ReturnType<typeof listMemories>> = [];
   let filterError = false;
   try {
-    items = await listMemories(uid, { ...filters, limit: 200 });
+    items = await listMemories(uid, { ...filters, limit: PAGE_SIZE + 1, offset: page * PAGE_SIZE });
   } catch {
     filterError = true;
   }
+  // One extra row tells us whether an older page exists.
+  const hasOlder = items.length > PAGE_SIZE;
+  items = items.slice(0, PAGE_SIZE);
+  const pageHref = (n: number) => {
+    const q = new URLSearchParams(Object.entries(filters).filter(([, v]) => v !== ""));
+    if (n > 0) q.set("page", String(n));
+    const qs = q.toString();
+    return `/memories${qs ? `?${qs}` : ""}`;
+  };
   const tags = await listTags(uid);
   const people = await listPeople(uid);
   // Group by year-month of the effective date.
@@ -91,6 +103,12 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
             </ul>
           </section>
         ))
+      )}
+      {(page > 0 || hasOlder) && (
+        <nav className="flex justify-between text-sm" aria-label="pagination">
+          {page > 0 ? <Link className="text-teal-700 underline" href={pageHref(page - 1)}>← {t.memories.newer}</Link> : <span />}
+          {hasOlder && <Link className="text-teal-700 underline" href={pageHref(page + 1)}>{t.memories.older} →</Link>}
+        </nav>
       )}
     </Page>
   );

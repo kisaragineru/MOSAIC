@@ -14,6 +14,11 @@ import { notFound } from "../errors";
  * never keep supporting a claim (its evidence row is gone and counts are recomputed).
  */
 export async function recomputeTendencies(tx: Tx, userId: string, now = new Date()) {
+  // Serialize recomputation per user: concurrent answers (double submit, two tabs) otherwise
+  // race on tendency_claims (unique violations / deadlocks) and roll back the answer itself.
+  // Transaction-scoped, released at commit/rollback. Read Committed then sees the other
+  // transaction's committed answer when this one proceeds.
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`tendency:${userId}`}, 0))`);
   const latest = await tx.execute<{
     id: string;
     question_id: string;

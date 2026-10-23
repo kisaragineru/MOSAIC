@@ -15,7 +15,7 @@ import {
   relationshipEntries,
   relationshipEvents,
 } from "../db/schema";
-import { withUser, type Tx } from "../db/tx";
+import { withAnon, withUser, type Tx } from "../db/tx";
 import { invalid, notFound } from "../errors";
 
 const RELATIONSHIPS = ["partner", "family", "friend", "colleague", "other"] as const;
@@ -360,6 +360,6 @@ export async function upcomingDates(userId: string, withinDays = 60, now = new D
 }
 
 export async function listCategories() {
-  // Catalog data; any authenticated context may read it.
-  return (await import("../db/client")).getDb().select().from(preferenceCategories).orderBy(asc(preferenceCategories.sortOrder));
+  // Catalog data (no personal data); read without identity.
+  return withAnon((tx) => tx.select().from(preferenceCategories).orderBy(asc(preferenceCategories.sortOrder)));
 }

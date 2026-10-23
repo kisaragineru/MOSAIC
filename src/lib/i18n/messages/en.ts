@@ -138,6 +138,8 @@ export const en = {
     versions: "Earlier versions",
     versionLabel: (n: number) => `Version ${n}`,
     editNote: "Editing keeps every earlier version, so you can see how your words changed.",
+    newer: "Newer",
+    older: "Older",
     from: "From",
     to: "To",
   },

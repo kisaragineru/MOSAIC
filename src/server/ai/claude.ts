@@ -11,10 +11,12 @@ import type { z } from "zod";
 
 export const AI_MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-5-5";
 
+// AI runs inside a page render: bound the worst case (≈ timeout × (retries + 1)) so a slow or
+// failing provider degrades to the deterministic result instead of hanging the page.
 let client: Anthropic | null | undefined;
 function getClient(): Anthropic | null {
   if (client !== undefined) return client;
-  client = process.env.ANTHROPIC_API_KEY ? new Anthropic({ timeout: 60_000, maxRetries: 2 }) : null;
+  client = process.env.ANTHROPIC_API_KEY ? new Anthropic({ timeout: 30_000, maxRetries: 1 }) : null;
   return client;
 }
 
@@ -37,7 +39,7 @@ export async function generateStructured<S extends z.ZodType>(opts: {
   const c = getClient();
   if (!c) return { ok: false, reason: "not_configured" };
   try {
-    const response = await c.beta.messages.parse({
+    const response = await c.beta.messages.create({
       model: AI_MODEL,
       max_tokens: opts.maxTokens ?? 4000,
       betas: ["server-side-fallback-2026-07-01"],
@@ -46,9 +48,18 @@ export async function generateStructured<S extends z.ZodType>(opts: {
       system: opts.system,
       messages: [{ role: "user", content: opts.user }],
     });
+    // Check the stop reason BEFORE reading content: a refusal carries no usable output.
     if (response.stop_reason === "refusal") return { ok: false, reason: "refused" };
-    if (response.parsed_output == null) return { ok: false, reason: "invalid_output" };
-    return { ok: true, data: response.parsed_output as z.infer<S> };
+    const text = response.content.find((b) => b.type === "text")?.text ?? "";
+    let json: unknown;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      return { ok: false, reason: "invalid_output" };
+    }
+    const parsed = opts.schema.safeParse(json);
+    if (!parsed.success) return { ok: false, reason: "invalid_output" };
+    return { ok: true, data: parsed.data as z.infer<S> };
   } catch (error) {
     if (error instanceof Anthropic.RateLimitError) return { ok: false, reason: "rate_limited" };
     if (error instanceof Anthropic.APIError) {

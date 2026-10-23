@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { tendencyFeedbackAction } from "@/app/actions/discovery";
 import { Flash } from "@/components/flash";
 import { Button, Card, Checkbox, Empty, Input, Notice, Page, Pill, Select } from "@/components/ui";
@@ -19,9 +20,12 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
   const people = await listPeople(uid);
   let reflection: Reflection | null = null;
   let reflectError: string | null = null;
+  // Sending records to the AI provider is only allowed for a form submitted from this site.
+  // A cross-site link (where the Lax session cookie is still sent) must never trigger it.
+  const sameOriginRequest = (await headers()).get("sec-fetch-site") === "same-origin";
   if (sp.kind) {
     try {
-      reflection = await reflect(uid, { kind: sp.kind, personId: sp.personId, locale, useAi: sp.ai === "1" });
+      reflection = await reflect(uid, { kind: sp.kind, personId: sp.personId, locale, useAi: sp.ai === "1" && sameOriginRequest });
     } catch (e) {
       reflectError = (e as { code?: string }).code ?? "invalid_input";
     }

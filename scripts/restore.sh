@@ -5,7 +5,11 @@
 set -euo pipefail
 URL="${RESTORE_DATABASE_URL:?RESTORE_DATABASE_URL (owner connection to an empty database) is required}"
 FILE="${1:?backup file required}"
-if [[ -f "$FILE.sha256" ]]; then sha256sum --check --status "$FILE.sha256" || { echo "checksum mismatch" >&2; exit 1; }; fi
+if [[ -f "$FILE.sha256" ]]; then
+  (cd "$(dirname "$FILE")" && sha256sum --check --status "$(basename "$FILE").sha256") || { echo "checksum mismatch" >&2; exit 1; }
+else
+  echo "warning: no checksum file next to the backup; integrity not verified" >&2
+fi
 if [[ "$FILE" == *.gpg ]]; then
   TMP="$(mktemp)"; trap 'rm -f "$TMP"' EXIT
   gpg --batch --yes --decrypt --output "$TMP" "$FILE"

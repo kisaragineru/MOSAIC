@@ -72,7 +72,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <ConfirmButton message={t.common.confirmDelete}>{t.settings.deleteAccount}</ConfirmButton>
         </form>
       </Card>
-      <p className="text-center text-xs text-stone-400">
+      <p className="text-center text-xs text-stone-500">
         MOSAIC · {t.tuvi.rulesetInfo(DEFAULT_RULESET.id, ENGINE_VERSION)}
       </p>
     </Page>

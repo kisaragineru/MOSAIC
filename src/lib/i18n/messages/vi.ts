@@ -140,6 +140,8 @@ export const vi: Dict = {
     versions: "Các phiên bản trước",
     versionLabel: (n: number) => `Phiên bản ${n}`,
     editNote: "Khi sửa, mọi phiên bản cũ vẫn được giữ lại để bạn thấy lời mình đã thay đổi thế nào.",
+    newer: "Mới hơn",
+    older: "Cũ hơn",
     from: "Từ",
     to: "Đến",
   },

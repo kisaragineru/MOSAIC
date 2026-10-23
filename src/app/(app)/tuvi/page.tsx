@@ -89,7 +89,7 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
               <summary className="cursor-pointer">{t.tuvi.notComputed}</summary>
               <p className="mt-1">{v.chart.notComputed.join(", ")}</p>
             </details>
-            <p className="mt-2 text-xs text-stone-400">{t.tuvi.rulesetInfo(v.chart.rulesetId, v.chart.engineVersion)}</p>
+            <p className="mt-2 text-xs text-stone-500">{t.tuvi.rulesetInfo(v.chart.rulesetId, v.chart.engineVersion)}</p>
           </Card>
           {p && !p.timeKnown && (
             <Card title={t.tuvi.exploreHours}>

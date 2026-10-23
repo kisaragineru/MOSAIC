@@ -53,9 +53,17 @@ Deploy order for upgrades: backup → `db:migrate` → `db:seed` → deploy new 
 
 ## Backups
 ```bash
-BACKUP_DATABASE_URL=postgres://mosaic_owner:…@host/mosaic_prod \
+BACKUP_DATABASE_URL=postgres://mosaic_owner@host/mosaic_prod \   # password from ~/.pgpass
 BACKUP_GPG_RECIPIENT=<key-id> scripts/backup.sh /secure/backups
 ```
+- Encryption is **mandatory**: without `BACKUP_GPG_RECIPIENT` the script refuses (override
+  `ALLOW_UNENCRYPTED_BACKUP=1` exists for local development only).
+- Key management: generate the backup key pair offline; the backup host holds only the **public**
+  key. Keep the private key (passphrase-protected) in two separate secure locations (e.g. a hardware
+  token + sealed offline copy) controlled by at least two people; rotate yearly; test decryption in
+  every restore drill. Losing the private key makes every backup unrecoverable.
+- Keep the DB password out of the command line (`~/.pgpass` / `PGPASSFILE`), since the URL is
+  visible in the process list.
 - Custom-format `pg_dump` (schema, data, RLS policies, grants, migration history), verified with
   `pg_restore --list`, SHA-256 checksum written alongside, optional GPG encryption
   (strongly recommended: dumps contain diaries and birth data).
@@ -71,6 +79,19 @@ BACKUP_GPG_RECIPIENT=<key-id> scripts/backup.sh /secure/backups
 Tested: a populated test database was backed up and restored; row counts and an md5 of all memory
 text were identical, policies and migration history were preserved, and RLS still applied to `mosaic_app`.
 Practice a restore drill regularly in a non-production environment.
+
+## Proxy & host configuration
+- `TRUST_PROXY=1` is **required** in production behind a proxy that overwrites `X-Forwarded-For`;
+  without it every registration shares one global rate-limit bucket (10/hour for the whole service)
+  and there is no per-IP login limit (AUD-03).
+- Server Actions compare `Origin` with `Host`/`X-Forwarded-Host`; make the proxy forward the public
+  host, or set `experimental.serverActions.allowedOrigins` in `next.config.ts`.
+
+## Housekeeping (schedule daily as the owner role)
+```sql
+DELETE FROM sessions WHERE expires_at < now();
+DELETE FROM rate_limit_buckets WHERE window_start < now() - interval '1 day';
+```
 
 ## Running the tests
 ```bash

@@ -40,18 +40,21 @@ keys, anonymous access, role privilege escalation, and identity leakage across p
 ## Web security
 - Nonce-based CSP (`script-src 'nonce-…' 'strict-dynamic'`, `frame-ancestors 'none'`,
   `form-action 'self'`, `object-src 'none'`), `X-Content-Type-Options`, `X-Frame-Options`,
-  `Referrer-Policy: same-origin`, `Permissions-Policy`, HSTS on HTTPS, `Cache-Control: private, no-store`.
+  `Referrer-Policy: same-origin` (not `no-referrer`: that makes browsers send `Origin: null` on form POSTs), `Permissions-Policy`, HSTS on HTTPS, `Cache-Control: private, no-store`.
 - Server Actions: Next.js Origin/Host check. Export route: explicit same-origin check (Origin or
   `Sec-Fetch-Site`). All input validated with zod; React escaping; no `dangerouslySetInnerHTML`.
 - Redirect targets restricted to same-site relative paths.
 
 ## Logging
-- Errors are logged as name + SQLSTATE only. **Database error messages are never logged** because
-  Drizzle embeds query parameters (diary text) in them.
+- Errors are logged as name + SQLSTATE only. Every DB error is converted at the transaction
+  boundary (`withUser`/`withAnon`) into a `DbError` carrying only the SQLSTATE and, for an allow-list
+  of codes, PostgreSQL's value-free primary message. Drizzle's original message (which embeds query
+  parameters) and PostgreSQL's `detail` never leave `src/server/db/tx.ts` (AUD-01).
 - Audit events record actions (login, export, share created/revoked, consent, deletion) with ids only.
 
 ## AI
-- Off unless the server has `ANTHROPIC_API_KEY` **and** the user opts in **and** presses the AI button.
+- Off unless the server has `ANTHROPIC_API_KEY` **and** the user opts in **and** submits the AI form
+  from the site itself (`Sec-Fetch-Site: same-origin`; cross-site links never trigger it — AUD-02).
 - Only short excerpts (≤280 chars, ≤40 items) of the records relevant to that question are sent.
 - Output must cite evidence ids that exist; otherwise discarded. AI text is never stored, so deleted
   records can never resurface through a cached summary. Tử Vi placement never uses AI.
