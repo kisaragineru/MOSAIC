@@ -330,6 +330,8 @@ export const questionVersions = pgTable(
     prompt: jsonb("prompt").notNull(),
     /** [{value, label:{en,vi}}] for choice formats. */
     options: jsonb("options"),
+    /** Upper bound of selections for 'multi'. NULL = any number. */
+    maxChoices: smallint("max_choices"),
     /** {min,max,minLabel:{..},maxLabel:{..}} for scale. */
     scale: jsonb("scale"),
     /** [{whenValue, questionId}] */

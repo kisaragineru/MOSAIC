@@ -49,6 +49,7 @@ export interface QuestionDef {
   format: "single" | "multi" | "scale" | "short" | "free";
   prompt: I18nText;
   options?: QuestionOption[];
+  maxChoices?: number;
   scale?: { min: number; max: number; minLabel: I18nText; maxLabel: I18nText };
   followUps?: { whenValue: string; questionId: string }[];
   signals?: Signal[];
@@ -210,6 +211,7 @@ export const QUESTION_BANK: QuestionDef[] = [
   {
     id: "v.top_values", version: 1, category: "values", sensitivity: "low", comparable: true, format: "multi",
     prompt: { en: "Which of these matter most to you right now? (up to 3)", vi: "Điều nào quan trọng nhất với bạn lúc này? (tối đa 3)" },
+    maxChoices: 3,
     options: [
       opt("family", "Family", "Gia đình"),
       opt("freedom", "Freedom", "Tự do"),

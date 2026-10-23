@@ -15,6 +15,20 @@
       "when": 1792735861946,
       "tag": "0001_rls_and_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792735924028,
+      "tag": "0002_search_unaccent",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792736045173,
+      "tag": "0003_question_max_choices",
+      "breakpoints": true
     }
   ]
 }

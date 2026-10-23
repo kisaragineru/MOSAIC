@@ -62,6 +62,7 @@ async function main() {
           format: q.format,
           prompt: q.prompt,
           options: q.options ?? null,
+          maxChoices: q.maxChoices ?? null,
           scale: q.scale ?? null,
           followUps: q.followUps ?? null,
           signals: q.signals ?? null,
