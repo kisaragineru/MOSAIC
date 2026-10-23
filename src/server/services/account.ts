@@ -37,9 +37,10 @@ async function createSession(tx: Parameters<Parameters<typeof withUser>[1]>[0], 
   return { userId, token, expiresAt };
 }
 
-export async function register(input: unknown, clientKey: string): Promise<NewSession> {
+/** clientKey: the caller's IP (or null when it cannot be determined reliably). */
+export async function register(input: unknown, clientKey: string | null): Promise<NewSession> {
   const data = registerSchema.parse(input);
-  await enforceRateLimit("register", clientKey);
+  await enforceRateLimit("register", clientKey ?? "unknown-client");
   const taken = await withAnon(async (tx) => {
     const r = await tx.execute<{ taken: boolean }>(sql`select auth_email_taken(${data.email}) as taken`);
     return r.rows[0]?.taken === true;
@@ -61,9 +62,10 @@ export async function register(input: unknown, clientKey: string): Promise<NewSe
   }
 }
 
-export async function login(input: unknown, clientKey: string): Promise<NewSession> {
+export async function login(input: unknown, clientKey: string | null): Promise<NewSession> {
   const data = loginSchema.parse(input);
-  await enforceRateLimit("login", clientKey);
+  // Per-IP limit only when the IP is trustworthy; the per-account limit always applies.
+  if (clientKey) await enforceRateLimit("login", clientKey);
   await enforceRateLimit("loginAccount", data.email);
   const row = await withAnon(async (tx) => {
     const r = await tx.execute<{ user_id: string; password_hash: string }>(
@@ -183,4 +185,21 @@ export async function updateProfile(userId: string, input: unknown) {
       .set({ displayName: data.displayName, bio: data.bio || null, locale: data.locale, timeZone: data.timeZone, updatedAt: new Date() })
       .where(eq(profiles.userId, userId));
   });
+}
+
+export async function getNotificationPrefs(userId: string) {
+  return withUser(userId, async (tx) => {
+    const [n] = await tx.select().from(notificationPreferences).where(eq(notificationPreferences.userId, userId));
+    return n ?? { userId, dailyQuestion: false, dateReminders: true, channel: "in_app", updatedAt: new Date() };
+  });
+}
+
+export async function updateNotificationPrefs(userId: string, input: { dailyQuestion: boolean; dateReminders: boolean }) {
+  const v = z.object({ dailyQuestion: z.boolean(), dateReminders: z.boolean() }).parse(input);
+  await withUser(userId, (tx) =>
+    tx
+      .insert(notificationPreferences)
+      .values({ userId, ...v })
+      .onConflictDoUpdate({ target: notificationPreferences.userId, set: { ...v, updatedAt: new Date() } }),
+  );
 }

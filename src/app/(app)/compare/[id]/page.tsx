@@ -1,0 +1,111 @@
+import { notFound } from "next/navigation";
+import { consentAction, endComparisonAction, recomputeAction } from "@/app/actions/sharing";
+import { ConfirmButton } from "@/components/confirm-button";
+import { Flash } from "@/components/flash";
+import { Button, Card, Checkbox, Notice, Page, Pill } from "@/components/ui";
+import { answerLabel } from "@/lib/discovery/format";
+import { getT } from "@/lib/i18n/server";
+import { requireUser } from "@/server/auth/session";
+import { getComparison, PURPOSE_TEXT, SCOPE_DESCRIPTIONS } from "@/server/services/sharing";
+
+const SCOPES = ["tuvi", "preferences", "values"] as const;
+
+export default async function ComparePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
+  const uid = await requireUser();
+  const { id } = await params;
+  const sp = await searchParams;
+  const { t, locale } = await getT();
+  const v = await getComparison(uid, id).catch(() => null);
+  if (!v) notFound();
+  const scopeNames = (s: string[]) => s.map((x) => t.compare.scopeNames[x as (typeof SCOPES)[number]] ?? x).join(", ");
+  const r = v.result;
+  const names = r ? { a: r.participants.a, b: r.participants.b } : null;
+  return (
+    <Page title={t.compare.title(v.otherName)} back="/share">
+      <Flash t={t} sp={sp} />
+      {v.status === "revoked" ? (
+        <Notice kind="warning">{t.compare.ended}</Notice>
+      ) : (
+        <>
+          <Card title={t.compare.consentTitle}>
+            <p className="mb-3 text-sm text-stone-600">{PURPOSE_TEXT[locale]}</p>
+            {v.myConsent && <p className="mb-2 text-sm"><Pill tone="teal">✓</Pill> {t.compare.yourConsent(scopeNames(v.myConsent.scopes))}</p>}
+            <p className="mb-3 text-sm">{v.otherConsented ? `✓ ${t.compare.otherConsented}` : `⏳ ${t.compare.waiting}`}</p>
+            <form action={consentAction} className="space-y-2">
+              <input type="hidden" name="sessionId" value={v.id} />
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium">{t.compare.scopes}</legend>
+                {SCOPES.map((s) => (
+                  <Checkbox
+                    key={s}
+                    name="scopes"
+                    value={s}
+                    defaultChecked={v.myConsent?.scopes.includes(s)}
+                    label={<><b>{t.compare.scopeNames[s]}</b> — <span className="text-stone-600">{SCOPE_DESCRIPTIONS[s][locale]}</span></>}
+                  />
+                ))}
+              </fieldset>
+              <Checkbox name="agree" required label={t.compare.agree} />
+              <Button type="submit">{v.myConsent ? t.compare.update : t.compare.give}</Button>
+            </form>
+          </Card>
+          {r && names && (
+            <>
+              <Notice>{r.disclaimer[locale]}</Notice>
+              <p className="text-xs text-stone-500">{t.compare.agreed(scopeNames(r.agreedScopes))}{v.computedAt && ` · ${t.compare.computedAt(v.computedAt.toISOString().slice(0, 16).replace("T", " "))}`}</p>
+              {r.tuvi && (
+                <Card title={t.compare.tuviTitle}>
+                  {r.tuvi.available ? (
+                    <ul className="list-disc space-y-1 pl-5 text-sm">{r.tuvi.observations.map((o) => <li key={o.ruleId}>{o.text[locale]}</li>)}</ul>
+                  ) : (
+                    <Notice kind="warning">{t.compare.tuviMissing}</Notice>
+                  )}
+                </Card>
+              )}
+              {r.preferences && (
+                <Card title={t.compare.prefTitle}>
+                  {r.preferences.items.length === 0 ? (
+                    <p className="text-sm text-stone-500">{t.compare.noPref}</p>
+                  ) : (
+                    <ul className="space-y-2" data-testid="pref-items">
+                      {r.preferences.items.map((i) => {
+                        const q = r.preferences!.questions[i.questionId];
+                        return (
+                          <li key={i.questionId} className="rounded-xl border border-stone-200 p-2 text-sm">
+                            <Pill tone={i.kind === "same" ? "teal" : i.kind === "partly_shared" ? "amber" : "violet"}>
+                              {i.kind === "same" ? t.compare.same : i.kind === "partly_shared" ? t.compare.partly : t.compare.different}
+                            </Pill>{" "}
+                            {q?.prompt[locale] ?? i.questionId}
+                            <p className="text-xs text-stone-600">
+                              {names.a}: {answerLabel(q?.options ?? null, i.a, locale)} · {names.b}: {answerLabel(q?.options ?? null, i.b, locale)}
+                            </p>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  {(r.preferences.onlyA.length > 0 || r.preferences.onlyB.length > 0) && (
+                    <p className="mt-2 text-xs text-stone-500">
+                      {t.compare.onlyOne}: {[...r.preferences.onlyA, ...r.preferences.onlyB].map((q) => r.preferences!.questions[q]?.prompt[locale] ?? q).join(" · ")}
+                    </p>
+                  )}
+                </Card>
+              )}
+              <Card title={t.compare.hints}>
+                <ul className="list-disc space-y-1 pl-5 text-sm">{r.hints.map((h) => <li key={h.ruleId}>{h.text[locale]}</li>)}</ul>
+              </Card>
+              <form action={recomputeAction}>
+                <input type="hidden" name="sessionId" value={v.id} />
+                <Button variant="secondary">{t.compare.recompute}</Button>
+              </form>
+            </>
+          )}
+          <form action={endComparisonAction}>
+            <input type="hidden" name="sessionId" value={v.id} />
+            <ConfirmButton message={t.compare.endConfirm}>{t.compare.end}</ConfirmButton>
+          </form>
+        </>
+      )}
+    </Page>
+  );
+}
