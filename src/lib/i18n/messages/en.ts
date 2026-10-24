@@ -678,6 +678,7 @@ export const en = {
   },
   settings: {
     dev: {
+      askOwner: "Make them ask you \"how do you see me?\"",
       answerAsks: (n: number) => `Answer "how do you see me?" (${n})`,
       ended: "(connection ended)",
       reconnect: "Connect again",

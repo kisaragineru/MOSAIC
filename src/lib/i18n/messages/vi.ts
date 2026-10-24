@@ -680,6 +680,7 @@ export const vi: Dict = {
   },
   settings: {
     dev: {
+      askOwner: "Cho họ hỏi bạn \"bạn thấy tôi thế nào?\"",
       answerAsks: (n: number) => `Trả lời "bạn thấy tôi thế nào?" (${n})`,
       ended: "(đã hủy kết nối)",
       reconnect: "Kết nối lại",

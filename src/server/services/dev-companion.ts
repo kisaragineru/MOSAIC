@@ -20,7 +20,7 @@ import { createMemory } from "./memories";
 import { setMemoryAudience } from "./memory-share";
 import { addPreference, updatePerson } from "./people";
 import { ANSWERS, BIO, BIRTH, FAVOURITES, INTRO, LEAN, MORE, MOTHER_COMMENT, MOTHER_GUESS, MOTHER_SEES_OTHERWISE, RECORDS } from "./dev-persona";
-import { answerPeer, myPeerRequests } from "./peers";
+import { answerPeer, askPeer, myPeerRequests } from "./peers";
 import { listTendencies } from "./tendencies";
 import { AXES } from "@/content/axes";
 import type { TendencyKey } from "@/content/questions";
@@ -225,6 +225,14 @@ export async function companionAnswersAsks(ownerId: string, companionId: string)
   for (const r of await companionAsks(cid)) {
     await answerPeer(cid, r.id, { anonymous: false, answers, comment: MOTHER_COMMENT });
   }
+}
+
+/** She asks the owner "how do you see me?" (shows up on the owner's Home and in "how others see you"). */
+export async function companionAsksOwner(ownerId: string, companionId: string) {
+  const cid = await own(ownerId, companionId);
+  const conn = (await listComparisons(cid)).find((c) => c.status === "active");
+  if (!conn) throw new AppError("connection_ended", 409);
+  await askPeer(cid, conn.id);
 }
 
 /** The companion writes one more record, shared with everyone it's connected with. */

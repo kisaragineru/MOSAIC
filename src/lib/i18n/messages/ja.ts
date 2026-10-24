@@ -680,6 +680,7 @@ export const ja: Dict = {
   },
   settings: {
     dev: {
+      askOwner: "あなたに「どう見える？」を聞かせる",
       answerAsks: (n: number) => `「周りから見たあなた」に答えさせる（${n}件）`,
       ended: "（つながり解除済み）",
       reconnect: "つなぎ直す",

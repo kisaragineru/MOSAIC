@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/server/auth/session";
-import { companionAnswersAsks, companionWrites, createCompanion, deleteCompanion, enrichCompanion, reconnectCompanion } from "@/server/services/dev-companion";
+import { companionAnswersAsks, companionAsksOwner, companionWrites, createCompanion, deleteCompanion, enrichCompanion, reconnectCompanion } from "@/server/services/dev-companion";
 import { attempt, str } from "./util";
 
 // Development only: every service call refuses unless DEV_TOOLS=on.
@@ -43,4 +43,9 @@ export async function reconnectCompanionAction(form: FormData) {
 export async function companionAnswersAction(form: FormData) {
   const uid = await requireUser();
   done(await attempt("dev.companion_answer", () => companionAnswersAsks(uid, str(form, "id"))));
+}
+
+export async function companionAsksOwnerAction(form: FormData) {
+  const uid = await requireUser();
+  done(await attempt("dev.companion_ask", () => companionAsksOwner(uid, str(form, "id"))));
 }

@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { companionAnswersAsks, companionAsks, companionConnected, companionPending, companionWrites, createCompanion, deleteCompanion, enrichCompanion, listCompanions, reconnectCompanion } from "@/server/services/dev-companion";
+import { companionAnswersAsks, companionAsks, companionAsksOwner, companionConnected, companionPending, companionWrites, createCompanion, deleteCompanion, enrichCompanion, listCompanions, reconnectCompanion } from "@/server/services/dev-companion";
 import { getAccount } from "@/server/services/account";
 import { answerQuestion } from "@/server/services/discovery";
-import { askPeer, peerResults } from "@/server/services/peers";
+import { askPeer, myPeerRequests, peerResults } from "@/server/services/peers";
 import { portrait } from "@/server/services/mosaic";
 import { connectionFeed, shareTargets } from "@/server/services/memory-share";
 import { listComparisons, revokeComparison } from "@/server/services/sharing";
@@ -61,6 +61,12 @@ describe("development test companion", () => {
     expect(seen.named[0]).toMatchObject({ name: "ミナ（テスト）" });
     expect(seen.named[0]!.comment).toMatch(/たまには頼ってね/);
     expect(Object.keys(seen.named[0]!.answers).length).toBeGreaterThan(5);
+
+    // She asks the owner in turn; it reaches the owner as a pending request.
+    await companionAsksOwner(u.userId, id);
+    const mine = (await myPeerRequests(u.userId)).filter((r) => r.role === "responder" && r.status === "pending");
+    expect(mine).toHaveLength(1);
+    expect(mine[0]!.otherName).toBe("ミナ（テスト）");
 
     // Ended by the owner, then connected again: same person entry, records visible again.
     const before = (await listComparisons(u.userId)).find((c) => c.status === "active")!;
