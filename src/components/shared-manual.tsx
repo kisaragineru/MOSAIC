@@ -22,6 +22,7 @@ export function SharedManualView({ m, locale, levels }: { m: SharedManual; local
         <h1 className="text-xl font-bold tracking-tight text-stone-900">{m.heading}</h1>
         <p className="mt-2 text-sm leading-7 text-stone-700">{m.lead}</p>
         {m.bio && <blockquote className="mt-3 whitespace-pre-line border-l-4 border-violet-200 pl-3 text-sm leading-7 text-stone-800">{m.bio}</blockquote>}
+        {m.intro && <blockquote className="mt-3 whitespace-pre-line rounded-2xl bg-white/70 p-3 text-sm leading-7 text-stone-800 ring-1 ring-sky-100">🧩 {m.intro}</blockquote>}
       </header>
       {m.empty && <p className="rounded-2xl bg-stone-100/80 px-4 py-3 text-sm text-stone-600">{m.empty}</p>}
       {m.summary.length > 0 && (

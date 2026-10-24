@@ -29,6 +29,7 @@ export interface SharedManualData {
   preset: ManualPreset;
   name: string;
   bio: string | null;
+  intro?: string | null;
   claims: { key: string; direction: 1 | -1; evidence: number; support: number; confidence: number }[];
   likes: { question_id: string; answer: Answer }[];
 }
@@ -49,6 +50,7 @@ export interface SharedManual {
   heading: string;
   lead: string;
   bio: string | null;
+  intro: string | null;
   summaryTitle: string;
   summary: string[];
   chapters: { chapter: string; traits: SharedTrait[] }[];
@@ -106,6 +108,7 @@ export function composeSharedManual(d: SharedManualData, locale: Locale): Shared
     heading: L(S.heading(d.name, d.preset)),
     lead: L(S.lead(d.name)),
     bio: d.bio,
+    intro: d.intro ?? null,
     summaryTitle: L(SECTION_TEXT.summary.title),
     summary: clear.map((c) => L(S.consistent(d.name, pole(c.key, c.direction)))),
     chapters: out,
@@ -163,7 +166,7 @@ export async function sharedManualFor(userId: string, sessionId: string, locale:
  */
 export async function sharedManualPreview(userId: string, preset: ManualPreset, locale: Locale): Promise<SharedManual> {
   const data = await withUser(userId, async (tx): Promise<SharedManualData> => {
-    const [p] = await tx.select({ name: profiles.displayName, bio: profiles.bio }).from(profiles).where(eq(profiles.userId, userId));
+    const [p] = await tx.select({ name: profiles.displayName, bio: profiles.bio, intro: profiles.intro }).from(profiles).where(eq(profiles.userId, userId));
     const claims = await tx
       .select({ key: tendencyClaims.claimKey, direction: tendencyClaims.direction, evidence: tendencyClaims.evidenceCount, support: tendencyClaims.supportCount, confidence: tendencyClaims.confidence, status: tendencyClaims.userStatus, valid: tendencyClaims.isValid })
       .from(tendencyClaims)
@@ -180,6 +183,7 @@ export async function sharedManualPreview(userId: string, preset: ManualPreset, 
       preset,
       name: p?.name ?? "",
       bio: p?.bio?.trim() || null,
+      intro: p?.intro?.trim() || null,
       claims: claims.filter((c) => c.valid && c.status !== "rejected").map((c) => ({ key: c.key, direction: c.direction as 1 | -1, evidence: c.evidence, support: c.support, confidence: c.confidence })),
       likes: likes.rows,
     };

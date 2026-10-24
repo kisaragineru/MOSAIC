@@ -308,6 +308,8 @@ export interface ComparisonView {
   otherName: string;
   /** Shown once the other person has consented in this connection (see connection_bio). */
   otherBio: string | null;
+  /** Their approved MOSAIC intro, under the same rule. */
+  otherIntro: string | null;
   myConsent: { scopes: string[]; consentedAt: Date } | null;
   otherConsented: boolean;
   otherScopes: string[] | null;
@@ -325,7 +327,7 @@ export async function getComparison(userId: string, sessionId: string, opts: { r
     const myRole = s.userA === userId ? "a" : "b";
     const parts = await tx.execute<{ user_id: string; display_name: string }>(sql`select * from comparison_participants(${id})`);
     const other = parts.rows.find((p) => p.user_id !== userId);
-    const bio = await tx.execute<{ bio: string }>(sql`select bio from connection_bio(${id})`);
+    const bio = await tx.execute<{ bio: string | null; intro: string | null }>(sql`select bio, intro from connection_bio(${id})`);
     const consents = await tx
       .select()
       .from(comparisonConsents)
@@ -350,6 +352,7 @@ export async function getComparison(userId: string, sessionId: string, opts: { r
       myRole,
       otherName: other?.display_name ?? "?",
       otherBio: bio.rows[0]?.bio ?? null,
+      otherIntro: bio.rows[0]?.intro ?? null,
       myConsent: mine ? { scopes: mine.scopes, consentedAt: mine.consentedAt } : null,
       otherConsented: !!theirs,
       otherScopes: theirs ? theirs.scopes : null,
@@ -395,6 +398,7 @@ export async function listComparisons(userId: string) {
 export interface SharedPreview {
   displayName: string;
   bio: string | null;
+  intro: string | null;
   /** The summary a comparison reads when Tử Vi is agreed (null without a chart). */
   tuvi: { yearStem: number; yearBranch: number; napAmElement: Element; menhBranch: number | null } | null;
   /** Latest answers the user marked "allow in comparisons", by the scope that would share them. */
@@ -410,7 +414,7 @@ export interface SharedPreview {
  */
 export async function sharedPreview(userId: string): Promise<SharedPreview> {
   return withUser(userId, async (tx) => {
-    const name = await tx.execute<{ display_name: string; bio: string | null }>(sql`select display_name, bio from profiles where user_id = ${userId}`);
+    const name = await tx.execute<{ display_name: string; bio: string | null; intro: string | null }>(sql`select display_name, bio, intro from profiles where user_id = ${userId}`);
     const chart = await tx.execute<{ year_stem: number; year_branch: number; nap_am_element: string; menh_branch: number | null }>(
       sql`select year_stem, year_branch, nap_am_element, menh_branch from tuvi_charts where user_id = ${userId} and is_current limit 1`,
     );
@@ -429,6 +433,7 @@ export async function sharedPreview(userId: string): Promise<SharedPreview> {
     return {
       displayName: name.rows[0]?.display_name ?? "",
       bio: name.rows[0]?.bio?.trim() || null,
+      intro: name.rows[0]?.intro?.trim() || null,
       tuvi: c ? { yearStem: c.year_stem, yearBranch: c.year_branch, napAmElement: c.nap_am_element as Element, menhBranch: c.menh_branch } : null,
       answers: rows.rows.filter((r) => r.privacy === "comparable").map((r) => ({ questionId: r.question_id, scope: r.scope, answer: r.answer })),
       choices: rows.rows.map((r) => ({ responseId: r.id, questionId: r.question_id, scope: r.scope, answer: r.answer, shared: r.privacy === "comparable" })),

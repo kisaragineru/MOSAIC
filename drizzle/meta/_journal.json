@@ -92,6 +92,13 @@
       "when": 1792824590167,
       "tag": "0012_onboarding",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792826311321,
+      "tag": "0013_intro",
+      "breakpoints": true
     }
   ]
 }

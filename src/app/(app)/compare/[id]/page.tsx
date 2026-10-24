@@ -6,6 +6,7 @@ import { myManualShare, sharedManualFor } from "@/server/services/manual-share";
 import { askPeerAction } from "@/app/actions/peers";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
+import { IntroPair } from "@/components/intro-pair";
 import { Button, Card, Checkbox, Notice, Page, Pill } from "@/components/ui";
 import { LOCALIZED_BANK } from "@/content/questions-i18n";
 import { answerLabel } from "@/lib/discovery/format";
@@ -64,9 +65,9 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
   return (
     <Page title={t.compare.title(v.otherName)} back="/share">
       <Flash t={t} sp={sp} />
-      {v.otherBio && v.status !== "revoked" && (
+      {(v.otherBio || v.otherIntro) && v.status !== "revoked" && (
         <Card title={t.compare.bioTitle(v.otherName)}>
-          <p className="whitespace-pre-line text-sm leading-relaxed text-stone-800">{v.otherBio}</p>
+          <IntroPair bio={v.otherBio} intro={v.otherIntro} name={v.otherName} t={t} />
         </Card>
       )}
       {theirManual && (

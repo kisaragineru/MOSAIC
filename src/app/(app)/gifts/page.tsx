@@ -19,7 +19,7 @@ export default async function GiftsPage({ searchParams }: { searchParams: Promis
   const writing = boxes.filter((b) => b.my_role !== "child");
   const received = boxes.filter((b) => b.my_role === "child");
   return (
-    <Page title={`🎁 ${g.title}`} back="/me">
+    <Page title={`🎁 ${g.title}`} back="/people">
       <Flash t={t} sp={sp} />
       <p className="text-sm leading-7 text-stone-600">{g.intro}</p>
 

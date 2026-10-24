@@ -96,6 +96,11 @@ export const profiles = pgTable("profiles", {
   timeZone: text("time_zone").notNull().default("Asia/Ho_Chi_Minh"),
   /** Explicit opt-in before any record excerpt is sent to the external AI provider. */
   aiOptIn: boolean("ai_opt_in").notNull().default(false),
+  /** An introduction MOSAIC drafted from what it knows, edited and approved by the user. */
+  intro: text("intro"),
+  introUpdatedAt: ts("intro_updated_at"),
+  /** How many pieces MOSAIC had when the intro was saved (to suggest an update later). */
+  introPieces: integer("intro_pieces"),
   /** When the user finished or skipped the first-run guide (null: not yet). */
   onboardedAt: ts("onboarded_at"),
   createdAt: createdAt(),

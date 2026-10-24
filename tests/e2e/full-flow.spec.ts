@@ -45,9 +45,11 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
 
   // Profile
   await pa.goto("/me");
-  await pa.getByLabel("About me").fill("I like quiet mornings.");
+  await pa.locator('textarea[name="bio"]').fill("I like quiet mornings.");
   await pa.getByRole("button", { name: "Save" }).first().click();
   await expect(pa.getByText("Saved.")).toBeVisible();
+  // Likes and dislikes in your own words now live in the "What you love" chapter.
+  await pa.goto("/discover/chapter/likes");
   await pa.getByLabel("What").fill("Phở");
   await pa.getByRole("button", { name: "Add" }).click();
   await expect(pa.getByText("Phở", { exact: true })).toBeVisible();

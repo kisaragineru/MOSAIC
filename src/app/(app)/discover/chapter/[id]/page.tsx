@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FeedbackPrompt } from "@/components/feedback-prompt";
+import { LikesFollowUp } from "@/components/likes-follow-up";
 import { Flash } from "@/components/flash";
 import { QuestionForm } from "@/components/question-form";
 import { Card, LinkButton, Page, ProgressBar } from "@/components/ui";
@@ -10,6 +11,8 @@ import type { Answer } from "@/lib/discovery/answers";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { chapterProgress, getQuestion } from "@/server/services/discovery";
+import { listCategories, listPreferences } from "@/server/services/people";
+import { PreferenceSection } from "@/components/preferences";
 
 /** One question at a time from a chapter; after each answer the next one appears here. */
 export default async function ChapterPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
@@ -37,6 +40,7 @@ export default async function ChapterPage({ params, searchParams }: { params: Pr
       </div>
       <Flash t={t} sp={sp} />
       <FeedbackPrompt sp={sp} back={back} t={t} />
+      <LikesFollowUp sp={sp} back={back} t={t} locale={locale} />
       {next ? (
         <Card key={next.question.id} className="animate-[fadeUp_.35s_ease-out] motion-reduce:animate-none">
           {followUp && <p className="mb-2 inline-block rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-violet-900">↳ {d.followUpBadge}</p>}
@@ -54,6 +58,12 @@ export default async function ChapterPage({ params, searchParams }: { params: Pr
             <LinkButton href="/insights" variant="primary">{t.insights.title} →</LinkButton>
             <LinkButton href="/discover/chapters" variant="secondary">{d.otherChapters}</LinkButton>
           </div>
+        </Card>
+      )}
+      {chapter === "likes" && (
+        <Card title={`🍀 ${d.likesOwnTitle}`}>
+          <p className="mb-3 text-xs leading-5 text-stone-500">{d.likesOwnHelp}</p>
+          <PreferenceSection t={t} locale={locale} prefs={await listPreferences(uid, null)} categories={await listCategories()} personId={null} back={back} editing={sp.edit ?? null} />
         </Card>
       )}
       <p className="text-center text-xs">

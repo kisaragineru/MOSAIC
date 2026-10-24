@@ -9,6 +9,7 @@ import { requireUser } from "@/server/auth/session";
 import { sharedPreview } from "@/server/services/sharing";
 import { getTuvi } from "@/server/services/tuvi";
 import { PhoneCard, PhoneFrame } from "@/components/phone-frame";
+import { IntroPair } from "@/components/intro-pair";
 import { TuviChart } from "@/components/tuvi-chart";
 import { TuviThemes } from "@/components/tuvi-themes";
 import { themeLabels } from "@/lib/tuvi/theme-labels";
@@ -62,9 +63,9 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
           </div>
         </div>
         <PhoneFrame title={t.compare.title(p.displayName)} label={t.preview.phoneTitle}>
-          {p.bio && (
+          {(p.bio || p.intro) && (
             <PhoneCard title={t.compare.bioTitle(p.displayName)}>
-              <p className="whitespace-pre-line leading-relaxed text-stone-800">{p.bio}</p>
+              <IntroPair bio={p.bio} intro={p.intro} name={p.displayName} t={t} small />
             </PhoneCard>
           )}
           {on.has("tuvi") && (
@@ -121,7 +122,7 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
               )}
             </PhoneCard>
           )}
-          {!p.bio && on.size === 0 && <p className="text-center text-stone-500">{t.preview.phoneEmpty}</p>}
+          {!p.bio && !p.intro && on.size === 0 && <p className="text-center text-stone-500">{t.preview.phoneEmpty}</p>}
         </PhoneFrame>
       </section>
 
@@ -139,8 +140,8 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
               <Pill tone="rose">{t.preview.bioTitle}</Pill>
               <span className="text-xs font-normal text-stone-500">{t.preview.bioWhen}</span>
             </p>
-            {p.bio ? (
-              <p className="whitespace-pre-line rounded-xl border border-stone-200 px-3 py-2 text-sm text-stone-800">{p.bio}</p>
+            {p.bio || p.intro ? (
+              <div className="rounded-xl border border-stone-200 px-3 py-2"><IntroPair bio={p.bio} intro={p.intro} name={p.displayName} t={t} /></div>
             ) : (
               <p className="text-sm text-stone-500"><Link href="/me" className="underline">{t.preview.bioNone}</Link></p>
             )}

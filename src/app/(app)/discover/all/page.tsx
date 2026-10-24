@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FeedbackPrompt } from "@/components/feedback-prompt";
+import { LikesFollowUp } from "@/components/likes-follow-up";
 import { Flash } from "@/components/flash";
 import { QuestionForm } from "@/components/question-form";
 import { Card, LinkButton, Page, ProgressBar } from "@/components/ui";
@@ -32,6 +33,7 @@ export default async function AllQuestionsPage({ searchParams }: { searchParams:
       </div>
       <Flash t={t} sp={sp} />
       <FeedbackPrompt sp={sp} back={BACK} t={t} />
+      <LikesFollowUp sp={sp} back={BACK} t={t} locale={locale} />
       {next ? (
         <Card key={next.question.id} className="animate-[fadeUp_.35s_ease-out] motion-reduce:animate-none">
           {followUp ? (

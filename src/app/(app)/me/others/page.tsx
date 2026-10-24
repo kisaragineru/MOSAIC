@@ -33,7 +33,7 @@ export default async function OthersPage({ searchParams }: { searchParams: Promi
     ...results.anonymous.comments.map((c) => ({ who: null, text: c })),
   ];
   return (
-    <Page title={p.title} back="/me">
+    <Page title={p.title} back="/insights">
       <Flash t={t} sp={sp} />
       <p className="text-sm leading-relaxed text-stone-700">{p.intro}</p>
       <p className="text-xs text-stone-500">🔒 {p.howAnon}</p>

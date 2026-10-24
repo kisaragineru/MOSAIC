@@ -30,8 +30,8 @@ test("ask a connection how they see you; they answer with their name; you see th
   await connect(hana, sora);
 
   // Hana asks from her profile.
-  await hana.goto("/me");
-  await hana.getByRole("link", { name: /周りから見たあなた/ }).click();
+  await hana.goto("/insights");
+  await hana.getByRole("link", { name: /周りから見たあなた/ }).first().click();
   await hana.waitForURL("/me/others");
   await expect(hana.getByText("まだ回答がありません。", { exact: false })).toBeVisible();
   await hana.getByRole("button", { name: "聞く" }).click();

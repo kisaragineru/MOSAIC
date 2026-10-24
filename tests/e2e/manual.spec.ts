@@ -21,8 +21,8 @@ test("the manual is a long read that grows with answers", async ({ browser }) =>
   await page.goto("/home");
 
   // Before any answers: every chapter says it is still waiting, and points to its questions.
-  await page.goto("/me");
-  await page.getByRole("link", { name: /自分の取扱説明書/ }).click();
+  await page.goto("/insights");
+  await page.getByRole("link", { name: "取扱説明書", exact: true }).click();
   await page.waitForURL("/me/manual");
   await expect(page.getByRole("heading", { level: 1, name: "サキさんの取扱説明書" })).toBeVisible();
   await expect(page.getByText("17軸のうち0軸")).toBeVisible();
@@ -34,7 +34,7 @@ test("the manual is a long read that grows with answers", async ({ browser }) =>
 
   // From Insights, under the mosaic.
   await page.goto("/insights");
-  await page.getByRole("link", { name: /取扱説明書を読む/ }).click();
+  await page.getByRole("link", { name: "取扱説明書", exact: true }).click();
   await page.waitForURL("/me/manual");
   await expect(page.getByText("17軸のうち1軸")).toBeVisible();
   const card = page.locator("#axis-planning");

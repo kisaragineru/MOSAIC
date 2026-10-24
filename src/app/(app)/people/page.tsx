@@ -22,6 +22,13 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
     <Page title={t.people.title}>
       <Flash t={t} sp={sp} />
       <p className="text-xs text-stone-500">🔒 {t.people.privateNote}</p>
+      <Link href="/gifts" className="flex items-center justify-between rounded-3xl bg-linear-to-br from-rose-50 to-amber-50 px-5 py-4 shadow-sm ring-1 ring-white/80 transition hover:shadow-md">
+        <span>
+          <span className="block font-semibold text-stone-900">🎁 {t.giftBox.meLink}</span>
+          <span className="block text-xs text-stone-600">{t.giftBox.meSub}</span>
+        </span>
+        <span aria-hidden className="text-teal-700">→</span>
+      </Link>
       {unlinked.length > 0 && (
         <Card title={`🔗 ${t.people.newConnections}`} className="border-teal-200 bg-teal-50/60">
           <p className="mb-2 text-xs text-stone-600">{t.people.newConnectionsHelp}</p>
