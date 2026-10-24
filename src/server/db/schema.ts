@@ -833,3 +833,121 @@ export const manualShares = pgTable(
   },
   (t) => [primaryKey({ columns: [t.sessionId, t.ownerId] }), check("manual_shares_preset_ck", sql`${t.preset} in ('friend','partner')`)],
 );
+
+// ---------------------------------------------------------------------------
+// Gift boxes: parents and grandparents write for a child, who receives it all on a date the
+// box's owner sets. Every read and write goes through the SECURITY DEFINER functions of
+// migration 0011; the app role has no grant on these tables.
+// ---------------------------------------------------------------------------
+
+export const GIFT_ROLES = ["father", "mother", "parent", "grandfather", "grandmother", "grandparent"] as const;
+
+export const giftBoxes = pgTable(
+  "gift_boxes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** The box's manager: sets the date, invites and removes writers, hands it over. */
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    childName: text("child_name").notNull(),
+    childBirthday: date("child_birthday"),
+    deliverOn: date("deliver_on").notNull(),
+    status: text("status").notNull().default("open"),
+    deliveredTo: uuid("delivered_to").references(() => users.id, { onDelete: "set null" }),
+    deliveredVia: text("delivered_via"),
+    deliveredAt: ts("delivered_at"),
+    receiveCodeHash: text("receive_code_hash"),
+    receiveCodeExpiresAt: ts("receive_code_expires_at"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("gift_boxes_owner_idx").on(t.ownerId),
+    uniqueIndex("gift_boxes_code_uq").on(t.receiveCodeHash),
+    check("gift_boxes_status_ck", sql`${t.status} in ('open','delivered')`),
+    check("gift_boxes_via_ck", sql`${t.deliveredVia} is null or ${t.deliveredVia} in ('account','pdf')`),
+    check("gift_boxes_child_ck", sql`char_length(${t.childName}) between 1 and 60`),
+  ],
+);
+
+export const giftWriters = pgTable(
+  "gift_writers",
+  {
+    boxId: uuid("box_id")
+      .notNull()
+      .references(() => giftBoxes.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: text("role").notNull(),
+    label: text("label"),
+    joinedAt: ts("joined_at").notNull().defaultNow(),
+    removedAt: ts("removed_at"),
+  },
+  (t) => [
+    primaryKey({ columns: [t.boxId, t.userId] }),
+    index("gift_writers_user_idx").on(t.userId),
+    check("gift_writers_role_ck", sql`${t.role} in ('father','mother','parent','grandfather','grandmother','grandparent')`),
+    check("gift_writers_label_ck", sql`${t.label} is null or char_length(${t.label}) <= 20`),
+  ],
+);
+
+export const giftInvites = pgTable(
+  "gift_invites",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    boxId: uuid("box_id")
+      .notNull()
+      .references(() => giftBoxes.id, { onDelete: "cascade" }),
+    codeHash: text("code_hash").notNull(),
+    role: text("role").notNull(),
+    expiresAt: ts("expires_at").notNull(),
+    usedBy: uuid("used_by").references(() => users.id, { onDelete: "set null" }),
+    usedAt: ts("used_at"),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("gift_invites_code_uq").on(t.codeHash), check("gift_invites_role_ck", sql`${t.role} in ('father','mother','parent','grandfather','grandmother','grandparent')`)],
+);
+
+export const giftEntries = pgTable(
+  "gift_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    boxId: uuid("box_id")
+      .notNull()
+      .references(() => giftBoxes.id, { onDelete: "cascade" }),
+    authorId: uuid("author_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    occurredOn: date("occurred_on"),
+    title: text("title"),
+    body: text("body").notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("gift_entries_box_idx").on(t.boxId),
+    check("gift_entries_kind_ck", sql`${t.kind} in ('growth','letter')`),
+    check("gift_entries_title_ck", sql`${t.title} is null or char_length(${t.title}) <= 120`),
+    check("gift_entries_body_ck", sql`char_length(${t.body}) between 1 and 5000`),
+  ],
+);
+
+/** A writer's view of the child on the seventeen axes (as in "How do you see me?"). */
+export const giftViews = pgTable(
+  "gift_views",
+  {
+    boxId: uuid("box_id")
+      .notNull()
+      .references(() => giftBoxes.id, { onDelete: "cascade" }),
+    authorId: uuid("author_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    answers: jsonb("answers").notNull(),
+    comment: text("comment"),
+    updatedAt: updatedAt(),
+  },
+  (t) => [primaryKey({ columns: [t.boxId, t.authorId] }), check("gift_views_comment_ck", sql`${t.comment} is null or char_length(${t.comment}) <= 1000`)],
+);

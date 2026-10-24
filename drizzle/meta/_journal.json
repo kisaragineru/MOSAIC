@@ -78,6 +78,13 @@
       "when": 1792817633074,
       "tag": "0010_manual_share",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792823174074,
+      "tag": "0011_gift_box",
+      "breakpoints": true
     }
   ]
 }

@@ -13,6 +13,7 @@ export const LIMITS = {
   loginAccount: { windowSeconds: 15 * 60, max: 8 },
   register: { windowSeconds: 60 * 60, max: 10 },
   shareOpen: { windowSeconds: 60 * 60, max: 30 },
+  giftCode: { windowSeconds: 60 * 60, max: 20 },
   ai: { windowSeconds: 60 * 60, max: 30 },
   export: { windowSeconds: 60 * 60, max: 5 },
   write: { windowSeconds: 60, max: 120 },
