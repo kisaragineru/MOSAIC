@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ["@node-rs/argon2", "pg"],
   experimental: {
-    serverActions: { bodySizeLimit: "1mb" },
+    serverActions: { bodySizeLimit: "3mb" },
   },
 };
 

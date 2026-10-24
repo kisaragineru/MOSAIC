@@ -19,6 +19,7 @@ import { setManualShare } from "./manual-share";
 import { createMemory } from "./memories";
 import { connectionFeed, setMemoryAudience } from "./memory-share";
 import { addComment, commentInbox } from "./comments";
+import { dmMessages, markRead, openDirect, reactToMessage, sendMessage } from "./dm";
 import { addPreference, updatePerson } from "./people";
 import { ANSWERS, BIO, BIRTH, FAVOURITES, INTRO, LEAN, MORE, MOTHER_COMMENT, MOTHER_GUESS, MOTHER_SEES_OTHERWISE, RECORDS } from "./dev-persona";
 import { answerPeer, askPeer, myPeerRequests } from "./peers";
@@ -277,4 +278,18 @@ export async function companionComments(ownerId: string, companionId: string) {
   const commented = new Set(inbox.filter((x) => !x.iOwn).map((x) => x.entryId));
   const next = (await connectionFeed(cid, { limit: 20 })).find((x) => x.ownerId === ownerId && !commented.has(x.id));
   if (next) await addComment(cid, next.id, null, NOTES[next.body.length % NOTES.length]);
+}
+
+const DM_LINES = ["メッセージありがとう。元気にしてる？", "こっちは畑の大根がよく育ってるよ。今度持っていくね。", "無理しないでね。ちゃんと寝てる？", "今度お茶でもしようか。"];
+
+/** She answers your messages: reads them, puts a ❤️ on your last one and replies (or says hello first). */
+export async function companionMessages(ownerId: string, companionId: string) {
+  const cid = await own(ownerId, companionId);
+  const conv = await openDirect(cid, ownerId);
+  const msgs = await dmMessages(cid, conv, { limit: 40 });
+  const yours = msgs.filter((m) => m.senderId === ownerId && !m.deleted && m.kind !== "system");
+  const last = yours.at(-1);
+  if (last && !last.reactions.some((r) => r.userId === cid)) await reactToMessage(cid, last.id, "❤️");
+  await markRead(cid, conv);
+  await sendMessage(cid, conv, { kind: "text", body: DM_LINES[msgs.filter((m) => m.senderId === cid).length % DM_LINES.length], replyTo: last?.id ?? null });
 }

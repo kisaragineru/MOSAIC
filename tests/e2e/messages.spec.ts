@@ -1,0 +1,151 @@
+import { randomUUID } from "node:crypto";
+import { expect, test, type Browser, type Page } from "@playwright/test";
+
+async function user(browser: Browser, name: string) {
+  const ctx = await browser.newContext({ locale: "ja-JP", timezoneId: "Asia/Tokyo", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.8.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
+  const page = await ctx.newPage();
+  await page.goto("/register");
+  await page.getByLabel("なんと呼べばいいですか？").fill(name);
+  await page.getByLabel("メールアドレス").fill(`${randomUUID().slice(0, 8)}@example.test`);
+  await page.getByLabel(/^パスワード/).fill("e2e correct horse battery");
+  await page.getByRole("button", { name: "アカウントを作成" }).click();
+  await page.waitForURL(/welcome/);
+  await page.goto("/home");
+  return page;
+}
+
+async function connect(a: Page, b: Page) {
+  await a.goto("/share");
+  await a.getByRole("button", { name: "QRを表示" }).click();
+  const url = await a.getByTestId("share-url").inputValue();
+  await b.goto(url.replace(/^https?:\/\/[^/]+/, ""));
+  await b.getByRole("button", { name: "続ける" }).click();
+  await b.waitForURL(/\/compare\//);
+  const compare = b.url();
+  for (const p of [b, a]) {
+    await p.goto(compare);
+    await p.getByRole("checkbox", { name: /^好み/ }).check();
+    await p.locator('input[name="agree"]').check();
+    await p.getByRole("button", { name: "同意する" }).click();
+    await expect(p.getByRole("button", { name: "同意する" })).toHaveCount(0);
+  }
+}
+
+async function sendText(p: Page, text: string) {
+  await p.getByLabel("メッセージを入力…").fill(text);
+  await p.getByRole("button", { name: "送信", exact: true }).click();
+  await expect(p.getByText(text, { exact: true }).last()).toBeVisible();
+}
+
+/** Open a message's actions (long press / right click). */
+async function actionsFor(p: Page, text: string) {
+  await p.locator('[role="button"][aria-label="メッセージの操作"]').filter({ has: p.getByText(text, { exact: true }) }).last().click({ button: "right" });
+  return p.getByRole("dialog", { name: "メッセージの操作" });
+}
+
+// A 1×1 PNG.
+const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+
+test("direct messages: send, read, reply, react, edit, unsend, photos", async ({ browser }) => {
+  test.setTimeout(180_000);
+  const hana = await user(browser, "ハナ");
+  const sora = await user(browser, "ソラ");
+  const ren = await user(browser, "レン");
+  await connect(hana, sora);
+
+  // Only people you're connected with can be picked.
+  await hana.goto("/messages");
+  await expect(hana.getByText("まだメッセージはありません。")).toBeVisible();
+  await hana.getByRole("link", { name: "新しいメッセージ" }).click();
+  await expect(hana.getByText("レン")).toHaveCount(0);
+  await hana.getByLabel("ソラ").check();
+  await hana.getByRole("button", { name: "はじめる" }).click();
+  await hana.waitForURL(/\/messages\/[0-9a-f-]+$/);
+  const thread = new URL(hana.url()).pathname;
+  await sendText(hana, "こんにちは！");
+
+  // Sora: badge in the header, the conversation in the inbox, then reads it.
+  await sora.goto("/home");
+  await expect(sora.getByRole("link", { name: "メッセージ (1)" })).toBeVisible();
+  await sora.getByRole("link", { name: "メッセージ (1)" }).click();
+  await expect(sora.getByText("こんにちは！")).toBeVisible();
+  await sora.getByRole("link", { name: /ハナ/ }).click();
+  await sora.waitForURL(thread);
+  await expect(sora.getByText("こんにちは！")).toBeVisible();
+  // Hana sees it was read, and that Sora is typing.
+  await expect(hana.getByText("既読")).toBeVisible({ timeout: 15_000 });
+  await sora.getByLabel("メッセージを入力…").fill("い");
+  await expect(hana.getByText("ソラが入力中…").first()).toBeVisible({ timeout: 15_000 });
+
+  // Sora replies to the message; Hana's screen picks it up by itself.
+  await (await actionsFor(sora, "こんにちは！")).getByRole("button", { name: /返信/ }).click();
+  await expect(sora.getByText("ハナに返信")).toBeVisible();
+  await sendText(sora, "元気だよ");
+  await expect(hana.getByText("元気だよ", { exact: true })).toBeVisible({ timeout: 15_000 });
+  await expect(hana.getByText("↩ ハナ")).toBeVisible();
+
+  // A reaction, seen on the other side.
+  await (await actionsFor(hana, "元気だよ")).getByRole("button", { name: "😂" }).click();
+  await expect(sora.getByRole("button", { name: "😂" })).toBeVisible({ timeout: 15_000 });
+
+  // Edit (own message, within 15 minutes) and unsend.
+  await (await actionsFor(hana, "こんにちは！")).getByRole("button", { name: /編集/ }).click();
+  await hana.getByLabel("メッセージを入力…").fill("こんにちは、ソラ！");
+  await hana.getByRole("button", { name: "保存" }).click();
+  await expect(sora.getByText("こんにちは、ソラ！").first()).toBeVisible({ timeout: 15_000 });
+  await expect(sora.getByText(/編集済み/)).toBeVisible();
+  sora.once("dialog", (d) => d.accept());
+  await (await actionsFor(sora, "元気だよ")).getByRole("button", { name: /送信を取り消す/ }).click();
+  await expect(hana.getByText("メッセージの送信が取り消されました")).toBeVisible({ timeout: 15_000 });
+
+  // A photo: only members can load it.
+  await hana.locator('input[type="file"]').setInputFiles({ name: "dot.png", mimeType: "image/png", buffer: PNG });
+  await expect(hana.getByRole("button", { name: "写真を外す" })).toBeVisible();
+  await hana.getByRole("button", { name: "送信", exact: true }).click();
+  const img = sora.locator('img[src^="/api/dm/photo/"]');
+  await expect(img).toBeVisible({ timeout: 15_000 });
+  const src = await img.getAttribute("src");
+  expect((await sora.request.get(src!)).status()).toBe(200);
+  expect((await ren.request.get(src!)).status()).toBe(404);
+  // And Ren can't open the conversation at all.
+  expect((await ren.goto(thread))?.status()).toBe(404);
+});
+
+test("group messages: create, notices, who wrote, read counts, leave", async ({ browser }) => {
+  test.setTimeout(180_000);
+  const hana = await user(browser, "ハナ");
+  const sora = await user(browser, "ソラ");
+  const ren = await user(browser, "レン");
+  await connect(hana, sora);
+  await connect(hana, ren);
+
+  await hana.goto("/messages/new");
+  await hana.getByLabel("ソラ").check();
+  await hana.getByLabel("レン").check();
+  await hana.getByLabel("グループ名（任意）").fill("週末の計画");
+  await hana.getByRole("button", { name: "はじめる" }).click();
+  await hana.waitForURL(/\/messages\/[0-9a-f-]+$/);
+  const group = new URL(hana.url()).pathname;
+  await expect(hana.getByRole("heading", { name: "週末の計画" })).toBeVisible();
+  await expect(hana.getByText("あなたがグループを作成しました")).toBeVisible();
+  await sendText(hana, "土曜どう？");
+
+  await ren.goto("/messages");
+  await expect(ren.getByText("週末の計画")).toBeVisible();
+  await ren.getByRole("link", { name: /週末の計画/ }).click();
+  await expect(ren.getByText("土曜どう？")).toBeVisible();
+  await sendText(ren, "いいね");
+  await sora.goto(group);
+  await expect(sora.getByText("いいね")).toBeVisible();
+  // Group: who wrote is shown, and how many have read.
+  await expect(sora.getByText("レン", { exact: true }).first()).toBeVisible();
+  await expect(ren.getByText(/既読 [12]/)).toBeVisible({ timeout: 15_000 });
+
+  // Ren leaves: the others see a notice, Ren can't write any more.
+  await ren.goto(`${group}/info`);
+  await expect(ren.getByText("メンバー（3人）")).toBeVisible();
+  ren.once("dialog", (d) => d.accept());
+  await ren.getByRole("button", { name: "グループを退出" }).click();
+  await ren.waitForURL("/messages");
+  await expect(hana.getByText("レンが退出しました")).toBeVisible({ timeout: 15_000 });
+});

@@ -88,8 +88,9 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
         <Card>
           <p className="whitespace-pre-line text-stone-900">{m.body}</p>
           {m.reason && <p className="mt-3 whitespace-pre-line text-sm text-stone-600">→ {m.reason}</p>}
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap gap-2">
             <LinkButton href={`/memories/${m.id}?edit=1`}>{t.common.edit}</LinkButton>
+            {m.visibility !== "private" && <LinkButton href={`/messages/new?record=${m.id}`} variant="secondary">{t.messages.shareRecord}</LinkButton>}
           </div>
         </Card>
       )}

@@ -31,6 +31,7 @@ import {
   unique,
   uniqueIndex,
   uuid,
+  customType,
 } from "drizzle-orm/pg-core";
 
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
@@ -1044,4 +1045,118 @@ export const memoryCommentReads = pgTable(
     readAt: ts("read_at").notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.entryId, t.partnerId] })],
+);
+
+/** Raw bytes (photos sent in messages). */
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
+
+/**
+ * Direct messages. A conversation is one-to-one ("direct", only between people with an active
+ * connection) or a group (everyone added by someone they're connected with). All reads and
+ * writes go through the SECURITY DEFINER functions of migration 0021; the app role has no
+ * direct access to these tables.
+ */
+export const dmConversations = pgTable(
+  "dm_conversations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: text("kind").notNull(),
+    title: text("title"),
+    /** "smaller-uuid:larger-uuid" for a direct conversation, so a pair has only one. */
+    directKey: text("direct_key"),
+    createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    lastMessageAt: ts("last_message_at").notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("dm_conversations_direct_uq").on(t.directKey),
+    check("dm_conversations_kind_ck", sql`${t.kind} in ('direct','group')`),
+    check("dm_conversations_title_ck", sql`${t.title} is null or char_length(${t.title}) between 1 and 60`),
+  ],
+);
+
+export const dmMembers = pgTable(
+  "dm_members",
+  {
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => dmConversations.id, { onDelete: "cascade" }),
+    userId: userRef(),
+    role: text("role").notNull().default("member"),
+    joinedAt: ts("joined_at").notNull().defaultNow(),
+    leftAt: ts("left_at"),
+    lastReadAt: ts("last_read_at"),
+    muted: boolean("muted").notNull().default(false),
+    /** "Delete chat" for me: messages up to here are hidden from me. */
+    hiddenBefore: ts("hidden_before"),
+    typingUntil: ts("typing_until"),
+  },
+  (t) => [primaryKey({ columns: [t.conversationId, t.userId] }), index("dm_members_user_idx").on(t.userId), check("dm_members_role_ck", sql`${t.role} in ('owner','member')`)],
+);
+
+export const dmMessages = pgTable(
+  "dm_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => dmConversations.id, { onDelete: "cascade" }),
+    senderId: uuid("sender_id").references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    body: text("body"),
+    replyTo: uuid("reply_to"),
+    recordId: uuid("record_id").references(() => memoryEntries.id, { onDelete: "set null" }),
+    /** System events: {"event": "created"|"added"|"left"|"renamed", ...}. */
+    meta: jsonb("meta"),
+    createdAt: createdAt(),
+    /** Bumped on every change (edit, unsend, reaction), so clients can fetch what changed. */
+    updatedAt: updatedAt(),
+    editedAt: ts("edited_at"),
+    deletedAt: ts("deleted_at"),
+  },
+  (t) => [
+    index("dm_messages_conv_time_idx").on(t.conversationId, t.createdAt),
+    index("dm_messages_conv_updated_idx").on(t.conversationId, t.updatedAt),
+    check("dm_messages_kind_ck", sql`${t.kind} in ('text','image','record','system')`),
+    check("dm_messages_body_ck", sql`${t.body} is null or char_length(${t.body}) <= 4000`),
+  ],
+);
+
+export const dmReactions = pgTable(
+  "dm_reactions",
+  {
+    messageId: uuid("message_id")
+      .notNull()
+      .references(() => dmMessages.id, { onDelete: "cascade" }),
+    userId: userRef(),
+    emoji: text("emoji").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.messageId, t.userId] }), check("dm_reactions_emoji_ck", sql`char_length(${t.emoji}) between 1 and 16`)],
+);
+
+export const dmAttachments = pgTable(
+  "dm_attachments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => dmConversations.id, { onDelete: "cascade" }),
+    uploaderId: uuid("uploader_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    messageId: uuid("message_id").references(() => dmMessages.id, { onDelete: "cascade" }),
+    position: smallint("position").notNull().default(0),
+    mime: text("mime").notNull(),
+    bytes: bytea("bytes").notNull(),
+    size: integer("size").notNull(),
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("dm_attachments_message_idx").on(t.messageId),
+    check("dm_attachments_mime_ck", sql`${t.mime} in ('image/jpeg','image/png','image/webp')`),
+    check("dm_attachments_size_ck", sql`${t.size} between 1 and 2500000`),
+  ],
 );

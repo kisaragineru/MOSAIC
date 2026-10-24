@@ -4,11 +4,13 @@ import { BrandMark, BrandWordmark } from "@/components/brand";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { getAccount } from "@/server/services/account";
+import { dmUnreadTotal } from "@/server/services/dm";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const uid = await requireUser();
   const { t } = await getT();
   const acc = await getAccount(uid);
+  const unread = await dmUnreadTotal(uid);
   const initial = Array.from(acc.profile.displayName.trim())[0]?.toUpperCase() ?? "?";
   return (
     <>
@@ -31,6 +33,22 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 <rect x="4" y="14" width="6" height="6" rx="1" />
                 <path d="M14 14h2v2h-2zM18 18h2v2h-2zM18 14h2M14 18v2" />
               </svg>
+            </Link>
+            <Link
+              href="/messages"
+              aria-label={unread ? `${t.messages.title} (${unread})` : t.messages.title}
+              title={t.messages.title}
+              className="relative flex h-9 w-9 items-center justify-center rounded-full text-stone-600 transition-colors hover:bg-stone-200 hover:text-stone-900"
+            >
+              <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M21 3 10 14" />
+                <path d="M21 3 14.5 21l-4.5-7-7-4.5Z" />
+              </svg>
+              {unread > 0 && (
+                <span aria-hidden className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white ring-2 ring-[#faf8f5]">
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              )}
             </Link>
             <Link
               href="/me"

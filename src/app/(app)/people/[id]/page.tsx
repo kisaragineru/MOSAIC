@@ -17,6 +17,7 @@ import { getT } from "@/lib/i18n/server";
 import { todayIn } from "@/lib/validation/common";
 import { getAccount } from "@/server/services/account";
 import { requireUser } from "@/server/auth/session";
+import { dmOpenForConnectionAction } from "@/app/actions/dm";
 import { normalizeCurrency, suggestGifts } from "@/server/services/gifts";
 import { getPerson, listCategories, nextOccurrence } from "@/server/services/people";
 import { connectionForPerson } from "@/server/services/sharing";
@@ -107,6 +108,15 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           {(connection.otherBio || connection.otherIntro) && (
             <span className="mt-3 line-clamp-3 block whitespace-pre-line rounded-2xl bg-white/80 px-3 py-2 text-sm leading-6 text-stone-800">{connection.otherBio || connection.otherIntro}</span>
           )}
+      {connection && connection.status === "active" && (
+        <form action={dmOpenForConnectionAction}>
+          <input type="hidden" name="sessionId" value={connection.id} />
+          <input type="hidden" name="back" value={`/people/${person.id}`} />
+          <button type="submit" className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-teal-700 text-base font-bold text-white shadow-md transition hover:bg-teal-800 active:scale-[0.98]">
+            {t.messages.message}
+          </button>
+        </form>
+      )}
         </Link>
       )}
       <Card title={`📝 ${t.people.note}`}>

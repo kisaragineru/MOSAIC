@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CommentThread } from "@/components/comment-thread";
 import { Flash } from "@/components/flash";
@@ -36,6 +37,9 @@ export default async function SharedRecordPage({ params, searchParams }: { param
         {e.title && <p className="font-semibold text-stone-900">{e.title}</p>}
         <p className="whitespace-pre-line leading-relaxed text-stone-800">{e.body}</p>
       </article>
+      <Link href={`/messages/new?record=${e.id}`} className="inline-flex min-h-10 items-center rounded-full bg-white px-4 text-sm font-semibold text-teal-800 ring-1 ring-stone-200 transition hover:ring-teal-300">
+        {t.messages.shareRecord}
+      </Link>
       <section id="comments" className="scroll-mt-24">
         <Card title={`💬 ${t.comments.title}`}>
           <p className="-mt-1 mb-3 text-xs leading-relaxed text-stone-500">{t.comments.private(e.ownerName)}</p>
