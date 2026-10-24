@@ -5,7 +5,7 @@
 import type { Chapter } from "./axes";
 import type { I18nText } from "./questions";
 
-export const MANUAL_SECTIONS = ["intro", "summary", "self", "mind", "people", "life", "likes", "tips", "others", "tuvi", "story", "future", "changes", "unknown"] as const;
+export const MANUAL_SECTIONS = ["intro", "summary", "self", "mind", "people", "life", "likes", "tips", "others", "tuvi", "story", "future", "changes", "unknown", "novel"] as const;
 export type ManualSectionId = (typeof MANUAL_SECTIONS)[number];
 
 export const SECTION_TEXT: Record<ManualSectionId, { title: I18nText; icon: string; lead?: I18nText }> = {
@@ -69,6 +69,11 @@ export const SECTION_TEXT: Record<ManualSectionId, { title: I18nText; icon: stri
     icon: "🔄",
     title: { ja: "変わってきたこと", en: "What has changed", vi: "Những điều đã thay đổi" },
     lead: { ja: "考えが変わったのは、あなたが動いてきた証拠です。", en: "A changed view is a sign that you've been moving.", vi: "Một suy nghĩ thay đổi là dấu hiệu bạn đã luôn tiến về phía trước." },
+  },
+  novel: {
+    icon: "📜",
+    title: { ja: "あなたの物語", en: "Your story", vi: "Câu chuyện của bạn" },
+    lead: { ja: "最後に、ここまでのことをひとつの物語にしてみました。登場する言葉は、すべてあなたが答え、記録したものです。", en: "Finally, everything so far told as one story. Every word quoted in it is something you answered or recorded.", vi: "Cuối cùng, mọi điều đến nay được kể thành một câu chuyện. Mọi lời được trích đều là điều bạn đã trả lời hoặc ghi lại." },
   },
   unknown: {
     icon: "🧩",

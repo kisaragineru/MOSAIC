@@ -8,7 +8,10 @@
  */
 import { eq } from "drizzle-orm";
 import { AXES, AXIS_CHAPTER, AXIS_LABEL, chapterOf, PEER_POLES, type Chapter } from "@/content/axes";
+import { COMBOS } from "@/content/insight-combos";
+import { PALACE_PLAIN } from "@/lib/tuvi/plain";
 import { MANUAL, type ManualPart } from "@/content/manual-axes";
+import { RECORD_KIND, STORY, STORY_LINES } from "@/content/manual-story";
 import { MANUAL_CHAPTERS, MANUAL_PHRASE as P, SECTION_TEXT, type ManualSectionId } from "@/content/manual-text";
 import type { I18nText, TendencyKey } from "@/content/questions";
 import type { Answer } from "@/lib/discovery/answers";
@@ -38,7 +41,9 @@ export type ManualBlock =
   | { t: "note"; text: string }
   /** A chapter not written yet: a blurred sample, how far away it is, and where to go. */
   | { t: "locked"; text: string; sample: string; href: string; label: string }
-  | { t: "link"; href: string; text: string };
+  | { t: "link"; href: string; text: string }
+  | { t: "episode"; title: string; paragraphs: string[] }
+  | { t: "storyTitle"; title: string; subtitle: string };
 
 /** "core": built from answers and tendencies; "personal": your stories, plans and others' words. */
 export type ManualScope = "core" | "personal" | "self";
@@ -93,7 +98,17 @@ export interface ManualInput {
   answers: ManualAnswer[];
   prefs: { label: string; sentiment: string }[];
   memories: { kind: string; title: string | null; body: string | null; date: string; sealedUntil: string | null }[];
-  tuvi: { summary: string | null; keywords: string[]; paragraphs: string[]; now: string | null } | null;
+  tuvi: {
+    summary: string | null;
+    keywords: string[];
+    paragraphs: string[];
+    now: string | null;
+    /** For the story: the birth year's name, its Nạp Âm, Mệnh as a kind of person, the current decade's theme. */
+    yearName?: string;
+    napAm?: string;
+    persona?: string;
+    cycleTopic?: string;
+  } | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -125,6 +140,10 @@ function blockText(b: ManualBlock): string {
     case "link":
     case "locked":
       return "";
+    case "episode":
+      return b.title + b.paragraphs.join("");
+    case "storyTitle":
+      return b.title + b.subtitle;
   }
 }
 
@@ -308,6 +327,8 @@ export function composeManual(d: ManualInput, locale: Locale): Manual {
       : [{ t: "p", text: L(P.unknownDone) }],
   );
 
+  add("novel", "personal", story(d, locale, said, poleOf, claim));
+
   const chars = sections.reduce((n, s) => n + s.chars, 0);
   return {
     name: d.name,
@@ -325,6 +346,76 @@ export function composeManual(d: ManualInput, locale: Locale): Manual {
     },
   };
 }
+
+// ---------------------------------------------------------------------------
+// The story: everything above, told as short episodes (manual-story.ts)
+// ---------------------------------------------------------------------------
+
+function story(
+  d: ManualInput,
+  locale: Locale,
+  said: (c: ManualClaim | undefined) => boolean,
+  poleOf: (k: TendencyKey, dir: 1 | -1) => I18nText,
+  claim: (k: TendencyKey) => ManualClaim | undefined,
+): ManualBlock[] {
+  const L = (t: I18nText) => t[locale];
+  const name = d.name;
+  const known = AXES.map(claim)
+    .filter((c): c is ManualClaim => said(c))
+    .sort((a, b) => (a.state === b.state ? b.confidence - a.confidence || a.key.localeCompare(b.key) : a.state === "consistent" ? -1 : 1));
+  const combo = COMBOS.find((x) => known.some((c) => c.key === x.a[0] && c.direction === x.a[1]) && known.some((c) => c.key === x.b[0] && c.direction === x.b[1]));
+  const lines = (episode: "childhood" | "path" | "future") =>
+    d.answers.filter((a) => STORY_LINES[a.questionId]?.episode === episode).map((a) => L(STORY_LINES[a.questionId]!.line(name, clip(L(a.label), 200))));
+  const records = (kinds: string[]) =>
+    d.memories
+      .filter((m) => kinds.includes(m.kind) && !m.sealedUntil && m.title)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(0, 5)
+      .map((m) => {
+        const [y, mo] = m.date.split("-");
+        const date = locale === "ja" ? `${y}年${Number(mo)}月` : locale === "vi" ? `Tháng ${Number(mo)}/${y}` : `${y}-${mo}`;
+        const line = L(STORY.record(date, clip(m.title!, 80), name, L(RECORD_KIND[m.kind] ?? RECORD_KIND.memory!)));
+        return m.body ? `${line}${locale === "ja" ? "" : " "}${clip(m.body, 160)}` : line;
+      });
+
+  const out: ManualBlock[] = [
+    { t: "storyTitle", title: L(STORY.title(name)), subtitle: L(combo ? STORY.subtitle(L(combo.title)) : STORY.subtitlePlain) },
+  ];
+  const tv = d.tuvi;
+  const prologue = tv?.yearName && tv.napAm ? [L(STORY.born(name, tv.yearName, tv.napAm)), ...(tv.persona ? [L(STORY.star(tv.persona))] : [])] : [L(STORY.bornUnknown(name))];
+  out.push({ t: "episode", title: L(STORY.episodes.prologue), paragraphs: prologue });
+
+  const childhood = lines("childhood");
+  if (childhood.length) out.push({ t: "episode", title: L(STORY.episodes.childhood), paragraphs: childhood });
+  const path = [...lines("path"), ...records(["achievement", "decision", "memory", "regret", "value"])];
+  if (path.length) out.push({ t: "episode", title: L(STORY.episodes.path), paragraphs: path });
+
+  const now: string[] = [];
+  if (known.length) {
+    now.push(L(STORY.nowTraits(name, known.slice(0, 3).map((c) => poleOf(c.key, c.direction)))));
+    if (combo) now.push(L(STORY.nowCombo(name, combo.title)));
+    const top = known[0]!;
+    const ask = MANUAL[top.key];
+    if (ask) now.push(L(STORY.nowAsk(L((top.direction === 1 ? ask.pos : ask.neg).ask))));
+  } else now.push(L(STORY.nowUnknown(name)));
+  if (d.peers.responders > 0) now.push(L(STORY.nowPeers(name, d.peers.responders)));
+  if (tv?.cycleTopic) now.push(L(STORY.nowCycle(tv.cycleTopic)));
+  out.push({ t: "episode", title: L(STORY.nowTitle(name)), paragraphs: now });
+
+  const future = [...lines("future"), ...records(["goal", "dream"])];
+  for (const m of d.memories.filter((x) => x.kind === "letter_to_future" && x.sealedUntil)) future.push(L(STORY.letter(m.sealedUntil!)));
+  if (future.length) out.push({ t: "episode", title: L(STORY.episodes.future), paragraphs: future });
+
+  if (!childhood.length && !path.length) out.push({ t: "locked", text: L(STORY.locked), sample: L(SAMPLE_STORY), href: "/memories/new", label: L(STORY.lockedButton) });
+  out.push({ t: "episode", title: L(STORY.episodes.epilogue), paragraphs: L(STORY.epilogue(name)).split("\n") });
+  return out;
+}
+
+const SAMPLE_STORY: I18nText = {
+  ja: "あの春、ひとりで知らない街に降り立った。駅前の小さなパン屋で道を聞いたのが、すべての始まりだった。そこで出会った人たちが、のちに大切な仲間になるとは、まだ知らなかった。",
+  en: "That spring, alone, in a town no one knew. Asking the way at a little bakery by the station was where it all began — though no one could have guessed those strangers would become dear friends.",
+  vi: "Mùa xuân năm ấy, một mình đến một thành phố xa lạ. Hỏi đường ở tiệm bánh nhỏ trước ga là khởi đầu của tất cả — chưa ai biết những người lạ ấy sau này sẽ thành bạn thân.",
+};
 
 // ---------------------------------------------------------------------------
 // Reading
@@ -392,6 +483,14 @@ export async function gatherManual(userId: string, locale: Locale): Promise<Manu
           keywords: personality?.keywords ?? [],
           paragraphs: (personality?.paragraphs ?? []).filter((p) => p.kind !== "note").map((p) => p.text),
           now: cycles?.paragraphs.find((p) => p.text.startsWith("▶"))?.text ?? null,
+          yearName: tv.chart.yearPillar.name,
+          napAm: tv.chart.napAm.name,
+          persona: personality?.persona,
+          cycleTopic: (() => {
+            const age = tv.currentAge;
+            const p = age === null ? undefined : tv.chart.palaces.find((x) => x.daiHan && age >= x.daiHan.from && age <= x.daiHan.to);
+            return p?.palace ? PALACE_PLAIN[p.palace][locale] : undefined;
+          })(),
         }
       : null,
   };

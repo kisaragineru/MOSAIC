@@ -64,6 +64,23 @@ function Block({ b }: { b: ManualBlock }) {
           </dl>
         </div>
       );
+    case "storyTitle":
+      return (
+        <header className="rounded-t-3xl bg-linear-to-b from-amber-50 to-white px-5 pb-2 pt-8 text-center">
+          <p aria-hidden className="text-xs tracking-[0.4em] text-amber-700">✦ ✦ ✦</p>
+          <p className="mt-3 text-2xl font-bold tracking-wide text-stone-900">{b.title}</p>
+          <p className="mt-2 text-sm text-stone-600">{b.subtitle}</p>
+        </header>
+      );
+    case "episode":
+      return (
+        <section className="break-inside-avoid bg-white/90 px-5 py-4 first-of-type:rounded-t-3xl last-of-type:rounded-b-3xl">
+          <h3 className="mb-3 text-center text-sm font-bold tracking-wider text-amber-800">― {b.title} ―</h3>
+          <div className="space-y-3">
+            {b.paragraphs.map((x, i) => <p key={i} className="leading-9 text-stone-800 [text-indent:1em]">{x}</p>)}
+          </div>
+        </section>
+      );
     case "locked":
       return (
         <div className="relative overflow-hidden rounded-2xl bg-white/80 ring-1 ring-stone-200/70">

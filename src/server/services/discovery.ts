@@ -551,6 +551,17 @@ export async function allProgress(userId: string, now = new Date()): Promise<All
   };
 }
 
+/** Questions whose latest response is an answer (not a skip). */
+export async function answeredQuestionIds(userId: string): Promise<Set<string>> {
+  return withUser(userId, async (tx) => {
+    const r = await tx.execute<{ question_id: string; status: string }>(sql`
+      select distinct on (question_id) question_id, status
+      from question_responses where user_id = ${userId}
+      order by question_id, answered_at desc, id desc`);
+    return new Set(r.rows.filter((x) => x.status === "answered").map((x) => x.question_id));
+  });
+}
+
 /** Axes a question informs (for showing what an answer contributes to). */
 export function axesOf(questionId: string) {
   const q = QUESTION_BANK.find((x) => x.id === questionId);

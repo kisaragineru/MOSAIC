@@ -232,6 +232,7 @@ export const ja: Dict = {
     deleteAnswer: "この回答を削除",
   },
   insights: {
+    feedbackToggle: "この読みは当てはまる？",
     title: "自己理解",
     tendencies: "MOSAICが見つけた傾向",
     tendenciesIntro:

@@ -230,6 +230,7 @@ export const en = {
     deleteAnswer: "Delete this answer",
   },
   insights: {
+    feedbackToggle: "Does this fit you?",
     title: "Insights",
     tendencies: "Tendencies MOSAIC noticed",
     tendenciesIntro:

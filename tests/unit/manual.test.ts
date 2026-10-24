@@ -167,4 +167,41 @@ describe("composeManual", () => {
       expect(m.minutes).toBeGreaterThanOrEqual(1);
     }
   });
+
+  it("ends with the story: episodes built only from what the user answered and recorded", () => {
+    const d = fullInput();
+    d.tuvi = { ...d.tuvi!, yearName: "Canh Ngọ", napAm: "Lộ Bàng Thổ", persona: "頭の回転が速い作戦参謀タイプ", cycleTopic: "仕事・キャリア" };
+    const m = composeManual(d, "ja");
+    const novel = m.sections.at(-1)!;
+    expect(novel.id).toBe("novel");
+    expect(novel.blocks.find((b) => b.t === "storyTitle")).toMatchObject({ title: "『Hanaの物語』" });
+    const eps = novel.blocks.filter((b) => b.t === "episode");
+    const titles = eps.map((b) => (b.t === "episode" ? b.title : ""));
+    expect(titles[0]).toBe("プロローグ");
+    expect(titles).toContain("第2話　選んできた道");
+    expect(titles).toContain("第3話　いまのHana");
+    expect(titles).toContain("第4話　まだ見ぬ明日へ");
+    expect(titles.at(-1)).toBe("エピローグ");
+    const text = JSON.stringify(novel);
+    expect(text).toContain("Canh Ngọの年、Hanaは生まれた。");
+    expect(text).toContain("最近、Hanaは小さな誇りを手にした。「初めてフルマラソンを完走した」");
+    expect(text).toContain("2026年3月。「資格に合格」——Hanaにとって、それはひとつの到達点だった。");
+    expect(text).toContain("Hanaには、いつか叶えたいことがある。「ベトナムを縦断する旅」");
+    expect(text).toContain("暦の上では、いまは「仕事・キャリア」がテーマの十年なのだという。");
+    expect(text).toContain("2027-05-02に開く手紙が一通");
+    expect(text).toContain("——つづく。");
+    expect(novel.scope).toBe("personal");
+  });
+
+  it("starts a story even with nothing, and says where episode one will come from", () => {
+    for (const l of LOCALES) {
+      const novel = composeManual(emptyInput(), l).sections.at(-1)!;
+      const eps = novel.blocks.filter((b) => b.t === "episode").map((b) => (b.t === "episode" ? b.title : ""));
+      expect(eps).toHaveLength(3); // prologue, now, epilogue
+      expect(novel.blocks.some((b) => b.t === "locked" && b.href === "/memories/new")).toBe(true);
+    }
+    const en = composeManual(emptyInput(), "en").sections.at(-1)!;
+    expect(JSON.stringify(en)).toContain("When and where Hana was born, this story does not yet know.");
+  });
 });
+

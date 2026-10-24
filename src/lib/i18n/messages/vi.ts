@@ -232,6 +232,7 @@ export const vi: Dict = {
     deleteAnswer: "Xóa câu trả lời này",
   },
   insights: {
+    feedbackToggle: "Điều này có đúng với bạn không?",
     title: "Thấu hiểu",
     tendencies: "Xu hướng MOSAIC nhận thấy",
     tendenciesIntro:
