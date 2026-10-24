@@ -198,6 +198,7 @@ export const en = {
       more: "Read more",
       less: "Show less",
       seeAll: "See the whole journal",
+      onlyFrom: (n: string) => `Shared by ${n}`,
     },
     audience: {
       label: "Who can read it",
@@ -622,7 +623,7 @@ export const en = {
     knowTitle: (n: string) => `Getting to know ${n}`,
     noIntro: (n: string) => `${n} hasn't written an introduction yet.`,
     theirRecords: (n: string) => `Shared by ${n} lately`,
-    moreRecords: "See all shared entries",
+    moreRecords: (n: string) => `See everything ${n} shared`,
     togetherTitle: "The two of you, side by side",
     you: "You",
     tuviSection: "Through Tử Vi",

@@ -200,6 +200,7 @@ export const vi: Dict = {
       more: "Đọc tiếp",
       less: "Thu gọn",
       seeAll: "Xem toàn bộ nhật ký",
+      onlyFrom: (n: string) => `Ghi chép ${n} chia sẻ`,
     },
     audience: {
       label: "Ai được đọc",
@@ -624,7 +625,7 @@ export const vi: Dict = {
     knowTitle: (n: string) => `Hiểu thêm về ${n}`,
     noIntro: (n: string) => `${n} chưa viết lời giới thiệu.`,
     theirRecords: (n: string) => `${n} chia sẻ gần đây`,
-    moreRecords: "Xem mọi ghi chép được chia sẻ",
+    moreRecords: (n: string) => `Xem mọi ghi chép của ${n}`,
     togetherTitle: "Hai bạn, đặt cạnh nhau",
     you: "Bạn",
     tuviSection: "Hai bạn qua Tử Vi",

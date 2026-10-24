@@ -200,6 +200,7 @@ export const ja: Dict = {
       more: "続きを読む",
       less: "たたむ",
       seeAll: "記録をすべて見る",
+      onlyFrom: (n: string) => `${n}さんが公開した記録`,
     },
     audience: {
       label: "公開範囲",
@@ -624,7 +625,7 @@ export const ja: Dict = {
     knowTitle: (n: string) => `${n}さんを知る`,
     noIntro: (n: string) => `${n}さんはまだ自己紹介を書いていません。`,
     theirRecords: (n: string) => `${n}さんが最近見せてくれた記録`,
-    moreRecords: "公開された記録をすべて見る",
+    moreRecords: (n: string) => `${n}さんの記録をすべて見る`,
     togetherTitle: "ふたりを並べてみる",
     you: "あなた",
     tuviSection: "Tử Vi で見るふたり",

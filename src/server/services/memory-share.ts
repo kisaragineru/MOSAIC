@@ -96,14 +96,14 @@ export async function visibleCount(userId: string, circle: Circle | null): Promi
  */
 export async function connectionFeed(
   userId: string,
-  opts: { after?: string | null; upto?: string | null; offset?: number; limit?: number } = {},
+  opts: { after?: string | null; upto?: string | null; offset?: number; limit?: number; sessionId?: string | null } = {},
 ): Promise<FeedItem[]> {
   const date = (v: string | null | undefined) => (v ? isoDate.parse(v) : null);
   return withUser(userId, async (tx) => {
     const r = await tx.execute<{
       id: string; owner_id: string; owner_name: string; session_id: string; kind: string; title: string | null; body: string;
       occurred_on: string | null; effective_on: string; created_at: Date; updated_at: Date;
-    }>(sql`select * from connection_feed(${date(opts.after)}::date, ${date(opts.upto)}::date, ${opts.offset ?? 0}, ${opts.limit ?? 20})`);
+    }>(sql`select * from connection_feed(${date(opts.after)}::date, ${date(opts.upto)}::date, ${opts.offset ?? 0}, ${opts.limit ?? 20}, ${opts.sessionId ? uuid.parse(opts.sessionId) : null}::uuid)`);
     return r.rows.map((x) => ({
       id: x.id,
       ownerId: x.owner_id,

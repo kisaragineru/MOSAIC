@@ -22,12 +22,14 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
   const filters = { q: sp.q ?? "", kind: sp.kind ?? "", tag: sp.tag ?? "", personId: sp.personId ?? "", from: sp.from ?? "", to: sp.to ?? "" };
   const filtering = Object.values(filters).some((v) => v !== "");
   const view = sp.view === "mine" || sp.view === "friends" ? sp.view : "all";
+  // ?with=<connection>: one person's shared records only.
+  const withWho = view === "friends" && sp.with ? ((await shareTargets(uid)).find((x) => x.sessionId === sp.with) ?? null) : null;
   const page = Math.min(Math.max(Number.parseInt(sp.page ?? "0", 10) || 0, 0), 2000);
   let entries: TimelineEntry[] = [];
   let hasOlder = false;
   let filterError = false;
   if (view === "friends") {
-    const feed = await connectionFeed(uid, { offset: page * PAGE_SIZE, limit: PAGE_SIZE + 1 });
+    const feed = await connectionFeed(uid, { offset: page * PAGE_SIZE, limit: PAGE_SIZE + 1, sessionId: withWho?.sessionId ?? null });
     hasOlder = feed.length > PAGE_SIZE;
     entries = feed.slice(0, PAGE_SIZE).map(feedToEntry);
   } else {
@@ -52,6 +54,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
   const pageHref = (n: number) => {
     const q = new URLSearchParams(Object.entries(filters).filter(([, v]) => v !== ""));
     if (view !== "all") q.set("view", view);
+    if (withWho) q.set("with", withWho.sessionId);
     if (n > 0) q.set("page", String(n));
     const qs = q.toString();
     return `/memories${qs ? `?${qs}` : ""}`;
@@ -59,7 +62,8 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
   const tags = await listTags(uid);
   const people = await listPeople(uid);
   const tl = t.memories.timeline;
-  const canShare = (await shareTargets(uid)).length > 0;
+  const targets = await shareTargets(uid);
+  const canShare = targets.length > 0;
   return (
     <Page title={t.memories.title}>
       <Flash t={t} sp={sp} />
@@ -72,6 +76,19 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
           </Link>
         ))}
       </nav>
+      {view === "friends" && targets.length > 1 && (
+        <nav aria-label={tl.views.friends} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 text-sm">
+          <Link href="/memories?view=friends" aria-current={!withWho ? "page" : undefined} className={`inline-flex min-h-10 shrink-0 items-center rounded-2xl px-4 font-semibold ${!withWho ? "bg-rose-600 text-white" : "bg-white text-stone-700 ring-1 ring-stone-200"}`}>{t.common.all}</Link>
+          {targets.map((x) => (
+            <Link key={x.sessionId} href={`/memories?view=friends&with=${x.sessionId}`} aria-current={withWho?.sessionId === x.sessionId ? "page" : undefined}
+              className={`inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-2xl px-4 font-semibold ${withWho?.sessionId === x.sessionId ? "bg-rose-600 text-white" : "bg-white text-stone-700 ring-1 ring-stone-200"}`}>
+              <span aria-hidden className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-100 text-[10px] text-rose-900">{Array.from(x.name.trim())[0] ?? "?"}</span>
+              {x.name}
+            </Link>
+          ))}
+        </nav>
+      )}
+      {withWho && targets.length <= 1 && <p className="px-1 text-sm font-semibold text-rose-900">{tl.onlyFrom(withWho.name)}</p>}
       {view !== "friends" && <Card>
         <form method="get" className="space-y-2" role="search">
           {view !== "all" && <input type="hidden" name="view" value={view} />}

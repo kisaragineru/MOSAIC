@@ -105,6 +105,16 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
             </p>
           </div>
         </div>
+        {theirManual && (
+          <Link href={`/compare/${v.id}/manual`} className="mt-4 flex items-center gap-3 rounded-2xl bg-linear-to-br from-amber-50 to-white px-4 py-3 ring-1 ring-amber-100 transition hover:ring-amber-300">
+            <span aria-hidden className="text-2xl">📖</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-stone-900">{t.manual.theirTitle(v.otherName)}</span>
+              <span className="block text-xs text-stone-600">{SHARED_TEXT.presetName[theirManual.preset][locale]}</span>
+            </span>
+            <span className="shrink-0 text-sm font-semibold text-teal-700">{t.manual.theirOpen} →</span>
+          </Link>
+        )}
       </section>
 
       {v.status === "revoked" && <Notice kind="warning">{cc.ended}</Notice>}
@@ -147,15 +157,6 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
           ) : (
             <p className="px-1 text-sm text-stone-500">{cc.noIntro(v.otherName)}</p>
           )}
-          {theirManual && (
-            <Link href={`/compare/${v.id}/manual`} className="flex items-center justify-between gap-3 rounded-3xl bg-linear-to-br from-amber-50 to-teal-50 px-5 py-4 shadow-sm ring-1 ring-amber-100 transition hover:shadow-md">
-              <span>
-                <span className="block font-semibold text-stone-900">📖 {t.manual.theirTitle(v.otherName)}</span>
-                <span className="block text-xs text-stone-600">{SHARED_TEXT.presetName[theirManual.preset][locale]}</span>
-              </span>
-              <span className="text-sm font-semibold text-teal-700">{t.manual.theirOpen} →</span>
-            </Link>
-          )}
           {theirRecords.length > 0 && (
             <Card title={`📝 ${cc.theirRecords(v.otherName)}`}>
               <ul className="space-y-2">
@@ -167,7 +168,7 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                   </li>
                 ))}
               </ul>
-              <Link href="/memories?view=friends" className="mt-2 block text-right text-sm text-teal-700 underline">{cc.moreRecords} →</Link>
+              <Link href={`/memories?view=friends&with=${v.id}`} className="mt-2 block text-right text-sm text-teal-700 underline">{cc.moreRecords(v.otherName)} →</Link>
             </Card>
           )}
         </section>

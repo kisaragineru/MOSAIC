@@ -106,4 +106,21 @@ describe("records shared with connections", () => {
     const days = buildTimeline(recent, "Asia/Tokyo");
     expect(days.map((d) => d.day)).toEqual([...days.map((d) => d.day)].sort().reverse());
   });
+
+  it("narrows to one connection's shared records", async () => {
+    const a = await makeUser();
+    const b = await makeUser("Sora");
+    const c = await makeUser("Ren");
+    const ab = await connect(a.userId, b.userId);
+    const ac = await connect(a.userId, c.userId);
+    for (const [u, body] of [[b.userId, "ソラの記録"], [c.userId, "レンの記録"]] as const) {
+      const id = await createMemory(u, { kind: "thought", body });
+      await setMemoryAudience(u, id, { visibility: "connections" });
+    }
+    expect((await connectionFeed(a.userId)).map((x) => x.body).sort()).toEqual(["ソラの記録", "レンの記録"]);
+    expect((await connectionFeed(a.userId, { sessionId: ab })).map((x) => x.body)).toEqual(["ソラの記録"]);
+    expect((await connectionFeed(a.userId, { sessionId: ac })).map((x) => x.body)).toEqual(["レンの記録"]);
+    // Someone else's connection id gives nothing, not their records.
+    expect(await connectionFeed(c.userId, { sessionId: ab })).toEqual([]);
+  });
 });
