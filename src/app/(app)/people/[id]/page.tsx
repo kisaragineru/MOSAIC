@@ -91,17 +91,26 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
     <Page title={person.nickname} back="/people">
       <Flash t={t} sp={sp} />
       <p className="text-xs text-stone-500">🔒 {t.people.privateNote}</p>
+      {connection && connection.status !== "revoked" && (
+        // Their page: what they chose to show you (introduction, manual, shared records, side by side).
+        <Link href={`/compare/${connection.id}`} className="block rounded-3xl bg-linear-to-br from-rose-50 via-white to-teal-50 p-4 shadow-sm ring-1 ring-teal-100 transition hover:shadow-md">
+          <span className="flex items-center gap-3">
+            <span aria-hidden className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-rose-100 text-lg font-bold text-rose-900 ring-4 ring-white">{Array.from(connection.otherName.trim())[0]?.toUpperCase() ?? "?"}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-semibold text-stone-900">{t.people.theirPage(connection.otherName)}</span>
+              <span className="block text-xs text-stone-600">{t.people.theirPageSub}</span>
+            </span>
+            <span aria-hidden className="shrink-0 text-lg text-teal-700">→</span>
+          </span>
+          {(connection.otherBio || connection.otherIntro) && (
+            <span className="mt-3 line-clamp-3 block whitespace-pre-line rounded-2xl bg-white/80 px-3 py-2 text-sm leading-6 text-stone-800">{connection.otherBio || connection.otherIntro}</span>
+          )}
+        </Link>
+      )}
       {connection && (
         <div className="space-y-2 rounded-3xl border border-teal-200 bg-linear-to-br from-teal-50 to-sky-50 p-4 text-sm">
           <p className="font-semibold text-teal-900">{connection.status === "revoked" ? t.people.connectionEndedTitle(connection.otherName) : t.people.connectionCard(connection.otherName)}</p>
-          {connection.otherBio && connection.status !== "revoked" && (
-            <p className="whitespace-pre-line rounded-2xl bg-white/80 px-3 py-2 text-stone-800">{connection.otherBio}</p>
-          )}
-          {connection.status === "revoked" ? (
-            <p className="text-stone-600">{t.people.connectionEnded}</p>
-          ) : (
-            <Link href={`/compare/${connection.id}`} className="inline-block rounded-full bg-teal-700 px-4 py-1.5 font-semibold text-white">{t.people.openComparison} →</Link>
-          )}
+          {connection.status === "revoked" && <p className="text-stone-600">{t.people.connectionEnded}</p>}
           {seen !== null && (
             <p className="rounded-2xl bg-white/80 px-3 py-2 text-stone-700">
               📖 {t.people.circleSeen(seen)}

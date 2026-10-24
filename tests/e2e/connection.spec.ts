@@ -84,7 +84,7 @@ test("QR connection: preview of what others see, who is waiting, results first",
   await a.getByRole("button", { name: /大切な人に追加/ }).click();
   await expect(a.getByRole("heading", { name: "ソラ" })).toBeVisible();
   await expect(a.getByText("🔗 ソラさんとQRでつながっています")).toBeVisible();
-  await a.getByRole("link", { name: /比較を見る/ }).click();
+  await a.getByRole("link", { name: /ソラさんのページ/ }).click();
   await expect(a.getByRole("link", { name: /大切な人のページを見る/ })).toBeVisible();
   await a.goto("/people");
   await expect(a.getByText("QRでつながった人")).toHaveCount(0);

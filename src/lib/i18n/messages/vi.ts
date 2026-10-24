@@ -531,6 +531,8 @@ export const vi: Dict = {
     newConnectionsHelp: "Thêm vào danh sách người thân để xem so sánh và ghi chú trên cùng một trang. Ghi chú của bạn vẫn ẩn với họ.",
     addFromConnection: "Thêm vào người thân",
     connectionCard: (n: string) => `🔗 Bạn đã kết nối với ${n} qua QR`,
+    theirPage: (n: string) => `Trang của ${n}`,
+    theirPageSub: "Những gì họ cho bạn xem: lời giới thiệu, sổ tay, ghi chép chia sẻ và so sánh hai bạn",
     connectionEndedTitle: (n: string) => `🔗 Kết nối với ${n} đã bị hủy`,
     connectionPrivate: "Ghi chú, sở thích, quà tặng và mọi thứ trên trang này vẫn ẩn với họ, kể cả khi đã kết nối.",
     connectionEnded: "Kết nối này đã bị hủy. Ghi chú của bạn ở trang này vẫn được giữ. Dùng mã QR mới để kết nối lại.",

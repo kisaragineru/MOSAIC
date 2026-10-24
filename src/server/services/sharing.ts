@@ -456,8 +456,14 @@ async function ownConnection(tx: Tx, userId: string, sessionId: string) {
     .where(and(eq(comparisonSessions.id, id), or(eq(comparisonSessions.userA, userId), eq(comparisonSessions.userB, userId))));
   if (!s) throw notFound();
   const parts = await tx.execute<{ user_id: string; display_name: string }>(sql`select * from comparison_participants(${id})`);
-  const bio = await tx.execute<{ bio: string }>(sql`select bio from connection_bio(${id})`);
-  return { id, status: s.status, otherName: parts.rows.find((p) => p.user_id !== userId)?.display_name ?? "?", otherBio: bio.rows[0]?.bio ?? null };
+  const bio = await tx.execute<{ bio: string | null; intro: string | null }>(sql`select bio, intro from connection_bio(${id})`);
+  return {
+    id,
+    status: s.status,
+    otherName: parts.rows.find((p) => p.user_id !== userId)?.display_name ?? "?",
+    otherBio: bio.rows[0]?.bio ?? null,
+    otherIntro: bio.rows[0]?.intro ?? null,
+  };
 }
 
 export async function linkPersonToConnection(userId: string, personId: string, sessionId: string) {

@@ -531,6 +531,8 @@ export const ja: Dict = {
     newConnectionsHelp: "大切な人に追加すると、比較とメモを同じページで見られます。メモは相手には見えません。",
     addFromConnection: "大切な人に追加",
     connectionCard: (n: string) => `🔗 ${n}さんとQRでつながっています`,
+    theirPage: (n: string) => `${n}さんのページ`,
+    theirPageSub: "自己紹介・取扱説明書・公開してくれた記録・ふたりの比較",
     connectionEndedTitle: (n: string) => `🔗 ${n}さんとのつながりは解除されています`,
     connectionPrivate: "このページのメモ・好み・プレゼントなどは、つながっていても相手には見えません。",
     connectionEnded: "このつながりは解除されています。このページのメモなどはあなたの手元に残ります。もう一度つながるには、新しいQRコードを使ってください。",

@@ -529,6 +529,8 @@ export const en = {
     newConnectionsHelp: "Add them to your people to see the comparison and your notes on one page. Your notes stay hidden from them.",
     addFromConnection: "Add to my people",
     connectionCard: (n: string) => `🔗 You are connected with ${n} by QR`,
+    theirPage: (n: string) => `${n}'s page`,
+    theirPageSub: "What they show you: introduction, manual, shared entries and the two of you side by side",
     connectionEndedTitle: (n: string) => `🔗 Your connection with ${n} has ended`,
     connectionPrivate: "Your notes, likes, gifts and the rest of this page stay hidden from them, even when connected.",
     connectionEnded: "This connection has ended. Your notes on this page stay with you. Use a new QR code to connect again.",
