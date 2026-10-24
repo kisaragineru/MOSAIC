@@ -577,7 +577,10 @@ export const en = {
   },
   gifts: {
     title: "Gift ideas",
-    intro: "Ideas come only from what you recorded. Each one shows why.",
+    intro: "Ideas come from what you recorded and from answers the person shares with you. Each one shows why.",
+    currencyNone: "Any",
+    fromThem: (name: string) => `From ${name}'s own answers`,
+    error: "Couldn't make suggestions. Please check the budget.",
     budget: "Budget (optional)",
     suggest: "Suggest",
     strength: { strong: "Strong", moderate: "Possible", weak: "Unconfirmed" },

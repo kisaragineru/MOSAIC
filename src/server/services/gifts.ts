@@ -5,9 +5,12 @@
  * gender, age or nationality (MOSAIC does not even store those for people). AI may only
  * rephrase the explanation of these candidates (see ai/gift-text.ts); it cannot add any.
  */
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { I18nText } from "@/content/questions";
+import { GIFT_HINTS } from "@/content/gift-hints";
+import { LOCALIZED_BANK } from "@/content/questions-i18n";
+import type { Answer } from "@/lib/discovery/answers";
 import { todayIn, uuid } from "@/lib/validation/common";
 import { giftRecords, importantDates, people, profiles, relationshipEntries } from "../db/schema";
 import { withUser } from "../db/tx";
@@ -15,9 +18,11 @@ import { notFound } from "../errors";
 import { loadPreferences, nextOccurrence, type PreferenceView } from "./people";
 
 export interface Evidence {
-  type: "preference" | "gift" | "entry" | "date";
+  type: "preference" | "gift" | "entry" | "date" | "answer";
   id: string;
   label: string;
+  /** Localised label, when there is one (their answers). */
+  text?: I18nText;
   /** Preference sentiment key (rendered localised by the UI). */
   sentiment?: string;
   source?: string;
@@ -27,7 +32,7 @@ export interface Evidence {
 export interface GiftCandidate {
   /** Localised idea text (the user's own labels are kept verbatim inside it). */
   idea: I18nText;
-  kind: "wished_item" | "related_to_like" | "experience_together" | "similar_to_loved_gift";
+  kind: "wished_item" | "from_their_answers" | "related_to_like" | "experience_together" | "similar_to_loved_gift";
   strength: "strong" | "moderate" | "weak";
   reason: I18nText;
   evidence: Evidence[];
@@ -38,7 +43,9 @@ export interface GiftCandidate {
 export interface GiftSuggestions {
   personName: string;
   candidates: GiftCandidate[];
-  avoid: { label: string; source: string }[];
+  avoid: { label: string; source: string; text?: I18nText }[];
+  /** Whether their own shared answers were used (connected, and they agreed to share preferences). */
+  usedTheirAnswers: boolean;
   alreadyGiven: string[];
   nextOccasion: { label: string; date: string; daysUntil: number } | null;
   budget: { amount: number; currency: string | null; checked: false; note: I18nText } | null;
@@ -92,10 +99,61 @@ const RELATED_IDEA: Record<string, I18nText> = {
   other: { en: "something related to {x}", vi: "món liên quan đến {x}", ja: "{x}に関するもの" },
 };
 
+/** What people type for a currency: a code in any case, or the usual sign or word. Anything else is ignored. */
+const CURRENCY_WORDS: Record<string, string> = { "円": "JPY", "¥": "JPY", "￥": "JPY", yen: "JPY", "$": "USD", "＄": "USD", dollar: "USD", "₫": "VND", "đ": "VND", dong: "VND", "đồng": "VND", "€": "EUR", euro: "EUR" };
+export function normalizeCurrency(v: unknown): string | undefined {
+  if (typeof v !== "string") return undefined;
+  const s = v.trim();
+  if (!s) return undefined;
+  const code = CURRENCY_WORDS[s.toLowerCase()] ?? s.toUpperCase();
+  return /^[A-Z]{3}$/.test(code) ? code : undefined;
+}
+
 const budgetSchema = z.object({
   budget: z.preprocess((v) => (v === "" || v === null ? undefined : v), z.coerce.number().int().min(0).max(1_000_000_000).optional()),
-  currency: z.preprocess((v) => (v === "" ? undefined : v), z.string().regex(/^[A-Z]{3}$/).optional()),
+  currency: z.preprocess(normalizeCurrency, z.string().optional()),
 });
+
+const QOPTS = new Map(LOCALIZED_BANK.map((q) => [q.id, q]));
+
+/** Their own answers (shared with me in this connection) turned into ideas and things to avoid. */
+function fromTheirAnswers(rows: { question_id: string; answer: Answer }[], name: string) {
+  const ideas: GiftCandidate[] = [];
+  const avoid: { label: string; source: string; text: I18nText }[] = [];
+  for (const r of rows) {
+    const hints = GIFT_HINTS[r.question_id];
+    const q = QOPTS.get(r.question_id);
+    if (!hints || !q) continue;
+    const values = "choice" in r.answer ? [r.answer.choice] : "choices" in r.answer ? r.answer.choices : [];
+    const label = (v: string) => q.options?.find((o) => o.value === v)?.label ?? { en: v, vi: v, ja: v };
+    const join = (vs: string[], l: keyof I18nText) => vs.map((v) => label(v)[l]).join(l === "ja" ? "／" : ", ");
+    const evidence = (vs: string[]): Evidence => ({
+      type: "answer",
+      id: r.question_id,
+      label: `${q.prompt.en} → ${join(vs, "en")}`,
+      text: { en: `${q.prompt.en} → ${join(vs, "en")}`, vi: `${q.prompt.vi} → ${join(vs, "vi")}`, ja: `${q.prompt.ja} → ${join(vs, "ja")}` },
+      source: "their_answer",
+    });
+    const reason = (vs: string[]): I18nText => ({
+      en: `${name} answered "${q.prompt.en}" with "${join(vs, "en")}" and shares it with you.`,
+      vi: `${name} đã trả lời "${q.prompt.vi}" là "${join(vs, "vi")}" và chia sẻ với bạn.`,
+      ja: `${name}さん本人の回答です（「${q.prompt.ja}」→ ${join(vs, "ja")}）。`,
+    });
+    // Options with their own hint one by one; the rest share the "*" hint, all named in one idea.
+    const rest = values.filter((v) => !hints[v]);
+    for (const v of values.filter((x) => hints[x])) {
+      const h = hints[v]!;
+      if (h.idea) ideas.push({ idea: h.idea, kind: "from_their_answers", strength: h.strength, reason: reason([v]), evidence: [evidence([v])], caveats: [] });
+      if (h.avoid) avoid.push({ label: h.avoid.en, source: "their_answer", text: h.avoid });
+    }
+    const any = hints["*"];
+    if (any?.idea && rest.length) {
+      const fill = (l: keyof I18nText) => any.idea![l].replace("{x}", join(rest, l));
+      ideas.push({ idea: { en: fill("en"), vi: fill("vi"), ja: fill("ja") }, kind: "from_their_answers", strength: any.strength, reason: reason(rest), evidence: [evidence(rest)], caveats: [] });
+    }
+  }
+  return { ideas, avoid };
+}
 
 export async function suggestGifts(userId: string, personId: string, opts: unknown = {}, now = new Date()): Promise<GiftSuggestions> {
   const o = budgetSchema.parse(opts);
@@ -108,6 +166,11 @@ export async function suggestGifts(userId: string, personId: string, opts: unkno
     const gifts = await tx.select().from(giftRecords).where(eq(giftRecords.personId, pid));
     const entries = await tx.select().from(relationshipEntries).where(eq(relationshipEntries.personId, pid));
     const dates = await tx.select().from(importantDates).where(eq(importantDates.personId, pid));
+    // Linked to a connection: what they chose to share with me (empty unless they agreed to "preferences").
+    const theirRows = person.connectionSessionId
+      ? (await tx.execute<{ user_id: string; question_id: string; answer: Answer }>(sql`select user_id, question_id, answer from comparison_responses(${person.connectionSessionId})`)).rows.filter((r) => r.user_id !== userId)
+      : [];
+    const theirs = fromTheirAnswers(theirRows, person.nickname);
 
     const owned = new Set(prefs.filter((p) => p.current.sentiment === "owns").map((p) => fold(p.label)));
     const given = new Set(gifts.map((g) => fold(g.item)));
@@ -143,6 +206,8 @@ export async function suggestGifts(userId: string, personId: string, opts: unkno
         caveats: caveatsFor(p.current.source),
       });
     }
+    // 1b. From their own answers, unless it clashes with something they dislike.
+    for (const c of theirs.ideas) if (!conflictsWithDislike(c.idea.en)) candidates.push(c);
     // 2. Experiences you both want to do.
     for (const e of entries.filter((x) => x.kind === "wish_together")) {
       candidates.push({
@@ -192,7 +257,7 @@ export async function suggestGifts(userId: string, personId: string, opts: unkno
     }
 
     const order = { strong: 0, moderate: 1, weak: 2 } as const;
-    const kindOrder = { wished_item: 0, experience_together: 1, similar_to_loved_gift: 2, related_to_like: 3 } as const;
+    const kindOrder = { wished_item: 0, from_their_answers: 1, experience_together: 2, similar_to_loved_gift: 3, related_to_like: 4 } as const;
     candidates.sort((a, b) => order[a.strength] - order[b.strength] || kindOrder[a.kind] - kindOrder[b.kind]);
 
     const today = todayIn(tzRow?.tz ?? "UTC", now);
@@ -201,6 +266,13 @@ export async function suggestGifts(userId: string, personId: string, opts: unkno
       .sort((a, b) => a.daysUntil - b.daysUntil)[0];
 
     const questionsToAsk: I18nText[] = [];
+    if (person.connectionSessionId && theirRows.length === 0) {
+      questionsToAsk.push({
+        en: `If ${person.nickname} agrees to share "Preferences" in your connection, ideas can come from their own answers too.`,
+        vi: `Nếu ${person.nickname} đồng ý chia sẻ "Sở thích" trong kết nối, gợi ý có thể dựa cả vào câu trả lời của họ.`,
+        ja: `つながりで${person.nickname}さんが「好み」の共有に同意すると、本人の回答からも提案できます。`,
+      });
+    }
     if (!prefs.some((p) => p.current.sentiment === "wants")) {
       questionsToAsk.push({
         en: `Has ${person.nickname} mentioned wanting anything recently? Add it as "wants" with the source "they said".`,
@@ -226,7 +298,8 @@ export async function suggestGifts(userId: string, personId: string, opts: unkno
     return {
       personName: person.nickname,
       candidates,
-      avoid: disliked.map((p) => ({ label: p.label, source: p.current.source })),
+      avoid: [...disliked.map((p) => ({ label: p.label, source: p.current.source })), ...theirs.avoid],
+      usedTheirAnswers: theirRows.length > 0,
       alreadyGiven: gifts.map((g) => g.item),
       nextOccasion: next ? { label: next.label, date: next.date, daysUntil: next.daysUntil } : null,
       budget:

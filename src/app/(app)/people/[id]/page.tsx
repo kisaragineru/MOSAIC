@@ -17,7 +17,7 @@ import { getT } from "@/lib/i18n/server";
 import { todayIn } from "@/lib/validation/common";
 import { getAccount } from "@/server/services/account";
 import { requireUser } from "@/server/auth/session";
-import { suggestGifts } from "@/server/services/gifts";
+import { normalizeCurrency, suggestGifts } from "@/server/services/gifts";
 import { getPerson, listCategories, nextOccurrence } from "@/server/services/people";
 import { connectionForPerson } from "@/server/services/sharing";
 
@@ -77,7 +77,11 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
   const acts = { edit: t.common.edit, delete: t.common.delete };
   const formT = { save: t.common.save, cancel: t.common.cancel };
   const showGifts = sp.gifts === "1";
-  const ideas = showGifts ? await suggestGifts(uid, person.id, { budget: sp.budget ?? "", currency: sp.currency ?? "" }).catch(() => null) : null;
+  const giftResult = showGifts
+    ? await suggestGifts(uid, person.id, { budget: sp.budget ?? "", currency: sp.currency ?? "" }).then((v) => ({ v }), () => ({ v: null }))
+    : null;
+  const ideas = giftResult?.v ?? null;
+  const currency = normalizeCurrency(sp.currency) ?? (locale === "ja" ? "JPY" : locale === "vi" ? "VND" : "");
   return (
     <Page
       title={person.nickname}
@@ -126,9 +130,15 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
         <form method="get" className="flex flex-wrap items-end gap-2">
           <input type="hidden" name="gifts" value="1" />
           <Field label={t.gifts.budget}><Input type="number" name="budget" min={0} defaultValue={sp.budget ?? ""} className="w-32" /></Field>
-          <Field label={t.people.currency}><Input name="currency" defaultValue={sp.currency ?? ""} maxLength={3} className="w-20 uppercase" /></Field>
+          <Field label={t.people.currency}>
+            <Select name="currency" defaultValue={currency} className="w-28">
+              <option value="">{t.gifts.currencyNone}</option>
+              {["JPY", "USD", "VND", "EUR"].map((c) => <option key={c} value={c}>{c}</option>)}
+            </Select>
+          </Field>
           <Button type="submit">{t.gifts.suggest}</Button>
         </form>
+        {giftResult && !ideas && <Notice kind="error">{t.gifts.error}</Notice>}
         {ideas && (
           <div className="mt-3 space-y-3" data-testid="gift-ideas">
             {ideas.nextOccasion && <Notice>{t.gifts.nextOccasion(ideas.nextOccasion.label, ideas.nextOccasion.date, t.home.inDays(ideas.nextOccasion.daysUntil))}</Notice>}
@@ -143,14 +153,15 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
                       <Pill tone={c.strength === "strong" ? "teal" : c.strength === "moderate" ? "stone" : "amber"}>{t.gifts.strength[c.strength]}</Pill>
                       <span className="font-medium">{c.idea[locale]}</span>
                     </div>
-                    <p className="text-sm text-stone-700">{c.reason[locale]}</p>
-                    <p className="text-xs text-stone-500">{t.gifts.evidence}: {c.evidence.map((e) => (e.sentiment ? `${e.label} (${t.people.sentiments[e.sentiment as keyof typeof t.people.sentiments] ?? e.sentiment})` : e.label)).join("; ")}</p>
+                    {c.kind === "from_their_answers" && <p className="text-xs font-semibold text-rose-800">💬 {t.gifts.fromThem(ideas.personName)}</p>}
+                    {c.kind !== "from_their_answers" && <p className="text-sm text-stone-700">{c.reason[locale]}</p>}
+                    <p className="text-xs text-stone-500">{t.gifts.evidence}: {c.evidence.map((e) => (e.text ? e.text[locale] : e.sentiment ? `${e.label} (${t.people.sentiments[e.sentiment as keyof typeof t.people.sentiments] ?? e.sentiment})` : e.label)).join("; ")}</p>
                     {c.caveats.map((cv, j) => <p key={j} className="text-xs text-amber-800">⚠ {cv[locale]}</p>)}
                   </li>
                 ))}
               </ol>
             )}
-            {ideas.avoid.length > 0 && <p className="text-sm"><b>{t.gifts.avoid}:</b> {ideas.avoid.map((a) => a.label).join(", ")}</p>}
+            {ideas.avoid.length > 0 && <p className="text-sm"><b>{t.gifts.avoid}:</b> {ideas.avoid.map((a) => a.text?.[locale] ?? a.label).join(locale === "ja" ? "、" : ", ")}</p>}
             {ideas.alreadyGiven.length > 0 && <p className="text-sm"><b>{t.gifts.alreadyGiven}:</b> {ideas.alreadyGiven.join(", ")}</p>}
             {ideas.questionsToAsk.length > 0 && (
               <div>

@@ -579,7 +579,10 @@ export const ja: Dict = {
   },
   gifts: {
     title: "プレゼントのアイデア",
-    intro: "あなたが記録した内容だけから提案します。それぞれに理由を示します。",
+    intro: "あなたが記録した内容と、つながっている相手が共有してくれた回答から提案します。それぞれに理由を示します。",
+    currencyNone: "指定しない",
+    fromThem: (name: string) => `${name}さん本人の回答から`,
+    error: "提案を作れませんでした。予算の入力を確認してください。",
     budget: "予算（任意）",
     suggest: "提案する",
     strength: { strong: "確度高", moderate: "可能性あり", weak: "未確認" },

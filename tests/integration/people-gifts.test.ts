@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { suggestGifts } from "@/server/services/gifts";
+import { normalizeCurrency, suggestGifts } from "@/server/services/gifts";
+import { answerQuestion } from "@/server/services/discovery";
+import { addPersonFromConnection, createShare, giveConsent, openComparison } from "@/server/services/sharing";
 import {
   addGift,
   addImportantDate,
@@ -135,5 +137,44 @@ describe("gift suggestions", () => {
     const s = await suggestGifts(u.userId, pid);
     expect(s.candidates).toEqual([]);
     expect(s.questionsToAsk.length).toBe(3);
+  });
+
+  it("reads a currency however it is typed, and ignores what it can't read", () => {
+    expect(["円", "¥", "jpy", " JPY ", "$", "đ", "€", "", "えん", "XYZW"].map(normalizeCurrency)).toEqual(["JPY", "JPY", "JPY", "JPY", "USD", "VND", "EUR", undefined, undefined, undefined]);
+  });
+
+  it("suggests from a connected person's own shared answers, only with their consent", async () => {
+    const me = await makeUser("Me");
+    const sora = await makeUser("Sora");
+    const share = await createShare(me.userId);
+    const sid = await openComparison(sora.userId, share.token);
+    const pid = await addPersonFromConnection(me.userId, sid, "friend");
+    const answer = async (questionId: string, a: unknown) => answerQuestion(sora.userId, { questionId, questionVersion: 1, answer: a, privacy: "comparable" });
+    await answer("l.gift_receive", { choice: "experience" });
+    await answer("l.scent", { choices: ["citrus", "floral"] });
+    await answer("l.alcohol", { choice: "no" });
+    await answer("l.things", { choice: "few" });
+
+    // Connected but nothing agreed yet: their answers aren't used, and it says how to get there.
+    await giveConsent(me.userId, sid, { scopes: ["preferences"], agree: true });
+    let s = await suggestGifts(me.userId, pid, { budget: "3000", currency: "円" });
+    expect(s.usedTheirAnswers).toBe(false);
+    expect(s.budget).toMatchObject({ amount: 3000, currency: "JPY" });
+    expect(s.questionsToAsk.map((q) => q.ja).join()).toMatch(/「好み」の共有に同意/);
+
+    await giveConsent(sora.userId, sid, { scopes: ["values"], agree: true });
+    expect((await suggestGifts(me.userId, pid)).usedTheirAnswers).toBe(false); // agreed scopes don't overlap
+    await giveConsent(sora.userId, sid, { scopes: ["preferences"], agree: true });
+    s = await suggestGifts(me.userId, pid);
+    expect(s.usedTheirAnswers).toBe(true);
+    const theirs = s.candidates.filter((c) => c.kind === "from_their_answers");
+    expect(theirs[0]).toMatchObject({ strength: "strong", idea: { ja: "一緒に過ごす時間（食事・日帰り旅・ライブなど）" } });
+    expect(theirs.map((c) => c.idea.ja)).toContain("柑橘／花の香りのハンドクリームやキャンドル");
+    expect(theirs[0]!.evidence[0]!.text!.ja).toBe("いちばんうれしい贈り物は？ → 一緒に過ごす体験");
+    expect(s.avoid.map((a) => a.text?.ja)).toEqual(expect.arrayContaining(["お酒", "かさばる物（消えものや体験のほうが合います）"]));
+
+    // Answers they keep to themselves stay out.
+    await answerQuestion(sora.userId, { questionId: "l.sweets", questionVersion: 1, answer: { choice: "love" }, privacy: "private" });
+    expect((await suggestGifts(me.userId, pid)).candidates.some((c) => c.idea.ja.includes("お菓子"))).toBe(false);
   });
 });

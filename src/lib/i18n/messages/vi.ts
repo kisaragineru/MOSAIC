@@ -579,7 +579,10 @@ export const vi: Dict = {
   },
   gifts: {
     title: "Gợi ý quà",
-    intro: "Gợi ý chỉ dựa trên những gì bạn đã ghi lại. Mỗi gợi ý đều có lý do.",
+    intro: "Gợi ý dựa trên những gì bạn ghi lại và câu trả lời người ấy chia sẻ với bạn. Mỗi gợi ý đều có lý do.",
+    currencyNone: "Không chọn",
+    fromThem: (name: string) => `Từ câu trả lời của ${name}`,
+    error: "Không thể tạo gợi ý. Hãy kiểm tra ngân sách.",
     budget: "Ngân sách (không bắt buộc)",
     suggest: "Gợi ý",
     strength: { strong: "Chắc chắn", moderate: "Có thể", weak: "Chưa xác nhận" },
