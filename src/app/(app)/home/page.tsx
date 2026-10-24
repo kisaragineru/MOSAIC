@@ -11,6 +11,7 @@ import { getDaily } from "@/server/services/discovery";
 import { listMemories } from "@/server/services/memories";
 import { upcomingDates } from "@/server/services/people";
 import { listComparisons } from "@/server/services/sharing";
+import { myPeerRequests } from "@/server/services/peers";
 import { getTuvi } from "@/server/services/tuvi";
 import { portrait, tileViews } from "@/server/services/mosaic";
 import { Mosaic } from "@/components/mosaic";
@@ -34,11 +35,19 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const chart = tv.chart;
   const menhStars = chart && chart.menh !== null ? chart.palaces[chart.menh]!.mainStars.map((s) => STAR_INFO[s.id].vi) : [];
   const waiting = (await listComparisons(uid)).filter((c) => c.waitingOn === "you");
+  const askedOfMe = (await myPeerRequests(uid)).filter((r) => r.role === "responder" && r.status === "pending");
   const pic = await portrait(uid);
   const nowStage = chart ? lifeStages(chart, locale, tv.currentAge).find((x) => x.state === "current") : undefined;
   return (
     <Page title={t.home.hello(account.profile.displayName)}>
       <Flash t={t} sp={sp} />
+      {askedOfMe.map((r) => (
+        <Link key={r.id} href={`/others/${r.id}`} className="flex items-center gap-3 rounded-3xl border border-violet-200 bg-violet-50/80 p-4 text-sm text-violet-950 transition hover:shadow-md">
+          <span aria-hidden className="text-xl">💭</span>
+          <span className="flex-1">{t.peers.homeAsked(r.otherName)}</span>
+          <span className="shrink-0 rounded-full bg-white px-3 py-1 font-semibold text-violet-800">{t.peers.homeAnswer} →</span>
+        </Link>
+      ))}
       {waiting.map((c) => (
         <Link key={c.id} href={`/compare/${c.id}`} className="flex items-center gap-3 rounded-3xl border border-rose-200 bg-rose-50/80 p-4 text-sm text-rose-950 transition hover:shadow-md">
           <span aria-hidden className="text-xl">🔗</span>

@@ -765,3 +765,50 @@ export const auditEvents = pgTable(
   },
   (t) => [index("audit_events_user_idx").on(t.userId, t.createdAt)],
 );
+
+/**
+ * "How do you see me?": the owner asks someone they are connected with (a comparison session) to
+ * answer the 17 axes about them. All reads and writes go through SECURITY DEFINER functions
+ * (migration 0009): the owner never reads an anonymous answer on its own, only a summary once
+ * at least three anonymous answers exist.
+ */
+export const peerRequests = pgTable(
+  "peer_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    responderId: uuid("responder_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => comparisonSessions.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("pending"),
+    createdAt: createdAt(),
+    answeredAt: ts("answered_at"),
+  },
+  (t) => [
+    index("peer_requests_owner_idx").on(t.ownerId),
+    index("peer_requests_responder_idx").on(t.responderId),
+    uniqueIndex("peer_requests_one_pending_uq").on(t.ownerId, t.responderId).where(sql`${t.status} = 'pending'`),
+    check("peer_requests_status_ck", sql`${t.status} in ('pending','answered','declined','cancelled','withdrawn')`),
+    check("peer_requests_not_self_ck", sql`${t.ownerId} <> ${t.responderId}`),
+  ],
+);
+
+export const peerResponses = pgTable(
+  "peer_responses",
+  {
+    requestId: uuid("request_id")
+      .primaryKey()
+      .references(() => peerRequests.id, { onDelete: "cascade" }),
+    anonymous: boolean("anonymous").notNull(),
+    /** { axisKey: 1 | 0 | -1 } — 1 the first pole, -1 the second, 0 neither / don't know. */
+    answers: jsonb("answers").notNull(),
+    comment: text("comment"),
+    createdAt: createdAt(),
+  },
+  (t) => [check("peer_responses_comment_ck", sql`${t.comment} is null or char_length(${t.comment}) <= 1000`)],
+);

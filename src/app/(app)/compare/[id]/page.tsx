@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { addPersonFromConnectionAction, consentAction, endComparisonAction, recomputeAction } from "@/app/actions/sharing";
+import { askPeerAction } from "@/app/actions/peers";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
 import { Button, Card, Checkbox, Notice, Page, Pill } from "@/components/ui";
@@ -72,6 +73,13 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
             <Button type="submit" variant="secondary">♡ {t.people.addFromConnection}</Button>
           </form>
         )
+      )}
+      {v.status !== "revoked" && (
+        <form action={askPeerAction}>
+          <input type="hidden" name="sessionId" value={v.id} />
+          <input type="hidden" name="back" value="/me/others" />
+          <Button type="submit" variant="secondary">💭 {t.peers.askThis(v.otherName)}</Button>
+        </form>
       )}
       {v.status === "revoked" ? (
         <Notice kind="warning">{t.compare.ended}</Notice>

@@ -110,3 +110,27 @@ export function chapterOf(q: Pick<QuestionDef, "category" | "signals">): Chapter
   const key = q.signals?.[0]?.claimKey;
   return key ? AXIS_CHAPTER[key] : CATEGORY_CHAPTER[q.category];
 }
+
+/**
+ * How a friend is asked about you: each pole as a short, neutral description of what you do.
+ * Read as "<name>…" — e.g. "Hana… plans ahead / goes with the flow".
+ */
+export const PEER_POLES: Record<TendencyKey, { pos: I18nText; neg: I18nText }> = {
+  social_energy: { pos: { en: "gets energy from being with people", vi: "nạp năng lượng khi ở bên mọi người", ja: "人と過ごして元気になる" }, neg: { en: "gets energy from time alone", vi: "nạp năng lượng khi ở một mình", ja: "ひとりの時間で元気になる" } },
+  planning: { pos: { en: "plans ahead", vi: "lên kế hoạch trước", ja: "先に計画を立てる" }, neg: { en: "goes with the flow", vi: "tùy cơ ứng biến", ja: "その場の流れで動く" } },
+  novelty: { pos: { en: "jumps at new things", vi: "thích thử cái mới", ja: "新しいものに飛びつく" }, neg: { en: "sticks with the familiar", vi: "thích những gì quen thuộc", ja: "慣れたものを好む" } },
+  calm: { pos: { en: "stays steady whatever happens", vi: "luôn điềm tĩnh dù có chuyện gì", ja: "何があっても落ち着いている" }, neg: { en: "feels things deeply and for a long time", vi: "cảm nhận sâu và lâu", ja: "感じたことが心に長く残る" } },
+  pace: { pos: { en: "acts before overthinking", vi: "hành động trước khi nghĩ nhiều", ja: "考えるより先に動く" }, neg: { en: "thinks it through before acting", vi: "suy nghĩ kỹ rồi mới làm", ja: "じっくり考えてから動く" } },
+  decision_style: { pos: { en: "decides with facts and reasons", vi: "quyết định bằng dữ kiện và lý lẽ", ja: "理屈や情報で決める" }, neg: { en: "decides by gut feeling", vi: "quyết định theo trực giác", ja: "直感で決める" } },
+  risk: { pos: { en: "takes the leap", vi: "dám liều", ja: "思い切って挑戦する" }, neg: { en: "plays it safe", vi: "chọn sự an toàn", ja: "慎重に安全を選ぶ" } },
+  independence: { pos: { en: "gets things done alone", vi: "tự mình làm xong", ja: "ひとりでやり遂げる" }, neg: { en: "works things out with others", vi: "cùng người khác giải quyết", ja: "人と相談しながら進める" } },
+  detail: { pos: { en: "notices the small details", vi: "để ý từng chi tiết nhỏ", ja: "細かいところに気づく" }, neg: { en: "sees the big picture", vi: "nhìn bức tranh tổng thể", ja: "全体をざっくりつかむ" } },
+  expressiveness: { pos: { en: "shows how they feel", vi: "thể hiện rõ cảm xúc", ja: "気持ちが表に出る" }, neg: { en: "keeps feelings inside", vi: "giữ cảm xúc trong lòng", ja: "気持ちを内に秘める" } },
+  conflict: { pos: { en: "says difficult things plainly", vi: "nói thẳng điều khó nói", ja: "言いにくいこともはっきり言う" }, neg: { en: "calms things down first", vi: "làm dịu tình hình trước", ja: "まず場を落ち着かせる" } },
+  closeness: { pos: { en: "has a few close people", vi: "có vài người thật thân", ja: "少数の人と深くつきあう" }, neg: { en: "knows lots of people", vi: "quen biết rất nhiều người", ja: "たくさんの人と広くつきあう" } },
+  care_style: { pos: { en: "shows care in words", vi: "quan tâm bằng lời nói", ja: "言葉で気持ちを伝える" }, neg: { en: "shows care in actions", vi: "quan tâm bằng hành động", ja: "行動で気持ちを示す" } },
+  giving: { pos: { en: "puts others first", vi: "đặt người khác lên trước", ja: "自分より人を優先する" }, neg: { en: "looks after their own limits", vi: "biết giữ giới hạn của mình", ja: "自分の限度も大切にする" } },
+  saving: { pos: { en: "saves for later", vi: "để dành cho sau này", ja: "将来のために貯める" }, neg: { en: "enjoys money now", vi: "tận hưởng tiền bạc hiện tại", ja: "いまを楽しむために使う" } },
+  ambition: { pos: { en: "keeps aiming higher", vi: "luôn hướng lên cao hơn", ja: "もっと上を目指している" }, neg: { en: "is content with what they have", vi: "hài lòng với những gì đang có", ja: "いまに満足している" } },
+  tradition: { pos: { en: "values tradition", vi: "coi trọng truyền thống", ja: "伝統やしきたりを大切にする" }, neg: { en: "finds their own way", vi: "chọn cách riêng của mình", ja: "自分なりのやり方を選ぶ" } },
+};

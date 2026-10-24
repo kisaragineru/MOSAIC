@@ -64,6 +64,13 @@
       "when": 1792805270765,
       "tag": "0008_answer_note_feedback",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792806512125,
+      "tag": "0009_peer_view",
+      "breakpoints": true
     }
   ]
 }

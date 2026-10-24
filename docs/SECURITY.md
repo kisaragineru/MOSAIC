@@ -40,6 +40,11 @@ keys, anonymous access, role privilege escalation, and identity leakage across p
   participant has consented in the connection under the consent text that mentions it
   (`consent-2026-10-bio` or later), and never once the connection has ended. The invite itself
   still shows only the display name.
+- "How do you see me?" (migration 0009): only the two people of a live connection can ask or
+  answer, and only through SECURITY DEFINER functions — the app role has no grant on
+  peer_requests / peer_responses. Anonymous answers reach the owner only as per-axis counts and
+  unordered comments, and only once three exist; each responder counts once (latest answer) and
+  can withdraw at any time. The owner is not told who chose anonymity.
 - Linking a connection to an entry in "people" (`people.connection_session_id`) is stored on the
   owner's row only; the other participant never sees it or any notes about them.
 

@@ -6,7 +6,7 @@
  * Nothing about OTHER users is included except what they consented to share in
  * comparisons the exporting user took part in (stored comparison results).
  */
-import { and, asc, eq, inArray, or } from "drizzle-orm";
+import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
 import { enforceRateLimit } from "../auth/rate-limit";
 import * as s from "../db/schema";
 import { withUser } from "../db/tx";
@@ -36,6 +36,10 @@ export async function buildExport(userId: string) {
     const qdefs = qids.length ? await tx.select().from(s.questionDefinitions).where(inArray(s.questionDefinitions.id, qids)) : [];
 
     const feedback = await tx.select().from(s.questionFeedback).where(eq(s.questionFeedback.userId, userId));
+    // "How do you see me?": requests both ways (with my own answers when I was asked) and what
+    // others said about me — anonymous answers only as the summary the app shows.
+    const peerRequests = (await tx.execute(sql`select * from peer_requests_mine() order by created_at`)).rows;
+    const peerResults = (await tx.execute(sql`select * from peer_results()`)).rows;
     const claims = await tx.select().from(s.tendencyClaims).where(eq(s.tendencyClaims.userId, userId));
     const evidence = await tx.select().from(s.tendencyEvidence).where(eq(s.tendencyEvidence.userId, userId));
 
@@ -98,6 +102,8 @@ export async function buildExport(userId: string) {
       questions: qdefs.map((d) => ({ ...d, versions: qversions.filter((v) => v.questionId === d.id) })),
       questionResponses: responses,
       questionFeedback: feedback,
+      peerRequests,
+      peerResults,
       tendencies: claims.map((c) => ({ ...c, evidence: evidence.filter((e) => e.claimId === c.id) })),
       tuvi: {
         birthProfile: birth ?? null,
