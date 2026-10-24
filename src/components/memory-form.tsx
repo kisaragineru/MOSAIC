@@ -10,7 +10,6 @@ export interface MemoryDefaults {
   title?: string | null;
   body?: string | null;
   reason?: string | null;
-  mood?: number | null;
   occurredOn?: string | null;
   revealOn?: string | null;
   tags?: string[];
@@ -22,7 +21,6 @@ export interface MemoryDefaults {
 const chip =
   "cursor-pointer select-none rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm text-stone-700 transition has-[:checked]:border-teal-600 has-[:checked]:bg-teal-600 has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-400";
 
-const MOODS = ["😞", "😕", "😐", "🙂", "😄"];
 
 export function MemoryForm({
   t,
@@ -127,27 +125,12 @@ export function MemoryForm({
           {canShare && <p className="mt-1 text-[11px] leading-5 text-stone-500">{t.memories.audience.help}</p>}
         </fieldset>
       )}
-      <details className="rounded-xl border border-stone-200 p-3" open={!!(d.occurredOn || d.tags?.length || d.personIds?.length || d.mood)}>
+      <details className="rounded-xl border border-stone-200 p-3" open={!!(d.occurredOn || d.tags?.length || d.personIds?.length)}>
         <summary className="cursor-pointer text-sm text-stone-600">{t.memories.details}</summary>
         <div className="mt-3 space-y-3">
           <Field label={t.memories.fields.occurredOn}>
             <Input type="date" name="occurredOn" defaultValue={d.occurredOn ?? ""} />
           </Field>
-          <fieldset>
-            <legend className="mb-1.5 text-sm font-medium text-stone-700">{t.memories.fields.mood}</legend>
-            <div className="flex flex-wrap gap-1.5">
-              <label className={chip}>
-                <input type="radio" name="mood" value="" defaultChecked={!d.mood} className="sr-only" />
-                {t.memories.moodNone}
-              </label>
-              {MOODS.map((e, i) => (
-                <label key={e} className={chip} title={String(i + 1)}>
-                  <input type="radio" name="mood" value={i + 1} defaultChecked={d.mood === i + 1} className="sr-only" aria-label={`${t.memories.fields.mood} ${i + 1}`} />
-                  <span aria-hidden>{e}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
           <Field label={t.memories.fields.tags}>
             <Input name="tags" defaultValue={(d.tags ?? []).join(", ")} />
           </Field>

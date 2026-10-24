@@ -30,6 +30,14 @@ describe("memories & timeline", () => {
     });
   });
 
+  it("keeps a mood saved before mood was taken out of the form", async () => {
+    const u = await makeUser();
+    const id = await createMemory(u.userId, { body: "Old note", mood: 4 });
+    expect(await editMemory(u.userId, id, { kind: "thought", body: "Old note" })).toEqual({ version: 1, contentChanged: false });
+    await editMemory(u.userId, id, { kind: "thought", body: "Old note, edited" });
+    expect((await getMemory(u.userId, id)).mood).toBe(4);
+  });
+
   it("keeps decision reasons and event dates", async () => {
     const u = await makeUser();
     const id = await createMemory(u.userId, {

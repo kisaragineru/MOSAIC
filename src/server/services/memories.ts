@@ -91,7 +91,7 @@ export async function editMemory(userId: string, entryId: string, input: unknown
       current.body !== data.body ||
       (current.title ?? null) !== (data.title ?? null) ||
       (current.reason ?? null) !== (data.reason ?? null) ||
-      (current.mood ?? null) !== (data.mood ?? null);
+      (current.mood ?? null) !== (data.mood ?? current.mood ?? null);
     let version = entry.currentVersion;
     if (contentChanged) {
       version += 1;
@@ -102,7 +102,8 @@ export async function editMemory(userId: string, entryId: string, input: unknown
         title: data.title ?? null,
         body: data.body,
         reason: data.reason ?? null,
-        mood: data.mood ?? null,
+        // Mood is no longer asked for: keep what an older version had.
+        mood: data.mood ?? current?.mood ?? null,
       });
     }
     await tx

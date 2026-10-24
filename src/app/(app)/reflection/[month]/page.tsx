@@ -11,13 +11,10 @@ import { requireUser } from "@/server/auth/session";
 import { activeMonths, monthKey, monthReport, parseMonth, shiftMonth, thisMonth, type AnsweredInMonth, type Month } from "@/server/services/monthly";
 import { listTendencies } from "@/server/services/tendencies";
 
-// Literal classes for the mood bars (Tailwind only generates classes it can see).
-const BAR = ["h-0", "h-[14%]", "h-[28%]", "h-[42%]", "h-[56%]", "h-[70%]"];
-const FACE = ["😞", "😕", "😐", "🙂", "😄"];
 /** Answers shown before "show all". */
 const SHOWN = 5;
 
-/** One month, looked back on: numbers, mood, highlights, first answers, changes, and a note. */
+/** One month, looked back on: numbers, highlights, answers, and a look back. */
 export default async function MonthPage({ params, searchParams }: { params: Promise<{ month: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
   const { month } = await params;
@@ -58,29 +55,6 @@ export default async function MonthPage({ params, searchParams }: { params: Prom
         </dl>
         <p className="mt-2 text-right text-xs text-stone-500">{mo.vsLast(r.pieces - r.previousPieces)}</p>
       </section>
-
-      <Card title={mo.moodTitle}>
-        <p className="-mt-1 mb-3 text-xs leading-relaxed text-stone-500">{mo.moodHelp}</p>
-        {r.moodAverage === null ? (
-          <p className="text-sm text-stone-500">{mo.moodNone}</p>
-        ) : (
-          <>
-            <div className="flex h-28 items-end gap-2" role="img" aria-label={mo.moodAvg(r.moodAverage.toFixed(1))}>
-              {r.moodWeeks.map((w, i) => (
-                <div key={i} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
-                  {w !== null && <span aria-hidden className="text-lg leading-none">{FACE[Math.round(w) - 1]}</span>}
-                  <div className={`w-full max-w-12 rounded-t-lg ${w === null ? "h-1 bg-stone-100" : `${BAR[Math.round(w)]} bg-linear-to-t from-sky-300 to-amber-200`}`} />
-                  <span className="text-[10px] text-stone-500">{mo.week(i + 1)}</span>
-                </div>
-              ))}
-            </div>
-            <p className="mt-2 flex justify-between text-xs text-stone-500">
-              <span>{FACE[Math.round(r.moodAverage) - 1]} {mo.moodAvg(r.moodAverage.toFixed(1))}</span>
-              <span>{mo.moodCount(r.moodCount)}</span>
-            </p>
-          </>
-        )}
-      </Card>
 
       <Card title={mo.highlights}>
         {r.highlights.length === 0 ? (

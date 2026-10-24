@@ -1,6 +1,6 @@
 /**
  * The monthly look back: what the user answered and recorded in one calendar month (in their own
- * time zone), how it compares with the month before, their mood through the month, and a place
+ * time zone), how it compares with the month before, and a place
  * to write a few lines about it. Read-only over existing data; writing back is an ordinary record.
  */
 import { eq, sql } from "drizzle-orm";
@@ -52,10 +52,6 @@ export interface MonthReport {
   pieces: number;
   days: number;
   previousPieces: number;
-  /** Average mood per week of the month (1–5), null for weeks without a mood. */
-  moodWeeks: (number | null)[];
-  moodAverage: number | null;
-  moodCount: number;
   highlights: MemorySummary[];
   /** The look backs written for this month (newest first), as prompt / answer pairs. */
   lookBacks: { id: string; createdAt: Date; sections: { prompt: string; answer: string }[] }[];
@@ -115,9 +111,6 @@ export async function monthReport(userId: string, m: Month, locale: Locale, now 
   const lookBacks = records.filter(isLookBack);
   const dayOf = (r: MemorySummary) => r.occurredOn ?? todayIn(tz, r.createdAt);
 
-  const weeks: number[][] = [[], [], [], [], []];
-  for (const r of records) if (r.mood) weeks[Math.min(4, Math.floor((Number(dayOf(r).slice(8, 10)) - 1) / 7))]!.push(r.mood);
-  const moods = records.filter((r) => r.mood).map((r) => r.mood!);
   const label = (qid: string, a: Answer | null) => {
     const q = QMETA.get(qid);
     return { prompt: q?.prompt[locale] ?? qid, answer: answerLabel(q?.options ?? null, a, locale) };
@@ -137,9 +130,6 @@ export async function monthReport(userId: string, m: Month, locale: Locale, now 
     pieces: answers.length + records.length,
     days: new Set(records.map(dayOf)).size,
     previousPieces: prevAnswers.length + prevRecords.length,
-    moodWeeks: weeks.map((w) => (w.length ? w.reduce((a, b) => a + b, 0) / w.length : null)),
-    moodCount: moods.length,
-    moodAverage: moods.length ? moods.reduce((a, b) => a + b, 0) / moods.length : null,
     lookBacks: lookBacks.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).map((r) => ({ id: r.id, createdAt: r.createdAt, sections: lookBackSections(r.body ?? "") })),
     highlights: records.filter((r) => !isLookBack(r)).filter((r) => ["achievement", "decision", "memory", "feeling", "value", "goal", "dream", "regret"].includes(r.kind) || r.title).slice(0, 8),
     answered: answeredIn(answers, locale),

@@ -33,21 +33,19 @@ describe("monthly look back", () => {
     expect(shiftMonth({ year: 2026, month: 12 }, 1)).toEqual({ year: 2027, month: 1 });
   });
 
-  it("sums up a month: answers, records, mood by week, first answers and changes, against the month before", async () => {
+  it("sums up a month: answers, records, highlights, first answers and changes, against the month before", async () => {
     const u = await makeUser();
     const now = await thisMonth(u.userId);
     const key = `${now.year}-${String(now.month).padStart(2, "0")}`;
     await answerQuestion(u.userId, { questionId: "p.weekend_plan", questionVersion: 1, answer: { choice: "plan" } });
     const second = await answerQuestion(u.userId, { questionId: "p.weekend_plan", questionVersion: 1, answer: { choice: "see" } });
     await setChangeKind(u.userId, second.responseId, "changed_mind");
-    await createMemory(u.userId, { kind: "achievement", title: "合格", body: "やった", occurredOn: `${key}-01`, mood: 5 });
-    await createMemory(u.userId, { kind: "feeling", body: "少し疲れた", occurredOn: `${key}-01`, mood: 2 });
+    await createMemory(u.userId, { kind: "achievement", title: "合格", body: "やった", occurredOn: `${key}-01` });
+    await createMemory(u.userId, { kind: "feeling", body: "少し疲れた", occurredOn: `${key}-01` });
     await createMemory(u.userId, { kind: "thought", body: "前の月", occurredOn: `${shiftMonth(now, -1).year}-${String(shiftMonth(now, -1).month).padStart(2, "0")}-15` });
 
     const r = await monthReport(u.userId, now, "ja");
     expect(r).toMatchObject({ current: true, answers: 2, records: 2, pieces: 4, days: 1, previousPieces: 1 });
-    expect(r.moodWeeks).toEqual([3.5, null, null, null, null]);
-    expect(r.moodAverage).toBe(3.5);
     expect(r.highlights.map((h) => h.title ?? h.body)).toEqual(expect.arrayContaining(["合格", "少し疲れた"]));
     // One entry per question: answered for the first time this month, so not "changed".
     expect(r.answered).toHaveLength(1);

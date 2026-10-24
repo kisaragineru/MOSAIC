@@ -192,11 +192,6 @@ async function gather(tx: Tx, userId: string, kind: ReflectionKind, locale: Loca
       findings.push({ refs, text: { en: `The tag “${t.tag}” appears in ${refs.length} entries.`, vi: `Thẻ “${t.tag}” xuất hiện trong ${refs.length} ghi chép.`, ja: `タグ「${t.tag}」が${refs.length}件の記録に出てきます。` } });
     }
     const hard = await currentMemories(tx, userId, { kinds: ["feeling", "regret", "thought"] });
-    const low = hard.filter(({ v }) => v.mood !== null && v.mood <= 2);
-    if (low.length >= 2) {
-      const refs = low.map(({ e, v }) => bag.add({ recordType: "memory", recordId: e.id, date: e.occurredOn ?? day(e.createdAt), excerpt: v.body }));
-      findings.push({ refs, text: { en: `${low.length} entries were written on low-mood days (mood 1–2).`, vi: `${low.length} ghi chép được viết vào những ngày tâm trạng thấp (1–2).`, ja: `気分が低い日（1〜2）に書いた記録が${low.length}件あります。` } });
-    }
     const regrets = hard.filter(({ e }) => e.kind === "regret");
     if (regrets.length >= 2) {
       const refs = regrets.map(({ e, v }) => bag.add({ recordType: "memory", recordId: e.id, date: e.occurredOn ?? day(e.createdAt), excerpt: v.body }));
