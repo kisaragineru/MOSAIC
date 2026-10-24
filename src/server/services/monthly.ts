@@ -55,6 +55,7 @@ export interface MonthReport {
   /** Average mood per week of the month (1–5), null for weeks without a mood. */
   moodWeeks: (number | null)[];
   moodAverage: number | null;
+  moodCount: number;
   highlights: MemorySummary[];
   /** The look backs written for this month (newest first), as prompt / answer pairs. */
   lookBacks: { id: string; createdAt: Date; sections: { prompt: string; answer: string }[] }[];
@@ -137,6 +138,7 @@ export async function monthReport(userId: string, m: Month, locale: Locale, now 
     days: new Set(records.map(dayOf)).size,
     previousPieces: prevAnswers.length + prevRecords.length,
     moodWeeks: weeks.map((w) => (w.length ? w.reduce((a, b) => a + b, 0) / w.length : null)),
+    moodCount: moods.length,
     moodAverage: moods.length ? moods.reduce((a, b) => a + b, 0) / moods.length : null,
     lookBacks: lookBacks.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).map((r) => ({ id: r.id, createdAt: r.createdAt, sections: lookBackSections(r.body ?? "") })),
     highlights: records.filter((r) => !isLookBack(r)).filter((r) => ["achievement", "decision", "memory", "feeling", "value", "goal", "dream", "regret"].includes(r.kind) || r.title).slice(0, 8),
