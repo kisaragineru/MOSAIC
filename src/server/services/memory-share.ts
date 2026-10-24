@@ -16,7 +16,7 @@ import { invalid, mapDbError } from "../errors";
 import { audit } from "./audit";
 import { listComparisons } from "./sharing";
 import { listMemories, type MemorySummary } from "./memories";
-import type { TimelineEntry } from "@/lib/timeline";
+import { timelineDay, type TimelineEntry } from "@/lib/timeline";
 
 export const VISIBILITIES = ["private", "connections", "circles"] as const;
 export type Visibility = (typeof VISIBILITIES)[number];
@@ -170,5 +170,7 @@ export async function feedForPage(userId: string, page: { previousOldest: string
 export async function recentTimeline(userId: string, n = 6): Promise<TimelineEntry[]> {
   const mine = (await listMemories(userId, { limit: n })).map(mineToEntry);
   const theirs = (await connectionFeed(userId, { limit: n })).map(feedToEntry);
-  return [...mine, ...theirs].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, n);
+  // Newest by the day each sits on (an opened letter counts from its opening day), then by time written.
+  const day = (e: TimelineEntry) => timelineDay(e) ?? e.createdAt.toISOString().slice(0, 10);
+  return [...mine, ...theirs].sort((a, b) => (day(a) === day(b) ? b.createdAt.getTime() - a.createdAt.getTime() : day(a) < day(b) ? 1 : -1)).slice(0, n);
 }

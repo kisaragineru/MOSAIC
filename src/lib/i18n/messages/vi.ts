@@ -198,6 +198,8 @@ export const vi: Dict = {
       filteredMineOnly: "Khi đang lọc, chỉ hiển thị ghi chép của bạn.",
       more: "Đọc tiếp",
       less: "Thu gọn",
+      letterArrived: "✉ Lá thư gửi tương lai đã đến",
+      letterFrom: (date: string, days: number) => `Viết ngày ${date} · từ bạn của ${days} ngày trước`,
       seeAll: "Xem toàn bộ nhật ký",
       onlyFrom: (n: string) => `Ghi chép ${n} chia sẻ`,
     },

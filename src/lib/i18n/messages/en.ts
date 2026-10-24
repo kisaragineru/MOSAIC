@@ -196,6 +196,8 @@ export const en = {
       filteredMineOnly: "While filtering, only your own entries are shown.",
       more: "Read more",
       less: "Show less",
+      letterArrived: "✉ A letter from your past self arrived",
+      letterFrom: (date: string, days: number) => `Written ${date} · from you ${days} days ago`,
       seeAll: "See the whole journal",
       onlyFrom: (n: string) => `Shared by ${n}`,
     },

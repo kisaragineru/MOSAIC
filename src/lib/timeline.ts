@@ -28,6 +28,8 @@ export interface TimelineEntry {
 
 export interface TimelineItem {
   entry: TimelineEntry;
+  /** An opened letter to the future: the day it was written and how long it waited. */
+  letter: { writtenOn: string; days: number } | null;
   /** HH:mm the record was written, in the viewer's time zone. */
   time: string;
   /** "M/D HH:mm" when it was written on another day than the one it is about. */
@@ -48,13 +50,29 @@ function clock(tz: string, at: Date) {
   return { time: `${p.hour}:${p.minute}`, md: `${p.month}/${p.day}` };
 }
 
+/** An opened letter to the future sits on the day it opened; anything else on the day it was about. */
+export function timelineDay(e: Pick<TimelineEntry, "kind" | "sealed" | "revealOn" | "occurredOn">): string | null {
+  return e.kind === "letter_to_future" && !e.sealed && e.revealOn ? e.revealOn : e.occurredOn;
+}
+
+const daysBetween = (a: string, b: string) => Math.round((Date.parse(`${a}T00:00:00Z`) - Date.parse(`${b}T00:00:00Z`)) / 86_400_000);
+
 /** Group into days, newest day first; within a day, newest written first. */
 export function buildTimeline(entries: TimelineEntry[], tz: string): TimelineDay[] {
   const items = entries.map((entry) => {
     const written = todayIn(tz, entry.createdAt);
-    const day = entry.occurredOn ?? written;
+    const day = timelineDay(entry) ?? written;
     const c = clock(tz, entry.createdAt);
-    return { day, item: { entry, time: c.time, writtenOn: written === day ? null : `${c.md} ${c.time}` } };
+    const opened = entry.kind === "letter_to_future" && !entry.sealed && !!entry.revealOn;
+    return {
+      day,
+      item: {
+        entry,
+        time: c.time,
+        writtenOn: opened || written === day ? null : `${c.md} ${c.time}`,
+        letter: opened ? { writtenOn: written, days: Math.max(daysBetween(day, written), 0) } : null,
+      },
+    };
   });
   items.sort((a, b) => (a.day === b.day ? b.item.entry.createdAt.getTime() - a.item.entry.createdAt.getTime() || a.item.entry.id.localeCompare(b.item.entry.id) : a.day < b.day ? 1 : -1));
   const days: TimelineDay[] = [];

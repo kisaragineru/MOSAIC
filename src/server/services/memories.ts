@@ -144,6 +144,8 @@ export interface MemorySummary {
   occurredOn: string | null;
   revealOn: string | null;
   sealed: boolean;
+  /** The day it sits on in the timeline (an opened letter: its opening day). */
+  timelineOn: string;
   createdAt: Date;
   updatedAt: Date;
   version: number;
@@ -171,6 +173,9 @@ export const memoryFilters = z.object({
 
 /** Effective timeline date: when it happened, else when it was written. */
 const effectiveDate = sql<string>`coalesce(${memoryEntries.occurredOn}, (${memoryEntries.createdAt} at time zone 'UTC')::date)`;
+/** Where a record sits on the timeline: a letter to the future, once opened, on the day it opened. */
+const timelineDate = (today: string) =>
+  sql<string>`case when ${memoryEntries.kind} = 'letter_to_future' and ${memoryEntries.revealOn} <= ${today}::date then ${memoryEntries.revealOn} else ${effectiveDate} end`;
 
 export async function listMemories(userId: string, filters: unknown = {}): Promise<MemorySummary[]> {
   const f = memoryFilters.parse(filters);
@@ -178,8 +183,9 @@ export async function listMemories(userId: string, filters: unknown = {}): Promi
     const today = await userToday(tx, userId);
     const conds: SQL[] = [eq(memoryEntries.userId, userId)];
     if (f.kind) conds.push(eq(memoryEntries.kind, f.kind));
-    if (f.from) conds.push(gte(effectiveDate, f.from));
-    if (f.to) conds.push(lte(effectiveDate, f.to));
+    const onTimeline = timelineDate(today);
+    if (f.from) conds.push(gte(onTimeline, f.from));
+    if (f.to) conds.push(lte(onTimeline, f.to));
     if (f.tag) {
       conds.push(
         sql`exists (select 1 from ${memoryTags} where ${memoryTags.entryId} = ${memoryEntries.id} and ${memoryTags.tag} = ${f.tag.toLowerCase()})`,
@@ -199,14 +205,14 @@ export async function listMemories(userId: string, filters: unknown = {}): Promi
       ) and (${memoryEntries.revealOn} is null or ${memoryEntries.revealOn} <= ${today})`);
     }
     const rows = await tx
-      .select({ e: memoryEntries, v: memoryEntryVersions, eff: effectiveDate })
+      .select({ e: memoryEntries, v: memoryEntryVersions })
       .from(memoryEntries)
       .innerJoin(
         memoryEntryVersions,
         and(eq(memoryEntryVersions.entryId, memoryEntries.id), eq(memoryEntryVersions.version, memoryEntries.currentVersion)),
       )
       .where(and(...conds))
-      .orderBy(desc(effectiveDate), desc(memoryEntries.createdAt))
+      .orderBy(desc(onTimeline), desc(memoryEntries.createdAt))
       .limit(f.limit)
       .offset(f.offset);
     return hydrate(tx, rows, today);
@@ -236,6 +242,7 @@ async function hydrate(
       occurredOn: e.occurredOn,
       revealOn: e.revealOn,
       sealed,
+      timelineOn: e.kind === "letter_to_future" && e.revealOn && !sealed ? e.revealOn : (e.occurredOn ?? e.createdAt.toISOString().slice(0, 10)),
       createdAt: e.createdAt,
       updatedAt: e.updatedAt,
       version: e.currentVersion,

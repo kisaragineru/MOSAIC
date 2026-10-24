@@ -46,7 +46,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
     const mine = rows.slice(0, PAGE_SIZE);
     entries = mine.map(mineToEntry);
     if (view === "all" && !filtering) {
-      const eff = (m: MemorySummary | undefined) => (m ? (m.occurredOn ?? m.createdAt.toISOString().slice(0, 10)) : null);
+      const eff = (m: MemorySummary | undefined) => m?.timelineOn ?? null;
       const theirs = await feedForPage(uid, { previousOldest: eff(before), oldest: eff(mine.at(-1)), first: page === 0, last: !hasOlder });
       entries = entries.concat(theirs.map(feedToEntry));
     }

@@ -198,6 +198,8 @@ export const ja: Dict = {
       filteredMineOnly: "絞り込み中は自分の記録だけを表示しています。",
       more: "続きを読む",
       less: "たたむ",
+      letterArrived: "✉ 未来への手紙が届きました",
+      letterFrom: (date: string, days: number) => `${date}に書いた手紙 · ${days}日前のあなたから`,
       seeAll: "記録をすべて見る",
       onlyFrom: (n: string) => `${n}さんが公開した記録`,
     },

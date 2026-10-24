@@ -12,6 +12,7 @@ import { getAccount } from "@/server/services/account";
 import { listPeople } from "@/server/services/people";
 import { shareTargets } from "@/server/services/memory-share";
 import { CIRCLE_ICON } from "@/components/circle-icon";
+import { todayIn } from "@/lib/validation/common";
 import { CommentThread } from "@/components/comment-thread";
 import { commentInbox, readThread } from "@/server/services/comments";
 
@@ -46,6 +47,17 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
         {m.tags.map((x) => <Pill key={x}>#{x}</Pill>)}
         {m.people.map((p) => <Pill key={p.id} tone="rose">{p.nickname}</Pill>)}
       </div>
+      {m.kind === "letter_to_future" && !m.sealed && m.revealOn && (
+        <p className="rounded-2xl bg-linear-to-br from-violet-50 to-amber-50 px-4 py-2.5 text-sm text-violet-900 ring-1 ring-violet-100">
+          {t.memories.timeline.letterArrived}
+          <span className="block text-xs text-violet-800/80">
+            {t.memories.timeline.letterFrom(
+              new Intl.DateTimeFormat(locale, { year: "numeric", month: "long", day: "numeric", timeZone: tz }).format(m.createdAt),
+              Math.max(Math.round((Date.parse(`${m.revealOn}T00:00:00Z`) - Date.parse(`${todayIn(tz, m.createdAt)}T00:00:00Z`)) / 86_400_000), 0),
+            )}
+          </span>
+        </p>
+      )}
       {m.kind !== "letter_to_future" && (
         <p className={`rounded-2xl px-4 py-2 text-xs ${m.visibility === "private" ? "bg-stone-100 text-stone-600" : "bg-rose-50 text-rose-900"}`}>
           {m.visibility === "private"

@@ -78,6 +78,17 @@ function Comments({ t, items, total }: { t: Dict; items: CommentPreview[]; total
 function Mine({ t, locale, it, compact, c, p }: { t: Dict; locale: Locale; it: TimelineItem; compact: boolean; c?: { count: number; unread: number }; p?: CommentPreview[] }) {
   const m = it.entry;
   const tl = t.memories.timeline;
+  if (it.letter) {
+    const written = new Intl.DateTimeFormat(locale, { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }).format(new Date(`${it.letter.writtenOn}T00:00:00Z`));
+    return (
+      <Link href={`/memories/${m.id}`} className="block rounded-2xl border border-violet-200 bg-linear-to-br from-violet-50 via-white to-amber-50 p-3.5 shadow-sm transition hover:border-violet-300">
+        <p className="text-sm font-semibold text-violet-900">{tl.letterArrived}</p>
+        <p className="mb-2 text-xs text-violet-800/80">{tl.letterFrom(written, it.letter.days)}</p>
+        {m.title && <p className="font-medium text-stone-900">{m.title}</p>}
+        <p className={`whitespace-pre-line text-sm leading-relaxed text-stone-800 ${compact ? "line-clamp-3" : "line-clamp-6"}`}>{m.body}</p>
+      </Link>
+    );
+  }
   return (
     <Link href={`/memories/${m.id}`} className="block rounded-2xl border border-stone-200 bg-white p-3 transition hover:border-teal-300">
       <div className="mb-1 flex flex-wrap items-center gap-1.5">

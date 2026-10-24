@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import { withUser } from "@/server/db/tx";
 import { people } from "@/server/db/schema";
 import { createMemory, deleteMemory, editMemory, getMemory, listMemories, listTags } from "@/server/services/memories";
+import { sql } from "drizzle-orm";
+import { buildTimeline } from "@/lib/timeline";
+import { mineToEntry } from "@/server/services/memory-share";
 import { makeUser } from "../helpers/factory";
 
 describe("memories & timeline", () => {
@@ -87,6 +90,26 @@ describe("memories & timeline", () => {
     });
     const past = await createMemory(u.userId, { kind: "letter_to_future", body: "opened", revealOn: "2020-01-01" });
     expect((await getMemory(u.userId, past)).body).toBe("opened");
+  });
+
+  it("an opened letter sits on the timeline on the day it opened, with how long it waited", async () => {
+    const u = await makeUser();
+    const before = await createMemory(u.userId, { body: "older note", occurredOn: "2026-01-10" });
+    const letter = await createMemory(u.userId, { kind: "letter_to_future", body: "Hello from March", revealOn: "2099-01-01" });
+    const sealedAt = (await listMemories(u.userId)).find((m) => m.id === letter)!;
+    expect(sealedAt).toMatchObject({ sealed: true, body: null });
+    // Written on 1 March, opened on 15 June (both in the past now).
+    await withUser(u.userId, (tx) => tx.execute(sql`update memory_entries set created_at = '2026-03-01T03:00:00Z', reveal_on = '2026-06-15' where id = ${letter}`));
+    const all = await listMemories(u.userId);
+    expect(all.map((m) => m.id)).toEqual([letter, before]);
+    expect(all[0]).toMatchObject({ sealed: false, body: "Hello from March", timelineOn: "2026-06-15" });
+    // Date filters follow the opening day, not the writing day.
+    expect((await listMemories(u.userId, { from: "2026-06-01", to: "2026-06-30" })).map((m) => m.id)).toEqual([letter]);
+    expect((await listMemories(u.userId, { from: "2026-03-01", to: "2026-03-31" })).map((m) => m.id)).toEqual([]);
+    const [day] = buildTimeline(all.map(mineToEntry), "UTC");
+    expect(day!.day).toBe("2026-06-15");
+    expect(day!.items[0]!.letter).toEqual({ writtenOn: "2026-03-01", days: 106 });
+    expect(day!.items[0]!.writtenOn).toBeNull();
   });
 
   it("deletes permanently, including all versions", async () => {
