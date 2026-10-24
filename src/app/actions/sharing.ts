@@ -16,7 +16,7 @@ import {
   revokeShare,
   unlinkPerson,
 } from "@/server/services/sharing";
-import { attempt, bool, str } from "./util";
+import { attempt, bool, safeNext, str, withParam } from "./util";
 
 export type ShareState = { url: string; qr: string; expiresAt: string } | { error: string } | null;
 
@@ -98,7 +98,7 @@ export async function linkPersonAction(form: FormData) {
   const personId = str(form, "personId");
   const r = await attempt("person.link", () => linkPersonToConnection(uid, personId, str(form, "sessionId")));
   revalidatePath("/people");
-  redirect(`/people/${personId}?${r.ok ? "ok=saved" : `e=${r.error}`}`);
+  redirect(withParam(safeNext(str(form, "back"), `/people/${personId}`), r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
 }
 
 export async function unlinkPersonAction(form: FormData) {
@@ -106,7 +106,7 @@ export async function unlinkPersonAction(form: FormData) {
   const personId = str(form, "personId");
   const r = await attempt("person.unlink", () => unlinkPerson(uid, personId));
   revalidatePath("/people");
-  redirect(`/people/${personId}?${r.ok ? "ok=saved" : `e=${r.error}`}`);
+  redirect(withParam(safeNext(str(form, "back"), `/people/${personId}`), r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
 }
 
 export async function manualShareAction(form: FormData) {

@@ -116,6 +116,7 @@ test("share by relationship, and a test companion from settings (development)", 
   await hana.getByLabel("関係").first().selectOption("family");
   await hana.getByRole("button", { name: /大切な人に追加/ }).click();
   await hana.waitForURL(/\/people\/[0-9a-f-]+/);
+  await hana.goto(`${new URL(hana.url()).pathname}/settings`);
   await expect(hana.getByText("あなたの記録のうち 0 件が見えています")).toBeVisible();
   await hana.goto("/memories/new");
   await hana.getByLabel("あったこと・考えていること").fill("家族だけに伝えたいこと。");
@@ -157,7 +158,18 @@ test("someone written about before connecting: the connection attaches to them",
   await expect(hana.getByLabel("ソラさんは「大切な人」の誰ですか？")).toHaveValue(before.split("/").pop()!);
   await hana.getByRole("button", { name: /大切な人に追加/ }).click();
   await hana.waitForURL(new RegExp(`${before}\\?ok=saved`));
-  await expect(hana.getByText(/ソラさんとQRでつながっています/)).toBeVisible();
+  await expect(hana.getByRole("link", { name: /ソラさんのページ/ })).toBeVisible();
   await hana.goto("/people");
-  await expect(hana.getByRole("link", { name: /ソラ/ })).toHaveCount(1);
+  await expect(hana.getByRole("link", { name: /ソラ.*つながっている/ })).toHaveCount(1);
+
+  // Settings for one person: its own page, from the gear on their panel.
+  await hana.getByRole("link", { name: "ソラさんへの設定" }).click();
+  await hana.waitForURL(/\/people\/[0-9a-f-]+\/settings$/);
+  await expect(hana.getByRole("heading", { level: 1, name: "ソラさんへの設定" })).toBeVisible();
+  await expect(hana.getByText(/あなたの記録のうち 0 件が見えています/)).toBeVisible();
+  await hana.getByLabel("関係").selectOption("family");
+  await hana.getByRole("button", { name: "保存" }).click();
+  await hana.waitForURL(/\/settings\?ok=saved/);
+  await expect(hana.getByLabel("関係")).toHaveValue("family");
+  await expect(hana.getByRole("button", { name: "この人と関連する記録をすべて削除" })).toBeVisible();
 });

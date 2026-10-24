@@ -74,8 +74,9 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
             const tone = REL_TONE[p.relationship] ?? REL_TONE.other!;
             const empty = !p.nextDate && !p.latest && p.loves.length === 0;
             return (
-              <li key={p.id}>
-                <Link href={`/people/${p.id}`} className="flex gap-3.5 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-stone-200/70 transition hover:shadow-md hover:ring-teal-300">
+              <li key={p.id} className="relative">
+                {/* The panel opens the person; the gear (a sibling, not nested) opens their settings. */}
+                <Link href={`/people/${p.id}`} className="flex gap-3.5 rounded-3xl bg-white p-4 pr-14 shadow-sm ring-1 ring-stone-200/70 transition hover:shadow-md hover:ring-teal-300">
                   <span aria-hidden className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-xl font-bold ${tone.avatar}`}>
                     {Array.from(p.nickname.trim())[0]?.toUpperCase() ?? "?"}
                   </span>
@@ -111,7 +112,10 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
                       <span title={t.people.gifts}>🎁 {p.counts.gifts}</span>
                     </span>
                   </span>
-                  <span aria-hidden className="self-center text-stone-300">›</span>
+                </Link>
+                <Link href={`/people/${p.id}/settings`} aria-label={t.people.settingsTitle(p.nickname)}
+                  className="absolute top-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-stone-50 text-lg ring-1 ring-stone-200 transition hover:bg-white hover:ring-teal-300">
+                  <span aria-hidden>⚙️</span>
                 </Link>
               </li>
             );

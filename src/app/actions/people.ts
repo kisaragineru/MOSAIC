@@ -35,7 +35,7 @@ export async function updatePersonAction(form: FormData) {
   const uid = await requireUser();
   const id = str(form, "personId");
   const r = await attempt("people.update", () => updatePerson(uid, id, { nickname: str(form, "nickname"), relationship: str(form, "relationship"), note: str(form, "note") }));
-  await done(`/people/${id}`, r);
+  await done(safeNext(str(form, "back"), `/people/${id}`), r);
 }
 
 export async function deletePersonAction(form: FormData) {
@@ -176,5 +176,5 @@ export async function mergePeopleAction(form: FormData) {
   const target = str(form, "targetId");
   const r = await attempt("people.merge", () => mergePeople(uid, target, str(form, "sourceId")));
   revalidatePath("/people");
-  redirect(`/people/${encodeURIComponent(target)}?${r.ok ? "ok=saved" : `e=${r.error}`}`);
+  redirect(withParam(safeNext(str(form, "back"), `/people/${encodeURIComponent(target)}`), r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
 }
