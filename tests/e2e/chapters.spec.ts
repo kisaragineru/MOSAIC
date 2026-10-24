@@ -83,3 +83,34 @@ test("a mosaic piece opens its own questions in the chapter", async ({ browser }
   await expect(page.getByText(/「段取り」のピースを集めています/)).toBeVisible();
   await expect(page.getByRole("link", { name: /段取り/ })).toHaveAttribute("aria-current", "page");
 });
+
+test("finishing a piece's questions is celebrated before anything else", async ({ browser }) => {
+  const ctx = await browser.newContext({ locale: "ja-JP", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.7.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
+  const page = await ctx.newPage();
+  await page.goto("/register");
+  await page.getByLabel("なんと呼べばいいですか？").fill("ケイ");
+  await page.getByLabel("メールアドレス").fill(`${randomUUID().slice(0, 8)}@example.test`);
+  await page.getByLabel(/^パスワード/).fill("e2e correct horse battery");
+  await page.getByRole("button", { name: "アカウントを作成" }).click();
+  await page.waitForURL(/welcome/);
+  await page.goto("/discover/chapter/self?axis=planning");
+  const done = page.getByRole("heading", { name: "「段取り」のピースがそろいました！" });
+  const save = page.getByRole("button", { name: "回答を保存" });
+  for (let i = 0; i < 12; i++) {
+    await expect(done.or(save)).toBeVisible();
+    if (await done.isVisible()) break;
+    const form = page.locator("form", { has: save });
+    const qid = await form.locator('input[name="questionId"]').inputValue();
+    // Answer with the first choice, whichever kind the question has.
+    const radio = form.locator('input[type="radio"]').first();
+    if (await radio.count()) await radio.check({ force: true });
+    else await form.locator('input[type="checkbox"][name="choices"]').first().check({ force: true });
+    await save.click();
+    // The next question (or the celebration) replaces this one. (The feedback form below keeps
+    // the previous question's id, so look only inside the question form.)
+    await expect(page.locator("form", { has: save }).locator(`input[name="questionId"][value="${qid}"]`)).toHaveCount(0);
+  }
+  await expect(done).toBeVisible();
+  await expect(page.getByRole("button", { name: "回答を保存" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /次のピース「/ })).toBeVisible();
+});
