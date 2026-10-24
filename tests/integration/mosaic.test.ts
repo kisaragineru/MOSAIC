@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { en } from "@/lib/i18n/messages/en";
 import { ja } from "@/lib/i18n/messages/ja";
-import { answerQuestion } from "@/server/services/discovery";
+import { answerQuestion, axisProgress } from "@/server/services/discovery";
+import { QUESTION_BANK } from "@/content/questions";
 import { portrait, tileViews } from "@/server/services/mosaic";
 import { saveBirthProfile } from "@/server/services/tuvi";
 import { makeUser } from "../helpers/factory";
@@ -13,7 +14,7 @@ describe("mosaic portrait", () => {
     const u = await makeUser();
     const p = await portrait(u.userId);
     expect(p.tiles).toHaveLength(20);
-    expect(p.axes).toBe(17);
+    expect(p.total).toBe(20);
     expect(p.revealed).toBe(0);
     expect(p.tiles.every((t) => t.level === "empty")).toBe(true);
     const views = tileViews(p, ja, "ja");
@@ -36,7 +37,7 @@ describe("mosaic portrait", () => {
     expect(v.label).toBe("Planner");
     expect(v.body).toBe("You often prefer to plan ahead.");
     expect(v.evidenceHref).toBe("/insights#t-planning");
-    expect(v.href).toBe("/discover/chapter/self");
+    expect(v.href).toBe("/discover/chapter/self?axis=planning");
   });
 
   it("shows both sides when answers disagree", async () => {
@@ -56,5 +57,20 @@ describe("mosaic portrait", () => {
     await saveBirthProfile(u.userId, { calendarInput: "solar", solarDate: "1990-06-07", timeKnown: true, birthTime: "06:30", timeZone: "Asia/Ho_Chi_Minh", sex: "male" });
     const p = await portrait(u.userId);
     expect(p.tiles.find((t) => t.kind === "tuvi")!.level).toBe("consistent");
+  });
+
+  it("counts every tile, Tử Vi and the chapters included, and focuses questions on one piece", async () => {
+    const u = await makeUser();
+    await pick(u.userId, "p.weekend_plan", "plan");
+    const ap = await axisProgress(u.userId, "planning");
+    expect(ap.answered).toBe(1);
+    expect(ap.total).toBeGreaterThanOrEqual(3);
+    const next = QUESTION_BANK.find((q) => q.id === ap.nextId)!;
+    expect(next.signals?.some((x) => x.claimKey === "planning")).toBe(true);
+    expect((await portrait(u.userId)).revealed).toBe(0);
+    // A Tử Vi chart is a piece too: 1 of 20.
+    await saveBirthProfile(u.userId, { calendarInput: "solar", solarDate: "1990-06-07", timeKnown: true, birthTime: "06:30", timeZone: "Asia/Ho_Chi_Minh", sex: "male" });
+    const p = await portrait(u.userId);
+    expect(p).toMatchObject({ revealed: 1, total: 20 });
   });
 });

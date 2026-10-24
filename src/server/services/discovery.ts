@@ -6,6 +6,7 @@ import { followUpFor, normalizeAnswer, sameAnswer, type Answer } from "@/lib/dis
 import { selectQuestion, type HistoryEvent } from "@/lib/discovery/select";
 import { todayIn, uuid } from "@/lib/validation/common";
 import { AXIS_CHAPTER, chapterOf, CHAPTERS, type Chapter } from "@/content/axes";
+import type { TendencyKey } from "@/content/questions";
 import { QUESTION_BANK } from "@/content/questions";
 import { ANSWER_COOLDOWN_DAYS } from "@/lib/discovery/select";
 import {
@@ -524,6 +525,30 @@ export async function chapterProgress(userId: string, now = new Date()): Promise
         .sort((a, b) => by.get(a.id)!.at.getTime() - by.get(b.id)!.at.getTime())[0];
       return { chapter, total: qs.length, answered: answered.length, nextId: fresh?.id ?? revisit?.id ?? null, freshId: fresh?.id ?? null, fresh: freshQs.length };
     });
+  });
+}
+
+export interface AxisProgress {
+  total: number;
+  answered: number;
+  /** The next of this axis's questions never answered (or skipped a while ago), if any. */
+  nextId: string | null;
+}
+
+/** Progress on the questions that feed one axis (one mosaic piece). */
+export async function axisProgress(userId: string, axis: TendencyKey): Promise<AxisProgress> {
+  return withUser(userId, async (tx) => {
+    const latest = await tx.execute<{ question_id: string; status: string; answered_at: Date }>(sql`
+      select distinct on (question_id) question_id, status, answered_at
+      from question_responses where user_id = ${userId}
+      order by question_id, answered_at desc, id desc`);
+    const by = new Map(latest.rows.map((r) => [r.question_id, { status: r.status, at: new Date(r.answered_at) }]));
+    const qs = CHAPTER_QUESTIONS.filter((q) => q.signals?.some((x) => x.claimKey === axis));
+    const fresh = qs.find((q) => {
+      const r = by.get(q.id);
+      return !r || (r.status === "skipped" && (Date.now() - r.at.getTime()) / 86400_000 >= 7);
+    });
+    return { total: qs.length, answered: qs.filter((q) => by.get(q.id)?.status === "answered").length, nextId: fresh?.id ?? null };
   });
 }
 

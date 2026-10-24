@@ -19,14 +19,14 @@ test("the mosaic fills in as answers agree, and a tile explains itself", async (
   // New accounts start with the welcome guide.
   await page.waitForURL(/welcome/);
   await page.goto("/home");
-  await expect(page.getByText("17枚のうち0枚が見えてきました")).toBeVisible();
+  await expect(page.getByText("20枚のうち0枚が見えてきました")).toBeVisible();
 
   await choose(page, "p.weekend_plan", "予定を立てる");
   await choose(page, "ax.plan_pack", "リストで確認して詰め終わっている");
   await choose(page, "ax.plan_deadline", "すぐ始めて早めに終わらせる");
 
   await page.goto("/home");
-  await expect(page.getByText("17枚のうち1枚が見えてきました")).toBeVisible();
+  await expect(page.getByText("20枚のうち1枚が見えてきました")).toBeVisible();
   await page.getByRole("link", { name: /あなたのモザイク/ }).click();
   await page.waitForURL("/insights");
   const tile = page.getByRole("button", { name: "段取り — 計画派: はっきり" });
@@ -36,7 +36,9 @@ test("the mosaic fills in as answers agree, and a tile explains itself", async (
   // An empty tile says what it needs and where to go.
   await page.getByRole("button", { name: "スピード: まだ" }).click();
   await expect(page.getByText(/まだ手がかりがありません/)).toBeVisible();
-  await page.getByRole("link", { name: /「気質」の質問に答える/ }).click();
-  await page.waitForURL("/discover/chapter/self");
+  // …and goes straight to that piece's own questions.
+  await page.getByRole("link", { name: /「スピード」の質問に答える/ }).click();
+  await page.waitForURL(/\/discover\/chapter\/[a-z]+\?axis=/);
+  await expect(page.getByText(/「スピード」のピースを集めています/)).toBeVisible();
   await ctx.close();
 });

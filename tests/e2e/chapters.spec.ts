@@ -67,3 +67,19 @@ test("likes: fashion, then several brands one after another", async ({ browser }
   await page.getByRole("link", { name: "これで終わり" }).click();
   await expect(page.getByText("もうひとつあれば")).toHaveCount(0);
 });
+
+test("a mosaic piece opens its own questions in the chapter", async ({ browser }) => {
+  const ctx = await browser.newContext({ locale: "ja-JP", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.7.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
+  const page = await ctx.newPage();
+  await page.goto("/register");
+  await page.getByLabel("なんと呼べばいいですか？").fill("ユイ");
+  await page.getByLabel("メールアドレス").fill(`${randomUUID().slice(0, 8)}@example.test`);
+  await page.getByLabel(/^パスワード/).fill("e2e correct horse battery");
+  await page.getByRole("button", { name: "アカウントを作成" }).click();
+  await page.waitForURL(/welcome/);
+  await page.goto("/insights");
+  await expect(page.getByText("20枚のうち0枚が見えてきました")).toBeVisible();
+  await page.goto("/discover/chapter/self?axis=planning");
+  await expect(page.getByText(/「段取り」のピースを集めています/)).toBeVisible();
+  await expect(page.getByRole("link", { name: /段取り/ })).toHaveAttribute("aria-current", "page");
+});

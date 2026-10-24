@@ -57,8 +57,8 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
         ))}
       </nav>
       <Card title={t.mosaic.title}>
-        <p className="mb-1 text-sm font-semibold text-stone-800">{t.mosaic.summary(p.revealed, p.axes)}</p>
-        <ProgressBar value={p.revealed} max={p.axes} label={t.mosaic.title} className="mb-4" />
+        <p className="mb-1 text-sm font-semibold text-stone-800">{t.mosaic.summary(p.revealed, p.total)}</p>
+        <ProgressBar value={p.revealed} max={p.total} label={t.mosaic.title} className="mb-4" />
         <Mosaic tiles={tileViews(p, t, locale)} labels={{ hint: t.mosaic.hint, evidence: t.mosaic.evidence, levels: t.mosaic.levels }} />
       </Card>
       <section aria-labelledby="reading-title" className="space-y-3 rounded-3xl bg-linear-to-br from-teal-50 via-white to-violet-50 p-5 shadow-sm ring-1 ring-white/80">

@@ -39,9 +39,9 @@ export type Tile = AxisTile | ExtraTile;
 
 export interface Portrait {
   tiles: Tile[];
-  /** Axis tiles that say something (emerging or consistent). */
+  /** Tiles that say something (emerging or consistent), out of all of them. */
   revealed: number;
-  axes: number;
+  total: number;
 }
 
 const levelOf = (state: ClaimState | null, evidence: number): TileLevel =>
@@ -76,10 +76,11 @@ export async function portrait(userId: string): Promise<Portrait> {
     { kind: "likes", level: progressLevel(ch("likes").answered, ch("likes").total), done: ch("likes").answered, total: ch("likes").total },
     { kind: "story", level: progressLevel(ch("story").answered, ch("story").total), done: ch("story").answered, total: ch("story").total },
   ];
+  const tiles: Tile[] = [...axisTiles, ...extras];
   return {
-    tiles: [...axisTiles, ...extras],
-    revealed: axisTiles.filter((t) => t.level === "emerging" || t.level === "consistent").length,
-    axes: axisTiles.length,
+    tiles,
+    revealed: tiles.filter((t) => t.level === "emerging" || t.level === "consistent").length,
+    total: tiles.length,
   };
 }
 
@@ -96,7 +97,6 @@ export function tileViews(p: Portrait, t: Dict, locale: Locale): TileView[] {
     if (tile.kind === "axis") {
       const lab = AXIS_LABEL[tile.key];
       const pole = tile.direction === 1 ? lab.pos[locale] : tile.direction === -1 ? lab.neg[locale] : null;
-      const chapter = CHAPTER_INFO[tile.chapter].title[locale];
       const body =
         tile.level === "emerging" || tile.level === "consistent"
           ? TENDENCY_TEXT[tile.key][tile.direction === -1 ? "neg" : "pos"][locale]
@@ -116,8 +116,9 @@ export function tileViews(p: Portrait, t: Dict, locale: Locale): TileView[] {
         meta: [tile.evidence ? m.basedOn(tile.evidence) : "", tile.rejected ? m.rejectedNote : ""].filter(Boolean).join(" · "),
         rejected: tile.rejected,
         dots: Math.min(3, tile.evidence),
-        href: `/discover/chapter/${tile.chapter}`,
-        hrefLabel: m.answerChapter(chapter),
+        // Straight to this piece's own questions (the chapter page focuses on it).
+        href: `/discover/chapter/${tile.chapter}?axis=${tile.key}`,
+        hrefLabel: m.answerPiece(lab.name[locale]),
         evidenceHref: tile.evidence ? `/insights#t-${tile.key}` : null,
       };
     }

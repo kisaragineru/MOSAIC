@@ -138,7 +138,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       <Link href="/insights" className="block rounded-3xl border border-stone-200/80 bg-white/80 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md motion-reduce:transition-none">
         <span className="flex items-baseline justify-between gap-2">
           <span className="font-semibold text-stone-900">{t.mosaic.title}</span>
-          <span className="text-xs text-stone-500">{t.mosaic.summary(pic.revealed, pic.axes)}</span>
+          <span className="text-xs text-stone-500">{t.mosaic.summary(pic.revealed, pic.total)}</span>
         </span>
         <span className="mt-3 block">
           <Mosaic compact tiles={tileViews(pic, t, locale)} labels={{ hint: t.mosaic.hint, evidence: t.mosaic.evidence, levels: t.mosaic.levels }} />
