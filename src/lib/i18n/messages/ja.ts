@@ -1060,6 +1060,8 @@ export const ja: Dict = {
     decline: "今回は見送る",
     thanks: (n: string) => `ありがとうございます。${n}さんに届きました。`,
     yourAnswer: "あなたが送った回答",
+    yourComment: "あなたのひとこと",
+    withdrawHelp: "送った回答は、いつでも取り消せます。",
     sentAnon: "匿名で送りました",
     sentNamed: "名前つきで送りました",
     withdraw: "回答を取り下げる",

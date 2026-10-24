@@ -274,13 +274,6 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                   <ul className="list-disc space-y-1 pl-5 text-sm">{r.hints.map((h) => <li key={h.ruleId}>{tr(h.text)}</li>)}</ul>
                 </Card>
               )}
-          <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-stone-500">
-            <span>{cc.agreed(scopeNames(r.agreedScopes))}{v.computedAt && ` · ${cc.computedAt(v.computedAt.toISOString().slice(0, 16).replace("T", " "))}`}</span>
-            <form action={recomputeAction}>
-              <input type="hidden" name="sessionId" value={v.id} />
-              <button type="submit" className="rounded-full bg-white px-3 py-1.5 font-semibold text-teal-700 ring-1 ring-stone-200 hover:ring-teal-300">↻ {cc.recompute}</button>
-            </form>
-          </div>
         </section>
       )}
 
@@ -336,36 +329,32 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
       )}
 
       {/* Everything you decide about this connection. */}
-      <section id="settings" className="scroll-mt-20 space-y-3">
-        <h2 className="px-1 text-base font-bold text-stone-900">⚙️ {cc.settingsTitle}</h2>
-      {personId ? (
-        <Link href={`/people/${personId}`} className="block text-sm font-medium text-teal-700 underline">♡ {t.compare.personLink} →</Link>
-      ) : (
-        v.status !== "revoked" && (
-          <Card>
-            <ConnectionPersonForm t={t} sessionId={v.id} otherName={v.otherName} people={(await listPeople(uid)).filter((p) => !p.connectionSessionId)} />
-          </Card>
-        )
-      )}
+      {/* The one thing to do from here: ask them how they see you. Settings live in People. */}
       {v.status !== "revoked" && (
         <form action={askPeerAction}>
           <input type="hidden" name="sessionId" value={v.id} />
           <input type="hidden" name="back" value="/me/others" />
-          <Button type="submit" variant="secondary">💭 {t.peers.askThis(v.otherName)}</Button>
+          <Button type="submit" variant="secondary" className="w-full">💭 {t.peers.askThis(v.otherName)}</Button>
         </form>
       )}
-      {personId ? (
-        <Link href={`/people/${personId}/settings`} className="flex items-center justify-between gap-3 rounded-2xl bg-white p-4 text-sm shadow-sm ring-1 ring-stone-200/70 hover:ring-teal-300">
-          <span>
-            <span className="block font-semibold text-stone-900">⚙️ {t.people.settingsTitle(v.otherName)}</span>
-            <span className="block text-xs text-stone-600">{cc.settingsMoved}</span>
-          </span>
-          <span aria-hidden className="text-teal-700">→</span>
-        </Link>
-      ) : (
-        <ConnectionSettings t={t} locale={locale} v={v} myShare={myShare} back={`/compare/${v.id}`} />
+      {!personId && v.status !== "revoked" && (
+        <section id="settings" className="scroll-mt-20 space-y-3">
+          <h2 className="px-1 text-base font-bold text-stone-900">⚙️ {cc.settingsTitle}</h2>
+          <Card>
+            <ConnectionPersonForm t={t} sessionId={v.id} otherName={v.otherName} people={(await listPeople(uid)).filter((p) => !p.connectionSessionId)} />
+          </Card>
+          <ConnectionSettings t={t} locale={locale} v={v} myShare={myShare} back={`/compare/${v.id}`} />
+        </section>
       )}
-      </section>
+      {v.status !== "revoked" && r && (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-stone-200/70 px-1 pt-3 text-xs text-stone-500">
+          <span>{cc.agreed(scopeNames(r.agreedScopes))}{v.computedAt && ` · ${cc.computedAt(v.computedAt.toISOString().slice(0, 16).replace("T", " "))}`}</span>
+          <form action={recomputeAction}>
+            <input type="hidden" name="sessionId" value={v.id} />
+            <button type="submit" className="rounded-full bg-white px-3 py-1.5 font-semibold text-teal-700 ring-1 ring-stone-200 hover:ring-teal-300">↻ {cc.recompute}</button>
+          </form>
+        </div>
+      )}
     </Page>
   );
 }

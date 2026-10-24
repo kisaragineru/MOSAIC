@@ -55,7 +55,9 @@ test("ask a connection how they see you; they answer with their name; you see th
   await sora.getByText(/名前を出す/).click();
   await sora.getByRole("button", { name: "送る", exact: true }).click();
   await expect(sora.getByText("ありがとうございます。ハナさんに届きました。")).toBeVisible();
-  await expect(sora.getByText("ハナさんは… 先に計画を立てる")).toBeVisible();
+  // What was sent: both sides of each axis, the chosen one lit up.
+  await expect(sora.getByText("ハナさんは…")).toBeVisible();
+  await expect(sora.getByText("先に計画を立てる", { exact: true })).toHaveClass(/bg-teal-600/);
 
   // Hana sees the answer beside her own (she has no answers yet, so these are things others notice).
   await hana.goto("/me/others");

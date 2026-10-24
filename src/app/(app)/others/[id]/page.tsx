@@ -91,16 +91,45 @@ export default async function PeerAnswerPage({ params, searchParams }: { params:
             </form>
           </Card>
           <Card title={p.yourAnswer}>
-            <ul className="space-y-1 text-sm">
-              {AXES.filter((k) => r.answers?.[k] !== undefined).map((k) => (
-                <li key={k} className="text-stone-700">
-                  {p.lead(name)} {r.answers![k] === 1 ? PEER_POLES[k].pos[locale] : r.answers![k] === -1 ? PEER_POLES[k].neg[locale] : `(${p.neither})`}
-                </li>
-              ))}
-            </ul>
-            {r.comment && <p className="mt-3 whitespace-pre-line rounded-2xl bg-stone-50 p-3 text-sm text-stone-700">{r.comment}</p>}
-            <form action={withdrawPeerAction} className="mt-4">
+            <p className="-mt-1 mb-3 text-sm font-semibold text-stone-700">{p.lead(name)}</p>
+            <div className="space-y-4">
+              {AXIS_CHAPTERS.map((ch) => {
+                const keys = AXES.filter((k) => AXIS_CHAPTER[k] === ch && r.answers?.[k] !== undefined);
+                if (!keys.length) return null;
+                return (
+                  <section key={ch}>
+                    <h3 className="mb-1.5 text-xs font-semibold text-violet-800">{CHAPTER_INFO[ch].icon} {CHAPTER_INFO[ch].title[locale]}</h3>
+                    <ul className="space-y-1.5">
+                      {keys.map((k) => {
+                        const v = r.answers![k];
+                        // Both sides of the axis, the chosen one lit up (or the middle, for "neither").
+                        const side = (on: boolean, text: string) => (
+                          <span className={`flex min-h-9 flex-1 items-center justify-center rounded-xl px-2 py-1.5 text-center text-xs leading-snug ${on ? "bg-teal-600 font-semibold text-white shadow-sm" : "bg-stone-50 text-stone-400"}`}>{text}</span>
+                        );
+                        return (
+                          <li key={k} className="flex items-stretch gap-1.5">
+                            {side(v === 1, PEER_POLES[k].pos[locale])}
+                            <span className={`flex w-10 shrink-0 items-center justify-center rounded-xl text-[10px] ${v === 0 ? "bg-stone-500 font-semibold text-white" : "bg-stone-50 text-stone-300"}`} title={p.neither}>
+                              {v === 0 ? "＝" : "・"}
+                            </span>
+                            {side(v === -1, PEER_POLES[k].neg[locale])}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                );
+              })}
+            </div>
+            {r.comment && (
+              <figure className="mt-5 rounded-2xl bg-linear-to-br from-amber-50 to-rose-50 p-4 ring-1 ring-amber-100">
+                <figcaption className="mb-1 text-xs font-semibold text-amber-900">💬 {p.yourComment}</figcaption>
+                <blockquote className="whitespace-pre-line text-sm leading-6 text-stone-800">{r.comment}</blockquote>
+              </figure>
+            )}
+            <form action={withdrawPeerAction} className="mt-5 border-t border-stone-100 pt-4">
               <input type="hidden" name="requestId" value={r.id} />
+              <p className="mb-2 text-xs text-stone-500">{p.withdrawHelp}</p>
               <ConfirmButton message={p.withdrawConfirm} className="min-h-8 px-3 py-1 text-xs">{p.withdraw}</ConfirmButton>
             </form>
           </Card>

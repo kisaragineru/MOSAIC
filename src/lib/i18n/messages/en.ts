@@ -1058,6 +1058,8 @@ export const en = {
     decline: "Not this time",
     thanks: (n: string) => `Thank you — ${n} has received it.`,
     yourAnswer: "What you sent",
+    yourComment: "Your words",
+    withdrawHelp: "You can take your answer back at any time.",
     sentAnon: "Sent anonymously",
     sentNamed: "Sent with your name",
     withdraw: "Withdraw my answer",

@@ -1060,6 +1060,8 @@ export const vi: Dict = {
     decline: "Lần này thôi",
     thanks: (n: string) => `Cảm ơn bạn — ${n} đã nhận được.`,
     yourAnswer: "Những gì bạn đã gửi",
+    yourComment: "Lời nhắn của bạn",
+    withdrawHelp: "Bạn có thể rút lại câu trả lời bất cứ lúc nào.",
     sentAnon: "Đã gửi ẩn danh",
     sentNamed: "Đã gửi kèm tên",
     withdraw: "Rút lại câu trả lời",
