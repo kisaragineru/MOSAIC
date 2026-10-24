@@ -35,7 +35,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const daily = await getDaily(uid);
   // A year ahead (366 days, so a date just passed still shows its next occurrence in a leap year).
   const dates = await upcomingDates(uid, 366);
-  const recent = buildTimeline(await recentTimeline(uid), account.profile.timeZone);
+  const recent = buildTimeline(await recentTimeline(uid, 3), account.profile.timeZone);
   const first = daily.slots[0];
   const due = dates.filter((d) => d.reminderDue);
   const np = await getNotificationPrefs(uid);
