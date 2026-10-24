@@ -1,16 +1,16 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { consentAction, endComparisonAction, manualShareAction, recomputeAction } from "@/app/actions/sharing";
-import { MANUAL_PRESETS, SHARED_TEXT } from "@/content/manual-text";
+import { consentAction, recomputeAction } from "@/app/actions/sharing";
+import { SHARED_TEXT } from "@/content/manual-text";
 import { myManualShare, sharedManualFor } from "@/server/services/manual-share";
 import { askPeerAction } from "@/app/actions/peers";
 import { listPeople } from "@/server/services/people";
 import { connectionFeed } from "@/server/services/memory-share";
 import { KIND_ICON } from "@/lib/timeline";
-import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
 import { IntroPair } from "@/components/intro-pair";
 import { ConnectionPersonForm } from "@/components/connection-person-form";
+import { ConnectionSettings } from "@/components/connection-settings";
 import { Button, Card, Checkbox, Notice, Page, Pill } from "@/components/ui";
 import { LOCALIZED_BANK } from "@/content/questions-i18n";
 import { answerLabel } from "@/lib/discovery/format";
@@ -105,18 +105,6 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
             </p>
           </div>
         </div>
-        {v.status !== "revoked" && (
-          <nav aria-label={cc.title(v.otherName)} className="mt-4 flex flex-wrap gap-1.5 text-xs">
-            {[
-              ["#know", `👤 ${cc.navKnow}`],
-              ...(r ? [["#together", `🧩 ${cc.navTogether}`]] : []),
-              ...(r?.tuvi || together ? [["#tuvi", `✦ Tử Vi`]] : []),
-              ["#settings", `⚙️ ${cc.navSettings}`],
-            ].map(([href, label]) => (
-              <a key={href} href={href} className="rounded-full bg-white/90 px-3 py-1.5 font-medium text-stone-700 ring-1 ring-stone-200 hover:ring-teal-300">{label}</a>
-            ))}
-          </nav>
-        )}
       </section>
 
       {v.status === "revoked" && <Notice kind="warning">{cc.ended}</Notice>}
@@ -365,72 +353,17 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
           <Button type="submit" variant="secondary">💭 {t.peers.askThis(v.otherName)}</Button>
         </form>
       )}
-      {v.status !== "revoked" && (
-        <div id="manual" className="scroll-mt-20">
-          <Card title={`📖 ${t.manual.shareTitle}`}>
-            <p className="mb-3 text-sm text-stone-600">{t.manual.shareHelp}</p>
-            {myShare && <p className="mb-2 text-xs font-semibold text-teal-800">✓ {t.manual.shareNow(SHARED_TEXT.presetName[myShare][locale])}</p>}
-            <form action={manualShareAction} className="space-y-2">
-              <input type="hidden" name="sessionId" value={v.id} />
-              <fieldset className="space-y-2">
-                <legend className="sr-only">{t.manual.shareTitle}</legend>
-                {(["none", ...MANUAL_PRESETS] as const).map((p) => (
-                  <label key={p} className="flex cursor-pointer items-start gap-3 rounded-2xl border border-stone-200 bg-white/80 p-3 has-checked:border-teal-400 has-checked:bg-teal-50/60">
-                    <input type="radio" name="preset" value={p} defaultChecked={(myShare ?? "none") === p} className="mt-1 accent-teal-700" />
-                    <span>
-                      <span className="block text-sm font-semibold text-stone-900">{p === "none" ? t.manual.shareNone : SHARED_TEXT.presetName[p][locale]}</span>
-                      {p !== "none" && <span className="block text-xs leading-5 text-stone-600">{SHARED_TEXT.presetWhat[p][locale]}</span>}
-                      {p !== "none" && (
-                        <Link href={`/me/manual/shared?preset=${p}&back=${encodeURIComponent(`/compare/${v.id}`)}`} className="text-xs text-teal-700 underline">{t.manual.sharePreview} →</Link>
-                      )}
-                    </span>
-                  </label>
-                ))}
-              </fieldset>
-              <p className="text-xs leading-5 text-stone-500">🔒 {SHARED_TEXT.never[locale]}</p>
-              <Button type="submit" variant="secondary">{t.manual.shareSave}</Button>
-            </form>
-          </Card>
-        </div>
+      {personId ? (
+        <Link href={`/people/${personId}/settings`} className="flex items-center justify-between gap-3 rounded-2xl bg-white p-4 text-sm shadow-sm ring-1 ring-stone-200/70 hover:ring-teal-300">
+          <span>
+            <span className="block font-semibold text-stone-900">⚙️ {t.people.settingsTitle(v.otherName)}</span>
+            <span className="block text-xs text-stone-600">{cc.settingsMoved}</span>
+          </span>
+          <span aria-hidden className="text-teal-700">→</span>
+        </Link>
+      ) : (
+        <ConnectionSettings t={t} locale={locale} v={v} myShare={myShare} back={`/compare/${v.id}`} />
       )}
-        {v.status !== "revoked" && (
-          <>
-          {r && (
-            <details className="rounded-3xl border border-stone-200/80 bg-white/70 p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-stone-700">{t.compare.changeConsent}</summary>
-              <div className="mt-3">
-          <div>
-            <p className="mb-3 text-sm text-stone-600">{PURPOSE_TEXT[locale]}</p>
-            {v.myConsent && <p className="mb-2 text-sm"><Pill tone="teal">✓</Pill> {t.compare.yourConsent(scopeNames(v.myConsent.scopes))}</p>}
-            <p className="mb-3 text-sm">{v.otherConsented ? `✓ ${t.compare.otherConsented}` : `⏳ ${t.compare.waiting}`}</p>
-            <form action={consentAction} className="space-y-2">
-              <input type="hidden" name="sessionId" value={v.id} />
-              <fieldset className="space-y-2">
-                <legend className="text-sm font-medium">{t.compare.scopes}</legend>
-                {SCOPES.map((s) => (
-                  <Checkbox
-                    key={s}
-                    name="scopes"
-                    value={s}
-                    defaultChecked={v.myConsent?.scopes.includes(s)}
-                    label={<><b>{t.compare.scopeNames[s]}</b> — <span className="text-stone-600">{SCOPE_DESCRIPTIONS[s][locale]}</span></>}
-                  />
-                ))}
-              </fieldset>
-              <Checkbox name="agree" required label={t.compare.agree} />
-              <p className="text-xs text-stone-500">{t.compare.bioNote}</p>
-              <Button type="submit">{v.myConsent ? t.compare.update : t.compare.give}</Button>
-            </form>
-          </div>
-              </div>
-            </details>
-          )}
-          <form action={endComparisonAction}>
-            <input type="hidden" name="sessionId" value={v.id} />
-            <ConfirmButton message={t.compare.endConfirm}>{t.compare.end}</ConfirmButton>
-          </form>
-          </>
-        )}
       </section>
     </Page>
   );

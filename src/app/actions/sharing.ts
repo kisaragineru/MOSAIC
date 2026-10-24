@@ -60,7 +60,8 @@ export async function consentAction(form: FormData) {
   const scopes = form.getAll("scopes").filter((x): x is string => typeof x === "string");
   const r = await attempt("comparison.consent", () => giveConsent(uid, id, { scopes, agree: bool(form, "agree") }));
   revalidatePath(`/compare/${id}`);
-  redirect(r.ok ? `/compare/${id}?ok=saved` : `/compare/${id}?e=${r.error}`);
+  const back = safeNext(str(form, "back"), `/compare/${id}`);
+  redirect(withParam(back, r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
 }
 
 export async function endComparisonAction(form: FormData) {
@@ -68,7 +69,9 @@ export async function endComparisonAction(form: FormData) {
   const id = str(form, "sessionId");
   const r = await attempt("comparison.revoke", () => revokeComparison(uid, id));
   revalidatePath("/share");
-  redirect(r.ok ? `/compare/${id}` : `/compare/${id}?e=${r.error}`);
+  revalidatePath("/people");
+  const back = safeNext(str(form, "back"), `/compare/${id}`);
+  redirect(r.ok ? back : withParam(back, "e", r.error));
 }
 
 export async function recomputeAction(form: FormData) {
@@ -114,5 +117,6 @@ export async function manualShareAction(form: FormData) {
   const id = str(form, "sessionId");
   const r = await attempt("manual.share", () => setManualShare(uid, id, str(form, "preset")));
   revalidatePath(`/compare/${id}`);
-  redirect(r.ok ? `/compare/${id}?ok=saved#manual` : `/compare/${id}?e=${r.error}#manual`);
+  const back = safeNext(str(form, "back"), `/compare/${id}`);
+  redirect(withParam(back, r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
 }

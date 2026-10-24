@@ -168,7 +168,7 @@ test("someone written about before connecting: the connection attaches to them",
   await expect(hana.getByRole("heading", { level: 1, name: "ソラさんへの設定" })).toBeVisible();
   await expect(hana.getByText(/あなたの記録のうち 0 件が見えています/)).toBeVisible();
   await hana.getByLabel("関係").selectOption("family");
-  await hana.getByRole("button", { name: "保存" }).click();
+  await hana.locator("form", { has: hana.getByLabel("関係") }).getByRole("button", { name: "保存" }).click();
   await hana.waitForURL(/\/settings\?ok=saved/);
   await expect(hana.getByLabel("関係")).toHaveValue("family");
   await expect(hana.getByRole("button", { name: "この人と関連する記録をすべて削除" })).toBeVisible();

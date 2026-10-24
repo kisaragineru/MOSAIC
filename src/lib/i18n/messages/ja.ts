@@ -614,6 +614,7 @@ export const ja: Dict = {
     own: "これはあなた自身のリンクです。",
   },
   compare: {
+    settingsMoved: "取扱説明書を見せる設定、同意した内容、つながりの解除はこちらです。",
     statusActive: "つながっています",
     statusPending: "同意を待っています",
     statusEnded: "つながりは終了しました",

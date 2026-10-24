@@ -612,6 +612,7 @@ export const en = {
     own: "This is your own link.",
   },
   compare: {
+    settingsMoved: "Showing your manual, what you consented to and ending the connection are there.",
     statusActive: "Connected",
     statusPending: "Waiting for consent",
     statusEnded: "Connection ended",

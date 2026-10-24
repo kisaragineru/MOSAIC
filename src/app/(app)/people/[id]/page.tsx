@@ -79,19 +79,16 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
   const showGifts = sp.gifts === "1";
   const ideas = showGifts ? await suggestGifts(uid, person.id, { budget: sp.budget ?? "", currency: sp.currency ?? "" }).catch(() => null) : null;
   return (
-    <Page title={person.nickname} back="/people">
+    <Page
+      title={person.nickname}
+      back="/people"
+      actions={
+        <Link href={`/people/${person.id}/settings`} aria-label={t.people.settingsTitle(person.nickname)} className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-lg ring-1 ring-stone-200 hover:ring-teal-300">
+          <span aria-hidden>⚙️</span>
+        </Link>
+      }
+    >
       <Flash t={t} sp={sp} />
-      <section className="flex items-center gap-3 rounded-3xl bg-white/85 p-4 shadow-sm ring-1 ring-white/80">
-        <span aria-hidden className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-xl font-bold text-teal-900">{Array.from(person.nickname.trim())[0]?.toUpperCase() ?? "?"}</span>
-        <span className="min-w-0 flex-1">
-          <span className="flex flex-wrap items-center gap-1.5">
-            <Pill tone="teal">{t.people.relationships[person.relationship as keyof typeof t.people.relationships] ?? person.relationship}</Pill>
-            {connection && connection.status !== "revoked" && <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[11px] font-bold text-teal-800">🔗 {t.people.connected}</span>}
-          </span>
-          <span className="mt-1 block text-xs text-stone-500">🔒 {t.people.privateShort}</span>
-        </span>
-        <Link href={`/people/${person.id}/settings`} className="shrink-0 rounded-full bg-white px-3 py-2 text-xs font-semibold text-stone-700 ring-1 ring-stone-200 hover:ring-teal-300">⚙️ {t.people.settingsShort}</Link>
-      </section>
       {connection && connection.status !== "revoked" && (
         // Their page: what they chose to show you (introduction, manual, shared records, side by side).
         <Link href={`/compare/${connection.id}`} className="block rounded-3xl bg-linear-to-br from-rose-50 via-white to-teal-50 p-4 shadow-sm ring-1 ring-teal-100 transition hover:shadow-md">
@@ -355,7 +352,6 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
         </ul>
       </Card>
 
-      <Link href={`/insights?kind=relationship&personId=${person.id}`} className="block text-sm text-teal-700 underline">{t.insights.reflections} →</Link>
 
     </Page>
   );

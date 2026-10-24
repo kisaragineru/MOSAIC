@@ -614,6 +614,7 @@ export const vi: Dict = {
     own: "Đây là liên kết của chính bạn.",
   },
   compare: {
+    settingsMoved: "Cài đặt sổ tay, nội dung đã đồng ý và hủy kết nối nằm ở đây.",
     statusActive: "Đã kết nối",
     statusPending: "Đang chờ đồng ý",
     statusEnded: "Kết nối đã kết thúc",

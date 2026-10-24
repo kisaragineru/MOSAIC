@@ -9,7 +9,9 @@ import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { visibleCount } from "@/server/services/memory-share";
 import { getPerson, listPeople } from "@/server/services/people";
-import { connectionForPerson, listComparisons } from "@/server/services/sharing";
+import { connectionForPerson, getComparison, listComparisons } from "@/server/services/sharing";
+import { myManualShare } from "@/server/services/manual-share";
+import { ConnectionSettings } from "@/components/connection-settings";
 
 const RELS = ["partner", "family", "friend", "colleague", "other"] as const;
 
@@ -18,7 +20,7 @@ export default async function PersonSettingsPage({ params, searchParams }: { par
   const uid = await requireUser();
   const { id } = await params;
   const sp = await searchParams;
-  const { t } = await getT();
+  const { t, locale } = await getT();
   const data = await getPerson(uid, id).catch(() => null);
   if (!data) notFound();
   const { person } = data;
@@ -28,6 +30,8 @@ export default async function PersonSettingsPage({ params, searchParams }: { par
   const others = (await listPeople(uid)).filter((p) => p.id !== person.id && !(p.connectionSessionId && person.connectionSessionId));
   const linkable = connection ? [] : (await listComparisons(uid)).filter((c) => c.status !== "revoked" && !c.personId);
   const here = `/people/${person.id}/settings`;
+  const view = connection && connection.status !== "revoked" ? await getComparison(uid, connection.id).catch(() => null) : null;
+  const myShare = view ? await myManualShare(uid, view.id) : null;
   return (
     <Page title={t.people.settingsTitle(person.nickname)} back={`/people/${person.id}`}>
       <Flash t={t} sp={sp} />
@@ -65,9 +69,6 @@ export default async function PersonSettingsPage({ params, searchParams }: { par
               )}
               <p className="text-xs text-stone-500">🔒 {t.people.connectionPrivate}</p>
               <div className="flex flex-wrap gap-2 pt-1">
-                {connection.status !== "revoked" && (
-                  <Link href={`/compare/${connection.id}#settings`} className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-teal-800 ring-1 ring-stone-200 hover:ring-teal-300">{t.people.connectionSettings} →</Link>
-                )}
                 <form action={unlinkPersonAction}>
               <input type="hidden" name="back" value={here} />
                   <input type="hidden" name="personId" value={person.id} />
@@ -91,6 +92,8 @@ export default async function PersonSettingsPage({ params, searchParams }: { par
             <p className="text-xs leading-5 text-stone-500">{t.people.notConnected}</p>
           )}
         </div>
+
+        {view && <ConnectionSettings t={t} locale={locale} v={view} myShare={myShare} back={here} />}
 
         {others.length > 0 && (
           <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200/70 text-sm">
