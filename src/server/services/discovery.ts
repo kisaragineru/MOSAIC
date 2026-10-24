@@ -38,38 +38,50 @@ export interface QuestionView {
   signals: Signal[] | null;
 }
 
-async function loadQuestion(tx: Tx, questionId: string, version?: number): Promise<QuestionView | null> {
+/**
+ * The question catalog (definitions and every version) is seeded at deploy time and never changes
+ * while the server runs, so it is read once per process and kept briefly: pages that look at
+ * many questions no longer ask the database one question at a time.
+ */
+const CATALOG_TTL_MS = 5 * 60_000;
+let catalogCache: { at: number; byKey: Map<string, QuestionView> } | null = null;
+
+async function questionCatalog(tx: Tx) {
+  if (catalogCache && Date.now() - catalogCache.at < CATALOG_TTL_MS) return catalogCache.byKey;
   const rows = await tx
     .select({ d: questionDefinitions, v: questionVersions })
     .from(questionDefinitions)
-    .innerJoin(questionVersions, eq(questionVersions.questionId, questionDefinitions.id))
-    .where(
-      and(
-        eq(questionDefinitions.id, questionId),
-        eq(questionVersions.version, version ?? sql`${questionDefinitions.currentVersion}`),
-      ),
-    );
-  const r = rows[0];
-  if (!r) return null;
-  const text = localizeQuestionContent(r.d.id, {
-    prompt: r.v.prompt as BankText,
-    options: r.v.options as { value: string; label: BankText }[] | null,
-    scale: r.v.scale as { min: number; max: number; minLabel: BankText; maxLabel: BankText } | null,
-  });
-  return {
-    id: r.d.id,
-    version: r.v.version,
-    category: r.d.category,
-    sensitivity: r.d.sensitivity as QuestionView["sensitivity"],
-    comparable: r.d.comparable,
-    format: r.v.format as QuestionView["format"],
-    prompt: text.prompt,
-    options: text.options,
-    maxChoices: r.v.maxChoices,
-    scale: text.scale,
-    followUps: r.v.followUps as QuestionView["followUps"],
-    signals: r.v.signals as Signal[] | null,
-  };
+    .innerJoin(questionVersions, eq(questionVersions.questionId, questionDefinitions.id));
+  const byKey = new Map<string, QuestionView>();
+  for (const r of rows) {
+    const text = localizeQuestionContent(r.d.id, {
+      prompt: r.v.prompt as BankText,
+      options: r.v.options as { value: string; label: BankText }[] | null,
+      scale: r.v.scale as { min: number; max: number; minLabel: BankText; maxLabel: BankText } | null,
+    });
+    const view: QuestionView = {
+      id: r.d.id,
+      version: r.v.version,
+      category: r.d.category,
+      sensitivity: r.d.sensitivity as QuestionView["sensitivity"],
+      comparable: r.d.comparable,
+      format: r.v.format as QuestionView["format"],
+      prompt: text.prompt,
+      options: text.options,
+      maxChoices: r.v.maxChoices,
+      scale: text.scale,
+      followUps: r.v.followUps as QuestionView["followUps"],
+      signals: r.v.signals as Signal[] | null,
+    };
+    byKey.set(`${r.d.id}@${r.v.version}`, view);
+    if (r.v.version === r.d.currentVersion) byKey.set(r.d.id, view);
+  }
+  catalogCache = { at: Date.now(), byKey };
+  return byKey;
+}
+
+async function loadQuestion(tx: Tx, questionId: string, version?: number): Promise<QuestionView | null> {
+  return (await questionCatalog(tx)).get(version === undefined ? questionId : `${questionId}@${version}`) ?? null;
 }
 
 async function userTz(tx: Tx, userId: string) {

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { randomUUID } from "node:crypto";
 import { and, eq, ne, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -159,7 +160,7 @@ export async function deleteAccount(userId: string, input: unknown): Promise<voi
   });
 }
 
-export async function getAccount(userId: string) {
+async function getAccountUncached(userId: string) {
   return withUser(userId, async (tx) => {
     const [u] = await tx
       .select({ id: users.id, email: users.email, createdAt: users.createdAt })
@@ -214,3 +215,6 @@ export async function updateNotificationPrefs(userId: string, input: { dailyQues
       .onConflictDoUpdate({ target: notificationPreferences.userId, set: { ...v, updatedAt: new Date() } }),
   );
 }
+
+/** Read once per page render (several parts of a page ask for it); actions always read fresh. */
+export const getAccount = cache(getAccountUncached);

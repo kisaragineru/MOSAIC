@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { TENDENCY_KEYS, TENDENCY_TEXT, type I18nText, type Signal, type TendencyKey } from "@/content/questions";
@@ -125,7 +126,7 @@ export function claimState(evidence: number, support: number, confidence: number
 
 const stateOf = (c: typeof tendencyClaims.$inferSelect): ClaimState => claimState(c.evidenceCount, c.supportCount, c.confidence);
 
-export async function listTendencies(userId: string): Promise<ClaimView[]> {
+async function listTendenciesUncached(userId: string): Promise<ClaimView[]> {
   return withUser(userId, async (tx) => {
     const claims = await tx
       .select()
@@ -196,3 +197,6 @@ export async function setTendencyFeedback(userId: string, claimId: string, input
     if (r.length === 0) throw notFound();
   });
 }
+
+/** Read once per page render (several parts of a page ask for it); actions always read fresh. */
+export const listTendencies = cache(listTendenciesUncached);

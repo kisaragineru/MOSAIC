@@ -3,6 +3,7 @@
  * time zone), how it compares with the month before, and a place
  * to write a few lines about it. Read-only over existing data; writing back is an ordinary record.
  */
+import { cache } from "react";
 import { eq, sql } from "drizzle-orm";
 import { LOCALIZED_BANK } from "@/content/questions-i18n";
 import type { TendencyKey } from "@/content/questions";
@@ -74,9 +75,9 @@ export interface AnsweredInMonth {
   answeredAt: Date;
 }
 
-async function timeZoneOf(userId: string) {
+const timeZoneOf = cache(async (userId: string) => {
   return withUser(userId, async (tx) => (await tx.select({ tz: profiles.timeZone }).from(profiles).where(eq(profiles.userId, userId)))[0]?.tz ?? "UTC");
-}
+});
 
 /** This month in the user's time zone. */
 export async function thisMonth(userId: string, now = new Date()): Promise<Month> {

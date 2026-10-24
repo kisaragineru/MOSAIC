@@ -9,7 +9,8 @@
  * privacy → result stored, readable by the two participants only → either can revoke,
  * which deletes the result and blocks further access.
  */
-import { and, desc, eq, or, sql } from "drizzle-orm";
+import { cache } from "react";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { I18nText } from "@/content/questions";
 import { LOCALIZED_BANK } from "@/content/questions-i18n";
@@ -363,7 +364,7 @@ export async function getComparison(userId: string, sessionId: string, opts: { r
   });
 }
 
-export async function listComparisons(userId: string) {
+async function listComparisonsUncached(userId: string) {
   return withUser(userId, async (tx) => {
     const sessions = await tx
       .select()
@@ -371,12 +372,20 @@ export async function listComparisons(userId: string) {
       .where(or(eq(comparisonSessions.userA, userId), eq(comparisonSessions.userB, userId)))
       .orderBy(desc(comparisonSessions.createdAt));
     const out = [];
+    // My current consents for all of them at once (one query, not one per connection).
+    const consented = new Set(
+      sessions.length
+        ? (
+            await tx
+              .select({ sessionId: comparisonConsents.sessionId })
+              .from(comparisonConsents)
+              .where(and(inArray(comparisonConsents.sessionId, sessions.map((s) => s.id)), eq(comparisonConsents.userId, userId), sql`${comparisonConsents.withdrawnAt} is null`))
+          ).map((r) => r.sessionId)
+        : [],
+    );
     for (const s of sessions) {
       const parts = await tx.execute<{ user_id: string; display_name: string }>(sql`select * from comparison_participants(${s.id})`);
-      const [mine] = await tx
-        .select({ id: comparisonConsents.id })
-        .from(comparisonConsents)
-        .where(and(eq(comparisonConsents.sessionId, s.id), eq(comparisonConsents.userId, userId), sql`${comparisonConsents.withdrawnAt} is null`));
+      const mine = consented.has(s.id);
       out.push({
         id: s.id,
         status: s.status,
@@ -508,3 +517,6 @@ export async function connectionForPerson(userId: string, sessionId: string | nu
   if (!sessionId) return null;
   return withUser(userId, (tx) => ownConnection(tx, userId, sessionId)).catch(() => null);
 }
+
+/** Read once per page render (several parts of a page ask for it); actions always read fresh. */
+export const listComparisons = cache(listComparisonsUncached);
