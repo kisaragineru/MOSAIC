@@ -6,10 +6,14 @@
 import { eq, sql } from "drizzle-orm";
 import { LOCALIZED_BANK } from "@/content/questions-i18n";
 import type { TendencyKey } from "@/content/questions";
+import { chapterOf, type Chapter } from "@/content/axes";
 import type { Answer } from "@/lib/discovery/answers";
 import { answerLabel } from "@/lib/discovery/format";
 import type { Locale } from "@/lib/i18n/locales";
 import { todayIn } from "@/lib/validation/common";
+import { en } from "@/lib/i18n/messages/en";
+import { ja } from "@/lib/i18n/messages/ja";
+import { vi } from "@/lib/i18n/messages/vi";
 import { profiles } from "../db/schema";
 import { withUser } from "../db/tx";
 import { createMemory, listMemories, type MemorySummary } from "./memories";
@@ -40,6 +44,8 @@ const lastDay = (m: Month) => {
 
 export interface MonthReport {
   month: Month;
+  /** The user's time zone, for showing times. */
+  timeZone: string;
   current: boolean;
   answers: number;
   records: number;
@@ -50,9 +56,25 @@ export interface MonthReport {
   moodWeeks: (number | null)[];
   moodAverage: number | null;
   highlights: MemorySummary[];
-  firstAnswers: { prompt: string; answer: string }[];
-  changed: { prompt: string; answer: string }[];
+  /** The look backs written for this month (newest first), as prompt / answer pairs. */
+  lookBacks: { id: string; createdAt: Date; sections: { prompt: string; answer: string }[] }[];
+  /** Every question answered in the month, its latest answer there, newest first. */
+  answered: AnsweredInMonth[];
   deepened: TendencyKey[];
+}
+
+export interface AnsweredInMonth {
+  questionId: string;
+  chapter: Chapter;
+  prompt: string;
+  answer: string;
+  /** First time ever, changed (the user said their view changed), or answered again. */
+  how: "first" | "changed" | "again";
+  /** The answer before this one, when it differs. */
+  before: string | null;
+  /** Their private "why", shown only to them. */
+  note: string | null;
+  answeredAt: Date;
 }
 
 async function timeZoneOf(userId: string) {
@@ -70,8 +92,9 @@ const QMETA = new Map(LOCALIZED_BANK.map((q) => [q.id, q]));
 async function responsesIn(userId: string, tz: string, m: Month) {
   return withUser(userId, async (tx) =>
     (
-      await tx.execute<{ id: string; question_id: string; answer: Answer | null; change_kind: string; first: boolean }>(sql`
-        select r.id, r.question_id, r.answer, r.change_kind,
+      await tx.execute<{ id: string; question_id: string; answer: Answer | null; change_kind: string; note: string | null; answered_at: string; before: Answer | null; first: boolean }>(sql`
+        select r.id, r.question_id, r.answer, r.change_kind, r.note, r.answered_at,
+               (select p.answer from question_responses p where p.id = r.previous_response_id and p.status = 'answered') as before,
                not exists (select 1 from question_responses p where p.user_id = r.user_id and p.question_id = r.question_id
                            and p.status = 'answered' and (p.answered_at, p.id) < (r.answered_at, r.id)) as first
         from question_responses r
@@ -88,6 +111,7 @@ export async function monthReport(userId: string, m: Month, locale: Locale, now 
   const [answers, prevAnswers] = [await responsesIn(userId, tz, m), await responsesIn(userId, tz, prev)];
   const records = (await listMemories(userId, { from: firstDay(m), to: lastDay(m), limit: 200 })).filter((r) => !r.sealed);
   const prevRecords = (await listMemories(userId, { from: firstDay(prev), to: lastDay(prev), limit: 200 })).filter((r) => !r.sealed);
+  const lookBacks = records.filter(isLookBack);
   const dayOf = (r: MemorySummary) => r.occurredOn ?? todayIn(tz, r.createdAt);
 
   const weeks: number[][] = [[], [], [], [], []];
@@ -105,6 +129,7 @@ export async function monthReport(userId: string, m: Month, locale: Locale, now 
 
   return {
     month: m,
+    timeZone: tz,
     current,
     answers: answers.length,
     records: records.length,
@@ -113,11 +138,47 @@ export async function monthReport(userId: string, m: Month, locale: Locale, now 
     previousPieces: prevAnswers.length + prevRecords.length,
     moodWeeks: weeks.map((w) => (w.length ? w.reduce((a, b) => a + b, 0) / w.length : null)),
     moodAverage: moods.length ? moods.reduce((a, b) => a + b, 0) / moods.length : null,
-    highlights: records.filter((r) => ["achievement", "decision", "memory", "feeling", "value", "goal", "dream", "regret"].includes(r.kind) || r.title).slice(0, 8),
-    firstAnswers: answers.filter((a) => a.first).slice(0, 6).map((a) => label(a.question_id, a.answer)),
-    changed: answers.filter((a) => !a.first && a.change_kind === "changed_mind").map((a) => label(a.question_id, a.answer)),
+    lookBacks: lookBacks.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).map((r) => ({ id: r.id, createdAt: r.createdAt, sections: lookBackSections(r.body ?? "") })),
+    highlights: records.filter((r) => !isLookBack(r)).filter((r) => ["achievement", "decision", "memory", "feeling", "value", "goal", "dream", "regret"].includes(r.kind) || r.title).slice(0, 8),
+    answered: answeredIn(answers, locale),
     deepened,
   };
+}
+
+// The look back's tag in any language (the user may have switched since writing it).
+const LOOKBACK_TAGS = new Set([en, vi, ja].map((d) => d.monthly.tag.toLowerCase()));
+const isLookBack = (r: MemorySummary) => r.tags.some((x) => LOOKBACK_TAGS.has(x.toLowerCase()));
+
+/** "■ prompt\nanswer" blocks, as saveLookBack writes them (edited text that lost the marks stays one block). */
+export function lookBackSections(body: string): { prompt: string; answer: string }[] {
+  const parts = body.split(/^■ /m).filter((x) => x.trim());
+  if (!body.trimStart().startsWith("■ ")) return [{ prompt: "", answer: body.trim() }];
+  return parts.map((p) => {
+    const [prompt, ...rest] = p.split("\n");
+    return { prompt: prompt!.trim(), answer: rest.join("\n").trim() };
+  });
+}
+
+/** One entry per question, its last answer in the month; "first" if the month holds its first answer. */
+function answeredIn(rows: Awaited<ReturnType<typeof responsesIn>>, locale: Locale): AnsweredInMonth[] {
+  const byQ = new Map<string, AnsweredInMonth>();
+  for (const r of rows) {
+    const q = QMETA.get(r.question_id);
+    const text = (a: Answer | null) => answerLabel(q?.options ?? null, a, locale);
+    const firstInMonth = byQ.get(r.question_id)?.how === "first" || r.first;
+    const before = r.before && JSON.stringify(r.before) !== JSON.stringify(r.answer) ? text(r.before) : null;
+    byQ.set(r.question_id, {
+      questionId: r.question_id,
+      chapter: q ? chapterOf(q) : "story",
+      prompt: q?.prompt[locale] ?? r.question_id,
+      answer: text(r.answer),
+      how: firstInMonth ? "first" : r.change_kind === "changed_mind" ? "changed" : "again",
+      before: firstInMonth ? null : before,
+      note: r.note,
+      answeredAt: new Date(r.answered_at),
+    });
+  }
+  return [...byQ.values()].sort((a, b) => b.answeredAt.getTime() - a.answeredAt.getTime());
 }
 
 /** Months with any answer or record, newest first (at most two years back). */

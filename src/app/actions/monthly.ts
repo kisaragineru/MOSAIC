@@ -16,5 +16,5 @@ export async function saveLookBackAction(form: FormData) {
     saveLookBack(uid, m, mo.prompts, [0, 1, 2].map((i) => str(form, `p${i}`)), mo.monthTitle(m.year, m.month), mo.tag),
   );
   revalidatePath("/memories");
-  redirect(`/reflection/${monthKey(m)}?${r.ok ? "ok=saved" : `e=${r.error}`}`);
+  redirect(`/reflection/${monthKey(m)}?${r.ok ? "ok=saved#lookback" : `e=${r.error}`}`);
 }

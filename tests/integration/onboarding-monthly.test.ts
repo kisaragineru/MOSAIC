@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { withUser } from "@/server/db/tx";
 import { answerQuestion, setChangeKind } from "@/server/services/discovery";
 import { createMemory, listMemories } from "@/server/services/memories";
-import { activeMonths, lookBackDue, monthReport, parseMonth, saveLookBack, shiftMonth, thisMonth } from "@/server/services/monthly";
+import { activeMonths, lookBackDue, lookBackSections, monthReport, parseMonth, saveLookBack, shiftMonth, thisMonth } from "@/server/services/monthly";
 import { finishOnboarding, onboardingState, SEED_QUESTIONS } from "@/server/services/onboarding";
 import { makeUser } from "../helpers/factory";
 
@@ -49,8 +49,9 @@ describe("monthly look back", () => {
     expect(r.moodWeeks).toEqual([3.5, null, null, null, null]);
     expect(r.moodAverage).toBe(3.5);
     expect(r.highlights.map((h) => h.title ?? h.body)).toEqual(expect.arrayContaining(["合格", "少し疲れた"]));
-    expect(r.firstAnswers).toHaveLength(1);
-    expect(r.changed).toHaveLength(1);
+    // One entry per question: answered for the first time this month, so not "changed".
+    expect(r.answered).toHaveLength(1);
+    expect(r.answered[0]).toMatchObject({ questionId: "p.weekend_plan", how: "first", before: null });
     expect((await activeMonths(u.userId)).map((m) => m.month)).toEqual(expect.arrayContaining([now.month, shiftMonth(now, -1).month]));
   });
 
@@ -72,5 +73,33 @@ describe("monthly look back", () => {
     const [m] = await listMemories(u.userId, { tag: "月の振り返り" });
     expect(m).toMatchObject({ kind: "thought", title: "2026年9月のあなた", occurredOn: "2026-09-30", tags: ["月の振り返り"] });
     expect(m!.body).toBe("■ Q1\nA1\n\n■ Q3\nA3");
+    // The month's page shows it back, apart from the month's other records.
+    const r = await monthReport(u.userId, { year: 2026, month: 9 }, "ja");
+    expect(r.lookBacks).toHaveLength(1);
+    expect(r.lookBacks[0]!.sections).toEqual([{ prompt: "Q1", answer: "A1" }, { prompt: "Q3", answer: "A3" }]);
+    expect(r.highlights).toEqual([]);
+  });
+
+  it("reads a look back back into its parts, even after it was edited", () => {
+    expect(lookBackSections("■ Q1\nline 1\n\nline 2\n\n■ Q2\nA2")).toEqual([{ prompt: "Q1", answer: "line 1\n\nline 2" }, { prompt: "Q2", answer: "A2" }]);
+    expect(lookBackSections("rewritten freely")).toEqual([{ prompt: "", answer: "rewritten freely" }]);
+  });
+
+  it("lists each question answered in the month once, with what it was before", async () => {
+    const u = await makeUser();
+    const now = await thisMonth(u.userId);
+    await answerQuestion(u.userId, { questionId: "p.weekend_plan", questionVersion: 1, answer: { choice: "plan" } });
+    await answerQuestion(u.userId, { questionId: "p.weekend_plan", questionVersion: 1, answer: { choice: "see" } });
+    const r = await monthReport(u.userId, now, "ja");
+    expect(r.answered).toHaveLength(1);
+    expect(r.answered[0]).toMatchObject({ chapter: "self", how: "first", before: null });
+    // Answered in an earlier month, changed now: shown with the answer before.
+    await withUser(u.userId, (tx) => tx.execute(sql`update question_responses set answered_at = answered_at - interval '62 days' where user_id = ${u.userId}`));
+    const third = await answerQuestion(u.userId, { questionId: "p.weekend_plan", questionVersion: 1, answer: { choice: "plan" }, note: "最近は予定を立てたい" });
+    await setChangeKind(u.userId, third.responseId, "changed_mind");
+    const [a] = (await monthReport(u.userId, now, "ja")).answered;
+    expect(a).toMatchObject({ how: "changed", note: "最近は予定を立てたい" });
+    expect(a!.before).toBeTruthy();
+    expect(a!.before).not.toBe(a!.answer);
   });
 });

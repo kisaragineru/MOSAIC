@@ -3,14 +3,18 @@ import { notFound } from "next/navigation";
 import { saveLookBackAction } from "@/app/actions/monthly";
 import { Flash } from "@/components/flash";
 import { Button, Card, Page, Textarea } from "@/components/ui";
-import { AXIS_LABEL, PEER_POLES } from "@/content/axes";
+import { AXIS_LABEL, CHAPTER_INFO, PEER_POLES } from "@/content/axes";
+import type { Dict } from "@/lib/i18n/messages/en";
+import type { Locale } from "@/lib/i18n/locales";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
-import { activeMonths, monthKey, monthReport, parseMonth, shiftMonth, thisMonth } from "@/server/services/monthly";
+import { activeMonths, monthKey, monthReport, parseMonth, shiftMonth, thisMonth, type AnsweredInMonth, type Month } from "@/server/services/monthly";
 import { listTendencies } from "@/server/services/tendencies";
 
 // Literal classes for the mood bars (Tailwind only generates classes it can see).
 const BAR = ["h-0", "h-1/5", "h-2/5", "h-3/5", "h-4/5", "h-full"];
+/** Answers shown before "show all". */
+const SHOWN = 5;
 
 /** One month, looked back on: numbers, mood, highlights, first answers, changes, and a note. */
 export default async function MonthPage({ params, searchParams }: { params: Promise<{ month: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
@@ -89,46 +93,60 @@ export default async function MonthPage({ params, searchParams }: { params: Prom
         )}
       </Card>
 
-      {(r.deepened.length > 0 || r.firstAnswers.length > 0 || r.changed.length > 0) && (
-        <Card>
-          {r.deepened.length > 0 && (
-            <>
-              <h3 className="mb-2 text-sm font-semibold text-stone-800">🧩 {mo.tiles}</h3>
-              <ul className="mb-4 flex flex-wrap gap-1.5">
-                {r.deepened.map((k) => {
-                  const c = claims.find((x) => x.claimKey === k)!;
-                  return <li key={k} className="rounded-full bg-teal-50 px-3 py-1 text-xs text-teal-900 ring-1 ring-teal-100">{AXIS_LABEL[k].name[locale]}：{(c.direction === 1 ? PEER_POLES[k].pos : PEER_POLES[k].neg)[locale]}</li>;
-                })}
-              </ul>
-            </>
-          )}
-          {r.firstAnswers.length > 0 && (
-            <>
-              <h3 className="mb-2 text-sm font-semibold text-stone-800">✨ {mo.newAnswers}</h3>
-              <ul className="mb-4 space-y-1.5 text-sm">{r.firstAnswers.map((a, i) => <li key={i} className="text-stone-700">{a.prompt} — <b className="text-stone-900">{a.answer}</b></li>)}</ul>
-            </>
-          )}
-          {r.changed.length > 0 && (
-            <>
-              <h3 className="mb-2 text-sm font-semibold text-stone-800">🔄 {mo.changed}</h3>
-              <ul className="space-y-1.5 text-sm">{r.changed.map((a, i) => <li key={i} className="text-stone-700">{a.prompt} — <b className="text-stone-900">{a.answer}</b></li>)}</ul>
-            </>
-          )}
+      {r.deepened.length > 0 && (
+        <Card title={`🧩 ${mo.tiles}`}>
+          <ul className="flex flex-wrap gap-1.5">
+            {r.deepened.map((k) => {
+              const c = claims.find((x) => x.claimKey === k)!;
+              return <li key={k} className="rounded-full bg-teal-50 px-3 py-1 text-xs text-teal-900 ring-1 ring-teal-100">{AXIS_LABEL[k].name[locale]}：{(c.direction === 1 ? PEER_POLES[k].pos : PEER_POLES[k].neg)[locale]}</li>;
+            })}
+          </ul>
         </Card>
       )}
 
-      <Card title={`✍️ ${mo.write}`}>
-        <form action={saveLookBackAction} className="space-y-3">
-          <input type="hidden" name="month" value={monthKey(m)} />
-          {mo.prompts.map((p, i) => (
-            <label key={p} className="block">
-              <span className="mb-1 block text-sm font-medium text-stone-800">{p}</span>
-              <Textarea name={`p${i}`} rows={2} maxLength={2000} />
-            </label>
-          ))}
-          <Button type="submit">{mo.writeButton}</Button>
-        </form>
-      </Card>
+      {r.answered.length > 0 && (
+        <Card title={`💬 ${mo.answeredTitle(r.answered.length)}`}>
+          <ul className="space-y-2">{r.answered.slice(0, SHOWN).map((a) => <Answered key={a.questionId} a={a} mo={mo} locale={locale} />)}</ul>
+          {r.answered.length > SHOWN && (
+            <details className="group mt-2">
+              <summary className="cursor-pointer list-none rounded-full py-2 text-center text-sm font-semibold text-teal-700 hover:bg-teal-50 group-open:hidden">{mo.showAll(r.answered.length - SHOWN)}</summary>
+              <ul className="space-y-2">{r.answered.slice(SHOWN).map((a) => <Answered key={a.questionId} a={a} mo={mo} locale={locale} />)}</ul>
+            </details>
+          )}
+          <Link href="/discover/history" className="mt-3 block text-right text-sm text-teal-700">{mo.toHistory} →</Link>
+        </Card>
+      )}
+
+      <section id="lookback" className="scroll-mt-24">
+        {r.lookBacks.length > 0 ? (
+          <Card title={`✍️ ${mo.yourLookBack}`}>
+            <div className="space-y-4">
+              {r.lookBacks.map((lb) => (
+                <article key={lb.id} className="space-y-3">
+                  {lb.sections.map((x, i) => (
+                    <div key={i}>
+                      {x.prompt && <p className="text-xs font-semibold text-violet-800">{x.prompt}</p>}
+                      <p className="mt-0.5 whitespace-pre-line text-base leading-relaxed text-stone-900">{x.answer}</p>
+                    </div>
+                  ))}
+                  <p className="flex items-center justify-between text-xs text-stone-500">
+                    <span>{mo.writtenOn(new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: r.timeZone }).format(lb.createdAt))}</span>
+                    <Link href={`/memories/${lb.id}`} className="rounded-full px-2 py-1 font-semibold text-teal-700 hover:bg-teal-50">{mo.edit}</Link>
+                  </p>
+                </article>
+              ))}
+            </div>
+            <details className="group mt-4 border-t border-violet-100 pt-3">
+              <summary className="cursor-pointer list-none text-sm font-semibold text-teal-700 group-open:mb-3">＋ {mo.writeMore}</summary>
+              <LookBackForm m={m} mo={mo} />
+            </details>
+          </Card>
+        ) : (
+          <Card title={`✍️ ${mo.write}`}>
+            <LookBackForm m={m} mo={mo} />
+          </Card>
+        )}
+      </section>
 
       {months.length > 1 && (
         <Card title={mo.archive}>
@@ -144,5 +162,41 @@ export default async function MonthPage({ params, searchParams }: { params: Prom
         </Card>
       )}
     </Page>
+  );
+}
+
+function LookBackForm({ m, mo }: { m: Month; mo: Dict["monthly"] }) {
+  return (
+    <form action={saveLookBackAction} className="space-y-3">
+      <input type="hidden" name="month" value={monthKey(m)} />
+      {mo.prompts.map((p, i) => (
+        <label key={p} className="block">
+          <span className="mb-1 block text-sm font-medium text-stone-800">{p}</span>
+          <Textarea name={`p${i}`} rows={2} maxLength={2000} />
+        </label>
+      ))}
+      <Button type="submit">{mo.writeButton}</Button>
+    </form>
+  );
+}
+
+function Answered({ a, mo, locale }: { a: AnsweredInMonth; mo: Dict["monthly"]; locale: Locale }) {
+  const info = CHAPTER_INFO[a.chapter];
+  const badge = { first: ["bg-amber-50 text-amber-800", `✨ ${mo.how.first}`], changed: ["bg-violet-50 text-violet-800", `🔄 ${mo.how.changed}`], again: ["bg-stone-100 text-stone-600", `↻ ${mo.how.again}`] }[a.how];
+  return (
+    <li className="rounded-2xl border border-stone-200 bg-white/80 px-4 py-3">
+      <p className="flex flex-wrap items-center gap-1.5 text-[11px] text-stone-500">
+        <span aria-hidden>{info.icon}</span>
+        {info.title[locale]}
+        <span className={`rounded-full px-2 py-0.5 font-semibold ${badge[0]}`}>{badge[1]}</span>
+      </p>
+      <p className="mt-1 text-sm text-stone-700">{a.prompt}</p>
+      <p className="mt-0.5 font-semibold text-stone-900">
+        {a.before && <span className="mr-1 font-normal text-stone-400 line-through">{a.before}</span>}
+        {a.before && <span aria-hidden className="mr-1 text-stone-400">→</span>}
+        {a.answer}
+      </p>
+      {a.note && <p className="mt-1.5 rounded-xl bg-stone-50 px-3 py-2 text-xs text-stone-600">🔒 {a.note}</p>}
+    </li>
   );
 }

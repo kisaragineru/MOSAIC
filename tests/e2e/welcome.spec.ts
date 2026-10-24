@@ -36,9 +36,16 @@ test("a new account is guided: three questions to a first tile, a bio, then home
   // Monthly look back: this month so far, and a note saved as a record.
   await page.goto("/reflection");
   await expect(page.getByRole("heading", { level: 2, name: /年\d+月のあなた/ })).toBeVisible();
+  // What was answered this month is listed, once per question.
+  await expect(page.getByRole("heading", { name: "💬 この月に答えたこと（3問）" })).toBeVisible();
+  await expect(page.getByText("予定を立てる", { exact: true })).toBeVisible();
   await page.getByLabel("この1か月で、いちばん心に残ったことは？").fill("はじめてMOSAICを使った。");
   await page.getByRole("button", { name: "振り返りを記録する" }).click();
   await expect(page).toHaveURL(/ok=saved/);
+  // What was written stays on the month's page, and more can be added.
+  await expect(page.getByRole("heading", { name: "✍️ この月の振り返り" })).toBeVisible();
+  await expect(page.locator("#lookback").getByText("はじめてMOSAICを使った。")).toBeVisible();
+  await expect(page.getByText("＋ もう一度書く・書き足す")).toBeVisible();
   await page.goto("/memories");
   await expect(page.getByText(/はじめてMOSAICを使った。/).first()).toBeVisible();
   await ctx.close();
