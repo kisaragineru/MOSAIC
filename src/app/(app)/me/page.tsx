@@ -121,6 +121,7 @@ export default async function MePage({ searchParams }: { searchParams: Promise<R
           {([
             ["/settings", "⚙️", t.nav.settings],
             ["/share", "🔗", t.nav.share],
+            ["/gifts", "🎁", t.giftBox.meLink],
             ["/discover/history", "🗂", t.nav.history],
           ] as const).map(([href, icon, label]) => (
             <li key={href}>

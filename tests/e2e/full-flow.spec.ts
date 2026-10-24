@@ -141,8 +141,9 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
 
   // People & gifts
   await pa.goto("/people");
-  await pa.getByLabel("Name or nickname").fill("Linh");
-  await pa.getByRole("button", { name: "Add" }).click();
+  await pa.getByRole("button", { name: "Add someone" }).click();
+  await pa.getByRole("dialog").getByLabel("Name or nickname").fill("Linh");
+  await pa.getByRole("dialog").getByRole("button", { name: "Add someone" }).click();
   await expect(pa.getByRole("heading", { name: "Linh" })).toBeVisible();
   const prefCard = pa.locator("section", { has: pa.getByRole("heading", { name: "Likes, dislikes & wishes" }) });
   await prefCard.locator('input[name="label"]').fill("Film camera");

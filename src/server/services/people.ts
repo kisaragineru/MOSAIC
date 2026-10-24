@@ -493,3 +493,67 @@ export async function listCategories() {
   // Catalog data (no personal data); read without identity.
   return withAnon((tx) => tx.select().from(preferenceCategories).orderBy(asc(preferenceCategories.sortOrder)));
 }
+
+export interface PersonSummary {
+  id: string;
+  nickname: string;
+  relationship: string;
+  connected: boolean;
+  /** The next date to remember (within a year), if any. */
+  nextDate: { label: string; date: string; daysUntil: number; kind: string } | null;
+  /** The latest thing done together, or else the latest note. */
+  latest: { text: string; on: string | null } | null;
+  /** Up to three things they love or like (latest feeling). */
+  loves: string[];
+  counts: { notes: number; events: number; gifts: number };
+}
+
+/** One panel's worth per person, for the People overview. Private: the user's own entries only. */
+export async function peopleSummaries(userId: string): Promise<PersonSummary[]> {
+  const list = await listPeople(userId);
+  if (!list.length) return [];
+  const dates = await upcomingDates(userId, 366);
+  const live = new Set((await withUser(userId, (tx) => tx.execute<{ id: string }>(sql`
+    select p.id from people p join comparison_sessions s on s.id = p.connection_session_id
+    where p.user_id = ${userId} and s.status = 'active'`))).rows.map((r) => r.id));
+  return withUser(userId, async (tx) => {
+    const ids = list.map((p) => p.id);
+    const events = await tx.select().from(relationshipEvents).where(and(eq(relationshipEvents.userId, userId), inArray(relationshipEvents.personId, ids))).orderBy(desc(relationshipEvents.occurredOn), desc(relationshipEvents.createdAt));
+    const entries = await tx.select().from(relationshipEntries).where(and(eq(relationshipEntries.userId, userId), inArray(relationshipEntries.personId, ids))).orderBy(desc(relationshipEntries.createdAt));
+    const gifts = await tx.select({ personId: giftRecords.personId }).from(giftRecords).where(and(eq(giftRecords.userId, userId), inArray(giftRecords.personId, ids)));
+    const prefs = await tx
+      .select({ personId: preferenceItems.personId, label: preferenceItems.label, sentiment: preferenceValues.sentiment, at: preferenceValues.recordedAt })
+      .from(preferenceItems)
+      .innerJoin(preferenceValues, eq(preferenceValues.itemId, preferenceItems.id))
+      .where(and(eq(preferenceItems.userId, userId), inArray(preferenceItems.personId, ids)));
+    return list.map((p) => {
+      const d = dates.find((x) => x.personId === p.id);
+      const ev = events.find((e) => e.personId === p.id);
+      const en = entries.find((e) => e.personId === p.id);
+      const latestFeel = new Map<string, { s: string; at: Date }>();
+      for (const x of prefs.filter((y) => y.personId === p.id)) {
+        const cur = latestFeel.get(x.label);
+        if (!cur || cur.at < x.at) latestFeel.set(x.label, { s: x.sentiment, at: x.at });
+      }
+      const loves = [...latestFeel.entries()]
+        .filter(([, v]) => v.s === "love" || v.s === "like")
+        .sort((a, b) => (a[1].s === b[1].s ? b[1].at.getTime() - a[1].at.getTime() : a[1].s === "love" ? -1 : 1))
+        .slice(0, 3)
+        .map(([k]) => k);
+      return {
+        id: p.id,
+        nickname: p.nickname,
+        relationship: p.relationship,
+        connected: live.has(p.id),
+        nextDate: d ? { label: d.label, date: d.date, daysUntil: d.daysUntil, kind: d.kind } : null,
+        latest: ev ? { text: ev.title, on: ev.occurredOn } : en ? { text: en.body, on: en.occurredOn } : null,
+        loves,
+        counts: {
+          notes: entries.filter((e) => e.personId === p.id).length,
+          events: events.filter((e) => e.personId === p.id).length,
+          gifts: gifts.filter((g) => g.personId === p.id).length,
+        },
+      };
+    });
+  });
+}

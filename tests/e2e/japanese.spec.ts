@@ -45,8 +45,9 @@ test("Japanese UI end to end: auto-detected, registration, question, Tử Vi, gi
   await expect(page.getByText("これからへの問い")).toBeVisible();
 
   await page.goto("/people");
-  await page.getByLabel("名前・呼び名").fill("ユキ");
-  await page.getByRole("button", { name: "追加" }).click();
+  await page.getByRole("button", { name: "人を追加" }).click();
+  await page.getByRole("dialog").getByLabel("名前・呼び名").fill("ユキ");
+  await page.getByRole("dialog").getByRole("button", { name: "人を追加" }).click();
   await expect(page.getByRole("heading", { name: "ユキ" })).toBeVisible();
   // Long notes are read clamped, and edited in an auto-growing field behind 編集.
   await page.getByText("✎ 編集").click();

@@ -43,10 +43,10 @@ test("profile: own words and an intro MOSAIC drafts, checked and saved before an
   await expect(phone.getByText("MOSAICから見たミナさん")).toBeVisible();
   await expect(phone.getByText("先に計画を立てるタイプです。秋と金木犀が好き。")).toBeVisible();
 
-  // Insights holds the things to read; the gift box sits with people.
+  // Insights holds the things to read; the gift box sits with your profile and settings.
   await page.goto("/insights");
   await expect(page.getByRole("navigation", { name: "あなたを読む" }).getByRole("link")).toHaveCount(3);
-  await page.goto("/people");
+  await page.goto("/me");
   await expect(page.getByRole("link", { name: /ギフトボックス/ })).toBeVisible();
   await ctx.close();
 });

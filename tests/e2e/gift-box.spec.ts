@@ -18,7 +18,7 @@ async function user(browser: Browser, name: string) {
 test("a gift box: parents write, letters stay private, the child receives it as a book", async ({ browser }) => {
   const today = new Date().toISOString().slice(0, 10);
   const mom = await user(browser, "マイ");
-  await mom.goto("/people");
+  await mom.goto("/me");
   await mom.getByRole("link", { name: /ギフトボックス/ }).click();
   await mom.waitForURL("/gifts");
   await mom.getByLabel("子どもの名前（呼び名）").fill("ハナ");
