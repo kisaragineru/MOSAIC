@@ -12,6 +12,7 @@ import {
   deletePerson,
   deletePersonRecord,
   deletePreferenceItem,
+  mergePeople,
   updatePerson,
   updatePersonRecord,
   updatePreference,
@@ -168,4 +169,12 @@ export async function updateRecordAction(form: FormData) {
   const r = await attempt("people.record.update", () => updatePersonRecord(uid, kind, str(form, "id"), input));
   if (kind === "date") revalidatePath("/home");
   await done(`/people/${personId}`, r);
+}
+
+export async function mergePeopleAction(form: FormData) {
+  const uid = await requireUser();
+  const target = str(form, "targetId");
+  const r = await attempt("people.merge", () => mergePeople(uid, target, str(form, "sourceId")));
+  revalidatePath("/people");
+  redirect(`/people/${encodeURIComponent(target)}?${r.ok ? "ok=saved" : `e=${r.error}`}`);
 }

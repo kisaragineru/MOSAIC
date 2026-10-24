@@ -21,9 +21,10 @@ import { todayIn } from "@/lib/validation/common";
 import { getAccount } from "@/server/services/account";
 import { requireUser } from "@/server/auth/session";
 import { suggestGifts } from "@/server/services/gifts";
-import { getPerson, listCategories, nextOccurrence } from "@/server/services/people";
+import { getPerson, listCategories, listPeople, nextOccurrence } from "@/server/services/people";
 import { connectionForPerson, listComparisons } from "@/server/services/sharing";
 import { visibleCount } from "@/server/services/memory-share";
+import { mergePeopleAction } from "@/app/actions/people";
 
 const RELS = ["partner", "family", "friend", "colleague", "other"] as const;
 
@@ -75,6 +76,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
   const connection = await connectionForPerson(uid, person.connectionSessionId);
   const circle = (["partner", "family", "friend", "colleague"] as const).find((c) => c === person.relationship) ?? null;
   const seen = connection && connection.status === "active" ? await visibleCount(uid, circle) : null;
+  const others = (await listPeople(uid)).filter((p) => p.id !== person.id && !(p.connectionSessionId && person.connectionSessionId));
   const linkable = connection ? [] : (await listComparisons(uid)).filter((c) => c.status !== "revoked" && !c.personId);
   const today = todayIn((await getAccount(uid)).profile.timeZone);
   const fmt = (y: number, m: number, d: number, withYear = true) =>
@@ -385,6 +387,19 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
         </ul>
       </Card>
 
+      {others.length > 0 && (
+        <details className="rounded-3xl border border-stone-200/80 bg-white/70 p-4 text-sm">
+          <summary className="cursor-pointer font-semibold text-stone-700">🔀 {t.people.mergeTitle}</summary>
+          <p className="mt-2 text-xs leading-5 text-stone-600">{t.people.mergeHelp}</p>
+          <form action={mergePeopleAction} className="mt-2 flex flex-wrap gap-2">
+            <input type="hidden" name="targetId" value={person.id} />
+            <Select name="sourceId" aria-label={t.people.mergeTitle} className="flex-1">
+              {others.map((p) => <option key={p.id} value={p.id}>{p.nickname}</option>)}
+            </Select>
+            <ConfirmButton message={t.people.mergeConfirm}>{t.people.mergeButton}</ConfirmButton>
+          </form>
+        </details>
+      )}
       <Link href={`/insights?kind=relationship&personId=${person.id}`} className="block text-sm text-teal-700 underline">{t.insights.reflections} →</Link>
       <form action={deletePersonAction}>
         <input type="hidden" name="personId" value={person.id} />

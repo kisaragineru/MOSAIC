@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createPersonAction } from "@/app/actions/people";
-import { addPersonFromConnectionAction } from "@/app/actions/sharing";
+import { ConnectionPersonForm } from "@/components/connection-person-form";
 import { Flash } from "@/components/flash";
 import { Button, Card, Empty, Field, Input, Page, Pill, Select } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
@@ -27,15 +27,9 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
           <p className="mb-2 text-xs text-stone-600">{t.people.newConnectionsHelp}</p>
           <ul className="space-y-2">
             {unlinked.map((c) => (
-              <li key={c.id} className="flex items-center justify-between gap-2 rounded-2xl bg-white p-3">
+              <li key={c.id} className="space-y-2 rounded-2xl bg-white p-3">
                 <Link href={`/compare/${c.id}`} className="font-medium hover:text-teal-700">{c.otherName}</Link>
-                <form action={addPersonFromConnectionAction} className="flex items-center gap-1.5">
-                  <input type="hidden" name="sessionId" value={c.id} />
-                  <Select name="relationship" defaultValue="friend" aria-label={t.people.relationship} className="!w-auto min-h-8 py-1 text-xs">
-                    {RELS.map((r) => <option key={r} value={r}>{t.people.relationships[r]}</option>)}
-                  </Select>
-                  <Button type="submit" className="min-h-8 px-3 py-1 text-xs">+ {t.people.addFromConnection}</Button>
-                </form>
+                <ConnectionPersonForm t={t} sessionId={c.id} otherName={c.otherName} people={people.filter((p) => !p.connectionSessionId || !live.has(p.id))} />
               </li>
             ))}
           </ul>

@@ -19,7 +19,11 @@ import { setManualShare } from "./manual-share";
 import { createMemory } from "./memories";
 import { setMemoryAudience } from "./memory-share";
 import { addPreference, updatePerson } from "./people";
-import { ANSWERS, BIO, BIRTH, FAVOURITES, INTRO, LEAN, MORE, RECORDS } from "./dev-persona";
+import { ANSWERS, BIO, BIRTH, FAVOURITES, INTRO, LEAN, MORE, MOTHER_COMMENT, MOTHER_GUESS, MOTHER_SEES_OTHERWISE, RECORDS } from "./dev-persona";
+import { answerPeer, myPeerRequests } from "./peers";
+import { listTendencies } from "./tendencies";
+import { AXES } from "@/content/axes";
+import type { TendencyKey } from "@/content/questions";
 import { saveIntro } from "./intro";
 import { listMemories } from "./memories";
 import { saveBirthProfile } from "./tuvi";
@@ -196,6 +200,31 @@ export async function reconnectCompanion(ownerId: string, companionId: string) {
   if (ownerPerson) await linkPersonToConnection(ownerId, ownerPerson, sid);
   else await addPersonFromConnection(ownerId, sid, "family");
   await fill(cid);
+}
+
+/** Requests from the owner ("how do you see me?") she hasn't answered yet. */
+export async function companionAsks(companionId: string) {
+  return (await myPeerRequests(companionId)).filter((r) => r.role === "responder" && r.status === "pending");
+}
+
+/**
+ * She answers the owner's "how do you see me?" as a mother would: mostly what the owner's own
+ * answers say, a couple of things the other way round (so there is something to discover), and
+ * a few words of her own. Named, not anonymous.
+ */
+export async function companionAnswersAsks(ownerId: string, companionId: string) {
+  const cid = await own(ownerId, companionId);
+  const own_ = new Map((await listTendencies(ownerId)).filter((c) => c.userStatus !== "rejected" && c.direction).map((c) => [c.claimKey, c.direction as 1 | -1]));
+  const answers: Partial<Record<TendencyKey, 1 | 0 | -1>> = {};
+  AXES.forEach((k, i) => {
+    const mine = own_.get(k);
+    // Two axes seen differently from the inside: a blind spot to talk about.
+    if (mine) answers[k] = MOTHER_SEES_OTHERWISE.includes(k) ? (-mine as 1 | -1) : mine;
+    else answers[k] = i % 3 === 0 ? 0 : MOTHER_GUESS[k] ?? 0;
+  });
+  for (const r of await companionAsks(cid)) {
+    await answerPeer(cid, r.id, { anonymous: false, answers, comment: MOTHER_COMMENT });
+  }
 }
 
 /** The companion writes one more record, shared with everyone it's connected with. */

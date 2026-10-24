@@ -142,3 +142,19 @@ export const MORE = [
   "畑のブロッコリーに小さなつぼみ。毎朝見に行くのが楽しみ。",
   "図書館に新しい絵本がたくさん入った。来週はどれを読もうかな。",
 ];
+
+/** "How do you see me?" — the axes where a mother sees her child differently than they do. */
+export const MOTHER_SEES_OTHERWISE: TendencyKey[] = ["calm", "giving"];
+/** Her impression where the child hasn't said anything about themself yet. */
+export const MOTHER_GUESS: Partial<Record<TendencyKey, 1 | -1>> = {
+  planning: 1,
+  social_energy: -1,
+  expressiveness: -1,
+  care_style: -1,
+  giving: 1,
+  ambition: 1,
+  detail: 1,
+  risk: 1,
+};
+export const MOTHER_COMMENT =
+  "小さいころから、決めたことは最後までやりとげる子。弱音をあまり言わないぶん、ひとりでがんばりすぎていないか心配になります。たまには頼ってね。";

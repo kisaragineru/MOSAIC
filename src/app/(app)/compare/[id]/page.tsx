@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { addPersonFromConnectionAction, consentAction, endComparisonAction, manualShareAction, recomputeAction } from "@/app/actions/sharing";
+import { consentAction, endComparisonAction, manualShareAction, recomputeAction } from "@/app/actions/sharing";
 import { MANUAL_PRESETS, SHARED_TEXT } from "@/content/manual-text";
 import { myManualShare, sharedManualFor } from "@/server/services/manual-share";
 import { askPeerAction } from "@/app/actions/peers";
@@ -10,6 +10,7 @@ import { KIND_ICON } from "@/lib/timeline";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
 import { IntroPair } from "@/components/intro-pair";
+import { ConnectionPersonForm } from "@/components/connection-person-form";
 import { Button, Card, Checkbox, Notice, Page, Pill } from "@/components/ui";
 import { LOCALIZED_BANK } from "@/content/questions-i18n";
 import { answerLabel } from "@/lib/discovery/format";
@@ -352,10 +353,9 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
         <Link href={`/people/${personId}`} className="block text-sm font-medium text-teal-700 underline">♡ {t.compare.personLink} →</Link>
       ) : (
         v.status !== "revoked" && (
-          <form action={addPersonFromConnectionAction}>
-            <input type="hidden" name="sessionId" value={v.id} />
-            <Button type="submit" variant="secondary">♡ {t.people.addFromConnection}</Button>
-          </form>
+          <Card>
+            <ConnectionPersonForm t={t} sessionId={v.id} otherName={v.otherName} people={(await listPeople(uid)).filter((p) => !p.connectionSessionId)} />
+          </Card>
         )
       )}
       {v.status !== "revoked" && (

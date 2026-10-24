@@ -141,3 +141,22 @@ test("share by relationship, and a test companion from settings (development)", 
   await hana.waitForURL(/ok=deleted/);
   await expect(hana.getByText("ミナ（テスト）")).toHaveCount(0);
 });
+
+test("someone written about before connecting: the connection attaches to them", async ({ browser }) => {
+  const hana = await user(browser, "ハナ");
+  const sora = await user(browser, "ソラ");
+  await hana.goto("/people");
+  await hana.getByLabel("名前・呼び名").fill("ソラ");
+  await hana.getByRole("button", { name: "追加" }).click();
+  await hana.waitForURL(/\/people\/[0-9a-f-]+/);
+  const before = new URL(hana.url()).pathname;
+  await connect(hana, sora);
+  await hana.goto("/people");
+  // The entry with the same name is suggested.
+  await expect(hana.getByLabel("ソラさんは「大切な人」の誰ですか？")).toHaveValue(before.split("/").pop()!);
+  await hana.getByRole("button", { name: /大切な人に追加/ }).click();
+  await hana.waitForURL(new RegExp(`${before}\\?ok=saved`));
+  await expect(hana.getByText(/ソラさんとQRでつながっています/)).toBeVisible();
+  await hana.goto("/people");
+  await expect(hana.getByRole("link", { name: /ソラ/ })).toHaveCount(1);
+});

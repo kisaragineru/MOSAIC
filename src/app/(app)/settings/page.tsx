@@ -10,8 +10,8 @@ import { DEFAULT_RULESET, ENGINE_VERSION } from "@/lib/tuvi/ruleset";
 import { requireUser } from "@/server/auth/session";
 import { aiConfigured } from "@/server/ai/claude";
 import { getAccount, getNotificationPrefs } from "@/server/services/account";
-import { companionConnected, companionPending, devToolsEnabled, listCompanions } from "@/server/services/dev-companion";
-import { companionWritesAction, createCompanionAction, deleteCompanionAction, enrichCompanionAction, reconnectCompanionAction } from "@/app/actions/dev";
+import { companionAsks, companionConnected, companionPending, devToolsEnabled, listCompanions } from "@/server/services/dev-companion";
+import { companionAnswersAction, companionWritesAction, createCompanionAction, deleteCompanionAction, enrichCompanionAction, reconnectCompanionAction } from "@/app/actions/dev";
 
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
@@ -20,7 +20,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const { t } = await getT();
   const acc = await getAccount(uid);
   const np = await getNotificationPrefs(uid);
-  const companions = await Promise.all((await listCompanions(uid)).map(async (c) => ({ ...c, pending: await companionPending(c.id), connected: await companionConnected(c.id) })));
+  const companions = await Promise.all((await listCompanions(uid)).map(async (c) => ({ ...c, pending: await companionPending(c.id), connected: await companionConnected(c.id), asks: (await companionAsks(c.id)).length })));
   const td = t.settings.dev;
   return (
     <Page title={t.settings.title}>
@@ -99,6 +99,12 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                     <input type="hidden" name="id" value={c.id} />
                     <Button type="submit" variant="secondary" className="min-h-8 px-3 py-1 text-xs">{c.pending > 0 ? `✨ ${td.enrich(c.pending)}` : `✓ ${td.enriched}`}</Button>
                   </form>
+                  {c.asks > 0 && (
+                    <form action={companionAnswersAction}>
+                      <input type="hidden" name="id" value={c.id} />
+                      <Button type="submit" className="min-h-8 px-3 py-1 text-xs">💭 {td.answerAsks(c.asks)}</Button>
+                    </form>
+                  )}
                   <form action={companionWritesAction}>
                     <input type="hidden" name="id" value={c.id} />
                     <Button type="submit" variant="secondary" className="min-h-8 px-3 py-1 text-xs">✎ {td.write}</Button>

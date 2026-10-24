@@ -48,6 +48,18 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   return (
     <Page title={t.home.hello(account.profile.displayName)}>
       <Flash t={t} sp={sp} />
+      <Card title={t.home.quickNote}>
+        <form action={createMemoryAction} className="space-y-2">
+          <input type="hidden" name="back" value="/home" />
+          <input type="hidden" name="stay" value="1" />
+          <input type="hidden" name="kind" value="thought" />
+          <Textarea name="body" required rows={3} placeholder={t.home.quickNotePlaceholder} aria-label={t.home.quickNote} />
+          <div className="flex justify-between">
+            <Link href="/memories/new" className="text-sm text-teal-700 underline">{t.home.writeMore} →</Link>
+            <Button type="submit">{t.common.save}</Button>
+          </div>
+        </form>
+      </Card>
       {askedOfMe.map((r) => (
         <Link key={r.id} href={`/others/${r.id}`} className="flex items-center gap-3 rounded-3xl border border-violet-200 bg-violet-50/80 p-4 text-sm text-violet-950 transition hover:shadow-md">
           <span aria-hidden className="text-xl">💭</span>
@@ -145,18 +157,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </span>
         <span className="mt-3 block text-right text-sm font-semibold text-teal-700">{t.mosaic.open} →</span>
       </Link>
-      <Card title={t.home.quickNote}>
-        <form action={createMemoryAction} className="space-y-2">
-          <input type="hidden" name="back" value="/home" />
-          <input type="hidden" name="stay" value="1" />
-          <input type="hidden" name="kind" value="thought" />
-          <Textarea name="body" required rows={3} placeholder={t.home.quickNotePlaceholder} aria-label={t.home.quickNote} />
-          <div className="flex justify-between">
-            <Link href="/memories/new" className="text-sm text-teal-700 underline">{t.home.writeMore} →</Link>
-            <Button type="submit">{t.common.save}</Button>
-          </div>
-        </form>
-      </Card>
       <Card title={t.home.upcoming}>
         {dates.length === 0 ? (
           <p className="text-sm text-stone-500">{t.home.noUpcoming}</p>

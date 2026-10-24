@@ -205,12 +205,15 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   await expect(pa.getByText(/Answered by only one of you/)).toBeVisible();
   // B has no Tử Vi chart → not compared, no guess
   await expect(pa.getByText(/the other person has not made their chart yet/)).toBeVisible();
-  // Private data never appears
+  // Private data never appears (A's own People list may, on A's own page, to attach the connection)
   const html = await pa.content();
-  for (const secret of ["1990-06-07", "06:30", "Family comes first", "Film camera", "Linh"]) expect(html).not.toContain(secret);
+  for (const secret of ["1990-06-07", "06:30", "Family comes first", "Film camera"]) expect(html).not.toContain(secret);
 
   await pb.goto(compareUrl);
   await expect(pb.getByRole("heading", { name: "The two of you, side by side" })).toBeVisible();
+  // Nothing private of A's reaches B, People entries included.
+  const seen = await pb.content();
+  for (const secret of ["1990-06-07", "06:30", "Family comes first", "Film camera", "Linh"]) expect(seen).not.toContain(secret);
 
   // --- A third user cannot see the comparison ---
   const c = await newUser(browser, "Chi");

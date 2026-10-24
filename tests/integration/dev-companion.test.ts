@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { companionConnected, companionPending, companionWrites, createCompanion, deleteCompanion, enrichCompanion, listCompanions, reconnectCompanion } from "@/server/services/dev-companion";
+import { companionAnswersAsks, companionAsks, companionConnected, companionPending, companionWrites, createCompanion, deleteCompanion, enrichCompanion, listCompanions, reconnectCompanion } from "@/server/services/dev-companion";
 import { getAccount } from "@/server/services/account";
 import { answerQuestion } from "@/server/services/discovery";
+import { askPeer, peerResults } from "@/server/services/peers";
 import { portrait } from "@/server/services/mosaic";
 import { connectionFeed, shareTargets } from "@/server/services/memory-share";
 import { listComparisons, revokeComparison } from "@/server/services/sharing";
@@ -51,6 +52,16 @@ describe("development test companion", () => {
     // Not someone else's companion.
     await expect(companionWrites(other.userId, id)).rejects.toMatchObject({ code: "not_found" });
     await expect(deleteCompanion(other.userId, id)).rejects.toMatchObject({ code: "not_found" });
+    // "How do you see me?": she answers by name, with a few words.
+    await askPeer(u.userId, (await listComparisons(u.userId)).find((c) => c.status === "active")!.id);
+    expect(await companionAsks(id)).toHaveLength(1);
+    await companionAnswersAsks(u.userId, id);
+    expect(await companionAsks(id)).toHaveLength(0);
+    const seen = await peerResults(u.userId);
+    expect(seen.named[0]).toMatchObject({ name: "ミナ（テスト）" });
+    expect(seen.named[0]!.comment).toMatch(/たまには頼ってね/);
+    expect(Object.keys(seen.named[0]!.answers).length).toBeGreaterThan(5);
+
     // Ended by the owner, then connected again: same person entry, records visible again.
     const before = (await listComparisons(u.userId)).find((c) => c.status === "active")!;
     await revokeComparison(u.userId, before.id);

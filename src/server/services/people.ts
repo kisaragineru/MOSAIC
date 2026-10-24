@@ -17,6 +17,7 @@ import {
 } from "../db/schema";
 import { withAnon, withUser, type Tx } from "../db/tx";
 import { AppError, invalid, notFound } from "../errors";
+import { audit } from "./audit";
 
 const RELATIONSHIPS = ["partner", "family", "friend", "colleague", "other"] as const;
 
@@ -59,6 +60,50 @@ export async function deletePerson(userId: string, personId: string) {
   await withUser(userId, async (tx) => {
     await ownPerson(tx, userId, personId);
     await tx.delete(people).where(eq(people.id, personId));
+  });
+}
+
+/**
+ * Merge two entries for the same person (e.g. one written before you connected, one added from
+ * the connection): everything recorded on `sourceId` — notes, events, gifts, dates, favourites,
+ * the people tagged in records — moves to `targetId`, which keeps (or takes over) the
+ * connection; the notes are joined, and the source entry is deleted. One transaction.
+ */
+export async function mergePeople(userId: string, targetId: string, sourceId: string) {
+  const tid = uuid.parse(targetId);
+  const sid = uuid.parse(sourceId);
+  if (tid === sid) throw invalid();
+  await withUser(userId, async (tx) => {
+    const target = await ownPerson(tx, userId, tid);
+    const source = await ownPerson(tx, userId, sid);
+    if (target.connectionSessionId && source.connectionSessionId) throw new AppError("both_connected", 409);
+    for (const t of ["relationship_entries", "relationship_events", "gift_records", "important_dates"]) {
+      await tx.execute(sql`update ${sql.identifier(t)} set person_id = ${tid} where user_id = ${userId} and person_id = ${sid}`);
+    }
+    await tx.execute(sql`
+      insert into memory_people (entry_id, person_id, user_id)
+      select entry_id, ${tid}, user_id from memory_people where user_id = ${userId} and person_id = ${sid}
+      on conflict do nothing`);
+    await tx.execute(sql`delete from memory_people where user_id = ${userId} and person_id = ${sid}`);
+    // Favourites: the same item on both keeps one item with both histories.
+    const items = await tx.select().from(preferenceItems).where(and(eq(preferenceItems.userId, userId), eq(preferenceItems.personId, sid)));
+    for (const it of items) {
+      const [same] = await tx
+        .select({ id: preferenceItems.id })
+        .from(preferenceItems)
+        .where(and(eq(preferenceItems.userId, userId), eq(preferenceItems.personId, tid), eq(preferenceItems.categoryId, it.categoryId), sql`lower(${preferenceItems.label}) = lower(${it.label})`));
+      if (same) {
+        await tx.update(preferenceValues).set({ itemId: same.id }).where(and(eq(preferenceValues.userId, userId), eq(preferenceValues.itemId, it.id)));
+        await tx.delete(preferenceItems).where(eq(preferenceItems.id, it.id));
+      } else {
+        await tx.update(preferenceItems).set({ personId: tid }).where(eq(preferenceItems.id, it.id));
+      }
+    }
+    const note = [target.note, source.note].filter((x) => x && x.trim()).join("\n\n") || null;
+    const link = target.connectionSessionId ?? source.connectionSessionId;
+    await tx.delete(people).where(eq(people.id, sid));
+    await tx.update(people).set({ note, connectionSessionId: link, updatedAt: new Date() }).where(eq(people.id, tid));
+    await audit(tx, userId, "person.merged", "person", tid);
   });
 }
 
