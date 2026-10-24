@@ -41,6 +41,10 @@ export async function buildExport(userId: string) {
     const peerRequests = (await tx.execute(sql`select * from peer_requests_mine() order by created_at`)).rows;
     const peerResults = (await tx.execute(sql`select * from peer_results()`)).rows;
     const manualShares = await tx.select().from(s.manualShares).where(eq(s.manualShares.ownerId, userId));
+    // Gift boxes I write in or received, each as I may see it (see gift_box_read).
+    const giftIds = (await tx.execute<{ id: string }>(sql`select id from gift_boxes_mine()`)).rows;
+    const giftBoxes = [];
+    for (const g of giftIds) giftBoxes.push((await tx.execute<{ b: unknown }>(sql`select gift_box_read(${g.id}) as b`)).rows[0]!.b);
     const claims = await tx.select().from(s.tendencyClaims).where(eq(s.tendencyClaims.userId, userId));
     const evidence = await tx.select().from(s.tendencyEvidence).where(eq(s.tendencyEvidence.userId, userId));
 
@@ -106,6 +110,7 @@ export async function buildExport(userId: string) {
       peerRequests,
       peerResults,
       manualShares,
+      giftBoxes,
       tendencies: claims.map((c) => ({ ...c, evidence: evidence.filter((e) => e.claimId === c.id) })),
       tuvi: {
         birthProfile: birth ?? null,

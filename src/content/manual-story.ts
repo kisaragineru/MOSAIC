@@ -98,6 +98,11 @@ export const STORY = {
     en: `Who ${name} is now — the story knows only the outline so far.`,
     vi: `${name} bây giờ là người thế nào — câu chuyện mới chỉ biết những đường nét.`,
   }),
+  giftLine: (date: string | null, from: string, text: string): I18nText => ({
+    ja: `${date ? `${date}。` : ""}${from}は、こう書き残している。「${text}」`,
+    en: `${date ? `${date}. ` : ""}${from} wrote it down: “${text}”`,
+    vi: `${date ? `${date}. ` : ""}${from} đã ghi lại: “${text}”`,
+  }),
   letter: (date: string): I18nText => ({
     ja: `そして、${date}に開く手紙が一通、静かにその日を待っている。`,
     en: `And a letter waits quietly to be opened on ${date}.`,

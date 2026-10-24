@@ -27,6 +27,7 @@ import { listPreferences } from "./people";
 import { johari } from "./peers";
 import { listTendencies, type ClaimState } from "./tendencies";
 import { getTuvi } from "./tuvi";
+import { receivedGifts } from "./gift-boxes";
 
 // ---------------------------------------------------------------------------
 // Shapes
@@ -98,6 +99,8 @@ export interface ManualInput {
   answers: ManualAnswer[];
   prefs: { label: string; sentiment: string }[];
   memories: { kind: string; title: string | null; body: string | null; date: string; sealedUntil: string | null }[];
+  /** Growth records from gift boxes this user received (parents' and grandparents' words). */
+  gifts?: { from: string; date: string | null; title: string | null; body: string }[];
   tuvi: {
     summary: string | null;
     keywords: string[];
@@ -385,7 +388,15 @@ function story(
   const prologue = tv?.yearName && tv.napAm ? [L(STORY.born(name, tv.yearName, tv.napAm)), ...(tv.persona ? [L(STORY.star(tv.persona))] : [])] : [L(STORY.bornUnknown(name))];
   out.push({ t: "episode", title: L(STORY.episodes.prologue), paragraphs: prologue });
 
-  const childhood = lines("childhood");
+  const fromFamily = (d.gifts ?? [])
+    .slice()
+    .sort((a, b) => (a.date ?? "9999").localeCompare(b.date ?? "9999"))
+    .slice(0, 6)
+    .map((x) => {
+      const date = x.date ? (locale === "ja" ? `${Number(x.date.slice(0, 4))}年${Number(x.date.slice(5, 7))}月` : x.date.slice(0, 7)) : null;
+      return L(STORY.giftLine(date, x.from, clip(x.title ? `${x.title} — ${x.body}` : x.body, 160)));
+    });
+  const childhood = [...fromFamily, ...lines("childhood")];
   if (childhood.length) out.push({ t: "episode", title: L(STORY.episodes.childhood), paragraphs: childhood });
   const path = [...lines("path"), ...records(["achievement", "decision", "memory", "regret", "value"])];
   if (path.length) out.push({ t: "episode", title: L(STORY.episodes.path), paragraphs: path });
@@ -432,6 +443,7 @@ export async function gatherManual(userId: string, locale: Locale): Promise<Manu
   const prefs = await listPreferences(userId, null);
   const memories = await listMemories(userId, { limit: 200 });
   const tv = await getTuvi(userId, locale);
+  const received = await receivedGifts(userId);
 
   const answers: ManualAnswer[] = [];
   for (const h of history) {
@@ -475,6 +487,14 @@ export async function gatherManual(userId: string, locale: Locale): Promise<Manu
       ],
     },
     answers,
+    gifts: received.flatMap((b) =>
+      b.entries
+        .filter((e) => e.kind === "growth")
+        .map((e) => {
+          const w = b.writers.find((x) => x.user_id === e.author_id);
+          return { from: w?.label ?? w?.name ?? "", date: e.occurred_on, title: e.title, body: e.body };
+        }),
+    ),
     prefs: prefs.map((p) => ({ label: p.label, sentiment: p.current.sentiment })),
     memories: memories.map((m) => ({ kind: m.kind, title: m.title, body: m.body, date: m.occurredOn ?? day(m.createdAt), sealedUntil: m.sealed ? m.revealOn : null })),
     tuvi: tv.chart

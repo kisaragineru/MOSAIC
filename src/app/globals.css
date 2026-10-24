@@ -113,3 +113,16 @@ body {
   50% { transform: translateX(0%) scaleX(0.6); }
   100% { transform: translateX(100%) scaleX(0.3); }
 }
+
+/* ---- Gift book: A5, printed or saved as PDF from the browser ---- */
+@page bookSheet { size: A5 portrait; margin: 0; }
+@page bookFlow { size: A5 portrait; margin: 16mm 15mm 18mm; }
+.book, .book * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+@media print {
+  html, body { background: #fff !important; }
+  /* The book starts on an A5 sheet, so the first page is A5 too; each sheet or chapter starts a page. */
+  .book { page: bookSheet; }
+  .book-sheet { page: bookSheet; break-before: page; width: 148mm; max-width: none !important; height: 209.5mm; overflow: hidden; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
+  .book-flow { page: bookFlow; break-before: page; max-width: none !important; box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; }
+  .book-entry { break-inside: avoid; }
+}

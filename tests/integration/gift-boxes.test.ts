@@ -3,6 +3,8 @@ import {
   codeHash, createGiftBox, deleteGiftEntry, deliverAsBook, inviteGiftWriter, issueReceiveCode, joinGiftBox, myGiftBoxes,
   newCode, readGiftBox, receiveGift, removeGiftWriter, saveGiftEntry, saveGiftView, updateGiftBox,
 } from "@/server/services/gift-boxes";
+import { buildExport } from "@/server/services/export";
+import { buildManual } from "@/server/services/manual";
 import { makeUser } from "../helpers/factory";
 
 const FUTURE = "2040-04-01";
@@ -146,4 +148,21 @@ describe("gift boxes", () => {
     await expect(saveGiftView(u.userId, box, { answers: { nope: 1 } })).rejects.toThrow();
     await expect(saveGiftEntry(u.userId, box, { kind: "diary", body: "x" })).rejects.toThrow();
   });
+
+  it("becomes part of the child's own manual story and export", async () => {
+    const { mom, box } = await family(PAST);
+    await saveGiftEntry(mom.userId, box, { kind: "growth", occurredOn: "2019-06-01", title: "初めて歩いた", body: "リビングで3歩。" });
+    await saveGiftEntry(mom.userId, box, { kind: "letter", body: "ないしょの手紙" });
+    const child = await makeUser("Hana");
+    await receiveGift(child.userId, await issueReceiveCode(mom.userId, box));
+    const m = await buildManual(child.userId, "ja");
+    const novel = JSON.stringify(m.sections.at(-1));
+    expect(novel).toContain("2019年6月。ママは、こう書き残している。「初めて歩いた — リビングで3歩。」");
+    expect(novel).toContain("第1話　夢を見ていた頃");
+    expect(novel).not.toContain("ないしょの手紙");
+    const doc = JSON.parse((await buildExport(child.userId)).json);
+    expect(doc.giftBoxes).toHaveLength(1);
+    expect(JSON.stringify(doc.giftBoxes)).toContain("ないしょの手紙");
+  });
 });
+

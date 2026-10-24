@@ -51,6 +51,14 @@ keys, anonymous access, role privilege escalation, and identity leakage across p
   the owner's name and bio, the counts of non-rejected tendencies on the preset's axes (never
   notes or evidence) and answers to "likes" questions the owner marked as shown. Records, written
   answers, private answers, others' comments and Tử Vi are never part of it.
+- Gift boxes (migration 0011): parents and grandparents write for a child; the app role has no
+  grant on the gift tables and every access goes through SECURITY DEFINER functions. Growth
+  records are shared among the box's active writers; letters and each writer's view of the child
+  are readable only by their author until the child receives the box. Invites and receive codes
+  are one-time, random (≈60 bits), stored only as hashes, time-limited (14 / 30 days) and
+  rate-limited. A box can be handed over only from its date, and closes for good when handed over
+  (to the child's own account, or as a book printed by the owner); writers keep read-only copies
+  of their own part. A removed writer loses access; the owner chooses whether their entries stay.
 - Linking a connection to an entry in "people" (`people.connection_session_id`) is stored on the
   owner's row only; the other participant never sees it or any notes about them.
 

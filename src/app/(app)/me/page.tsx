@@ -30,6 +30,13 @@ export default async function MePage({ searchParams }: { searchParams: Promise<R
         </span>
         <span aria-hidden>→</span>
       </Link>
+      <Link href="/gifts" className="flex items-center justify-between rounded-3xl bg-linear-to-br from-rose-50 to-amber-50 px-5 py-4 shadow-sm transition hover:shadow-md">
+        <span>
+          <span className="block font-semibold text-stone-900">🎁 {t.giftBox.meLink}</span>
+          <span className="block text-xs text-stone-600">{t.giftBox.meSub}</span>
+        </span>
+        <span aria-hidden>→</span>
+      </Link>
       <Link href="/me/others" className="flex items-center justify-between rounded-3xl bg-linear-to-br from-violet-50 to-rose-50 px-5 py-4 font-semibold text-violet-900 shadow-sm transition hover:shadow-md">
         <span>💭 {t.peers.meLink}</span><span aria-hidden>→</span>
       </Link>
