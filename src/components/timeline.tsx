@@ -16,12 +16,12 @@ export function Timeline({ t, locale, tz, days, compact = false }: { t: Dict; lo
       {days.map((d) => {
         const rel = relativeDay(d.day, tz);
         return (
-          <li key={d.day}>
+          <li key={d.day} className="animate-[fadeUp_.4s_ease-out_both]">
             <h3 className="mb-2 flex items-baseline gap-2 text-sm font-semibold text-stone-700">
               <time dateTime={d.day}>{dayLabel(d.day, locale)}</time>
-              {rel && <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[11px] font-semibold text-teal-800">{tl[rel]}</span>}
+              {rel && <span className={`rounded-full bg-teal-50 px-2 py-0.5 text-[11px] font-semibold text-teal-800 ${rel === "today" ? "animate-[softPulse_2.4s_ease-in-out_3]" : ""}`}>{tl[rel]}</span>}
             </h3>
-            <ol className="ml-2 space-y-3 border-l-2 border-stone-200 pl-5">
+            <ol className="stagger ml-2 space-y-3 border-l-2 border-stone-200 pl-5">
               {d.items.map((it) => (
                 <li key={`${it.entry.mine ? "m" : "f"}-${it.entry.id}`} className="relative">
                   <span aria-hidden className={`absolute -left-[1.85rem] top-3 flex h-5 w-5 items-center justify-center rounded-full text-[11px] ring-4 ring-white ${it.entry.mine ? "bg-teal-100" : "bg-rose-100"}`}>

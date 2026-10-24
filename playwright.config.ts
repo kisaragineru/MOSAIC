@@ -14,6 +14,8 @@ export default defineConfig({
   reporter: [["list"]],
   globalSetup: "./tests/e2e/global-setup.ts",
   use: {
+    // The suite checks behaviour, not motion: with reduced motion the app drops its animations.
+    reducedMotion: "reduce",
     baseURL: `http://localhost:${PORT}`,
     trace: "retain-on-failure",
     launchOptions: executablePath ? { executablePath } : {},

@@ -5,6 +5,7 @@ import { LikesFollowUp } from "@/components/likes-follow-up";
 import { Flash } from "@/components/flash";
 import { QuestionForm } from "@/components/question-form";
 import { Card, LinkButton, Page, ProgressBar } from "@/components/ui";
+import { Confetti } from "@/components/confetti";
 import { AXES, AXIS_CHAPTER, AXIS_LABEL, CHAPTER_INFO, CHAPTERS, type Chapter } from "@/content/axes";
 import { TENDENCY_TEXT, type TendencyKey } from "@/content/questions";
 import { portrait } from "@/server/services/mosaic";
@@ -89,11 +90,12 @@ export default async function ChapterPage({ params, searchParams }: { params: Pr
       )}
       {pieceDone && focus && ap && (
         <section aria-live="polite" className="relative overflow-hidden rounded-3xl bg-linear-to-br from-amber-100 via-rose-50 to-teal-100 p-6 text-center shadow-md ring-1 ring-white">
-          <p aria-hidden className="animate-[zoomIn_.5s_ease-out] text-5xl motion-reduce:animate-none">🎉</p>
+          <Confetti />
+          <p aria-hidden className="animate-[pop_.6s_ease-out] text-5xl motion-reduce:animate-none">🎉</p>
           <h2 className="mt-2 text-xl font-bold text-stone-900">{d.pieceDoneTitle(AXIS_LABEL[focus].name[locale])}</h2>
           <p className="mt-1 text-sm text-stone-700">{d.pieceDoneSub(ap.total)}</p>
           {doneTile && (doneTile.level === "emerging" || doneTile.level === "consistent") && doneTile.direction ? (
-            <div className="mx-auto mt-4 max-w-sm rounded-2xl bg-white/90 p-4 text-left shadow-sm">
+            <div className="shine mx-auto mt-4 max-w-sm animate-[zoomIn_.5s_.25s_ease-out_both] rounded-2xl bg-white/90 p-4 text-left shadow-sm">
               <p className="text-xs font-semibold text-teal-800">🧩 {d.pieceResult}</p>
               <p className="mt-1 text-lg font-bold text-stone-900">{(doneTile.direction === 1 ? AXIS_LABEL[focus].pos : AXIS_LABEL[focus].neg)[locale]}</p>
               <p className="mt-1 text-sm leading-6 text-stone-700">{TENDENCY_TEXT[focus][doneTile.direction === -1 ? "neg" : "pos"][locale]}</p>

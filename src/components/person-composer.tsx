@@ -18,7 +18,7 @@ const RELS = ["family", "partner", "friend", "colleague", "other"];
 const chip =
   "cursor-pointer select-none rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm text-stone-700 transition has-[:checked]:border-teal-600 has-[:checked]:bg-teal-600 has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-400";
 const fab =
-  "fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-[max(1rem,calc(50%-20rem))] z-30 inline-flex items-center gap-2 rounded-full bg-linear-to-br from-rose-500 to-amber-500 px-6 py-4 text-base font-bold text-white shadow-lg shadow-rose-900/25 ring-4 ring-white/80 transition hover:shadow-xl active:scale-95 print:hidden";
+  "animate-[floatIn_.5s_cubic-bezier(.2,.8,.2,1)_backwards] fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-[max(1rem,calc(50%-20rem))] z-30 inline-flex items-center gap-2 rounded-full bg-linear-to-br from-rose-500 to-amber-500 px-6 py-4 text-base font-bold text-white shadow-lg shadow-rose-900/25 ring-4 ring-white/80 transition hover:shadow-xl active:scale-95 print:hidden";
 const noop = () => () => {};
 
 function Submit({ tx }: { tx: PersonComposerText }) {

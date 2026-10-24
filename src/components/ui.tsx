@@ -13,7 +13,7 @@ export function Page({ title, children, back, actions }: { title: string; childr
         <h1 className="flex-1 text-2xl font-semibold tracking-tight text-stone-900">{title}</h1>
         {actions}
       </div>
-      <div className="space-y-4">{children}</div>
+      <div className="stagger space-y-4">{children}</div>
     </main>
   );
 }
@@ -91,7 +91,7 @@ export function Notice({ kind = "info", children }: { kind?: "info" | "error" | 
     warning: "border-amber-200 bg-amber-50 text-amber-900",
   }[kind];
   return (
-    <div role={kind === "error" ? "alert" : "status"} className={`rounded-2xl border px-4 py-2.5 text-sm ${styles}`}>
+    <div role={kind === "error" ? "alert" : "status"} className={`animate-[slideDown_.35s_cubic-bezier(.2,.8,.2,1)_both] rounded-2xl border px-4 py-2.5 text-sm ${styles}`}>
       {children}
     </div>
   );
@@ -147,7 +147,7 @@ export function widthClass(value: number, max: number) {
 export function ProgressBar({ value, max, label, className = "" }: { value: number; max: number; label: string; className?: string }) {
   return (
     <div role="progressbar" aria-valuemin={0} aria-valuemax={max} aria-valuenow={value} aria-label={label} className={`h-2 overflow-hidden rounded-full bg-stone-100 ${className}`}>
-      <div className={`h-full rounded-full bg-linear-to-r from-teal-400 to-violet-400 transition-all motion-reduce:transition-none ${widthClass(value, max)}`} />
+      <div className={`h-full origin-left animate-[growX_.9s_cubic-bezier(.2,.8,.2,1)_both] rounded-full bg-linear-to-r from-teal-400 to-violet-400 transition-all motion-reduce:transition-none ${widthClass(value, max)}`} />
     </div>
   );
 }

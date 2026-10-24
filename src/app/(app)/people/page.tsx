@@ -69,7 +69,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
       {people.length === 0 ? (
         <Empty>{t.people.empty}</Empty>
       ) : (
-        <ul className="space-y-3" aria-label={t.people.title}>
+        <ul className="stagger space-y-3" aria-label={t.people.title}>
           {shown.map((p) => {
             const tone = REL_TONE[p.relationship] ?? REL_TONE.other!;
             const empty = !p.nextDate && !p.latest && p.loves.length === 0;

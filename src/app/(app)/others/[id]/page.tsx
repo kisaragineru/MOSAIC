@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { answerPeerAction, askPeerAction, declinePeerAction, withdrawPeerAction } from "@/app/actions/peers";
 import { ConfirmButton } from "@/components/confirm-button";
+import { Confetti } from "@/components/confetti";
 import { Flash } from "@/components/flash";
 import { Button, Card, Notice, Page, Textarea } from "@/components/ui";
 import { AXES, AXIS_CHAPTER, AXIS_CHAPTERS, CHAPTER_INFO, PEER_POLES } from "@/content/axes";
@@ -80,8 +81,9 @@ export default async function PeerAnswerPage({ params, searchParams }: { params:
         </form>
       ) : r.status === "answered" ? (
         <>
-          <Card className="text-center">
-            <p className="text-3xl" aria-hidden>💌</p>
+          <Card className="relative overflow-hidden text-center">
+            <Confetti />
+            <p className="animate-[pop_.6s_ease-out] text-3xl" aria-hidden>💌</p>
             <p className="mt-2 font-semibold text-stone-900">{p.thanks(name)}</p>
             <p className="mt-1 text-xs text-stone-500">{r.anonymous ? p.sentAnon : p.sentNamed}</p>
             <form action={askPeerAction} className="mt-4">

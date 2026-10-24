@@ -146,3 +146,107 @@ body {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
 }
+
+/* ---------------------------------------------------------------------------
+   Motion: small, quick, and all of it off for people who prefer reduced motion.
+   --------------------------------------------------------------------------- */
+@keyframes growX {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes growY {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes pop {
+  0% { transform: scale(0.92); }
+  55% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes softPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(45, 120, 220, 0.35); }
+  50% { box-shadow: 0 0 0 8px rgba(45, 120, 220, 0); }
+}
+@keyframes confetti {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0) scale(0.6); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx, 0), 140px) rotate(540deg) scale(1); }
+}
+@keyframes shine {
+  from { transform: translateX(-120%) skewX(-18deg); }
+  to { transform: translateX(220%) skewX(-18deg); }
+}
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* Lists and page sections come in one after another. */
+.stagger > * { animation: fadeUp 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+.stagger > *:nth-child(2) { animation-delay: 40ms; }
+.stagger > *:nth-child(3) { animation-delay: 80ms; }
+.stagger > *:nth-child(4) { animation-delay: 120ms; }
+.stagger > *:nth-child(5) { animation-delay: 160ms; }
+.stagger > *:nth-child(6) { animation-delay: 200ms; }
+.stagger > *:nth-child(7) { animation-delay: 240ms; }
+.stagger > *:nth-child(8) { animation-delay: 280ms; }
+.stagger > *:nth-child(n + 9) { animation-delay: 320ms; }
+
+/* Pressing anything pressable gives way a little. */
+button:not(:disabled), a[class*="rounded-full"], a[class*="rounded-2xl"], a[class*="rounded-3xl"], label[class*="rounded-full"] {
+  transition-property: transform, box-shadow, background-color, color, border-color, opacity;
+  transition-duration: 160ms;
+}
+button:not(:disabled):active, a[class*="rounded-full"]:active, a[class*="rounded-2xl"]:active, a[class*="rounded-3xl"]:active { transform: scale(0.97); }
+
+/* A chosen chip pops. */
+label:has(> input.sr-only:checked) { animation: pop 0.28s ease-out; }
+
+/* A short burst of confetti (see <Confetti />). */
+.confetti { pointer-events: none; position: absolute; inset: 0; overflow: hidden; }
+.confetti > span {
+  position: absolute; top: 10%; width: 8px; height: 12px; border-radius: 2px; opacity: 0;
+  animation: confetti 1.6s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+.confetti > span:nth-child(6n + 1) { background: #4f8ef7; }
+.confetti > span:nth-child(6n + 2) { background: #f7b84f; }
+.confetti > span:nth-child(6n + 3) { background: #f27a7a; }
+.confetti > span:nth-child(6n + 4) { background: #9b7cf2; }
+.confetti > span:nth-child(6n + 5) { background: #4fc8a8; }
+.confetti > span:nth-child(6n + 6) { background: #f7d94f; border-radius: 50%; width: 9px; height: 9px; }
+.confetti > span:nth-child(1) { left: 8%; --dx: -20px; animation-delay: 0ms; }
+.confetti > span:nth-child(2) { left: 18%; --dx: 25px; animation-delay: 60ms; }
+.confetti > span:nth-child(3) { left: 28%; --dx: -15px; animation-delay: 120ms; }
+.confetti > span:nth-child(4) { left: 38%; --dx: 30px; animation-delay: 30ms; }
+.confetti > span:nth-child(5) { left: 48%; --dx: -25px; animation-delay: 90ms; }
+.confetti > span:nth-child(6) { left: 58%; --dx: 20px; animation-delay: 150ms; }
+.confetti > span:nth-child(7) { left: 68%; --dx: -30px; animation-delay: 10ms; }
+.confetti > span:nth-child(8) { left: 78%; --dx: 15px; animation-delay: 110ms; }
+.confetti > span:nth-child(9) { left: 88%; --dx: -10px; animation-delay: 70ms; }
+.confetti > span:nth-child(10) { left: 13%; --dx: 35px; animation-delay: 200ms; }
+.confetti > span:nth-child(11) { left: 33%; --dx: -35px; animation-delay: 240ms; }
+.confetti > span:nth-child(12) { left: 53%; --dx: 10px; animation-delay: 180ms; }
+.confetti > span:nth-child(13) { left: 73%; --dx: -20px; animation-delay: 260ms; }
+.confetti > span:nth-child(14) { left: 93%; --dx: 25px; animation-delay: 220ms; }
+
+/* A light sweep across something just earned. */
+.shine { position: relative; overflow: hidden; }
+.shine::after {
+  content: ""; position: absolute; inset: -20% auto -20% 0; width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+  animation: shine 1.4s 0.3s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  .confetti { display: none; }
+}

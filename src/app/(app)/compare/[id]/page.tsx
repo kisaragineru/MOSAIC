@@ -11,6 +11,7 @@ import { Flash } from "@/components/flash";
 import { IntroPair } from "@/components/intro-pair";
 import { ConnectionPersonForm } from "@/components/connection-person-form";
 import { ConnectionSettings } from "@/components/connection-settings";
+import { CountUp } from "@/components/count-up";
 import { Button, Card, Checkbox, Notice, Page, Pill } from "@/components/ui";
 import { LOCALIZED_BANK } from "@/content/questions-i18n";
 import { answerLabel } from "@/lib/discovery/format";
@@ -32,10 +33,11 @@ const SCOPES = ["tuvi", "tuvi_detail", "preferences", "values"] as const;
 const QMETA = new Map(LOCALIZED_BANK.map((q) => [q.id, q]));
 const ORDER_KIND = ["same", "partly_shared", "different"];
 const KIND_STYLE = {
-  same: { box: "bg-teal-50 text-teal-900", pill: "bg-teal-100 text-teal-900", ring: "ring-teal-200" },
-  partly_shared: { box: "bg-amber-50 text-amber-900", pill: "bg-amber-100 text-amber-900", ring: "ring-amber-200" },
-  different: { box: "bg-violet-50 text-violet-900", pill: "bg-violet-100 text-violet-900", ring: "ring-violet-200" },
+  same: { box: "bg-teal-50 text-teal-900", pill: "bg-teal-100 text-teal-900", ring: "ring-teal-200", bar: "bg-teal-400" },
+  partly_shared: { box: "bg-amber-50 text-amber-900", pill: "bg-amber-100 text-amber-900", ring: "ring-amber-200", bar: "bg-amber-400" },
+  different: { box: "bg-violet-50 text-violet-900", pill: "bg-violet-100 text-violet-900", ring: "ring-violet-200", bar: "bg-violet-400" },
 };
+const SHARE_W = ["w-0", "w-1/12", "w-2/12", "w-3/12", "w-4/12", "w-5/12", "w-6/12", "w-7/12", "w-8/12", "w-9/12", "w-10/12", "w-11/12", "w-full"];
 
 export default async function ComparePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
@@ -184,15 +186,21 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                 <p className="text-sm text-stone-500">{cc.noPref}</p>
               ) : (
                 <>
+                  {/* The share of each kind, as a bar that fills in, then the counts. */}
+                  <div aria-hidden className="mb-3 flex h-2.5 overflow-hidden rounded-full bg-stone-100">
+                    {(["same", "partly_shared", "different"] as const).map((k) =>
+                      count(k) ? <span key={k} className={`h-full origin-left animate-[growX_.9s_cubic-bezier(.2,.8,.2,1)_both] ${KIND_STYLE[k].bar} ${SHARE_W[Math.round((count(k) / items.length) * 12)]}`} /> : null,
+                    )}
+                  </div>
                   <div className="mb-3 grid grid-cols-3 gap-2 text-center">
                     {(["same", "partly_shared", "different"] as const).map((k) => (
-                      <div key={k} className={`rounded-2xl px-2 py-2 ${KIND_STYLE[k].box}`}>
-                        <p className="text-xl font-bold">{count(k)}</p>
+                      <div key={k} className={`animate-[pop_.45s_ease-out_backwards] rounded-2xl px-2 py-2 ${KIND_STYLE[k].box}`}>
+                        <CountUp value={count(k)} className="block text-xl font-bold tabular-nums" />
                         <p className="text-[11px] font-semibold">{k === "same" ? cc.same : k === "partly_shared" ? cc.partly : cc.different}</p>
                       </div>
                     ))}
                   </div>
-                  <ul className="space-y-2.5" data-testid="pref-items">
+                  <ul className="stagger space-y-2.5" data-testid="pref-items">
                     {items.map((i) => {
                       // Display text from the current catalog (stored results may predate a language).
                       const q = QMETA.get(i.questionId) ?? pref.questions[i.questionId];

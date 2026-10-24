@@ -3,6 +3,10 @@ import { AXIS_LABEL, CHAPTER_INFO } from "@/content/axes";
 import type { Locale } from "@/lib/i18n/locales";
 import type { Dict } from "@/lib/i18n/messages/en";
 import { PIECE_WEIGHT, type Knowledge, type NextAction } from "@/server/services/knowledge";
+import { CountUp } from "./count-up";
+
+/** The filled cells appear one after another (literal classes: no inline styles under the CSP). */
+const CELL_DELAY = ["delay-0", "delay-75", "delay-100", "delay-150", "delay-200", "delay-300", "delay-500", "delay-700"];
 
 // Literal class strings (Tailwind only generates classes it can see).
 const HUES = ["bg-teal-400", "bg-sky-400", "bg-rose-300", "bg-amber-300", "bg-violet-300"];
@@ -45,7 +49,7 @@ export function KnowledgeCard({ k, t, locale, showNext = true }: { k: Knowledge;
         <div>
           <h2 id="knowledge-title" className="text-sm font-semibold text-stone-700">{tk.title}</h2>
           <p className="mt-1 flex items-baseline gap-1.5">
-            <span className="text-4xl font-bold tracking-tight text-stone-900" data-testid="pieces">{k.pieces}</span>
+            <span data-testid="pieces"><CountUp value={k.pieces} className="text-4xl font-bold tracking-tight text-stone-900 tabular-nums" /></span>
             <span className="text-sm text-stone-500">{tk.pieces}</span>
           </p>
         </div>
@@ -57,7 +61,7 @@ export function KnowledgeCard({ k, t, locale, showNext = true }: { k: Knowledge;
       <div>
         <div aria-hidden className="grid grid-cols-15 gap-1">
           {Array.from({ length: CELLS }, (_, i) => (
-            <span key={i} className={`aspect-square rounded-[3px] ${i < filled ? `${HUES[i % HUES.length]} motion-safe:animate-[zoomIn_.4s_ease-out_both]` : "bg-stone-100"}`} />
+            <span key={i} className={`aspect-square rounded-[3px] ${i < filled ? `${HUES[i % HUES.length]} motion-safe:animate-[pop_.45s_ease-out_both] ${CELL_DELAY[i % CELL_DELAY.length]}` : "bg-stone-100"}`} />
           ))}
         </div>
         <p className="mt-1.5 text-xs text-stone-500">{k.to === null ? tk.top : tk.toNext(k.to - k.pieces)}</p>

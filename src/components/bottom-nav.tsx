@@ -57,8 +57,8 @@ export function BottomNav({ items }: { items: { href: string; label: string; ico
                   className={`relative flex h-7 w-12 items-center justify-center rounded-full transition-all duration-200 motion-reduce:transition-none ${
                     active
                       ? special
-                        ? "bg-linear-to-br from-teal-100 to-violet-200 text-violet-800 shadow-sm"
-                        : "bg-teal-100/80 text-teal-800"
+                        ? "animate-[pop_.35s_ease-out] bg-linear-to-br from-teal-100 to-violet-200 text-violet-800 shadow-sm"
+                        : "animate-[pop_.35s_ease-out] bg-teal-100/80 text-teal-800"
                       : special
                         ? "text-violet-700 group-hover:bg-stone-100"
                         : "group-hover:bg-stone-100"
