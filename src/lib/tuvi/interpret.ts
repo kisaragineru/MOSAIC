@@ -11,6 +11,7 @@ import { lunarToSolar } from "./calendar";
 import { BRANCHES } from "./canchi";
 import type { Chart, Palace } from "./engine";
 import { MAIN_EXTRA, PALACE_BY_AGE, PALACE_JA, PALACE_ROLE, PALACE_SHORT } from "./interpret-detail";
+import { GLOSSARY, PALACE_PLAIN, PLAIN_PHRASE, SECTION_PLAIN, STAR_PLAIN, type GlossaryKey } from "./plain";
 import { HOA_INFO, PALACE_INFO, STAR_INFO, type AuxStarId, type HoaId, type MainStarId, type PalaceId } from "./stars";
 
 export const INTERPRETATION_VERSION = "interp-3";
@@ -195,6 +196,12 @@ export interface InterpretationSection {
   /** Short traditional keywords of the primary palace's main stars. */
   keywords?: string[];
   paragraphs: InterpretationParagraph[];
+  /** The same reading in everyday words, for readers new to Tử Vi. */
+  plain?: string[];
+  /** Terms the detailed reading uses, explained. */
+  terms?: { term: string; meaning: string }[];
+  /** The main star(s) of the section as a kind of person ("the natural leader"). */
+  persona?: string;
 }
 
 const pick = (t: T, locale: Locale) => t[locale];
@@ -395,9 +402,10 @@ export function interpret(chart: Chart, locale: Locale, currentAge?: number): In
       summary: head ? `${palaceLabel(primary, head.palace.branch, locale)}: ${starsText(head.mains, locale) || "—"}` : undefined,
       keywords: head ? head.mains.map((m) => MAIN[m].keywords[locale]) : undefined,
       paragraphs,
+      ...plainOf(chart, section, head, locale),
     });
   }
-  sections.push({ section: "cycles", title: pick(SECTION_TITLES.cycles, locale), paragraphs: cycleParagraphs(chart, locale, currentAge) });
+  sections.push({ section: "cycles", title: pick(SECTION_TITLES.cycles, locale), paragraphs: cycleParagraphs(chart, locale, currentAge), ...plainCycles(chart, locale, currentAge) });
   return sections;
 }
 
@@ -745,3 +753,41 @@ export function palaceDetails(chart: Chart, locale: Locale): PalaceDetail[] {
   });
 }
 
+
+// ---------------------------------------------------------------------------
+// Everyday words (plain.ts): the reading again, for readers new to Tử Vi.
+// ---------------------------------------------------------------------------
+
+const terms = (keys: GlossaryKey[], locale: Locale) => [...new Set(keys)].map((k) => ({ term: pick(GLOSSARY[k].term, locale), meaning: pick(GLOSSARY[k].meaning, locale) }));
+
+function plainOf(chart: Chart, section: Exclude<Section, "cycles">, head: ReturnType<typeof mainsOf>, locale: Locale) {
+  const plain = [pick(SECTION_PLAIN[section], locale)];
+  const keys: GlossaryKey[] = ["chinh_tinh", "tam_phuong"];
+  if (section === "personality") keys.unshift("menh", "than");
+  if (head && head.mains.length) {
+    if (head.borrowed) {
+      plain.push(pick(PLAIN_PHRASE.borrowed, locale));
+      keys.push("vo_chinh_dieu");
+    }
+    const personas = head.mains.map((m) => pick(STAR_PLAIN[m].persona, locale));
+    plain.push(pick(personas.length === 1 ? PLAIN_PHRASE.starIs(personas[0]!) : PLAIN_PHRASE.starsAre(personas), locale));
+    for (const m of head.mains) plain.push(`${STAR_INFO[m].vi}${locale === "ja" ? "：" : ": "}${pick(STAR_PLAIN[m].plain, locale)}`);
+    for (const s of [...head.palace.mainStars, ...head.palace.auxStars]) {
+      if (s.hoa) {
+        plain.push(pick(PLAIN_PHRASE.hoa[s.hoa], locale));
+        keys.push("hoa");
+      }
+    }
+    if (head.palace.auxStars.length) keys.push("phu_tinh");
+    if (chart.tuan.includes(head.palace.branch) || chart.triet.includes(head.palace.branch)) keys.push("tuan_triet");
+  }
+  const persona = head?.mains.length ? head.mains.map((m) => pick(STAR_PLAIN[m].persona, locale)).join(locale === "ja" ? "・" : " / ") : undefined;
+  return { plain, terms: terms(keys, locale), persona };
+}
+
+function plainCycles(chart: Chart, locale: Locale, currentAge?: number) {
+  const plain = [pick(PLAIN_PHRASE.cycleIntro, locale)];
+  const now = currentAge === undefined ? undefined : chart.palaces.find((p) => p.daiHan && currentAge >= p.daiHan.from && currentAge <= p.daiHan.to);
+  if (now?.palace) plain.push(pick(PLAIN_PHRASE.cycleNow(now.daiHan!.from, now.daiHan!.to, pick(PALACE_PLAIN[now.palace], locale)), locale));
+  return { plain, terms: terms(["dai_han", "cuc"], locale) };
+}

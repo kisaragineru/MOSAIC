@@ -27,12 +27,12 @@ test("the mosaic fills in as answers agree, and a tile explains itself", async (
   await expect(page.getByText("17枚のうち1枚が見えてきました")).toBeVisible();
   await page.getByRole("link", { name: /あなたのモザイク/ }).click();
   await page.waitForURL("/insights");
-  const tile = page.getByRole("listitem", { name: "段取り — 計画派: はっきり" });
+  const tile = page.getByRole("button", { name: "段取り — 計画派: はっきり" });
   await tile.click();
   await expect(page.getByText("先に計画を立てるのを好むことが多いようです。").first()).toBeVisible();
   await expect(page.getByText("回答3件から")).toBeVisible();
   // An empty tile says what it needs and where to go.
-  await page.getByRole("listitem", { name: "スピード: まだ" }).click();
+  await page.getByRole("button", { name: "スピード: まだ" }).click();
   await expect(page.getByText(/まだ手がかりがありません/)).toBeVisible();
   await page.getByRole("link", { name: /「気質」の質問に答える/ }).click();
   await page.waitForURL("/discover/chapter/self");

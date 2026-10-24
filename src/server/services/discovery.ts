@@ -489,6 +489,10 @@ export interface ChapterProgress {
   answered: number;
   /** Next question to offer in this chapter, or null when nothing is left for now. */
   nextId: string | null;
+  /** Next never-answered question (or a skip that has come back); no revisits. */
+  freshId: string | null;
+  /** Never-answered questions left (skips that have come back included). */
+  fresh: number;
 }
 
 /** Questions that belong in chapters: active, not follow-ups. */
@@ -510,16 +514,41 @@ export async function chapterProgress(userId: string, now = new Date()): Promise
     return CHAPTERS.map((chapter) => {
       const qs = CHAPTER_QUESTIONS.filter((q) => chapterOf(q) === chapter);
       const answered = qs.filter((q) => by.get(q.id)?.status === "answered");
-      const fresh = qs.find((q) => {
+      const freshQs = qs.filter((q) => {
         const r = by.get(q.id);
         return !r || (r.status === "skipped" && days(r.at) >= 7);
       });
+      const fresh = freshQs[0];
       const revisit = answered
         .filter((q) => days(by.get(q.id)!.at) >= ANSWER_COOLDOWN_DAYS)
         .sort((a, b) => by.get(a.id)!.at.getTime() - by.get(b.id)!.at.getTime())[0];
-      return { chapter, total: qs.length, answered: answered.length, nextId: fresh?.id ?? revisit?.id ?? null };
+      return { chapter, total: qs.length, answered: answered.length, nextId: fresh?.id ?? revisit?.id ?? null, freshId: fresh?.id ?? null, fresh: freshQs.length };
     });
   });
+}
+
+export interface AllProgress {
+  total: number;
+  answered: number;
+  /** Questions not yet answered and available now. */
+  left: number;
+  next: { id: string; chapter: Chapter } | null;
+}
+
+/**
+ * "Answer them all": the next unanswered question from any chapter. It comes from the chapter
+ * with the smallest share answered so far, so the portrait fills in evenly and the topics vary.
+ */
+export async function allProgress(userId: string, now = new Date()): Promise<AllProgress> {
+  const chapters = await chapterProgress(userId, now);
+  const open = chapters.filter((c) => c.freshId).sort((a, b) => a.answered / a.total - b.answered / b.total || CHAPTERS.indexOf(a.chapter) - CHAPTERS.indexOf(b.chapter));
+  const first = open[0];
+  return {
+    total: chapters.reduce((n, c) => n + c.total, 0),
+    answered: chapters.reduce((n, c) => n + c.answered, 0),
+    left: chapters.reduce((n, c) => n + c.fresh, 0),
+    next: first ? { id: first.freshId!, chapter: first.chapter } : null,
+  };
 }
 
 /** Axes a question informs (for showing what an answer contributes to). */

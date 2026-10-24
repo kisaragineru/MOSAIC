@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { M_PLUS_Rounded_1c } from "next/font/google";
-import { getLocale } from "@/lib/i18n/server";
+import { Suspense } from "react";
+import { NavProgress } from "@/components/nav-progress";
+import { getLocale, dictFor } from "@/lib/i18n/server";
 import "./globals.css";
 
 // A rounded face for a softer feel; covers Japanese, Vietnamese diacritics and Latin. Self-hosted by next/font.
@@ -18,7 +20,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const locale = await getLocale();
   return (
     <html lang={locale}>
-      <body className={`${rounded.className} min-h-dvh`}>{children}</body>
+      <body className={`${rounded.className} min-h-dvh`}>
+        <Suspense fallback={null}>
+          <NavProgress label={dictFor(locale).common.loading} />
+        </Suspense>
+        {children}
+      </body>
     </html>
   );
 }

@@ -3,6 +3,7 @@ import type { Dict } from "./en";
 /** Vietnamese UI strings. */
 export const vi: Dict = {
   common: {
+    loading: "Đang tải…",
     appName: "MOSAIC",
     tagline: "A lifetime, piece by piece.",
     brand: "Mỗi mảnh ghép của bạn đều quan trọng.",
@@ -183,6 +184,17 @@ export const vi: Dict = {
     lastAnswer: (a: string, d: string) => `Lần trước (${d}): ${a}`,
     answerAgain: "Trả lời lại",
     saved: "Đã lưu. Các câu trả lời cũ vẫn được giữ trong lịch sử.",
+    allTitle: "Trả lời liền một mạch",
+    allIntro: "Ở đây không giới hạn mỗi ngày: trả lời bao nhiêu tùy thích, câu này nối câu kia. Dừng lúc nào cũng được — lần sau sẽ tiếp tục từ đây.",
+    allProgress: (n: number, all: number) => `Đã trả lời ${n}/${all}`,
+    allLeft: (n: number) => `Còn ${n} câu`,
+    allLink: "Trả lời liền một mạch",
+    allLinkSub: (n: number) => (n > 0 ? `Còn ${n} câu bạn chưa trả lời` : "Bạn đã trả lời mọi câu hỏi"),
+    allDoneTitle: "Bạn đã trả lời mọi câu hỏi",
+    allDoneText: "Câu đã bỏ qua sẽ quay lại sau một tuần, và câu trả lời có thể xem lại sau nửa năm. Cẩm nang của bạn đã sẵn sàng.",
+    allRest: "Nghỉ một chút",
+    allReadManual: "Đọc cẩm nang",
+    followUpBadge: "Câu hỏi thêm cho câu trả lời vừa rồi",
     chaptersTab: "Theo chương",
     chaptersTitle: "Trả lời theo chương",
     chaptersIntro: "Trả lời theo từng chủ đề, theo nhịp của bạn. Mỗi câu trả lời lấp thêm bức tranh ghép và cuốn cẩm nang của bạn.",
@@ -260,6 +272,12 @@ export const vi: Dict = {
   },
   tuvi: {
     ui: {
+      plain: "Nói đơn giản",
+      detail: "Luận giải chi tiết (theo thuật ngữ truyền thống)",
+      terms: "Thuật ngữ trong phần luận giải",
+      guideLink: "Mới làm quen Tử Vi? Cách đọc lá số",
+      guideSub: "Giải thích dễ hiểu về lá số, mười hai cung và các sao",
+      personaLead: "Nói ngắn gọn",
       reflectTitle: "Gợi ý để nhìn lại",
       aheadTitle: "Điều để suy ngẫm",
       reference: "Tham khảo",
@@ -573,6 +591,12 @@ export const vi: Dict = {
     about: "Thông tin",
   },
   preview: {
+    phoneTitle: "Điện thoại của họ sẽ hiển thị thế này",
+    phoneNote: "Màn hình người kết nối nhìn thấy sau khi hai bên đồng ý nội dung so sánh. Câu trả lời của bạn hiện cạnh câu trả lời của họ (ở đây ghi là “câu trả lời của họ”).",
+    phoneScopes: "Thay đổi nội dung bạn đồng ý chia sẻ",
+    phoneTuviPair: "Trên màn hình thật, phần so sánh năm sinh và ngũ hành của hai người sẽ hiện ở đây.",
+    phoneTheirAnswer: "câu trả lời của họ",
+    phoneEmpty: "Nếu không chọn gì, họ chỉ thấy tên hiển thị của bạn.",
     title: "Người khác thấy bạn thế nào",
     intro: "Những gì người kết nối với bạn qua QR hay liên kết có thể thấy. Chỉ những mục cả hai cùng đồng ý mới thực sự được chia sẻ.",
     step1: "Điều người quét QR của bạn thấy đầu tiên",

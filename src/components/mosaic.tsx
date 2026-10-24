@@ -90,21 +90,21 @@ export function Mosaic({ tiles, labels, compact = false }: { tiles: TileView[]; 
   const s = tiles.find((t) => t.id === sel) ?? null;
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-5 gap-1.5" role="list">
+      <ul className="grid grid-cols-5 gap-1.5">
         {tiles.map((t, i) => (
-          <button
-            key={t.id}
-            type="button"
-            role="listitem"
-            aria-label={`${t.title}: ${labels.levels[t.level]}`}
-            aria-pressed={sel === t.id}
-            onClick={() => setSel(sel === t.id ? null : t.id)}
-            className="rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
-          >
-            <Tile t={t} i={i} selected={sel === t.id} />
-          </button>
+          <li key={t.id}>
+            <button
+              type="button"
+              aria-label={`${t.title}: ${labels.levels[t.level]}`}
+              aria-pressed={sel === t.id}
+              onClick={() => setSel(sel === t.id ? null : t.id)}
+              className="block w-full rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
+            >
+              <Tile t={t} i={i} selected={sel === t.id} />
+            </button>
+          </li>
         ))}
-      </div>
+      </ul>
       <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-stone-500">
         {(["empty", "gathering", "emerging", "consistent", "mixed"] as const).map((l) => (
           <span key={l} className="flex items-center gap-1">

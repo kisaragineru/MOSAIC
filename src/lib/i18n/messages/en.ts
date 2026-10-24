@@ -1,6 +1,7 @@
 /** English UI strings. `vi.ts` must have exactly the same shape (enforced by the type). */
 export const en = {
   common: {
+    loading: "Loading…",
     appName: "MOSAIC",
     tagline: "A lifetime, piece by piece.",
     brand: "Every piece of you matters.",
@@ -181,6 +182,17 @@ export const en = {
     lastAnswer: (a: string, d: string) => `Your last answer (${d}): ${a}`,
     answerAgain: "Answer again",
     saved: "Answer saved. Earlier answers are kept in your history.",
+    allTitle: "Answer them all",
+    allIntro: "No daily limit here: answer as many as you like, one after another. Stop whenever you want — your place is kept.",
+    allProgress: (n: number, all: number) => `${n} of ${all} answered`,
+    allLeft: (n: number) => `${n} left`,
+    allLink: "Answer them all in a row",
+    allLinkSub: (n: number) => (n > 0 ? `${n} questions you haven't answered yet` : "You've answered every question"),
+    allDoneTitle: "You've answered every question",
+    allDoneText: "Skipped questions come back after a week, and your answers can be revisited in half a year. Your manual is ready to read.",
+    allRest: "Take a break",
+    allReadManual: "Read your manual",
+    followUpBadge: "A follow-up to your last answer",
     chaptersTab: "By chapter",
     chaptersTitle: "Answer by chapter",
     chaptersIntro: "Answer theme by theme, at your own pace. Every answer fills in more of your mosaic and your manual.",
@@ -258,6 +270,12 @@ export const en = {
   },
   tuvi: {
     ui: {
+      plain: "In plain words",
+      detail: "The detailed reading (in traditional terms)",
+      terms: "Words used in this reading",
+      guideLink: "New to Tử Vi? How to read it",
+      guideSub: "The chart, the twelve palaces and the stars, explained simply",
+      personaLead: "In a word",
       reflectTitle: "To look back",
       aheadTitle: "Something to think about",
       reference: "Reference",
@@ -571,6 +589,12 @@ export const en = {
     about: "About",
   },
   preview: {
+    phoneTitle: "This is what their phone shows",
+    phoneNote: "The screen a connection sees once you've both agreed on what to compare. Your answers appear beside theirs (shown here as “their answer”).",
+    phoneScopes: "Switch what you agree to share",
+    phoneTuviPair: "On the real screen, a comparison of your birth years and elements appears here.",
+    phoneTheirAnswer: "their answer",
+    phoneEmpty: "With nothing chosen, they only see your display name.",
     title: "How others see you",
     intro: "What someone you connect with by QR or link could see. Only what both of you agree to is actually shared.",
     step1: "What someone sees first when they scan your QR",

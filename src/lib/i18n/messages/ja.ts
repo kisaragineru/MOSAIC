@@ -3,6 +3,7 @@ import type { Dict } from "./en";
 /** Japanese UI strings. Tử Vi terms keep their Vietnamese names, with kanji where helpful. */
 export const ja: Dict = {
   common: {
+    loading: "読み込み中…",
     appName: "MOSAIC",
     tagline: "A lifetime, piece by piece.",
     brand: "あなたのかけらは、どれも大切。",
@@ -183,6 +184,17 @@ export const ja: Dict = {
     lastAnswer: (a: string, d: string) => `前回の回答（${d}）：${a}`,
     answerAgain: "もう一度答える",
     saved: "回答を保存しました。以前の回答も履歴に残っています。",
+    allTitle: "まとめて答える",
+    allIntro: "ここでは1日の数に制限はありません。好きなだけ続けて答えられます。いつやめても、続きはここから再開できます。",
+    allProgress: (n: number, all: number) => `${all}問中${n}問に回答`,
+    allLeft: (n: number) => `残り${n}問`,
+    allLink: "まとめて答える",
+    allLinkSub: (n: number) => (n > 0 ? `まだ答えていない質問が${n}問あります` : "すべての質問に答えました"),
+    allDoneTitle: "すべての質問に答えました",
+    allDoneText: "スキップした質問は1週間後に戻ってきます。答えは半年後にまた見直せます。取扱説明書を読んでみましょう。",
+    allRest: "ひと休みする",
+    allReadManual: "取扱説明書を読む",
+    followUpBadge: "いまの答えへの追加の質問",
     chaptersTab: "章ごとに",
     chaptersTitle: "章ごとに答える",
     chaptersIntro: "テーマごとに、好きなペースで答えられます。答えるほど、あなたのモザイクと取扱説明書が埋まっていきます。",
@@ -260,6 +272,12 @@ export const ja: Dict = {
   },
   tuvi: {
     ui: {
+      plain: "かんたんに言うと",
+      detail: "くわしい読み（伝統の言葉で）",
+      terms: "この読みに出てくる言葉",
+      guideLink: "はじめての方へ：Tử Vi の読み方",
+      guideSub: "命盤の見方、12の宮、星の意味をやさしく説明します",
+      personaLead: "ひとことで言うと",
       reflectTitle: "振り返りのヒント",
       aheadTitle: "これからへの問い",
       reference: "参考",
@@ -573,6 +591,12 @@ export const ja: Dict = {
     about: "このアプリについて",
   },
   preview: {
+    phoneTitle: "相手のスマホではこう見えます",
+    phoneNote: "つながった相手が、比べる内容に同意したあとで見る画面です。相手の答えと並べて表示されます（ここでは相手の部分を「相手の答え」としています）。",
+    phoneScopes: "相手と合意する内容を切り替えて確認",
+    phoneTuviPair: "実際の画面では、ここに二人の生まれ年・五行の比較が表示されます。",
+    phoneTheirAnswer: "相手の答え",
+    phoneEmpty: "何も選ばれていないと、相手には表示名しか見えません。",
     title: "相手からの見え方",
     intro: "QRやリンクで誰かとつながったとき、相手に見える可能性があるものです。実際に共有されるのは、お二人とも同意した項目だけです。",
     step1: "QRを読み取った人に最初に見えるもの",

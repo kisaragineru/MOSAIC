@@ -100,7 +100,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         {first ? (
           <div className="space-y-3">
             <p className="text-lg text-stone-900">{first.question.prompt[locale]}</p>
-            {first.doneToday ? <Pill tone="teal">{t.home.doneToday}</Pill> : <LinkButton href="/discover" variant="primary">{t.home.answerNow}</LinkButton>}
+            <div className="flex flex-wrap items-center gap-2">
+              {first.doneToday ? <Pill tone="teal">{t.home.doneToday}</Pill> : <LinkButton href="/discover" variant="primary">{t.home.answerNow}</LinkButton>}
+              <Link href="/discover/all" className="text-sm font-semibold text-teal-700 underline underline-offset-4">⚡ {t.discover.allLink}</Link>
+            </div>
           </div>
         ) : (
           <p className="text-sm text-stone-500">{t.discover.noQuestion}</p>

@@ -14,6 +14,7 @@ import { currentLunarYearFor } from "@/server/services/tuvi";
 import { TuviChart } from "@/components/tuvi-chart";
 import { TuviPair } from "@/components/tuvi-pair";
 import { TuviThemes } from "@/components/tuvi-themes";
+import { themeLabels } from "@/lib/tuvi/theme-labels";
 import { pairReadings } from "@/lib/compare/tuvi-pair";
 import { chartView } from "@/lib/tuvi/chart-view";
 import { nominalAge } from "@/lib/tuvi/engine";
@@ -126,7 +127,7 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                     />
                   </Card>
                   <Card title={t.compare.partnerReading(v.otherName)}>
-                    <TuviThemes sections={together.themes} labels={{ related: t.tuvi.ui.related, strength: t.tuvi.ui.strength, caution: t.tuvi.ui.caution, notes: t.tuvi.ui.notes }} />
+                    <TuviThemes sections={together.themes} labels={themeLabels(t)} />
                   </Card>
                   <Card title={t.compare.partnerChart(v.otherName)}>
                     <TuviChart chart={together.theirs} details={together.view.details} center={together.view.center} currentAge={together.theirAge} localNames={together.view.localNames} labels={together.view.labels} />

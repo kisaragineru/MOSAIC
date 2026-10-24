@@ -1,9 +1,11 @@
+import Link from "next/link";
 import { deleteBirthAction, saveBirthAction } from "@/app/actions/tuvi";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
 import { TuviChart } from "@/components/tuvi-chart";
 import { TuviStages, type StageView } from "@/components/tuvi-stages";
 import { TuviThemes } from "@/components/tuvi-themes";
+import { themeLabels } from "@/lib/tuvi/theme-labels";
 import { Button, Card, Checkbox, Field, Input, Notice, Page, Select } from "@/components/ui";
 import { BRANCHES } from "@/lib/tuvi/canchi";
 import { timeZoneOptions, preferredZone } from "@/lib/timezones";
@@ -55,6 +57,8 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
   const now = stages.find((x) => x.state === "current");
   const menh = c && c.menh !== null ? details.find((d) => d.branch === c.menh) : undefined;
   const ORDER = ["personality", "love", "career", "family", "wealth", "relationships"];
+  const persona = v.sections.find((x) => x.section === "personality")?.persona;
+  const cyclesPlain = v.sections.find((x) => x.section === "cycles")?.plain ?? [];
   const themes = v.sections.filter((x) => x.section !== "cycles").sort((a, b) => ORDER.indexOf(a.section) - ORDER.indexOf(b.section));
   return (
     <Page title={t.tuvi.title}>
@@ -71,6 +75,7 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {menh.mains.map((m) => <span key={m.name} className="rounded-full bg-white/70 px-2.5 py-0.5 text-xs text-violet-900">{m.keywords}</span>)}
               </div>
+              {persona && <p className="mt-3 text-sm text-teal-950"><span className="text-xs text-teal-700">{ui.personaLead}：</span><b>「{persona}」</b></p>}
             </>
           ) : (
             <p className="mt-3 text-sm text-teal-900/80">{v.sections[0]?.paragraphs[0]?.text}</p>
@@ -84,16 +89,29 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
           )}
         </section>
       )}
+      <Link href="/tuvi/guide" className="flex items-center justify-between gap-3 rounded-3xl bg-white/85 px-5 py-4 shadow-sm ring-1 ring-violet-100 transition hover:shadow-md">
+        <span>
+          <span className="block font-semibold text-violet-900">🔰 {ui.guideLink}</span>
+          <span className="block text-xs text-stone-600">{ui.guideSub}</span>
+        </span>
+        <span aria-hidden className="text-violet-700">→</span>
+      </Link>
       <Notice kind="info">{t.tuvi.disclaimer}</Notice>
       {c && themes.length > 0 && (
         <Card title={ui.themesTitle}>
           <p className="mb-3 text-xs text-stone-500">{ui.themesHelp}</p>
-          <TuviThemes sections={themes} labels={{ related: ui.related, strength: ui.strength, caution: ui.caution, notes: ui.notes }} />
+          <TuviThemes sections={themes} labels={themeLabels(t)} />
         </Card>
       )}
       {c && c.menh !== null && (
         <div id="stages" className="scroll-mt-16">
           <Card title={ui.stagesTitle}>
+            {cyclesPlain.length > 0 && (
+              <div className="mb-4 space-y-1.5 rounded-2xl bg-linear-to-br from-amber-50 to-violet-50 p-4 ring-1 ring-amber-100">
+                <p className="text-xs font-semibold text-amber-800">💡 {ui.plain}</p>
+                {cyclesPlain.map((x, i) => <p key={i} className="text-sm leading-7 text-stone-800">{x}</p>)}
+              </div>
+            )}
             {stages.length > 0 ? (
               <TuviStages
                 stages={stages}

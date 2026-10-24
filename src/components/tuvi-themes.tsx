@@ -7,6 +7,9 @@ export interface ThemeLabels {
   strength: string;
   caution: string;
   notes: string;
+  plain: string;
+  detail: string;
+  terms: string;
 }
 
 const ICON: Record<string, string> = {
@@ -67,6 +70,14 @@ export function TuviThemes({ sections, labels }: { sections: InterpretationSecti
         })}
       </div>
       <div key={s.section} role="tabpanel" className="animate-[fadeUp_.25s_ease-out] space-y-3 motion-reduce:animate-none">
+        {s.plain && s.plain.length > 0 && (
+          <div className="space-y-2 rounded-2xl bg-linear-to-br from-violet-50 to-sky-50 p-4 ring-1 ring-violet-100">
+            <p className="text-xs font-semibold text-violet-700">💡 {labels.plain}</p>
+            {s.persona && <p className="text-base font-bold text-stone-900">「{s.persona}」</p>}
+            {s.plain.map((x, i) => <p key={i} className="text-sm leading-7 text-stone-800">{x}</p>)}
+          </div>
+        )}
+        {s.plain && s.plain.length > 0 && <p className="pt-1 text-xs font-semibold text-stone-500">📜 {labels.detail}</p>}
         {s.summary && <p className="text-sm font-semibold text-stone-900">{s.summary}</p>}
         {s.keywords && s.keywords.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
@@ -88,6 +99,18 @@ export function TuviThemes({ sections, labels }: { sections: InterpretationSecti
         )}
         {by("related").length > 0 && <Toggle title={labels.related}><Lines items={by("related")} /></Toggle>}
         {by("note").length > 0 && <Toggle title={labels.notes}><Lines items={by("note")} /></Toggle>}
+        {s.terms && s.terms.length > 0 && (
+          <Toggle title={`📖 ${labels.terms}`}>
+            <dl className="space-y-2">
+              {s.terms.map((x) => (
+                <div key={x.term}>
+                  <dt className="font-semibold text-stone-800">{x.term}</dt>
+                  <dd className="leading-6 text-stone-700">{x.meaning}</dd>
+                </div>
+              ))}
+            </dl>
+          </Toggle>
+        )}
       </div>
     </div>
   );

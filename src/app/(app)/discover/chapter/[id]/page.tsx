@@ -23,7 +23,8 @@ export default async function ChapterPage({ params, searchParams }: { params: Pr
   const all = await chapterProgress(uid);
   const c = all.find((x) => x.chapter === chapter)!;
   const info = CHAPTER_INFO[chapter];
-  const next = c.nextId ? await getQuestion(uid, c.nextId).catch(() => null) : null;
+  const followUp = sp.f ? await getQuestion(uid, sp.f).catch(() => null) : null;
+  const next = followUp ?? (c.nextId ? await getQuestion(uid, c.nextId).catch(() => null) : null);
   const back = `/discover/chapter/${chapter}`;
   return (
     <Page title={`${info.icon} ${info.title[locale]}`} back="/discover/chapters">
@@ -38,6 +39,7 @@ export default async function ChapterPage({ params, searchParams }: { params: Pr
       <FeedbackPrompt sp={sp} back={back} t={t} />
       {next ? (
         <Card key={next.question.id} className="animate-[fadeUp_.35s_ease-out] motion-reduce:animate-none">
+          {followUp && <p className="mb-2 inline-block rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-violet-900">↳ {d.followUpBadge}</p>}
           {next.latest?.status === "answered" && (
             <p className="mb-2 text-xs text-stone-500">{d.lastAnswer(answerLabel(next.question.options, next.latest.answer as Answer, locale), next.latest.answeredAt.toISOString().slice(0, 10))}</p>
           )}

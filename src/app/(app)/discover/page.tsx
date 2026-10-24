@@ -8,13 +8,14 @@ import { Button, Card, Notice, Page, Pill, SegmentedTabs } from "@/components/ui
 import { answerLabel } from "@/lib/discovery/format";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
-import { getDaily, getHistory } from "@/server/services/discovery";
+import { allProgress, getDaily, getHistory } from "@/server/services/discovery";
 
 export default async function DiscoverPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
   const sp = await searchParams;
   const { t, locale } = await getT();
   const daily = await getDaily(uid);
+  const all = await allProgress(uid);
 
   let changed: { id: string; prompt: string; before: string; after: string } | null = null;
   if (sp.changed) {
@@ -39,6 +40,13 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Pro
       <SegmentedTabs current="/discover" items={[{ href: "/discover", label: t.nav.todayQuestions }, { href: "/discover/chapters", label: t.discover.chaptersTab }, { href: "/discover/history", label: t.nav.history }]} />
       <p className="text-sm text-stone-600">{t.discover.intro}</p>
       <Link href="/me/preview" className="inline-block text-sm text-teal-700 underline">{t.discover.privacyLink} →</Link>
+      <Link href="/discover/all" className="flex items-center justify-between gap-3 rounded-3xl bg-linear-to-br from-teal-50 to-violet-50 px-5 py-4 shadow-sm ring-1 ring-teal-100 transition hover:shadow-md">
+        <span>
+          <span className="block font-semibold text-teal-900">⚡ {t.discover.allLink}</span>
+          <span className="block text-xs text-stone-600">{t.discover.allLinkSub(all.left)}</span>
+        </span>
+        <span aria-hidden className="text-teal-700">→</span>
+      </Link>
       <Flash t={t} sp={sp} />
       {!changed && <FeedbackPrompt sp={sp} back="/discover" t={t} />}
       {changed && (

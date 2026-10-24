@@ -43,7 +43,11 @@ export async function answerAction(form: FormData) {
   revalidatePath("/discover");
   revalidatePath("/home");
   if (r.value.changedFromPrevious) redirect(`/discover?changed=${r.value.responseId}`);
-  if (r.value.followUpQuestionId) redirect(`/discover/q/${encodeURIComponent(r.value.followUpQuestionId)}?ok=answered`);
+  if (r.value.followUpQuestionId) {
+    // Inside a run of questions (all, or a chapter) the follow-up is asked in place.
+    const inFlow = back.startsWith("/discover/all") || back.startsWith("/discover/chapter/");
+    redirect(inFlow ? withParam(withParam(back.split("?")[0]!, "f", r.value.followUpQuestionId), "ok", "answered") : `/discover/q/${encodeURIComponent(r.value.followUpQuestionId)}?ok=answered`);
+  }
   // Ask once, lightly, how the question was (fb = the question just answered).
   redirect(withParam(withParam(back, "ok", "answered"), "fb", str(form, "questionId")));
 }
