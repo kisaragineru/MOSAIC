@@ -24,7 +24,7 @@ import { saveIntro } from "./intro";
 import { listMemories } from "./memories";
 import { saveBirthProfile } from "./tuvi";
 import { QUESTION_BANK } from "@/content/questions";
-import { addPersonFromConnection, createShare, giveConsent, listComparisons, openComparison } from "./sharing";
+import { addPersonFromConnection, createShare, getComparison, giveConsent, listComparisons, openComparison } from "./sharing";
 
 export const devToolsEnabled = () => process.env.DEV_TOOLS === "on";
 const MAX = 3;
@@ -92,12 +92,20 @@ async function own(ownerId: string, companionId: string) {
  */
 /** Questions the persona answers that the companion hasn't answered yet. */
 async function unanswered(cid: string) {
-  const done = new Set(
-    (await withUser(cid, (tx) => tx.execute<{ q: string }>(sql`select distinct question_id as q from question_responses where user_id = ${cid} and status = 'answered'`))).rows.map((r) => r.q),
+  const latest = new Map(
+    (
+      await withUser(cid, (tx) =>
+        tx.execute<{ q: string; answer: unknown }>(sql`
+          select distinct on (question_id) question_id as q, answer from question_responses
+          where user_id = ${cid} and status = 'answered' order by question_id, answered_at desc, id desc`),
+      )
+    ).rows.map((r) => [r.q, r.answer]),
   );
-  return QUESTION_BANK.filter((q) => !q.followUpOnly && q.active !== false && !done.has(q.id)).flatMap((q) => {
+  const norm = (a: unknown) => JSON.stringify(a, (_k, v) => (Array.isArray(v) ? [...v].sort() : v));
+  // Not yet answered, or answered differently (e.g. by an older version of the persona).
+  return QUESTION_BANK.filter((q) => !q.followUpOnly && q.active !== false).flatMap((q) => {
     const answer = ANSWERS[q.id] ?? leaning(q);
-    return answer ? [{ q, answer }] : [];
+    return answer && (!latest.has(q.id) || norm(latest.get(q.id)) !== norm(answer)) ? [{ q, answer }] : [];
   });
 }
 
@@ -137,9 +145,11 @@ async function fill(cid: string): Promise<number> {
   let left = todo.length;
   for (const { q, answer } of todo) {
     if (Date.now() - started > BUDGET_MS) break;
-    await answerQuestion(cid, { questionId: q.id, questionVersion: q.version, answer, privacy: q.comparable ? "comparable" : "private" }).catch(() => undefined);
+    await answerQuestion(cid, { questionId: q.id, questionVersion: q.version, answer, privacy: q.comparable ? "comparable" : "private", changeKind: "correction" }).catch(() => undefined);
     left--;
   }
+  // Comparison results are stored when computed: refresh them with what she answered.
+  if (conn) await getComparison(cid, conn.id, { recompute: true }).catch(() => undefined);
   return left;
 }
 

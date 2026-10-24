@@ -199,11 +199,52 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                       })}
                     </ul>
                   )}
-                  {(r.preferences.onlyA.length > 0 || r.preferences.onlyB.length > 0) && (
-                    <p className="mt-2 text-xs text-stone-500">
-                      {t.compare.onlyOne}: {[...r.preferences.onlyA, ...r.preferences.onlyB].map((q) => { const m = QMETA.get(q) ?? r.preferences!.questions[q]; return m ? tr(m.prompt) : q; }).join(" · ")}
-                    </p>
-                  )}
+                  {(r.preferences.onlyA.length > 0 || r.preferences.onlyB.length > 0) && (() => {
+                    const prompt = (q: string) => {
+                      const m = QMETA.get(q) ?? r.preferences!.questions[q];
+                      return m ? tr(m.prompt) : q;
+                    };
+                    // Only they answered: I can answer to compare. Only I answered: just listed.
+                    const theirsOnly = v.myRole === "a" ? r.preferences.onlyB : r.preferences.onlyA;
+                    const mineOnly = v.myRole === "a" ? r.preferences.onlyA : r.preferences.onlyB;
+                    return (
+                      <details className="mt-3 rounded-2xl bg-stone-50 px-4 py-3 text-sm">
+                        <summary className="cursor-pointer font-medium text-stone-700">
+                          {t.compare.onlyOne} <span className="text-stone-500">({theirsOnly.length + mineOnly.length})</span>
+                        </summary>
+                        {theirsOnly.length > 0 && (
+                          <div className="mt-3">
+                            <p className="mb-1.5 text-xs font-semibold text-stone-600">{t.compare.onlyThem(v.otherName, theirsOnly.length)}</p>
+                            <p className="mb-2 text-xs text-teal-800">{t.compare.onlyThemHint}</p>
+                            <ul className="space-y-1">
+                              {theirsOnly.slice(0, 8).map((q) => (
+                                <li key={q}>
+                                  <Link href={`/discover/q/${q}`} className="flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-stone-800 ring-1 ring-stone-200 hover:ring-teal-300">
+                                    <span>{prompt(q)}</span>
+                                    <span aria-hidden className="shrink-0 text-teal-700">→</span>
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                            {theirsOnly.length > 8 && (
+                              <Link href="/discover/all" className="mt-2 block text-right text-xs font-semibold text-teal-700 underline">{t.compare.onlyThemMore(theirsOnly.length - 8)} →</Link>
+                            )}
+                          </div>
+                        )}
+                        {mineOnly.length > 0 && (
+                          <div className="mt-3">
+                            <p className="mb-1.5 text-xs font-semibold text-stone-600">{t.compare.onlyMe(mineOnly.length)}</p>
+                            <ul className="space-y-1">
+                              {mineOnly.slice(0, 8).map((q) => (
+                                <li key={q} className="rounded-xl bg-white px-3 py-2 text-stone-700 ring-1 ring-stone-200">{prompt(q)}</li>
+                              ))}
+                            </ul>
+                            {mineOnly.length > 8 && <p className="mt-1 text-right text-xs text-stone-500">{t.compare.andMore(mineOnly.length - 8)}</p>}
+                          </div>
+                        )}
+                      </details>
+                    );
+                  })()}
                 </Card>
               )}
               {r.hints.length > 0 && (

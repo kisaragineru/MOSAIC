@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { companionPending, companionWrites, createCompanion, deleteCompanion, enrichCompanion, listCompanions } from "@/server/services/dev-companion";
 import { getAccount } from "@/server/services/account";
+import { answerQuestion } from "@/server/services/discovery";
 import { portrait } from "@/server/services/mosaic";
 import { connectionFeed, shareTargets } from "@/server/services/memory-share";
 import { listComparisons } from "@/server/services/sharing";
@@ -27,6 +28,9 @@ describe("development test companion", () => {
     expect((await listComparisons(u.userId))[0]).toMatchObject({ status: "active", otherName: "ミナ（テスト）" });
     expect((await shareTargets(u.userId))[0]!.circle).toBe("family");
     // A made-up woman in her sixties: bio, intro, a chart, answers to everything, months of records.
+    // An answer left over from an older persona is corrected on the next fill.
+    await answerQuestion(id, { questionId: "p.weekend_plan", questionVersion: 1, answer: { choice: "see" }, changeKind: "correction" });
+    expect(await companionPending(id)).toBeGreaterThan(0);
     // Answers come in time-boxed batches; keep filling until none are left.
     for (let i = 0; i < 10 && (await companionPending(id)) > 0; i++) await enrichCompanion(u.userId, id);
     expect(await companionPending(id)).toBe(0);
