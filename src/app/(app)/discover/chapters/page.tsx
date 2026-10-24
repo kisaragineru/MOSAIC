@@ -4,6 +4,7 @@ import { CHAPTER_INFO } from "@/content/axes";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { allProgress, chapterProgress } from "@/server/services/discovery";
+import { AnswerPrivacyLink } from "@/components/answer-privacy-link";
 
 export default async function ChaptersPage() {
   const uid = await requireUser();
@@ -12,7 +13,7 @@ export default async function ChaptersPage() {
   const chapters = await chapterProgress(uid);
   const all = await allProgress(uid);
   return (
-    <Page title={t.discover.title}>
+    <Page title={t.discover.title} actions={<AnswerPrivacyLink t={t} />}>
       <SegmentedTabs
         current="/discover/chapters"
         items={[

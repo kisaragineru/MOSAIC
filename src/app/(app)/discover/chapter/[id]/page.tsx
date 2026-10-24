@@ -6,6 +6,7 @@ import { Flash } from "@/components/flash";
 import { QuestionForm } from "@/components/question-form";
 import { Card, LinkButton, Page, ProgressBar } from "@/components/ui";
 import { Confetti } from "@/components/confetti";
+import { AnswerPrivacyLink } from "@/components/answer-privacy-link";
 import { AXES, AXIS_CHAPTER, AXIS_LABEL, CHAPTER_INFO, CHAPTERS, type Chapter } from "@/content/axes";
 import { TENDENCY_TEXT, type TendencyKey } from "@/content/questions";
 import { portrait } from "@/server/services/mosaic";
@@ -58,7 +59,7 @@ export default async function ChapterPage({ params, searchParams }: { params: Pr
     return l === "consistent" ? "bg-teal-600" : l === "emerging" ? "bg-teal-300" : l === "gathering" ? "bg-sky-100 ring-1 ring-sky-300" : l === "mixed" ? "bg-linear-to-br from-sky-300 to-rose-300" : "bg-white ring-1 ring-stone-300";
   };
   return (
-    <Page title={`${info.icon} ${info.title[locale]}`} back="/discover/chapters">
+    <Page title={`${info.icon} ${info.title[locale]}`} back="/discover/chapters" actions={<AnswerPrivacyLink t={t} />}>
       <div className="space-y-1">
         <div className="flex items-center justify-between text-xs text-stone-500">
           <span>{info.intro[locale]}</span>
@@ -143,9 +144,6 @@ export default async function ChapterPage({ params, searchParams }: { params: Pr
           <PreferenceSection t={t} locale={locale} prefs={await listPreferences(uid, null)} categories={await listCategories()} personId={null} back={back} editing={sp.edit ?? null} />
         </Card>
       )}
-      <p className="text-center text-xs">
-        <Link href="/me/preview" className="text-teal-700 underline">{d.privacyLink}</Link>
-      </p>
     </Page>
   );
 }
