@@ -64,12 +64,13 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
           <Button type="submit">{t.common.add}</Button>
         </form>
       </Card>
-      <Link href="/gifts" className="flex items-center justify-between rounded-3xl bg-linear-to-br from-rose-50 to-amber-50 px-5 py-4 shadow-sm ring-1 ring-white/80 transition hover:shadow-md">
-        <span>
-          <span className="block font-semibold text-stone-900">🎁 {t.giftBox.meLink}</span>
-          <span className="block text-xs text-stone-600">{t.giftBox.meSub}</span>
+      <Link href="/gifts" className="flex items-center gap-4 rounded-3xl bg-linear-to-br from-rose-50 to-amber-50 px-5 py-4 shadow-sm ring-1 ring-white/80 transition hover:shadow-md">
+        <span aria-hidden className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/90 text-2xl shadow-sm">🎁</span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold text-stone-900">{t.giftBox.meLink}</span>
+          <span className="mt-0.5 block text-xs leading-5 text-stone-600">{t.giftBox.meSub}</span>
         </span>
-        <span aria-hidden className="text-teal-700">→</span>
+        <span aria-hidden className="shrink-0 text-teal-700">→</span>
       </Link>
     </Page>
   );

@@ -19,7 +19,7 @@ test("a gift box: parents write, letters stay private, the child receives it as 
   const today = new Date().toISOString().slice(0, 10);
   const mom = await user(browser, "マイ");
   await mom.goto("/people");
-  await mom.getByRole("link", { name: /ギフトボックス（子どもへの贈りもの）/ }).click();
+  await mom.getByRole("link", { name: /ギフトボックス/ }).click();
   await mom.waitForURL("/gifts");
   await mom.getByLabel("子どもの名前（呼び名）").fill("ハナ");
   await mom.getByLabel("子どもの誕生日（任意）").fill("2018-05-05");
