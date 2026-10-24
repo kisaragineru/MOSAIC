@@ -73,6 +73,16 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           </div>
         </form>
       </Card>
+      <Card title={t.home.recent}>
+        {recent.length === 0 ? (
+          <p className="text-sm text-stone-500">{t.memories.empty}</p>
+        ) : (
+          <div className="space-y-3">
+            <Timeline t={t} locale={locale} tz={account.profile.timeZone} days={recent} compact comments={counts} previews={previews} />
+            <Link href="/memories" className="block text-right text-sm text-teal-700 underline">{t.memories.timeline.seeAll} →</Link>
+          </div>
+        )}
+      </Card>
       {askedOfMe.map((r) => (
         <Link key={r.id} href={`/others/${r.id}`} className="flex items-center gap-3 rounded-3xl border border-violet-200 bg-violet-50/80 p-4 text-sm text-violet-950 transition hover:shadow-md">
           <span aria-hidden className="text-xl">💭</span>
@@ -226,16 +236,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               </li>
             ))}
           </ul>
-        )}
-      </Card>
-      <Card title={t.home.recent}>
-        {recent.length === 0 ? (
-          <p className="text-sm text-stone-500">{t.memories.empty}</p>
-        ) : (
-          <div className="space-y-3">
-            <Timeline t={t} locale={locale} tz={account.profile.timeZone} days={recent} compact comments={counts} previews={previews} />
-            <Link href="/memories" className="block text-right text-sm text-teal-700 underline">{t.memories.timeline.seeAll} →</Link>
-          </div>
         )}
       </Card>
     </Page>
