@@ -90,7 +90,17 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
   return (
     <Page title={person.nickname} back="/people">
       <Flash t={t} sp={sp} />
-      <p className="text-xs text-stone-500">🔒 {t.people.privateNote}</p>
+      <section className="flex items-center gap-3 rounded-3xl bg-white/85 p-4 shadow-sm ring-1 ring-white/80">
+        <span aria-hidden className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-xl font-bold text-teal-900">{Array.from(person.nickname.trim())[0]?.toUpperCase() ?? "?"}</span>
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-1.5">
+            <Pill tone="teal">{t.people.relationships[person.relationship as keyof typeof t.people.relationships] ?? person.relationship}</Pill>
+            {connection && connection.status !== "revoked" && <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[11px] font-bold text-teal-800">🔗 {t.people.connected}</span>}
+          </span>
+          <span className="mt-1 block text-xs text-stone-500">🔒 {t.people.privateShort}</span>
+        </span>
+        <a href="#settings" className="shrink-0 rounded-full bg-white px-3 py-2 text-xs font-semibold text-stone-700 ring-1 ring-stone-200 hover:ring-teal-300">⚙️ {t.people.settingsShort}</a>
+      </section>
       {connection && connection.status !== "revoked" && (
         // Their page: what they chose to show you (introduction, manual, shared records, side by side).
         <Link href={`/compare/${connection.id}`} className="block rounded-3xl bg-linear-to-br from-rose-50 via-white to-teal-50 p-4 shadow-sm ring-1 ring-teal-100 transition hover:shadow-md">
@@ -107,59 +117,17 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           )}
         </Link>
       )}
-      {connection && (
-        <div className="space-y-2 rounded-3xl border border-teal-200 bg-linear-to-br from-teal-50 to-sky-50 p-4 text-sm">
-          <p className="font-semibold text-teal-900">{connection.status === "revoked" ? t.people.connectionEndedTitle(connection.otherName) : t.people.connectionCard(connection.otherName)}</p>
-          {connection.status === "revoked" && <p className="text-stone-600">{t.people.connectionEnded}</p>}
-          {seen !== null && (
-            <p className="rounded-2xl bg-white/80 px-3 py-2 text-stone-700">
-              📖 {t.people.circleSeen(seen)}
-              {!circle && <span className="mt-1 block text-xs text-stone-500">{person.relationship === "other" ? t.people.circleOther : t.people.circleNone}</span>}
-            </p>
-          )}
-          <p className="text-xs text-stone-600">🔒 {t.people.connectionPrivate}</p>
-          <form action={unlinkPersonAction}>
-            <input type="hidden" name="personId" value={person.id} />
-            <button className="text-xs text-stone-500 underline">{t.people.unlink}</button>
-          </form>
-        </div>
-      )}
-      {linkable.length > 0 && (
-        <details className="rounded-3xl border border-stone-200/80 bg-white/70 p-4 text-sm">
-          <summary className="cursor-pointer font-semibold text-stone-700">🔗 {t.people.linkTitle}</summary>
-          <p className="mt-2 text-xs text-stone-600">{t.people.linkHelp}</p>
-          <form action={linkPersonAction} className="mt-2 flex gap-2">
-            <input type="hidden" name="personId" value={person.id} />
-            <Select name="sessionId" aria-label={t.people.linkTitle} className="flex-1">
-              {linkable.map((c) => <option key={c.id} value={c.id}>{c.otherName}</option>)}
-            </Select>
-            <Button type="submit">{t.people.link}</Button>
-          </form>
-        </details>
-      )}
-      <Card>
-        <div className="flex items-center gap-2">
-          <Pill tone="teal">{t.people.relationships[person.relationship as keyof typeof t.people.relationships] ?? person.relationship}</Pill>
-        </div>
-        <div className="mt-3">
-          <p className="mb-1 text-xs font-semibold text-stone-500">{t.people.note}</p>
-          {person.note ? <ExpandableText text={person.note} more={t.people.readMore} less={t.people.showLess} /> : <p className="text-sm text-stone-500">{t.people.noteEmpty}</p>}
-        </div>
+      <Card title={`📝 ${t.people.note}`}>
+        {person.note ? <ExpandableText text={person.note} more={t.people.readMore} less={t.people.showLess} /> : <p className="text-sm text-stone-500">{t.people.noteEmpty}</p>}
         <details className="group mt-3">
           <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-full border border-stone-200 px-3 py-1 text-sm text-stone-700 hover:border-teal-300">
             ✎ {t.common.edit}
           </summary>
           <form action={updatePersonAction} className="mt-3 space-y-2">
             <input type="hidden" name="personId" value={person.id} />
-            <div className="grid grid-cols-2 gap-2">
-              <Field label={t.people.nickname}><Input name="nickname" defaultValue={person.nickname} required maxLength={80} /></Field>
-              <Field label={t.people.relationship}>
-                <Select name="relationship" defaultValue={person.relationship}>
-                  {RELS.map((r) => <option key={r} value={r}>{t.people.relationships[r]}</option>)}
-                </Select>
-              </Field>
-            </div>
-            <Field label={t.people.note}><Textarea name="note" defaultValue={person.note ?? ""} rows={6} maxLength={4000} /></Field>
+            <input type="hidden" name="nickname" value={person.nickname} />
+            <input type="hidden" name="relationship" value={person.relationship} />
+            <Textarea name="note" defaultValue={person.note ?? ""} rows={6} maxLength={4000} aria-label={t.people.note} />
             <Button type="submit">{t.common.save}</Button>
           </form>
         </details>
@@ -396,24 +364,91 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
         </ul>
       </Card>
 
-      {others.length > 0 && (
-        <details className="rounded-3xl border border-stone-200/80 bg-white/70 p-4 text-sm">
-          <summary className="cursor-pointer font-semibold text-stone-700">🔀 {t.people.mergeTitle}</summary>
-          <p className="mt-2 text-xs leading-5 text-stone-600">{t.people.mergeHelp}</p>
-          <form action={mergePeopleAction} className="mt-2 flex flex-wrap gap-2">
-            <input type="hidden" name="targetId" value={person.id} />
-            <Select name="sourceId" aria-label={t.people.mergeTitle} className="flex-1">
-              {others.map((p) => <option key={p.id} value={p.id}>{p.nickname}</option>)}
-            </Select>
-            <ConfirmButton message={t.people.mergeConfirm}>{t.people.mergeButton}</ConfirmButton>
-          </form>
-        </details>
-      )}
       <Link href={`/insights?kind=relationship&personId=${person.id}`} className="block text-sm text-teal-700 underline">{t.insights.reflections} →</Link>
-      <form action={deletePersonAction}>
-        <input type="hidden" name="personId" value={person.id} />
-        <ConfirmButton message={t.common.confirmDelete}>{t.people.deletePerson}</ConfirmButton>
-      </form>
+
+      {/* Everything you decide about this person, in one place. */}
+      <section id="settings" className="scroll-mt-20 space-y-3">
+        <h2 className="px-1 text-base font-bold text-stone-900">⚙️ {t.people.settingsTitle(person.nickname)}</h2>
+        <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200/70">
+          <h3 className="mb-2 text-sm font-semibold text-stone-800">👤 {t.people.basics}</h3>
+          <form action={updatePersonAction} className="space-y-2">
+            <input type="hidden" name="personId" value={person.id} />
+            <input type="hidden" name="note" value={person.note ?? ""} />
+            <div className="grid grid-cols-2 gap-2">
+              <Field label={t.people.nickname}><Input name="nickname" defaultValue={person.nickname} required maxLength={80} /></Field>
+              <Field label={t.people.relationship}>
+                <Select name="relationship" defaultValue={person.relationship}>
+                  {RELS.map((r) => <option key={r} value={r}>{t.people.relationships[r]}</option>)}
+                </Select>
+              </Field>
+            </div>
+            {connection && connection.status !== "revoked" && <p className="text-xs leading-5 text-stone-500">{t.people.relationshipShares}</p>}
+            <Button type="submit" variant="secondary">{t.common.save}</Button>
+          </form>
+        </div>
+
+        <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200/70 text-sm">
+          <h3 className="mb-2 text-sm font-semibold text-stone-800">🔗 {t.people.connectionTitle}</h3>
+          {connection ? (
+            <div className="space-y-2">
+              <p className="font-medium text-teal-900">{connection.status === "revoked" ? t.people.connectionEndedTitle(connection.otherName) : t.people.connectionCard(connection.otherName)}</p>
+              {connection.status === "revoked" && <p className="text-stone-600">{t.people.connectionEnded}</p>}
+              {seen !== null && (
+                <p className="rounded-xl bg-teal-50/70 px-3 py-2 text-stone-700">
+                  📖 {t.people.circleSeen(seen)}
+                  {!circle && <span className="mt-1 block text-xs text-stone-500">{person.relationship === "other" ? t.people.circleOther : t.people.circleNone}</span>}
+                </p>
+              )}
+              <p className="text-xs text-stone-500">🔒 {t.people.connectionPrivate}</p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {connection.status !== "revoked" && (
+                  <Link href={`/compare/${connection.id}#settings`} className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-teal-800 ring-1 ring-stone-200 hover:ring-teal-300">{t.people.connectionSettings} →</Link>
+                )}
+                <form action={unlinkPersonAction}>
+                  <input type="hidden" name="personId" value={person.id} />
+                  <button className="rounded-full bg-white px-3 py-1.5 text-xs text-stone-600 ring-1 ring-stone-200 hover:ring-stone-300">{t.people.unlink}</button>
+                </form>
+              </div>
+            </div>
+          ) : linkable.length > 0 ? (
+            <div>
+              <p className="mb-2 text-xs text-stone-600">{t.people.linkHelp}</p>
+              <form action={linkPersonAction} className="flex gap-2">
+                <input type="hidden" name="personId" value={person.id} />
+                <Select name="sessionId" aria-label={t.people.linkTitle} className="flex-1">
+                  {linkable.map((c) => <option key={c.id} value={c.id}>{c.otherName}</option>)}
+                </Select>
+                <Button type="submit">{t.people.link}</Button>
+              </form>
+            </div>
+          ) : (
+            <p className="text-xs leading-5 text-stone-500">{t.people.notConnected}</p>
+          )}
+        </div>
+
+        {others.length > 0 && (
+          <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200/70 text-sm">
+            <h3 className="mb-1 text-sm font-semibold text-stone-800">🔀 {t.people.mergeTitle}</h3>
+            <p className="mb-2 text-xs leading-5 text-stone-600">{t.people.mergeHelp}</p>
+            <form action={mergePeopleAction} className="flex flex-wrap gap-2">
+              <input type="hidden" name="targetId" value={person.id} />
+              <Select name="sourceId" aria-label={t.people.mergeTitle} className="flex-1">
+                {others.map((p) => <option key={p.id} value={p.id}>{p.nickname}</option>)}
+              </Select>
+              <ConfirmButton message={t.people.mergeConfirm}>{t.people.mergeButton}</ConfirmButton>
+            </form>
+          </div>
+        )}
+
+        <div className="rounded-2xl border border-rose-200 bg-rose-50/50 p-4 text-sm">
+          <h3 className="mb-1 text-sm font-semibold text-rose-900">🗑 {t.people.dangerTitle}</h3>
+          <p className="mb-2 text-xs leading-5 text-rose-900/80">{t.people.dangerHelp}</p>
+          <form action={deletePersonAction}>
+            <input type="hidden" name="personId" value={person.id} />
+            <ConfirmButton message={t.common.confirmDelete}>{t.people.deletePerson}</ConfirmButton>
+          </form>
+        </div>
+      </section>
     </Page>
   );
 }

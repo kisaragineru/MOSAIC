@@ -48,11 +48,12 @@ test("Japanese UI end to end: auto-detected, registration, question, Tử Vi, gi
   await page.getByRole("button", { name: "人を追加" }).click();
   await page.getByRole("dialog").getByLabel("名前・呼び名").fill("ユキ");
   await page.getByRole("dialog").getByRole("button", { name: "人を追加" }).click();
-  await expect(page.getByRole("heading", { name: "ユキ" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "ユキ" })).toBeVisible();
   // Long notes are read clamped, and edited in an auto-growing field behind 編集.
   await page.getByText("✎ 編集").click();
-  await page.locator('textarea[name="note"]').fill(Array.from({ length: 8 }, (_, i) => `メモの${i + 1}行目`).join("\n"));
-  await page.getByRole("button", { name: "保存", exact: true }).click();
+  const memo = page.locator("form", { has: page.locator('textarea[name="note"]') });
+  await memo.locator('textarea[name="note"]').fill(Array.from({ length: 8 }, (_, i) => `メモの${i + 1}行目`).join("\n"));
+  await memo.getByRole("button", { name: "保存", exact: true }).click();
   await page.getByRole("button", { name: "続きを読む" }).click();
   await expect(page.getByRole("button", { name: "閉じる" })).toBeVisible();
   // A date with a past year repeats yearly and says when it comes next.
