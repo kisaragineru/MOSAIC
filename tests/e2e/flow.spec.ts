@@ -69,6 +69,8 @@ test("preview: the other person's phone, and switching what is shared", async ({
   await expect(phone.getByText("あなたとミオさん")).toBeVisible();
   await expect(phone.getByText("好みと価値観")).toBeVisible();
   await page.getByRole("link", { name: "✓ 好み" }).click();
+  // Each switch is a navigation: wait for it before the next one, which builds on it.
+  await expect(page.getByRole("link", { name: "好み", exact: true })).toBeVisible();
   await page.getByRole("link", { name: "✓ 価値観" }).click();
   await expect(page).toHaveURL(/s=tuvi%2Ctuvi_detail|s=tuvi,tuvi_detail/);
   await expect(phone.getByText("好みと価値観")).toHaveCount(0);

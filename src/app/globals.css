@@ -1,5 +1,59 @@
 @import "tailwindcss";
 
+/*
+ * Brand palette, from the logo: sky-to-cobalt blue (primary, mapped onto "teal" so every
+ * existing teal-* class follows), butter and peach ("amber"), coral ("rose"), violet as is,
+ * and a blue-slate ink for text ("stone" stays warm grey for surfaces).
+ */
+@theme {
+  --color-teal-50: #f1f6fe;
+  --color-teal-100: #e1ecfd;
+  --color-teal-200: #c6dbfb;
+  --color-teal-300: #9ec2f6;
+  --color-teal-400: #6fa2ef;
+  --color-teal-500: #4c82e6;
+  --color-teal-600: #3b67d6;
+  --color-teal-700: #3254bc;
+  --color-teal-800: #2e4797;
+  --color-teal-900: #2b3f78;
+  --color-teal-950: #1e284a;
+
+  --color-amber-50: #fffaeb;
+  --color-amber-100: #fff0c9;
+  --color-amber-200: #fee29a;
+  --color-amber-300: #fdd17c;
+  --color-amber-400: #fbbd62;
+  --color-amber-500: #f4a043;
+  --color-amber-600: #dc7f2a;
+  --color-amber-700: #b55f22;
+  --color-amber-800: #934b21;
+  --color-amber-900: #793f1f;
+  --color-amber-950: #45200d;
+
+  --color-rose-50: #fff4f2;
+  --color-rose-100: #ffe6e2;
+  --color-rose-200: #ffd0c9;
+  --color-rose-300: #fdafa4;
+  --color-rose-400: #f88b7c;
+  --color-rose-500: #ef6c5c;
+  --color-rose-600: #da5142;
+  --color-rose-700: #b73f33;
+  --color-rose-800: #97362d;
+  --color-rose-900: #7d3229;
+  --color-rose-950: #431611;
+
+  /* Text greys lean towards the logo's blue-slate ink; light greys (surfaces, borders) stay warm. */
+  --color-stone-400: #a2a8b2;
+  --color-stone-500: #7a8291;
+  --color-stone-600: #5a6372;
+  --color-stone-700: #434c5b;
+  --color-stone-800: #323b49;
+  --color-stone-900: #222a36;
+  --color-stone-950: #151a22;
+
+  --color-ink: #2e3a4b;
+}
+
 :root {
   color-scheme: light;
   /* Keep focused or scrolled-to elements clear of the sticky header and the fixed bottom tabs. */
@@ -10,22 +64,17 @@
 body {
   /* Soft peach and lavender light behind everything. */
   background:
-    radial-gradient(900px 520px at -10% -8%, #fde8da 0%, transparent 60%),
-    radial-gradient(760px 520px at 112% 6%, #ebe5fb 0%, transparent 58%),
-    radial-gradient(700px 600px at 50% 110%, #dff3ee 0%, transparent 60%),
-    #fbf7f3;
-  color: #1c1917;
+    radial-gradient(900px 520px at -10% -8%, #fdeedd 0%, transparent 60%),
+    radial-gradient(760px 520px at 112% 6%, #ece6fc 0%, transparent 58%),
+    radial-gradient(700px 600px at 50% 110%, #e2eefc 0%, transparent 60%),
+    #faf8f5;
+  color: #1f2733;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Subtle mosaic texture behind the brand mark */
+/* The brand mark as a background (decorative uses). */
 .mosaic-mark {
-  background-image:
-    linear-gradient(135deg, #0f766e 25%, transparent 25%),
-    linear-gradient(225deg, #b45309 25%, transparent 25%),
-    linear-gradient(45deg, #be123c 25%, transparent 25%),
-    linear-gradient(315deg, #6d28d9 25%, #faf8f5 25%);
-  background-size: 12px 12px;
+  background: url("/brand/mark.png") center / contain no-repeat;
 }
 
 @keyframes fadeUp {

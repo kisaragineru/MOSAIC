@@ -5,7 +5,7 @@ export function PhoneFrame({ title, children, label }: { title: string; children
   return (
     <figure aria-label={label} className="mx-auto w-full max-w-[340px]">
       <div className="rounded-[2.6rem] bg-stone-900 p-2.5 shadow-[0_24px_60px_-20px_rgba(40,30,20,0.55)] ring-1 ring-stone-700">
-        <div className="relative overflow-hidden rounded-[2.1rem] bg-[#fbf7f3]">
+        <div className="relative overflow-hidden rounded-[2.1rem] bg-[#faf8f5]">
           {/* Status bar and notch */}
           <div aria-hidden className="relative flex h-7 items-center justify-between px-6 text-[10px] font-semibold text-stone-800">
             <span>9:41</span>
@@ -16,8 +16,8 @@ export function PhoneFrame({ title, children, label }: { title: string; children
           </div>
           {/* App header, as in MOSAIC */}
           <div aria-hidden className="flex items-center gap-1.5 border-b border-white/60 px-3 py-1.5">
-            <span className="mosaic-mark h-4 w-4 rounded" />
-            <span className="text-[10px] font-semibold tracking-[0.2em]">MOSAIC</span>
+            <span className="mosaic-mark h-4 w-4" />
+            <span className="text-[10px] font-semibold tracking-[0.25em] text-[#2e3a4b]">MOSAIC</span>
           </div>
           <div className="h-[540px] overflow-y-auto overscroll-contain px-3 pb-6 pt-3 [scrollbar-width:thin]">
             <p className="mb-3 flex items-center gap-2 text-base font-semibold text-stone-900">

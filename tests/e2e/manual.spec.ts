@@ -24,7 +24,7 @@ test("the manual is a long read that grows with answers", async ({ browser }) =>
   await page.waitForURL("/me/manual");
   await expect(page.getByRole("heading", { level: 1, name: "サキさんの取扱説明書" })).toBeVisible();
   await expect(page.getByText("17軸のうち0軸")).toBeVisible();
-  await expect(page.getByText("この章は、まだ書けるほどの答えがありません。").first()).toBeVisible();
+  await expect(page.getByText("この章は、あと3問答えると書きはじめられます。").first()).toBeVisible();
 
   await choose(page, "p.weekend_plan", "予定を立てる");
   await choose(page, "ax.plan_pack", "リストで確認して詰め終わっている");
@@ -48,7 +48,7 @@ test("the manual is a long read that grows with answers", async ({ browser }) =>
   await expect(page.locator("#sec-tips li")).toHaveCount(1);
   await expect(page.getByRole("button", { name: /印刷・PDFで保存/ })).toBeVisible();
   // A chapter link leads back to its questions.
-  await page.locator("#sec-mind").getByRole("link", { name: /この章の質問へ/ }).click();
+  await page.locator("#sec-mind").getByRole("link", { name: /質問に答えて章を書き足す/ }).click();
   await page.waitForURL("/discover/chapter/mind");
   await ctx.close();
 });
