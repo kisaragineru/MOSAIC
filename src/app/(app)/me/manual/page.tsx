@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { AXIS_CHAPTER, type Chapter } from "@/content/axes";
 import { PrintButton } from "@/components/print-button";
+import { KnowledgeCard } from "@/components/knowledge-card";
+import { knowledge } from "@/server/services/knowledge";
 import { MANUAL_PRESETS, SHARED_TEXT } from "@/content/manual-text";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
@@ -62,6 +64,17 @@ function Block({ b }: { b: ManualBlock }) {
           </dl>
         </div>
       );
+    case "locked":
+      return (
+        <div className="relative overflow-hidden rounded-2xl bg-white/80 ring-1 ring-stone-200/70">
+          <p aria-hidden className="pointer-events-none select-none p-4 leading-8 text-stone-700 blur-[5px]">{b.sample}</p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/40 p-4 text-center">
+            <span aria-hidden className="text-2xl">🔒</span>
+            <p className="text-sm font-semibold leading-6 text-stone-800">{b.text}</p>
+            <Link href={b.href} className="rounded-full bg-teal-700 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-800 print:hidden">{b.label} →</Link>
+          </div>
+        </div>
+      );
     case "link":
       return (
         <p className="print:hidden">
@@ -106,6 +119,7 @@ export default async function ManualPage() {
   const uid = await requireUser();
   const { t, locale } = await getT();
   const m = await buildManual(uid, locale);
+  const know = await knowledge(uid);
   const tm = t.manual;
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pb-28 pt-4 print:pb-0">
@@ -123,6 +137,7 @@ export default async function ManualPage() {
           <li className="rounded-full bg-white/90 px-3 py-1 font-semibold text-teal-800 ring-1 ring-teal-100">⏱ {tm.minutes(m.minutes)}</li>
           <li className="rounded-full bg-white/90 px-3 py-1 text-stone-600 ring-1 ring-stone-200">{tm.chars(m.chars)}</li>
           <li className="rounded-full bg-white/90 px-3 py-1 text-stone-600 ring-1 ring-stone-200">{tm.axes(m.stats.axesKnown, m.stats.axes)}</li>
+          <li className="rounded-full bg-white/90 px-3 py-1 text-stone-600 ring-1 ring-stone-200">{tm.written(m.stats.written, m.stats.sections)}</li>
         </ul>
         <p className="relative mt-3 text-xs text-stone-500 print:hidden">{tm.privateNote}</p>
       </header>
@@ -134,13 +149,15 @@ export default async function ManualPage() {
             <li key={s.id}>
               <a href={`#sec-${s.id}`} className="flex items-center gap-2 rounded-lg px-1 py-1.5 text-sm text-stone-800 transition hover:bg-teal-50 hover:text-teal-800">
                 <span aria-hidden className="w-5 text-center">{s.icon}</span>
-                <span className="truncate">{s.title}</span>
+                <span className={`truncate ${s.locked ? "text-stone-400" : ""}`}>{s.title}</span>
+                {s.locked && <span aria-label={tm.lockedLabel} className="ml-auto text-xs">🔒</span>}
               </a>
             </li>
           ))}
         </ol>
       </nav>
 
+      <div className="mt-4 print:hidden"><KnowledgeCard k={know} t={t} locale={locale} /></div>
       <section className="mt-4 rounded-3xl bg-white/85 p-5 shadow-sm ring-1 ring-teal-100 print:hidden">
         <h2 className="text-sm font-semibold text-stone-800">🔗 {tm.shareFromManual}</h2>
         <p className="mt-1 text-xs leading-5 text-stone-600">{tm.shareFromManualHelp}</p>

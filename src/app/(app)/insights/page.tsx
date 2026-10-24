@@ -12,6 +12,8 @@ import { reflect, REFLECTION_KINDS, REFLECTION_QUESTIONS, type Reflection } from
 import { listTendencies } from "@/server/services/tendencies";
 import { portrait, tileViews } from "@/server/services/mosaic";
 import { Mosaic } from "@/components/mosaic";
+import { KnowledgeCard } from "@/components/knowledge-card";
+import { knowledge } from "@/server/services/knowledge";
 
 const QMAP = new Map(LOCALIZED_BANK.map((q) => [q.id, q]));
 
@@ -22,6 +24,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
   const claims = await listTendencies(uid);
   const p = await portrait(uid);
   const people = await listPeople(uid);
+  const know = await knowledge(uid);
   let reflection: Reflection | null = null;
   let reflectError: string | null = null;
   // Sending records to the AI provider is only allowed for a form submitted from this site.
@@ -37,6 +40,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
   return (
     <Page title={t.insights.title}>
       <Flash t={t} sp={sp} />
+      <KnowledgeCard k={know} t={t} locale={locale} />
       <Card title={t.mosaic.title}>
         <p className="mb-1 text-sm font-semibold text-stone-800">{t.mosaic.summary(p.revealed, p.axes)}</p>
         <ProgressBar value={p.revealed} max={p.axes} label={t.mosaic.title} className="mb-4" />

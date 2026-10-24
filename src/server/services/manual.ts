@@ -36,6 +36,8 @@ export type ManualBlock =
   | { t: "kv"; title?: string; items: { k: string; v: string }[] }
   | { t: "axis"; key: TendencyKey; name: string; pole: string; level: "consistent" | "emerging" | "mixed"; badge: string; portrait: string; thrive?: string; watch?: string; labels: { thrive: string; watch: string }; meta: string; extra: string[] }
   | { t: "note"; text: string }
+  /** A chapter not written yet: a blurred sample, how far away it is, and where to go. */
+  | { t: "locked"; text: string; sample: string; href: string; label: string }
   | { t: "link"; href: string; text: string };
 
 /** "core": built from answers and tendencies; "personal": your stories, plans and others' words. */
@@ -48,6 +50,8 @@ export interface ManualSection {
   scope: ManualScope;
   blocks: ManualBlock[];
   chars: number;
+  /** Nothing written here yet. */
+  locked: boolean;
 }
 
 export interface Manual {
@@ -55,7 +59,7 @@ export interface Manual {
   sections: ManualSection[];
   chars: number;
   minutes: number;
-  stats: { answers: number; memories: number; axesKnown: number; axes: number; responders: number };
+  stats: { answers: number; memories: number; axesKnown: number; axes: number; responders: number; written: number; sections: number };
 }
 
 export interface ManualClaim {
@@ -119,6 +123,7 @@ function blockText(b: ManualBlock): string {
     case "axis":
       return b.name + b.portrait + (b.thrive ?? "") + (b.watch ?? "") + b.extra.join("");
     case "link":
+    case "locked":
       return "";
   }
 }
@@ -131,7 +136,7 @@ export function composeManual(d: ManualInput, locale: Locale): Manual {
   const add = (id: ManualSectionId, scope: ManualScope, blocks: ManualBlock[]) => {
     const s = SECTION_TEXT[id];
     const all: ManualBlock[] = s.lead ? [{ t: "p", text: L(s.lead) }, ...blocks] : blocks;
-    sections.push({ id, title: L(s.title), icon: s.icon, scope, blocks: all, chars: all.reduce((n, b) => n + blockText(b).length, 0) });
+    sections.push({ id, title: L(s.title), icon: s.icon, scope, blocks: all, chars: all.reduce((n, b) => n + blockText(b).length, 0), locked: blocks.some((b) => b.t === "locked") });
   };
   const peerWindow = (k: TendencyKey) => d.peers.windows.find((w) => w.key === k);
   const textAnswers = (pred: (a: ManualAnswer) => boolean) => d.answers.filter(pred);
@@ -151,7 +156,7 @@ export function composeManual(d: ManualInput, locale: Locale): Manual {
   const summary: ManualBlock[] = [];
   if (top.length) summary.push({ t: "list", items: top.map((c) => L(poleOf(c.key, c.direction))) });
   if (d.bio?.trim()) summary.push({ t: "quote", text: clip(d.bio.trim(), 600), cite: L(P.bioCite) });
-  if (!summary.length) summary.push({ t: "note", text: L(P.chapterEmpty) }, { t: "link", href: "/discover/chapters", text: L(P.answerMore) });
+  if (!summary.length) summary.push({ t: "locked", text: L(P.lockedSummary), sample: L(P.sample), href: "/discover/all", label: L(P.answerMore) });
   add("summary", "core", summary);
 
   // 2. The four axis chapters
@@ -193,8 +198,12 @@ export function composeManual(d: ManualInput, locale: Locale): Manual {
         extra,
       });
     }
-    if (!blocks.some((b) => b.t === "axis")) blocks.push({ t: "note", text: L(P.chapterEmpty) });
-    blocks.push({ t: "link", href: `/discover/chapter/${ch}`, text: L(P.chapterLink) });
+    const keys = AXES.filter((k) => AXIS_CHAPTER[k] === ch);
+    if (!blocks.some((b) => b.t === "axis")) {
+      const need = Math.min(...keys.map((k) => Math.max(1, MIN_EVIDENCE - (claim(k)?.evidence ?? 0))));
+      const sample = MANUAL[keys[0]!]!.pos;
+      blocks.push({ t: "locked", text: L(P.lockedAxes(need)), sample: `${L(sample.portrait)} ${L(sample.thrive)}`, href: `/discover/chapter/${ch}`, label: L(P.answerMore) });
+    } else blocks.push({ t: "link", href: `/discover/chapter/${ch}`, text: L(P.chapterLink) });
     add(ch, "core", blocks);
   }
 
@@ -206,7 +215,7 @@ export function composeManual(d: ManualInput, locale: Locale): Manual {
     .map((s) => ({ s, items: d.prefs.filter((p) => p.sentiment === s).map((p) => p.label) }))
     .filter((g) => g.items.length);
   if (bySentiment.length) likes.push({ t: "kv", title: L(P.likesFromPrefs), items: bySentiment.map((g) => ({ k: L(P.sentiment[g.s]!), v: g.items.join("、") })) });
-  if (!likes.length) likes.push({ t: "note", text: L(P.chapterEmpty) }, { t: "link", href: "/discover/chapter/likes", text: L(P.answerMore) });
+  if (!likes.length) likes.push({ t: "locked", text: L(P.lockedLikes), sample: L(P.sample), href: "/discover/chapter/likes", label: L(P.answerMore) });
   add("likes", "core", likes);
 
   // 4. Tips: the "ask" lines, people chapter first
@@ -214,7 +223,13 @@ export function composeManual(d: ManualInput, locale: Locale): Manual {
     .map((k) => ({ k, c: claim(k) }))
     .filter(({ c, k }) => said(c) && MANUAL[k])
     .map(({ k, c }) => L((c!.direction === 1 ? MANUAL[k]!.pos : MANUAL[k]!.neg).ask));
-  add("tips", "core", asks.length ? [{ t: "list", items: asks }, { t: "p", text: L(P.tipsOutro) }] : [{ t: "note", text: L(P.chapterEmpty) }]);
+  add(
+    "tips",
+    "core",
+    asks.length
+      ? [{ t: "list", items: asks }, { t: "p", text: L(P.tipsOutro) }]
+      : [{ t: "locked", text: L(P.lockedTips), sample: `${L(MANUAL.social_energy!.pos.ask)} ${L(MANUAL.planning!.pos.ask)}`, href: "/discover/all", label: L(P.answerMore) }],
+  );
 
   // 5. As others see me
   const others: ManualBlock[] = [];
@@ -239,7 +254,7 @@ export function composeManual(d: ManualInput, locale: Locale): Manual {
   // 6. Tử Vi
   const tuvi: ManualBlock[] = [];
   if (!d.tuvi) {
-    tuvi.push({ t: "note", text: L(P.tuviNone) }, { t: "link", href: "/tuvi", text: L(P.tuviSetup) });
+    tuvi.push({ t: "locked", text: L(P.tuviNone), sample: L(P.sample), href: "/tuvi", label: L(P.tuviSetup) });
   } else {
     if (d.tuvi.summary) tuvi.push({ t: "kv", items: [{ k: L(P.tuviMenh), v: d.tuvi.summary }] });
     if (d.tuvi.keywords.length) tuvi.push({ t: "list", title: L(P.tuviKeywords), items: d.tuvi.keywords });
@@ -305,6 +320,8 @@ export function composeManual(d: ManualInput, locale: Locale): Manual {
       axesKnown: d.claims.filter(said).length,
       axes: AXES.length,
       responders: d.peers.responders,
+      written: sections.filter((x) => !x.locked).length,
+      sections: sections.length,
     },
   };
 }

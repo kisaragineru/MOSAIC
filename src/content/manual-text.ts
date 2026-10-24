@@ -160,6 +160,19 @@ export const MANUAL_PHRASE = {
     vi: k > 0 ? `${name} (còn ${n(k)} câu)` : `${name} (câu trả lời chia đôi)`,
   }),
   unknownDone: { ja: "17の軸すべてに、何かしらの答えが出ています。あとは答え直したり、周りの人に聞いたりして、説明書を育てていってください。", en: "Every one of the 17 axes says something now. Keep growing the manual by re-answering and asking others.", vi: "Cả 17 trục đều đã có thông tin. Hãy tiếp tục làm dày cẩm nang bằng cách trả lời lại và hỏi người khác." } as I18nText,
+  lockedAxes: (n: number): I18nText => ({
+    ja: `この章は、あと${n}問答えると書きはじめられます。`,
+    en: `${n} more answer${n === 1 ? "" : "s"} and this chapter starts to write itself.`,
+    vi: `Trả lời thêm ${n} câu nữa là chương này bắt đầu được viết.`,
+  }),
+  lockedSummary: { ja: "傾向がひとつ見えてくると、ここにあなたをひとことで表す言葉が並びます。", en: "Once a first tendency shows, a few words that sum you up will appear here.", vi: "Khi xu hướng đầu tiên hiện ra, vài dòng tóm tắt về bạn sẽ xuất hiện ở đây." } as I18nText,
+  lockedLikes: { ja: "好きなものについての質問に答えると、この章が書けるようになります。", en: "Answer a few questions about what you love and this chapter can be written.", vi: "Trả lời vài câu về những điều bạn thích để chương này được viết." } as I18nText,
+  lockedTips: { ja: "傾向が見えてくると、ここに「私と付き合うためのヒント」があなたの言葉で並びます。", en: "As tendencies show, tips for getting along with you will appear here in your own voice.", vi: "Khi các xu hướng hiện ra, những gợi ý để hòa hợp với bạn sẽ xuất hiện ở đây bằng giọng của chính bạn." } as I18nText,
+  sample: {
+    ja: "休日の朝は少しゆっくり始めて、気に入った店でコーヒーを飲むのが好きです。季節の変わり目には新しい場所に出かけたくなり、旅先では地元の人が通う食堂を探します。人に贈り物をするときは、相手の話を思い出しながら選ぶ時間も楽しんでいます。",
+    en: "Weekend mornings start slowly, with coffee at a favourite place. When the seasons change there's a pull to go somewhere new, and on trips the hunt is for the diner the locals use. Choosing a gift means remembering what the other person said — and enjoying that part too.",
+    vi: "Sáng cuối tuần bắt đầu thong thả với ly cà phê ở quán quen. Khi giao mùa lại muốn đi đâu đó mới, và khi đi xa thì tìm quán ăn của người địa phương. Chọn quà là lúc nhớ lại những gì người kia từng kể — và cũng tận hưởng điều đó.",
+  } as I18nText,
   chapterLink: { ja: "この章の質問へ", en: "Questions for this chapter", vi: "Câu hỏi của chương này" } as I18nText,
 };
 

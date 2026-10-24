@@ -71,8 +71,10 @@ describe("manual content", () => {
 });
 
 describe("composeManual", () => {
-  it("lays out every section in order", () => {
+  it("lays out every section in order, all written for a well-answered user", () => {
     const m = composeManual(fullInput(), "ja");
+    expect(m.sections.filter((s) => s.locked).map((s) => s.id)).toEqual([]);
+    expect(m.stats.written).toBe(m.stats.sections);
     expect(m.sections.map((s) => s.id)).toEqual([...MANUAL_SECTIONS]);
     expect(m.sections.every((s) => s.blocks.length > 0 && s.title)).toBe(true);
   });
@@ -160,7 +162,8 @@ describe("composeManual", () => {
       expect(m.stats.axesKnown).toBe(0);
       const unknown = m.sections.find((s) => s.id === "unknown")!.blocks.find((b) => b.t === "list");
       expect(unknown && unknown.t === "list" && unknown.items).toHaveLength(17);
-      expect(m.sections.find((s) => s.id === "tuvi")!.blocks.some((b) => b.t === "link" && b.href === "/tuvi")).toBe(true);
+      expect(m.sections.find((s) => s.id === "tuvi")!.blocks.some((b) => b.t === "locked" && b.href === "/tuvi")).toBe(true);
+      for (const id of ["summary", "self", "mind", "people", "life", "likes", "tips", "tuvi"]) expect(m.sections.find((s) => s.id === id)!.locked, `${l}:${id}`).toBe(true);
       expect(m.minutes).toBeGreaterThanOrEqual(1);
     }
   });

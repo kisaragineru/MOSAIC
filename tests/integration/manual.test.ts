@@ -30,7 +30,10 @@ describe("self manual", () => {
     const u = await makeUser();
     const m = await buildManual(u.userId, "ja");
     expect(m.stats).toMatchObject({ answers: 0, memories: 0, axesKnown: 0, responders: 0 });
-    expect(m.sections.find((s) => s.id === "self")!.blocks.some((b) => b.t === "note")).toBe(true);
+    const self = m.sections.find((s) => s.id === "self")!;
+    expect(self.locked).toBe(true);
+    expect(self.blocks.find((b) => b.t === "locked")).toMatchObject({ text: "この章は、あと3問答えると書きはじめられます。", href: "/discover/chapter/self" });
+    expect(m.stats.written).toBeLessThan(m.stats.sections);
     expect(m.chars).toBeLessThan(2000);
   });
 

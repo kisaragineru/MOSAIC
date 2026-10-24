@@ -15,6 +15,8 @@ import { myPeerRequests } from "@/server/services/peers";
 import { getTuvi } from "@/server/services/tuvi";
 import { portrait, tileViews } from "@/server/services/mosaic";
 import { Mosaic } from "@/components/mosaic";
+import { KnowledgeCard } from "@/components/knowledge-card";
+import { knowledge } from "@/server/services/knowledge";
 import { lifeStages } from "@/lib/tuvi/interpret";
 import { STAR_INFO } from "@/lib/tuvi/stars";
 
@@ -37,6 +39,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const waiting = (await listComparisons(uid)).filter((c) => c.waitingOn === "you");
   const askedOfMe = (await myPeerRequests(uid)).filter((r) => r.role === "responder" && r.status === "pending");
   const pic = await portrait(uid);
+  const know = await knowledge(uid);
   const nowStage = chart ? lifeStages(chart, locale, tv.currentAge).find((x) => x.state === "current") : undefined;
   return (
     <Page title={t.home.hello(account.profile.displayName)}>
@@ -109,6 +112,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           <p className="text-sm text-stone-500">{t.discover.noQuestion}</p>
         )}
       </Card>
+      <KnowledgeCard k={know} t={t} locale={locale} />
       <Link href="/insights" className="block rounded-3xl border border-stone-200/80 bg-white/80 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md motion-reduce:transition-none">
         <span className="flex items-baseline justify-between gap-2">
           <span className="font-semibold text-stone-900">{t.mosaic.title}</span>
