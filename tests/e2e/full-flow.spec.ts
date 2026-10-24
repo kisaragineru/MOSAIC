@@ -179,13 +179,13 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   const compareUrl = pb.url();
   await expect(pb.getByText("Waiting for the other person to consent.")).toBeVisible();
   // No result before consent
-  await expect(pb.getByText("Preferences & values")).toHaveCount(0);
+  await expect(pb.getByText("The two of you, side by side")).toHaveCount(0);
   await pb.getByLabel(/Tử Vi —/).check();
   await pb.getByLabel(/Preferences —/).check();
   await pb.getByLabel(/I understand and consent/).check();
   await pb.getByRole("button", { name: "Give consent" }).click();
   await expect(pb.getByText(/You consented to: Tử Vi, Preferences/)).toBeVisible();
-  await expect(pb.getByText("Preferences & values")).toHaveCount(0);
+  await expect(pb.getByText("The two of you, side by side")).toHaveCount(0);
 
   // A consents → result for both
   await pa.goto("/share");
@@ -195,7 +195,7 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   await pa.getByLabel(/Preferences —/).check();
   await pa.getByLabel(/I understand and consent/).check();
   await pa.getByRole("button", { name: "Give consent" }).click();
-  await expect(pa.getByRole("heading", { name: "Preferences & values" })).toBeVisible();
+  await expect(pa.getByRole("heading", { name: "The two of you, side by side" })).toBeVisible();
   const items = pa.getByTestId("pref-items");
   await expect(items.getByText("Your go-to drink?")).toBeVisible();
   await expect(items.locator("li", { hasText: "Your go-to drink?" }).getByText("In common")).toBeVisible(); // both Tea now
@@ -210,7 +210,7 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   for (const secret of ["1990-06-07", "06:30", "Family comes first", "Film camera", "Linh"]) expect(html).not.toContain(secret);
 
   await pb.goto(compareUrl);
-  await expect(pb.getByRole("heading", { name: "Preferences & values" })).toBeVisible();
+  await expect(pb.getByRole("heading", { name: "The two of you, side by side" })).toBeVisible();
 
   // --- A third user cannot see the comparison ---
   const c = await newUser(browser, "Chi");
@@ -224,11 +224,11 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
 
   // --- Revoke: B ends the comparison, A loses access to the result ---
   pb.on("dialog", (d) => d.accept());
-  await pb.getByRole("button", { name: "End this comparison" }).click();
-  await expect(pb.getByText(/This comparison has ended/)).toBeVisible();
+  await pb.getByRole("button", { name: "End this connection" }).click();
+  await expect(pb.getByText(/This connection has ended/)).toBeVisible();
   await pa.goto(compareUrl);
-  await expect(pa.getByText(/This comparison has ended/)).toBeVisible();
-  await expect(pa.getByText("Preferences & values")).toHaveCount(0);
+  await expect(pa.getByText(/This connection has ended/)).toBeVisible();
+  await expect(pa.getByText("The two of you, side by side")).toHaveCount(0);
 
   // A revokes the share link → a new visitor gets "unavailable"
   pa.on("dialog", (d) => d.accept());

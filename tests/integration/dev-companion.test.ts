@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { companionPending, companionWrites, createCompanion, deleteCompanion, enrichCompanion, listCompanions } from "@/server/services/dev-companion";
+import { companionConnected, companionPending, companionWrites, createCompanion, deleteCompanion, enrichCompanion, listCompanions, reconnectCompanion } from "@/server/services/dev-companion";
 import { getAccount } from "@/server/services/account";
 import { answerQuestion } from "@/server/services/discovery";
 import { portrait } from "@/server/services/mosaic";
 import { connectionFeed, shareTargets } from "@/server/services/memory-share";
-import { listComparisons } from "@/server/services/sharing";
+import { listComparisons, revokeComparison } from "@/server/services/sharing";
 import { makeUser } from "../helpers/factory";
 
 afterEach(() => {
@@ -51,6 +51,16 @@ describe("development test companion", () => {
     // Not someone else's companion.
     await expect(companionWrites(other.userId, id)).rejects.toMatchObject({ code: "not_found" });
     await expect(deleteCompanion(other.userId, id)).rejects.toMatchObject({ code: "not_found" });
+    // Ended by the owner, then connected again: same person entry, records visible again.
+    const before = (await listComparisons(u.userId)).find((c) => c.status === "active")!;
+    await revokeComparison(u.userId, before.id);
+    expect(await companionConnected(id)).toBe(false);
+    expect(await connectionFeed(u.userId)).toEqual([]);
+    await reconnectCompanion(u.userId, id);
+    expect(await companionConnected(id)).toBe(true);
+    const now = (await listComparisons(u.userId)).find((c) => c.status === "active")!;
+    expect(now.personId).toBe(before.personId);
+    expect(await connectionFeed(u.userId, { limit: 100 })).toHaveLength(11);
     await deleteCompanion(u.userId, id);
     expect(await listCompanions(u.userId)).toEqual([]);
     expect(await connectionFeed(u.userId)).toEqual([]);

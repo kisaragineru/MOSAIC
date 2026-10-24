@@ -10,8 +10,8 @@ import { DEFAULT_RULESET, ENGINE_VERSION } from "@/lib/tuvi/ruleset";
 import { requireUser } from "@/server/auth/session";
 import { aiConfigured } from "@/server/ai/claude";
 import { getAccount, getNotificationPrefs } from "@/server/services/account";
-import { companionPending, devToolsEnabled, listCompanions } from "@/server/services/dev-companion";
-import { companionWritesAction, createCompanionAction, deleteCompanionAction, enrichCompanionAction } from "@/app/actions/dev";
+import { companionConnected, companionPending, devToolsEnabled, listCompanions } from "@/server/services/dev-companion";
+import { companionWritesAction, createCompanionAction, deleteCompanionAction, enrichCompanionAction, reconnectCompanionAction } from "@/app/actions/dev";
 
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
@@ -20,7 +20,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const { t } = await getT();
   const acc = await getAccount(uid);
   const np = await getNotificationPrefs(uid);
-  const companions = await Promise.all((await listCompanions(uid)).map(async (c) => ({ ...c, pending: await companionPending(c.id) })));
+  const companions = await Promise.all((await listCompanions(uid)).map(async (c) => ({ ...c, pending: await companionPending(c.id), connected: await companionConnected(c.id) })));
   const td = t.settings.dev;
   return (
     <Page title={t.settings.title}>
@@ -88,7 +88,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             <ul className="space-y-2">
               {companions.map((c) => (
                 <li key={c.id} className="flex flex-wrap items-center gap-2 rounded-2xl bg-white p-3 text-sm">
-                  <span className="flex-1 font-medium">{c.name}</span>
+                  <span className="flex-1 font-medium">{c.name}{!c.connected && <span className="ml-2 text-xs font-normal text-rose-700">{td.ended}</span>}</span>
+                  {!c.connected && (
+                    <form action={reconnectCompanionAction}>
+                      <input type="hidden" name="id" value={c.id} />
+                      <Button type="submit" className="min-h-8 px-3 py-1 text-xs">🔗 {td.reconnect}</Button>
+                    </form>
+                  )}
                   <form action={enrichCompanionAction}>
                     <input type="hidden" name="id" value={c.id} />
                     <Button type="submit" variant="secondary" className="min-h-8 px-3 py-1 text-xs">{c.pending > 0 ? `✨ ${td.enrich(c.pending)}` : `✓ ${td.enriched}`}</Button>

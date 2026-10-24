@@ -24,7 +24,7 @@ import { saveIntro } from "./intro";
 import { listMemories } from "./memories";
 import { saveBirthProfile } from "./tuvi";
 import { QUESTION_BANK } from "@/content/questions";
-import { addPersonFromConnection, createShare, getComparison, giveConsent, listComparisons, openComparison } from "./sharing";
+import { addPersonFromConnection, createShare, getComparison, giveConsent, linkPersonToConnection, listComparisons, openComparison } from "./sharing";
 
 export const devToolsEnabled = () => process.env.DEV_TOOLS === "on";
 const MAX = 3;
@@ -173,6 +173,29 @@ function leaning(q: (typeof QUESTION_BANK)[number]) {
 /** Fill (or refill) an existing companion with the persona. */
 export async function enrichCompanion(ownerId: string, companionId: string): Promise<number> {
   return fill(await own(ownerId, companionId));
+}
+
+/** Whether the companion is still connected with its owner (they may have ended it to try that). */
+export async function companionConnected(companionId: string) {
+  return (await listComparisons(companionId)).some((c) => c.status === "active");
+}
+
+/**
+ * Connect again after the owner ended the connection: a new connection with both consents,
+ * the owner's existing person entry moved onto it, her shares restored.
+ */
+export async function reconnectCompanion(ownerId: string, companionId: string) {
+  const cid = await own(ownerId, companionId);
+  if (await companionConnected(cid)) return;
+  const ended = (await listComparisons(cid)).filter((c) => c.status === "revoked").map((c) => c.id);
+  const ownerPerson = (await listComparisons(ownerId)).find((c) => ended.includes(c.id) && c.personId)?.personId ?? null;
+  const share = await createShare(cid);
+  const sid = await openComparison(ownerId, share.token);
+  await giveConsent(cid, sid, { scopes: ["preferences", "values"], agree: true });
+  await giveConsent(ownerId, sid, { scopes: ["preferences", "values"], agree: true });
+  if (ownerPerson) await linkPersonToConnection(ownerId, ownerPerson, sid);
+  else await addPersonFromConnection(ownerId, sid, "family");
+  await fill(cid);
 }
 
 /** The companion writes one more record, shared with everyone it's connected with. */

@@ -4,6 +4,9 @@ import { addPersonFromConnectionAction, consentAction, endComparisonAction, manu
 import { MANUAL_PRESETS, SHARED_TEXT } from "@/content/manual-text";
 import { myManualShare, sharedManualFor } from "@/server/services/manual-share";
 import { askPeerAction } from "@/app/actions/peers";
+import { listPeople } from "@/server/services/people";
+import { connectionFeed } from "@/server/services/memory-share";
+import { KIND_ICON } from "@/lib/timeline";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
 import { IntroPair } from "@/components/intro-pair";
@@ -26,6 +29,12 @@ import { fromSharedChart } from "@/lib/tuvi/shared-chart";
 
 const SCOPES = ["tuvi", "tuvi_detail", "preferences", "values"] as const;
 const QMETA = new Map(LOCALIZED_BANK.map((q) => [q.id, q]));
+const ORDER_KIND = ["same", "partly_shared", "different"];
+const KIND_STYLE = {
+  same: { box: "bg-teal-50 text-teal-900", pill: "bg-teal-100 text-teal-900", ring: "ring-teal-200" },
+  partly_shared: { box: "bg-amber-50 text-amber-900", pill: "bg-amber-100 text-amber-900", ring: "ring-amber-200" },
+  different: { box: "bg-violet-50 text-violet-900", pill: "bg-violet-100 text-violet-900", ring: "ring-violet-200" },
+};
 
 export default async function ComparePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
@@ -39,6 +48,9 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
   const myShare = await myManualShare(uid, v.id);
   const theirManual = v.status === "revoked" ? null : await sharedManualFor(uid, v.id, locale);
   const personId = (await listComparisons(uid)).find((c) => c.id === v.id)?.personId ?? null;
+  const relationship = personId ? ((await listPeople(uid)).find((p) => p.id === personId)?.relationship ?? null) : null;
+  // What they chose to show me lately (records shared with this connection).
+  const theirRecords = v.status === "active" ? (await connectionFeed(uid, { limit: 30 })).filter((x) => x.sessionId === v.id).slice(0, 3) : [];
   const scopeNames = (s: string[]) => s.map((x) => t.compare.scopeNames[x as (typeof SCOPES)[number]] ?? x).join(", ");
   const r = v.result;
   const names = r ? { a: r.participants.a, b: r.participants.b } : null;
@@ -62,76 +74,230 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
       themes: interpret(theirs, locale, theirAge).filter((x) => x.section !== "cycles").sort((x, y) => ORDER.indexOf(x.section) - ORDER.indexOf(y.section)),
     };
   }
+  const myName = names ? (v.myRole === "a" ? names.a : names.b) : "";
+  const initial = (n: string) => Array.from(n.trim())[0]?.toUpperCase() ?? "?";
+  const pref = r?.preferences ?? null;
+  // Me first, then them, whatever side of the session each of us is on.
+  const items = pref
+    ? [...pref.items]
+        .map((i) => ({ ...i, mine: v.myRole === "a" ? i.a : i.b, theirs: v.myRole === "a" ? i.b : i.a }))
+        .sort((x, y) => ORDER_KIND.indexOf(x.kind) - ORDER_KIND.indexOf(y.kind))
+    : [];
+  const count = (k: string) => items.filter((i) => i.kind === k).length;
+  const cc = t.compare;
   return (
-    <Page title={t.compare.title(v.otherName)} back="/share">
+    <Page title={cc.title(v.otherName)} back="/share">
       <Flash t={t} sp={sp} />
-      {(v.otherBio || v.otherIntro) && v.status !== "revoked" && (
-        <Card title={t.compare.bioTitle(v.otherName)}>
-          <IntroPair bio={v.otherBio} intro={v.otherIntro} name={v.otherName} t={t} />
-        </Card>
-      )}
-      {theirManual && (
-        <Link href={`/compare/${v.id}/manual`} className="flex items-center justify-between gap-3 rounded-3xl bg-linear-to-br from-amber-50 to-teal-50 px-5 py-4 shadow-sm ring-1 ring-amber-100 transition hover:shadow-md">
-          <span>
-            <span className="block font-semibold text-stone-900">📖 {t.manual.theirTitle(v.otherName)}</span>
-            <span className="block text-xs text-stone-600">{SHARED_TEXT.presetName[theirManual.preset][locale]}</span>
-          </span>
-          <span className="text-sm font-semibold text-teal-700">{t.manual.theirOpen} →</span>
-        </Link>
-      )}
-      {v.status !== "revoked" && (
-        <div id="manual" className="scroll-mt-20">
-          <Card title={`📖 ${t.manual.shareTitle}`}>
-            <p className="mb-3 text-sm text-stone-600">{t.manual.shareHelp}</p>
-            {myShare && <p className="mb-2 text-xs font-semibold text-teal-800">✓ {t.manual.shareNow(SHARED_TEXT.presetName[myShare][locale])}</p>}
-            <form action={manualShareAction} className="space-y-2">
+
+      {/* Who: the two of you, how you're connected, and where to go on this page. */}
+      <section className="rounded-3xl bg-linear-to-br from-rose-50 via-white to-teal-50 p-5 shadow-sm ring-1 ring-white/80">
+        <div className="flex items-center gap-3">
+          <div className="flex -space-x-3" aria-hidden>
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100 text-lg font-bold text-teal-900 ring-4 ring-white">{initial(myName || "?")}</span>
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-lg font-bold text-rose-900 ring-4 ring-white">{initial(v.otherName)}</span>
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-lg font-bold text-stone-900">{v.otherName}</p>
+            <p className="text-xs text-stone-600">
+              {relationship ? `${t.people.relationships[relationship as keyof typeof t.people.relationships] ?? relationship} · ` : ""}
+              {v.status === "active" ? cc.statusActive : v.status === "revoked" ? cc.statusEnded : cc.statusPending}
+            </p>
+          </div>
+        </div>
+        {v.status !== "revoked" && (
+          <nav aria-label={cc.title(v.otherName)} className="mt-4 flex flex-wrap gap-1.5 text-xs">
+            {[
+              ["#know", `👤 ${cc.navKnow}`],
+              ...(r ? [["#together", `🧩 ${cc.navTogether}`]] : []),
+              ...(r?.tuvi || together ? [["#tuvi", `✦ Tử Vi`]] : []),
+              ["#settings", `⚙️ ${cc.navSettings}`],
+            ].map(([href, label]) => (
+              <a key={href} href={href} className="rounded-full bg-white/90 px-3 py-1.5 font-medium text-stone-700 ring-1 ring-stone-200 hover:ring-teal-300">{label}</a>
+            ))}
+          </nav>
+        )}
+      </section>
+
+      {v.status === "revoked" && <Notice kind="warning">{cc.ended}</Notice>}
+
+      {/* Not connected yet: deciding what to share is the one thing to do here. */}
+      {v.status !== "revoked" && !r && (
+          <Card title={t.compare.consentTitle}>
+            <p className="mb-3 text-sm text-stone-600">{PURPOSE_TEXT[locale]}</p>
+            {v.myConsent && <p className="mb-2 text-sm"><Pill tone="teal">✓</Pill> {t.compare.yourConsent(scopeNames(v.myConsent.scopes))}</p>}
+            <p className="mb-3 text-sm">{v.otherConsented ? `✓ ${t.compare.otherConsented}` : `⏳ ${t.compare.waiting}`}</p>
+            <form action={consentAction} className="space-y-2">
               <input type="hidden" name="sessionId" value={v.id} />
               <fieldset className="space-y-2">
-                <legend className="sr-only">{t.manual.shareTitle}</legend>
-                {(["none", ...MANUAL_PRESETS] as const).map((p) => (
-                  <label key={p} className="flex cursor-pointer items-start gap-3 rounded-2xl border border-stone-200 bg-white/80 p-3 has-checked:border-teal-400 has-checked:bg-teal-50/60">
-                    <input type="radio" name="preset" value={p} defaultChecked={(myShare ?? "none") === p} className="mt-1 accent-teal-700" />
-                    <span>
-                      <span className="block text-sm font-semibold text-stone-900">{p === "none" ? t.manual.shareNone : SHARED_TEXT.presetName[p][locale]}</span>
-                      {p !== "none" && <span className="block text-xs leading-5 text-stone-600">{SHARED_TEXT.presetWhat[p][locale]}</span>}
-                      {p !== "none" && (
-                        <Link href={`/me/manual/shared?preset=${p}&back=${encodeURIComponent(`/compare/${v.id}`)}`} className="text-xs text-teal-700 underline">{t.manual.sharePreview} →</Link>
-                      )}
-                    </span>
-                  </label>
+                <legend className="text-sm font-medium">{t.compare.scopes}</legend>
+                {SCOPES.map((s) => (
+                  <Checkbox
+                    key={s}
+                    name="scopes"
+                    value={s}
+                    defaultChecked={v.myConsent?.scopes.includes(s)}
+                    label={<><b>{t.compare.scopeNames[s]}</b> — <span className="text-stone-600">{SCOPE_DESCRIPTIONS[s][locale]}</span></>}
+                  />
                 ))}
               </fieldset>
-              <p className="text-xs leading-5 text-stone-500">🔒 {SHARED_TEXT.never[locale]}</p>
-              <Button type="submit" variant="secondary">{t.manual.shareSave}</Button>
+              <Checkbox name="agree" required label={t.compare.agree} />
+              <p className="text-xs text-stone-500">{t.compare.bioNote}</p>
+              <Button type="submit">{v.myConsent ? t.compare.update : t.compare.give}</Button>
             </form>
           </Card>
-        </div>
       )}
-      {personId ? (
-        <Link href={`/people/${personId}`} className="block text-sm font-medium text-teal-700 underline">♡ {t.compare.personLink} →</Link>
-      ) : (
-        v.status !== "revoked" && (
-          <form action={addPersonFromConnectionAction}>
-            <input type="hidden" name="sessionId" value={v.id} />
-            <Button type="submit" variant="secondary">♡ {t.people.addFromConnection}</Button>
-          </form>
-        )
-      )}
+
+      {/* Getting to know them: their words, their manual, what they shared lately. */}
       {v.status !== "revoked" && (
-        <form action={askPeerAction}>
-          <input type="hidden" name="sessionId" value={v.id} />
-          <input type="hidden" name="back" value="/me/others" />
-          <Button type="submit" variant="secondary">💭 {t.peers.askThis(v.otherName)}</Button>
-        </form>
+        <section id="know" className="scroll-mt-20 space-y-3">
+          <h2 className="px-1 text-base font-bold text-stone-900">👤 {cc.knowTitle(v.otherName)}</h2>
+          {v.otherBio || v.otherIntro ? (
+            <Card>
+              <IntroPair bio={v.otherBio} intro={v.otherIntro} name={v.otherName} t={t} />
+            </Card>
+          ) : (
+            <p className="px-1 text-sm text-stone-500">{cc.noIntro(v.otherName)}</p>
+          )}
+          {theirManual && (
+            <Link href={`/compare/${v.id}/manual`} className="flex items-center justify-between gap-3 rounded-3xl bg-linear-to-br from-amber-50 to-teal-50 px-5 py-4 shadow-sm ring-1 ring-amber-100 transition hover:shadow-md">
+              <span>
+                <span className="block font-semibold text-stone-900">📖 {t.manual.theirTitle(v.otherName)}</span>
+                <span className="block text-xs text-stone-600">{SHARED_TEXT.presetName[theirManual.preset][locale]}</span>
+              </span>
+              <span className="text-sm font-semibold text-teal-700">{t.manual.theirOpen} →</span>
+            </Link>
+          )}
+          {theirRecords.length > 0 && (
+            <Card title={`📝 ${cc.theirRecords(v.otherName)}`}>
+              <ul className="space-y-2">
+                {theirRecords.map((x) => (
+                  <li key={x.id} className="rounded-2xl bg-rose-50/50 p-3 ring-1 ring-rose-100">
+                    <p className="mb-1 text-xs text-stone-500"><span aria-hidden>{KIND_ICON[x.kind]} </span>{x.effectiveOn}</p>
+                    {x.title && <p className="text-sm font-semibold text-stone-900">{x.title}</p>}
+                    <p className="line-clamp-3 whitespace-pre-line text-sm text-stone-800">{x.body}</p>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/memories?view=friends" className="mt-2 block text-right text-sm text-teal-700 underline">{cc.moreRecords} →</Link>
+            </Card>
+          )}
+        </section>
       )}
-      {v.status === "revoked" ? (
-        <Notice kind="warning">{t.compare.ended}</Notice>
-      ) : (
-        <>
-          {r && names && (
-            <>
-              <Notice>{tr(r.disclaimer)}</Notice>
-              <p className="text-xs text-stone-500">{t.compare.agreed(scopeNames(r.agreedScopes))}{v.computedAt && ` · ${t.compare.computedAt(v.computedAt.toISOString().slice(0, 16).replace("T", " "))}`}</p>
+
+      {/* Side by side: you first, then them. */}
+      {v.status !== "revoked" && r && names && (
+        <section id="together" className="scroll-mt-20 space-y-3">
+          <h2 className="px-1 text-base font-bold text-stone-900">🧩 {cc.togetherTitle}</h2>
+          {pref && (
+            <Card>
+              {items.length === 0 ? (
+                <p className="text-sm text-stone-500">{cc.noPref}</p>
+              ) : (
+                <>
+                  <div className="mb-3 grid grid-cols-3 gap-2 text-center">
+                    {(["same", "partly_shared", "different"] as const).map((k) => (
+                      <div key={k} className={`rounded-2xl px-2 py-2 ${KIND_STYLE[k].box}`}>
+                        <p className="text-xl font-bold">{count(k)}</p>
+                        <p className="text-[11px] font-semibold">{k === "same" ? cc.same : k === "partly_shared" ? cc.partly : cc.different}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <ul className="space-y-2.5" data-testid="pref-items">
+                    {items.map((i) => {
+                      // Display text from the current catalog (stored results may predate a language).
+                      const q = QMETA.get(i.questionId) ?? pref.questions[i.questionId];
+                      const ks = KIND_STYLE[i.kind as keyof typeof KIND_STYLE] ?? KIND_STYLE.different;
+                      return (
+                        <li key={i.questionId} className={`overflow-hidden rounded-2xl ring-1 ${ks.ring}`}>
+                          <div className="flex items-start gap-2 bg-white px-3 pt-3 pb-2">
+                            <span className={`mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${ks.pill}`}>
+                              {i.kind === "same" ? cc.same : i.kind === "partly_shared" ? cc.partly : cc.different}
+                            </span>
+                            <p className="text-sm font-medium leading-6 text-stone-900">{q ? tr(q.prompt) : i.questionId}</p>
+                          </div>
+                          <dl className="grid grid-cols-2 divide-x divide-stone-100 border-t border-stone-100 bg-stone-50/60 text-sm">
+                            <div className="px-3 py-2">
+                              <dt className="mb-0.5 flex items-center gap-1 text-[11px] font-semibold text-teal-800"><span aria-hidden className="flex h-4 w-4 items-center justify-center rounded-full bg-teal-100 text-[9px]">{initial(myName)}</span>{cc.you}</dt>
+                              <dd className="leading-5 text-stone-900">{answerLabel(q?.options ?? null, i.mine, locale)}</dd>
+                            </div>
+                            <div className="px-3 py-2">
+                              <dt className="mb-0.5 flex items-center gap-1 text-[11px] font-semibold text-rose-800"><span aria-hidden className="flex h-4 w-4 items-center justify-center rounded-full bg-rose-100 text-[9px]">{initial(v.otherName)}</span>{v.otherName}</dt>
+                              <dd className="leading-5 text-stone-900">{answerLabel(q?.options ?? null, i.theirs, locale)}</dd>
+                            </div>
+                          </dl>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
+              )}
+                  {(pref.onlyA.length > 0 || pref.onlyB.length > 0) && (() => {
+                    const prompt = (q: string) => {
+                      const m = QMETA.get(q) ?? pref!.questions[q];
+                      return m ? tr(m.prompt) : q;
+                    };
+                    // Only they answered: I can answer to compare. Only I answered: just listed.
+                    const theirsOnly = v.myRole === "a" ? pref.onlyB : pref.onlyA;
+                    const mineOnly = v.myRole === "a" ? pref.onlyA : pref.onlyB;
+                    return (
+                      <details className="mt-3 rounded-2xl bg-stone-50 px-4 py-3 text-sm">
+                        <summary className="cursor-pointer font-medium text-stone-700">
+                          {t.compare.onlyOne} <span className="text-stone-500">({theirsOnly.length + mineOnly.length})</span>
+                        </summary>
+                        {theirsOnly.length > 0 && (
+                          <div className="mt-3">
+                            <p className="mb-1.5 text-xs font-semibold text-stone-600">{t.compare.onlyThem(v.otherName, theirsOnly.length)}</p>
+                            <p className="mb-2 text-xs text-teal-800">{t.compare.onlyThemHint}</p>
+                            <ul className="space-y-1">
+                              {theirsOnly.slice(0, 8).map((q) => (
+                                <li key={q}>
+                                  <Link href={`/discover/q/${q}`} className="flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-stone-800 ring-1 ring-stone-200 hover:ring-teal-300">
+                                    <span>{prompt(q)}</span>
+                                    <span aria-hidden className="shrink-0 text-teal-700">→</span>
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                            {theirsOnly.length > 8 && (
+                              <Link href="/discover/all" className="mt-2 block text-right text-xs font-semibold text-teal-700 underline">{t.compare.onlyThemMore(theirsOnly.length - 8)} →</Link>
+                            )}
+                          </div>
+                        )}
+                        {mineOnly.length > 0 && (
+                          <div className="mt-3">
+                            <p className="mb-1.5 text-xs font-semibold text-stone-600">{t.compare.onlyMe(mineOnly.length)}</p>
+                            <ul className="space-y-1">
+                              {mineOnly.slice(0, 8).map((q) => (
+                                <li key={q} className="rounded-xl bg-white px-3 py-2 text-stone-700 ring-1 ring-stone-200">{prompt(q)}</li>
+                              ))}
+                            </ul>
+                            {mineOnly.length > 8 && <p className="mt-1 text-right text-xs text-stone-500">{t.compare.andMore(mineOnly.length - 8)}</p>}
+                          </div>
+                        )}
+                      </details>
+                    );
+                  })()}
+            </Card>
+          )}
+              {r.hints.length > 0 && (
+                <Card title={t.compare.hints}>
+                  <ul className="list-disc space-y-1 pl-5 text-sm">{r.hints.map((h) => <li key={h.ruleId}>{tr(h.text)}</li>)}</ul>
+                </Card>
+              )}
+          <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-stone-500">
+            <span>{cc.agreed(scopeNames(r.agreedScopes))}{v.computedAt && ` · ${cc.computedAt(v.computedAt.toISOString().slice(0, 16).replace("T", " "))}`}</span>
+            <form action={recomputeAction}>
+              <input type="hidden" name="sessionId" value={v.id} />
+              <button type="submit" className="rounded-full bg-white px-3 py-1.5 font-semibold text-teal-700 ring-1 ring-stone-200 hover:ring-teal-300">↻ {cc.recompute}</button>
+            </form>
+          </div>
+        </section>
+      )}
+
+      {v.status !== "revoked" && r && names && (r.tuvi || together || detail) && (
+        <section id="tuvi" className="scroll-mt-20 space-y-3">
+          <h2 className="px-1 text-base font-bold text-stone-900">✦ {cc.tuviSection}</h2>
+          <p className="px-1 text-xs leading-5 text-stone-500">{tr(r.disclaimer)}</p>
               {r.tuvi && (
                 <Card title={t.compare.tuviTitle}>
                   {r.tuvi.available ? (
@@ -176,89 +342,60 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                   </Card>
                 </>
               )}
-              {r.preferences && (
-                <Card title={t.compare.prefTitle}>
-                  {r.preferences.items.length === 0 ? (
-                    <p className="text-sm text-stone-500">{t.compare.noPref}</p>
-                  ) : (
-                    <ul className="space-y-2" data-testid="pref-items">
-                      {r.preferences.items.map((i) => {
-                        // Display text from the current catalog (stored results may predate a language).
-                        const q = QMETA.get(i.questionId) ?? r.preferences!.questions[i.questionId];
-                        return (
-                          <li key={i.questionId} className="rounded-xl border border-stone-200 p-2 text-sm">
-                            <Pill tone={i.kind === "same" ? "teal" : i.kind === "partly_shared" ? "amber" : "violet"}>
-                              {i.kind === "same" ? t.compare.same : i.kind === "partly_shared" ? t.compare.partly : t.compare.different}
-                            </Pill>{" "}
-                            {q ? tr(q.prompt) : i.questionId}
-                            <p className="text-xs text-stone-600">
-                              {names.a}: {answerLabel(q?.options ?? null, i.a, locale)} · {names.b}: {answerLabel(q?.options ?? null, i.b, locale)}
-                            </p>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                  {(r.preferences.onlyA.length > 0 || r.preferences.onlyB.length > 0) && (() => {
-                    const prompt = (q: string) => {
-                      const m = QMETA.get(q) ?? r.preferences!.questions[q];
-                      return m ? tr(m.prompt) : q;
-                    };
-                    // Only they answered: I can answer to compare. Only I answered: just listed.
-                    const theirsOnly = v.myRole === "a" ? r.preferences.onlyB : r.preferences.onlyA;
-                    const mineOnly = v.myRole === "a" ? r.preferences.onlyA : r.preferences.onlyB;
-                    return (
-                      <details className="mt-3 rounded-2xl bg-stone-50 px-4 py-3 text-sm">
-                        <summary className="cursor-pointer font-medium text-stone-700">
-                          {t.compare.onlyOne} <span className="text-stone-500">({theirsOnly.length + mineOnly.length})</span>
-                        </summary>
-                        {theirsOnly.length > 0 && (
-                          <div className="mt-3">
-                            <p className="mb-1.5 text-xs font-semibold text-stone-600">{t.compare.onlyThem(v.otherName, theirsOnly.length)}</p>
-                            <p className="mb-2 text-xs text-teal-800">{t.compare.onlyThemHint}</p>
-                            <ul className="space-y-1">
-                              {theirsOnly.slice(0, 8).map((q) => (
-                                <li key={q}>
-                                  <Link href={`/discover/q/${q}`} className="flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-stone-800 ring-1 ring-stone-200 hover:ring-teal-300">
-                                    <span>{prompt(q)}</span>
-                                    <span aria-hidden className="shrink-0 text-teal-700">→</span>
-                                  </Link>
-                                </li>
-                              ))}
-                            </ul>
-                            {theirsOnly.length > 8 && (
-                              <Link href="/discover/all" className="mt-2 block text-right text-xs font-semibold text-teal-700 underline">{t.compare.onlyThemMore(theirsOnly.length - 8)} →</Link>
-                            )}
-                          </div>
-                        )}
-                        {mineOnly.length > 0 && (
-                          <div className="mt-3">
-                            <p className="mb-1.5 text-xs font-semibold text-stone-600">{t.compare.onlyMe(mineOnly.length)}</p>
-                            <ul className="space-y-1">
-                              {mineOnly.slice(0, 8).map((q) => (
-                                <li key={q} className="rounded-xl bg-white px-3 py-2 text-stone-700 ring-1 ring-stone-200">{prompt(q)}</li>
-                              ))}
-                            </ul>
-                            {mineOnly.length > 8 && <p className="mt-1 text-right text-xs text-stone-500">{t.compare.andMore(mineOnly.length - 8)}</p>}
-                          </div>
-                        )}
-                      </details>
-                    );
-                  })()}
-                </Card>
-              )}
-              {r.hints.length > 0 && (
-                <Card title={t.compare.hints}>
-                  <ul className="list-disc space-y-1 pl-5 text-sm">{r.hints.map((h) => <li key={h.ruleId}>{tr(h.text)}</li>)}</ul>
-                </Card>
-              )}
-              <form action={recomputeAction}>
-                <input type="hidden" name="sessionId" value={v.id} />
-                <Button variant="secondary">{t.compare.recompute}</Button>
-              </form>
-            </>
-          )}
-          {r ? (
+        </section>
+      )}
+
+      {/* Everything you decide about this connection. */}
+      <section id="settings" className="scroll-mt-20 space-y-3">
+        <h2 className="px-1 text-base font-bold text-stone-900">⚙️ {cc.settingsTitle}</h2>
+      {personId ? (
+        <Link href={`/people/${personId}`} className="block text-sm font-medium text-teal-700 underline">♡ {t.compare.personLink} →</Link>
+      ) : (
+        v.status !== "revoked" && (
+          <form action={addPersonFromConnectionAction}>
+            <input type="hidden" name="sessionId" value={v.id} />
+            <Button type="submit" variant="secondary">♡ {t.people.addFromConnection}</Button>
+          </form>
+        )
+      )}
+      {v.status !== "revoked" && (
+        <form action={askPeerAction}>
+          <input type="hidden" name="sessionId" value={v.id} />
+          <input type="hidden" name="back" value="/me/others" />
+          <Button type="submit" variant="secondary">💭 {t.peers.askThis(v.otherName)}</Button>
+        </form>
+      )}
+      {v.status !== "revoked" && (
+        <div id="manual" className="scroll-mt-20">
+          <Card title={`📖 ${t.manual.shareTitle}`}>
+            <p className="mb-3 text-sm text-stone-600">{t.manual.shareHelp}</p>
+            {myShare && <p className="mb-2 text-xs font-semibold text-teal-800">✓ {t.manual.shareNow(SHARED_TEXT.presetName[myShare][locale])}</p>}
+            <form action={manualShareAction} className="space-y-2">
+              <input type="hidden" name="sessionId" value={v.id} />
+              <fieldset className="space-y-2">
+                <legend className="sr-only">{t.manual.shareTitle}</legend>
+                {(["none", ...MANUAL_PRESETS] as const).map((p) => (
+                  <label key={p} className="flex cursor-pointer items-start gap-3 rounded-2xl border border-stone-200 bg-white/80 p-3 has-checked:border-teal-400 has-checked:bg-teal-50/60">
+                    <input type="radio" name="preset" value={p} defaultChecked={(myShare ?? "none") === p} className="mt-1 accent-teal-700" />
+                    <span>
+                      <span className="block text-sm font-semibold text-stone-900">{p === "none" ? t.manual.shareNone : SHARED_TEXT.presetName[p][locale]}</span>
+                      {p !== "none" && <span className="block text-xs leading-5 text-stone-600">{SHARED_TEXT.presetWhat[p][locale]}</span>}
+                      {p !== "none" && (
+                        <Link href={`/me/manual/shared?preset=${p}&back=${encodeURIComponent(`/compare/${v.id}`)}`} className="text-xs text-teal-700 underline">{t.manual.sharePreview} →</Link>
+                      )}
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
+              <p className="text-xs leading-5 text-stone-500">🔒 {SHARED_TEXT.never[locale]}</p>
+              <Button type="submit" variant="secondary">{t.manual.shareSave}</Button>
+            </form>
+          </Card>
+        </div>
+      )}
+        {v.status !== "revoked" && (
+          <>
+          {r && (
             <details className="rounded-3xl border border-stone-200/80 bg-white/70 p-4">
               <summary className="cursor-pointer text-sm font-semibold text-stone-700">{t.compare.changeConsent}</summary>
               <div className="mt-3">
@@ -287,37 +424,14 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
           </div>
               </div>
             </details>
-          ) : (
-          <Card title={t.compare.consentTitle}>
-            <p className="mb-3 text-sm text-stone-600">{PURPOSE_TEXT[locale]}</p>
-            {v.myConsent && <p className="mb-2 text-sm"><Pill tone="teal">✓</Pill> {t.compare.yourConsent(scopeNames(v.myConsent.scopes))}</p>}
-            <p className="mb-3 text-sm">{v.otherConsented ? `✓ ${t.compare.otherConsented}` : `⏳ ${t.compare.waiting}`}</p>
-            <form action={consentAction} className="space-y-2">
-              <input type="hidden" name="sessionId" value={v.id} />
-              <fieldset className="space-y-2">
-                <legend className="text-sm font-medium">{t.compare.scopes}</legend>
-                {SCOPES.map((s) => (
-                  <Checkbox
-                    key={s}
-                    name="scopes"
-                    value={s}
-                    defaultChecked={v.myConsent?.scopes.includes(s)}
-                    label={<><b>{t.compare.scopeNames[s]}</b> — <span className="text-stone-600">{SCOPE_DESCRIPTIONS[s][locale]}</span></>}
-                  />
-                ))}
-              </fieldset>
-              <Checkbox name="agree" required label={t.compare.agree} />
-              <p className="text-xs text-stone-500">{t.compare.bioNote}</p>
-              <Button type="submit">{v.myConsent ? t.compare.update : t.compare.give}</Button>
-            </form>
-          </Card>
           )}
           <form action={endComparisonAction}>
             <input type="hidden" name="sessionId" value={v.id} />
             <ConfirmButton message={t.compare.endConfirm}>{t.compare.end}</ConfirmButton>
           </form>
-        </>
-      )}
+          </>
+        )}
+      </section>
     </Page>
   );
 }

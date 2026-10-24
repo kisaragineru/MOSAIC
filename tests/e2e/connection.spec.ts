@@ -68,10 +68,10 @@ test("QR connection: preview of what others see, who is waiting, results first",
   await a.getByRole("button", { name: "同意する" }).click();
 
   // Once both agree the results come first; the consent form folds away.
-  await expect(a.getByText("ハナ: お茶 · ソラ: お茶")).toBeVisible();
+  await expect(a.getByTestId("pref-items").getByText("お茶", { exact: true })).toHaveCount(2);
   const compareUrl = a.url();
   await b.goto(compareUrl.replace(/^https?:\/\/[^/]+/, "").split("?")[0]!);
-  await expect(b.getByRole("heading", { name: "ハナさんの自己紹介" })).toBeVisible();
+  await expect(b.getByRole("heading", { name: "ハナさんを知る" })).toBeVisible();
   await expect(b.getByText("お茶と散歩が好きです。")).toBeVisible();
   await expect(a.getByText("同意した内容を見る・変える")).toBeVisible();
   await expect(a.getByRole("button", { name: "同意内容を更新" })).toBeHidden();
