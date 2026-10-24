@@ -12,6 +12,8 @@ import { getAccount } from "@/server/services/account";
 import { listPeople } from "@/server/services/people";
 import { shareTargets } from "@/server/services/memory-share";
 import { CIRCLE_ICON } from "@/components/circle-icon";
+import { CommentThread } from "@/components/comment-thread";
+import { commentInbox, readThread } from "@/server/services/comments";
 
 export default async function MemoryPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
@@ -30,6 +32,9 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
   const people = await listPeople(uid);
   const canShare = (await shareTargets(uid)).length > 0;
   const ta = t.memories.audience;
+  // One conversation per person who commented (each sees only theirs); unread counted before reading.
+  const threads = m.sealed ? [] : (await commentInbox(uid)).filter((x) => x.entryId === m.id && x.iOwn);
+  const convos = await Promise.all(threads.map(async (th) => ({ th, comments: await readThread(uid, m.id, th.partnerId) })));
   return (
     <Page title={m.title ?? t.memories.kinds[m.kind]} back="/memories">
       <Flash t={t} sp={sp} />
@@ -75,6 +80,28 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
             <LinkButton href={`/memories/${m.id}?edit=1`}>{t.common.edit}</LinkButton>
           </div>
         </Card>
+      )}
+      {(convos.length > 0 || (!m.sealed && m.visibility !== "private")) && (
+        <section id="comments" className="scroll-mt-24">
+          <Card title={`💬 ${t.comments.title}`}>
+            <p className="-mt-1 mb-3 text-xs leading-relaxed text-stone-500">{t.comments.privateOwner}</p>
+            {convos.length === 0 ? (
+              <p className="text-sm text-stone-500">{t.comments.noneOwner}</p>
+            ) : (
+              <div className="space-y-5">
+                {convos.map(({ th, comments }) => (
+                  <section key={th.partnerId} id={`c-${th.partnerId}`} className="rounded-2xl bg-stone-50/80 p-3 ring-1 ring-stone-100">
+                    <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-stone-800">
+                      {t.comments.with(th.otherName)}
+                      {th.unread > 0 && <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">{t.comments.newBadge}</span>}
+                    </h3>
+                    <CommentThread t={t} locale={locale} tz={tz} comments={comments} otherName={th.otherName} entryId={m.id} partnerId={th.partnerId} back={`/memories/${m.id}`} reply />
+                  </section>
+                ))}
+              </div>
+            )}
+          </Card>
+        </section>
       )}
       {m.versions.length > 1 && (
         <Card title={t.memories.versions}>

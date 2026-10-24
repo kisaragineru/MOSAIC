@@ -17,7 +17,8 @@ import { audit } from "./audit";
 import { answerQuestion } from "./discovery";
 import { setManualShare } from "./manual-share";
 import { createMemory } from "./memories";
-import { setMemoryAudience } from "./memory-share";
+import { connectionFeed, setMemoryAudience } from "./memory-share";
+import { addComment, commentInbox } from "./comments";
 import { addPreference, updatePerson } from "./people";
 import { ANSWERS, BIO, BIRTH, FAVOURITES, INTRO, LEAN, MORE, MOTHER_COMMENT, MOTHER_GUESS, MOTHER_SEES_OTHERWISE, RECORDS } from "./dev-persona";
 import { answerPeer, askPeer, myPeerRequests } from "./peers";
@@ -257,4 +258,23 @@ export async function deleteCompanion(ownerId: string, companionId: string) {
   const cid = await own(ownerId, companionId);
   await withUser(cid, (tx) => tx.delete(users).where(eq(users.id, cid)));
   await withUser(ownerId, (tx) => audit(tx, ownerId, "dev.companion_deleted"));
+}
+
+const REPLIES = ["コメントありがとう。読んでうれしかったよ。", "そうなの、また話そうね。", "気にかけてくれてありがとう。体に気をつけてね。"];
+const NOTES = ["いい一日だったみたいね。よかった。", "読んで、ちょっとほっとしたよ。無理しないでね。", "今度ゆっくり聞かせてね。"];
+
+/**
+ * She takes part in comments: answers whoever is waiting for her reply on her records, and writes
+ * on the owner's newest record shared with her (once per record).
+ */
+export async function companionComments(ownerId: string, companionId: string) {
+  const cid = await own(ownerId, companionId);
+  const inbox = await commentInbox(cid);
+  let i = 0;
+  for (const th of inbox.filter((x) => x.iOwn && !x.lastMine)) {
+    await addComment(cid, th.entryId, th.partnerId, REPLIES[i++ % REPLIES.length]);
+  }
+  const commented = new Set(inbox.filter((x) => !x.iOwn).map((x) => x.entryId));
+  const next = (await connectionFeed(cid, { limit: 20 })).find((x) => x.ownerId === ownerId && !commented.has(x.id));
+  if (next) await addComment(cid, next.id, null, NOTES[next.body.length % NOTES.length]);
 }

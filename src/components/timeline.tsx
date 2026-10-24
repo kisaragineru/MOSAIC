@@ -9,7 +9,9 @@ const dayLabel = (day: string, locale: Locale) =>
   new Intl.DateTimeFormat(locale, { year: "numeric", month: "long", day: "numeric", weekday: "short", timeZone: "UTC" }).format(new Date(`${day}T00:00:00Z`));
 
 /** Days of records on a vertical line: mine link to the record, others' are shown in full. */
-export function Timeline({ t, locale, tz, days, compact = false }: { t: Dict; locale: Locale; tz: string; days: TimelineDay[]; compact?: boolean }) {
+type Counts = Map<string, { count: number; unread: number }>;
+
+export function Timeline({ t, locale, tz, days, compact = false, comments = new Map() }: { t: Dict; locale: Locale; tz: string; days: TimelineDay[]; compact?: boolean; comments?: Counts }) {
   const tl = t.memories.timeline;
   return (
     <ol className="space-y-5" aria-label={t.memories.title}>
@@ -27,7 +29,7 @@ export function Timeline({ t, locale, tz, days, compact = false }: { t: Dict; lo
                   <span aria-hidden className={`absolute -left-[1.85rem] top-3 flex h-5 w-5 items-center justify-center rounded-full text-[11px] ring-4 ring-white ${it.entry.mine ? "bg-teal-100" : "bg-rose-100"}`}>
                     {KIND_ICON[it.entry.kind] ?? "•"}
                   </span>
-                  {it.entry.mine ? <Mine t={t} locale={locale} it={it} compact={compact} /> : <Theirs t={t} it={it} />}
+                  {it.entry.mine ? <Mine t={t} locale={locale} it={it} compact={compact} c={comments.get(it.entry.id)} /> : <Theirs t={t} it={it} c={comments.get(it.entry.id)} />}
                 </li>
               ))}
             </ol>
@@ -46,7 +48,17 @@ function Stamp({ t, it }: { t: Dict; it: TimelineItem }) {
   );
 }
 
-function Mine({ t, locale, it, compact }: { t: Dict; locale: Locale; it: TimelineItem; compact: boolean }) {
+/** "💬 n", with a dot when something new came in. */
+function CommentCount({ t, c }: { t: Dict; c: { count: number; unread: number } }) {
+  return (
+    <span className="relative rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-800">
+      {t.comments.count(c.count)}
+      {c.unread > 0 && <span aria-label={t.comments.newBadge} className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />}
+    </span>
+  );
+}
+
+function Mine({ t, locale, it, compact, c }: { t: Dict; locale: Locale; it: TimelineItem; compact: boolean; c?: { count: number; unread: number } }) {
   const m = it.entry;
   const tl = t.memories.timeline;
   return (
@@ -57,6 +69,7 @@ function Mine({ t, locale, it, compact }: { t: Dict; locale: Locale; it: Timelin
         {m.audience !== "private" && (
           <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-800">{m.audience === "connections" ? `🔗 ${tl.sharedAll}` : `👪 ${tl.sharedCircles(m.circles.map((c) => t.people.relationships[c as keyof Dict["people"]["relationships"]]).join(locale === "ja" ? "・" : ", "))}`}</span>
         )}
+        {c && <CommentCount t={t} c={c} />}
         {!compact && m.version > 1 && <Pill>v{m.version}</Pill>}
         {!compact && m.tags.map((x) => <Pill key={x}>#{x}</Pill>)}
         {!compact && m.people.map((p) => <Pill key={p.id} tone="rose">{p.nickname}</Pill>)}
@@ -73,7 +86,7 @@ function Mine({ t, locale, it, compact }: { t: Dict; locale: Locale; it: Timelin
   );
 }
 
-function Theirs({ t, it }: { t: Dict; it: TimelineItem }) {
+function Theirs({ t, it, c }: { t: Dict; it: TimelineItem; c?: { count: number; unread: number } }) {
   const m = it.entry;
   const tl = t.memories.timeline;
   const name = m.ownerName ?? "?";
@@ -89,6 +102,12 @@ function Theirs({ t, it }: { t: Dict; it: TimelineItem }) {
       </div>
       {m.title && <p className="font-medium text-stone-900">{m.title}</p>}
       <ExpandableText text={m.body ?? ""} more={tl.more} less={tl.less} />
+      <div className="mt-2 flex justify-end">
+        <Link href={`/memories/shared/${m.id}#comments`} className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-semibold text-rose-900 ring-1 ring-rose-200 transition hover:bg-rose-50 active:scale-95">
+          {c ? t.comments.count(c.count) : t.comments.open}
+          {c && c.unread > 0 && <span className="rounded-full bg-rose-600 px-1.5 text-[10px] text-white">{t.comments.newBadge}</span>}
+        </Link>
+      </div>
     </article>
   );
 }

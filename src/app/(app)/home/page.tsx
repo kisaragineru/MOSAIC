@@ -9,6 +9,7 @@ import { requireUser } from "@/server/auth/session";
 import { getAccount, getNotificationPrefs } from "@/server/services/account";
 import { getDaily } from "@/server/services/discovery";
 import { recentTimeline } from "@/server/services/memory-share";
+import { commentInbox, countsByEntry } from "@/server/services/comments";
 import { Timeline } from "@/components/timeline";
 import { buildTimeline } from "@/lib/timeline";
 import { upcomingDates } from "@/server/services/people";
@@ -44,6 +45,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const pic = await portrait(uid);
   const know = await knowledge(uid);
   const lookBack = await lookBackDue(uid);
+  const inbox = await commentInbox(uid);
+  const newComments = inbox.filter((x) => x.unread > 0);
   const nowStage = chart ? lifeStages(chart, locale, tv.currentAge).find((x) => x.state === "current") : undefined;
   return (
     <Page title={t.home.hello(account.profile.displayName)}>
@@ -67,6 +70,27 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           <span className="shrink-0 rounded-full bg-white px-3 py-1 font-semibold text-violet-800">{t.peers.homeAnswer} →</span>
         </Link>
       ))}
+      {newComments.length > 0 && (
+        <section className="rounded-3xl border border-sky-200 bg-sky-50/80 p-4">
+          <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-sky-950">
+            <span aria-hidden className="text-xl">💬</span>
+            {t.comments.homeTitle}
+          </h2>
+          <ul className="space-y-2">
+            {newComments.slice(0, 3).map((x) => (
+              <li key={`${x.entryId}-${x.partnerId}`}>
+                <Link
+                  href={x.iOwn ? `/memories/${x.entryId}#c-${x.partnerId}` : `/memories/shared/${x.entryId}#comments`}
+                  className="block rounded-2xl bg-white px-3.5 py-2.5 text-sm ring-1 ring-sky-100 transition hover:ring-sky-300"
+                >
+                  <span className="block text-xs text-sky-800">{t.comments.fromOn(x.otherName, x.iOwn)}</span>
+                  <span className="line-clamp-2 text-stone-900">{x.lastBody}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {waiting.map((c) => (
         <Link key={c.id} href={`/compare/${c.id}`} className="flex items-center gap-3 rounded-3xl border border-rose-200 bg-rose-50/80 p-4 text-sm text-rose-950 transition hover:shadow-md">
           <span aria-hidden className="text-xl">🔗</span>
@@ -178,7 +202,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           <p className="text-sm text-stone-500">{t.memories.empty}</p>
         ) : (
           <div className="space-y-3">
-            <Timeline t={t} locale={locale} tz={account.profile.timeZone} days={recent} compact />
+            <Timeline t={t} locale={locale} tz={account.profile.timeZone} days={recent} compact comments={countsByEntry(inbox)} />
             <Link href="/memories" className="block text-right text-sm text-teal-700 underline">{t.memories.timeline.seeAll} →</Link>
           </div>
         )}

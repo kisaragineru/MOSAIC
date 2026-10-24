@@ -17,6 +17,7 @@ export const LIMITS = {
   ai: { windowSeconds: 60 * 60, max: 30 },
   export: { windowSeconds: 60 * 60, max: 5 },
   write: { windowSeconds: 60, max: 120 },
+  comment: { windowSeconds: 60 * 60, max: 60 },
 } satisfies Record<string, Limit>;
 
 /** Throws AppError('rate_limited') when the bucket is exhausted. Keys are stored hashed. */

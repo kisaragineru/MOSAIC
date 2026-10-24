@@ -173,3 +173,59 @@ test("someone written about before connecting: the connection attaches to them",
   await expect(hana.getByLabel("関係")).toHaveValue("family");
   await expect(hana.getByRole("button", { name: "この人と関連する記録をすべて削除" })).toBeVisible();
 });
+
+test("one-to-one comments on a shared record", async ({ browser }) => {
+  const hana = await user(browser, "ハナ");
+  const sora = await user(browser, "ソラ");
+  const ren = await user(browser, "レン");
+  await connect(hana, sora);
+  await connect(hana, ren);
+  await hana.goto("/memories/new");
+  await hana.getByLabel("あったこと・考えていること").fill("はじめてパンを焼いた。");
+  await hana.getByRole("radio", { name: /つながっている全員/ }).check({ force: true });
+  await hana.getByRole("button", { name: "記録する" }).click();
+  await hana.waitForURL(/\/memories\/[0-9a-f-]+\?ok=saved/);
+  const record = new URL(hana.url()).pathname;
+  await expect(hana.getByText("共有した相手がコメントすると、ここに届きます。")).toBeVisible();
+
+  // Sora comments from the shared timeline; the page says it's only between the two of them.
+  await sora.goto("/memories?view=friends");
+  await sora.getByRole("link", { name: "💬 コメント" }).click();
+  await sora.waitForURL(/\/memories\/shared\//);
+  await expect(sora.getByText("はじめてパンを焼いた。")).toBeVisible();
+  await expect(sora.getByText("🔒 このやりとりは、あなたとハナさんの2人だけに見えます。")).toBeVisible();
+  await sora.getByLabel("コメントを書く").fill("おいしそう！");
+  await sora.getByRole("button", { name: "送る" }).click();
+  await expect(sora.getByText("おいしそう！")).toBeVisible();
+  const shared = new URL(sora.url()).pathname;
+
+  // Ren sees the record but not Sora's comment.
+  await ren.goto(shared);
+  await expect(ren.getByText("はじめてパンを焼いた。")).toBeVisible();
+  await expect(ren.getByText("おいしそう！")).toHaveCount(0);
+  await expect(ren.getByText("まだコメントはありません。")).toBeVisible();
+
+  // Hana is told on Home, opens it and answers Sora.
+  await hana.goto("/home");
+  await expect(hana.getByText("新しいコメント")).toBeVisible();
+  await hana.getByRole("link", { name: /ソラさんからコメント/ }).click();
+  await hana.waitForURL(new RegExp(record));
+  await expect(hana.getByRole("heading", { name: /ソラさんとのやりとり/ })).toBeVisible();
+  await hana.getByLabel("返信する").fill("ありがとう、今度持っていくね");
+  await hana.getByRole("button", { name: "送る" }).click();
+  await expect(hana.getByText("ありがとう、今度持っていくね")).toBeVisible();
+  await hana.goto("/home");
+  await expect(hana.getByText("新しいコメント")).toHaveCount(0);
+
+  await sora.goto("/home");
+  await sora.getByRole("link", { name: /ハナさんから返信/ }).click();
+  await expect(sora.getByText("ありがとう、今度持っていくね")).toBeVisible();
+  // Taking back her own comment.
+  sora.once("dialog", (d) => d.accept());
+  await sora.getByRole("button", { name: "取り消す" }).click();
+  await expect(sora.getByText("おいしそう！")).toHaveCount(0);
+
+  // Someone not connected can't open the shared page at all.
+  const stranger = await user(browser, "X");
+  expect((await stranger.goto(shared))?.status()).toBe(404);
+});

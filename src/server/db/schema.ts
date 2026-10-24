@@ -995,3 +995,53 @@ export const devCompanions = pgTable(
   },
   (t) => [primaryKey({ columns: [t.ownerId, t.companionId] })],
 );
+
+/**
+ * One-to-one comments on a shared record. Every comment belongs to the thread between the
+ * record's owner and one other person (`partner_id`); only those two can read it, and only while
+ * the partner can still see the record (same rules as the shared feed). Read and written
+ * through SECURITY DEFINER functions (migration 0018); the app role cannot touch the table.
+ */
+export const memoryComments = pgTable(
+  "memory_comments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    entryId: uuid("entry_id")
+      .notNull()
+      .references(() => memoryEntries.id, { onDelete: "cascade" }),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    partnerId: uuid("partner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    authorId: uuid("author_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("memory_comments_thread_idx").on(t.entryId, t.partnerId, t.createdAt),
+    index("memory_comments_owner_idx").on(t.ownerId, t.createdAt),
+    index("memory_comments_partner_idx").on(t.partnerId, t.createdAt),
+    check("memory_comments_author_ck", sql`${t.authorId} in (${t.ownerId}, ${t.partnerId}) and ${t.ownerId} <> ${t.partnerId}`),
+    check("memory_comments_body_ck", sql`char_length(${t.body}) between 1 and 2000`),
+  ],
+);
+
+/** When each person last read a comment thread (for "new comments"). Own rows only. */
+export const memoryCommentReads = pgTable(
+  "memory_comment_reads",
+  {
+    userId: userRef(),
+    entryId: uuid("entry_id")
+      .notNull()
+      .references(() => memoryEntries.id, { onDelete: "cascade" }),
+    partnerId: uuid("partner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    readAt: ts("read_at").notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.entryId, t.partnerId] })],
+);
