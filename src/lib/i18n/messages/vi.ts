@@ -167,6 +167,13 @@ export const vi: Dict = {
     bodyPlaceholder: "Cứ viết như bạn nghĩ — một dòng cũng đủ.",
     moodNone: "Không",
     details: "Thêm (ngày, tâm trạng, thẻ, người)",
+    composer: {
+      title: "Viết ngay",
+      close: "Đóng",
+      discard: "Bỏ nội dung vừa viết?",
+      more: "Viết chi tiết hơn (ngày, tâm trạng, thư…)",
+      saving: "Đang lưu…",
+    },
     empty: "Chưa có ghi chép nào. Hãy bắt đầu bằng một ghi chú ngắn.",
     sealed: (date: string) => `Niêm phong đến ${date}`,
     versions: "Các phiên bản trước",

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Flash } from "@/components/flash";
+import { QuickComposer } from "@/components/quick-composer";
 import { Timeline } from "@/components/timeline";
 import { Button, Card, Empty, Input, LinkButton, Notice, Page, Select } from "@/components/ui";
 import { buildTimeline, type TimelineEntry } from "@/lib/timeline";
@@ -8,7 +9,7 @@ import { requireUser } from "@/server/auth/session";
 import { MEMORY_KINDS } from "@/server/db/schema";
 import { getAccount } from "@/server/services/account";
 import { listMemories, listTags, type MemorySummary } from "@/server/services/memories";
-import { connectionFeed, feedForPage, feedToEntry, mineToEntry } from "@/server/services/memory-share";
+import { audienceChoices, connectionFeed, feedForPage, feedToEntry, mineToEntry } from "@/server/services/memory-share";
 import { listPeople } from "@/server/services/people";
 
 const PAGE_SIZE = 50;
@@ -58,6 +59,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
   const tags = await listTags(uid);
   const people = await listPeople(uid);
   const tl = t.memories.timeline;
+  const choices = await audienceChoices(uid);
   return (
     <Page title={t.memories.title}>
       <Flash t={t} sp={sp} />
@@ -113,14 +115,27 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
         </nav>
       )}
       <div aria-hidden className="h-16" />
-      {/* Writing is the main thing here: a floating button above the tab bar, always in reach. */}
-      <Link
-        href="/memories/new"
-        className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-[max(1rem,calc(50%-20rem))] z-30 inline-flex items-center gap-2 rounded-full bg-linear-to-br from-teal-600 to-violet-600 px-6 py-4 text-base font-bold text-white shadow-lg shadow-teal-900/25 ring-4 ring-white/80 transition hover:shadow-xl active:scale-95 print:hidden"
-      >
-        <span aria-hidden className="text-xl leading-none">✎</span>
-        {t.memories.write}
-      </Link>
+      {/* Writing is the main thing here: a floating button that opens a composer in place. */}
+      <QuickComposer
+        canShare={choices.length > 0}
+        tx={{
+          write: t.memories.write,
+          title: t.memories.composer.title,
+          placeholder: t.memories.bodyPlaceholder,
+          body: t.memories.fields.body,
+          kind: t.memories.fields.kind,
+          kinds: t.memories.kinds,
+          audience: t.memories.audience.label,
+          private: t.memories.audience.private,
+          connections: t.memories.audience.connections,
+          save: t.common.save,
+          saving: t.memories.composer.saving,
+          close: t.memories.composer.close,
+          discard: t.memories.composer.discard,
+          more: t.memories.composer.more,
+          errors: t.errors,
+        }}
+      />
     </Page>
   );
 }

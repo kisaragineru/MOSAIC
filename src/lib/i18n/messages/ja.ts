@@ -167,6 +167,13 @@ export const ja: Dict = {
     bodyPlaceholder: "思ったまま、ひとことでも。",
     moodNone: "なし",
     details: "詳しく（日付・気分・タグ・人）",
+    composer: {
+      title: "いま、書く",
+      close: "閉じる",
+      discard: "書いた内容を消して閉じますか？",
+      more: "もっと詳しく書く（日付・気分・手紙など）",
+      saving: "保存中…",
+    },
     empty: "まだ記録がありません。短いメモから始めてみましょう。",
     sealed: (date: string) => `${date} まで封印中`,
     versions: "以前の版",

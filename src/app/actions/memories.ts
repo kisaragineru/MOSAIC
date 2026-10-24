@@ -70,3 +70,21 @@ export async function deleteMemoryAction(form: FormData) {
   revalidatePath("/memories");
   redirect("/memories?ok=deleted");
 }
+
+export type QuickState = { ok: true; at: number } | { ok: false; error: string } | null;
+
+/** The in-place composer on the journal: saves and stays, reporting back instead of redirecting. */
+export async function quickMemoryAction(_prev: QuickState, form: FormData): Promise<QuickState> {
+  const uid = await requireUser();
+  const data = fromForm(form);
+  if (data.kind === "letter_to_future") return { ok: false, error: "invalid_input" };
+  const r = await attempt("memory.quick", async () => {
+    const id = await createMemory(uid, data);
+    const audience = audienceFromForm(form);
+    if (audience.visibility !== "private") await setMemoryAudience(uid, id, audience);
+  });
+  if (!r.ok) return { ok: false, error: r.error };
+  revalidatePath("/memories");
+  revalidatePath("/home");
+  return { ok: true, at: Date.now() };
+}

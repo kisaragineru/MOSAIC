@@ -81,3 +81,27 @@ test("records on a timeline, and a record shared with a connection", async ({ br
   await sora.goto("/memories");
   await expect(sora.getByText("みんなで海に行って、夕日を見た。")).toHaveCount(0);
 });
+
+test("write in place from the floating button, or close it with ✕", async ({ browser }) => {
+  const page = await user(browser, "ミオ");
+  await page.goto("/memories");
+  await page.getByRole("button", { name: "書く" }).click();
+  const sheet = page.getByRole("dialog", { name: "いま、書く" });
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByLabel("あったこと・考えていること")).toBeFocused();
+  await sheet.getByLabel("あったこと・考えていること").fill("駅まで歩いて、金木犀の匂いがした。");
+  await sheet.locator("label", { hasText: "気持ち" }).click();
+  await expect(sheet.getByRole("radio", { name: /気持ち/ })).toBeChecked();
+  await sheet.getByRole("button", { name: "保存" }).click();
+  await expect(sheet).toBeHidden();
+  await expect(page).toHaveURL(/\/memories$/);
+  await expect(page.getByRole("link", { name: /金木犀の匂いがした/ })).toContainText("気持ち");
+
+  // ✕ asks before throwing away what was written.
+  await page.getByRole("button", { name: "書く" }).click();
+  await page.getByRole("dialog").getByLabel("あったこと・考えていること").fill("下書き");
+  page.once("dialog", (d) => d.accept());
+  await page.getByRole("dialog").getByRole("button", { name: "閉じる" }).last().click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByText("下書き")).toHaveCount(0);
+});

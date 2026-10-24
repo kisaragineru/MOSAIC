@@ -165,6 +165,13 @@ export const en = {
     bodyPlaceholder: "Write it the way it comes — a line is enough.",
     moodNone: "None",
     details: "More (date, mood, tags, people)",
+    composer: {
+      title: "Write it down",
+      close: "Close",
+      discard: "Discard what you wrote?",
+      more: "More options (date, mood, letter…)",
+      saving: "Saving…",
+    },
     empty: "No entries yet. Start with one short note.",
     sealed: (date: string) => `Sealed until ${date}`,
     versions: "Earlier versions",
