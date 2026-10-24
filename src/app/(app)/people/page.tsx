@@ -9,6 +9,7 @@ import { PersonComposer } from "@/components/person-composer";
 import { listComparisons } from "@/server/services/sharing";
 
 const RELS = ["family", "partner", "friend", "colleague", "other"] as const;
+const REL_ICON: Record<string, string> = { all: "✨", family: "🏠", partner: "💞", friend: "🤝", colleague: "💼", other: "🙂" };
 const REL_TONE: Record<string, { avatar: string; pill: string }> = {
   family: { avatar: "bg-amber-100 text-amber-900", pill: "bg-amber-50 text-amber-800" },
   partner: { avatar: "bg-rose-100 text-rose-900", pill: "bg-rose-50 text-rose-800" },
@@ -50,65 +51,67 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
         </Card>
       )}
       {people.length > 0 && (
-        <nav aria-label={t.people.relationship} className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 text-xs">
-          {(["all", ...RELS] as const).filter((r) => r === "all" || summaries.some((x) => x.relationship === r)).map((r) => (
-            <Link key={r} href={r === "all" ? "/people" : `/people?rel=${r}`} aria-current={rel === r ? "page" : undefined}
-              className={`shrink-0 rounded-full px-3 py-1.5 font-medium ring-1 ${rel === r ? "bg-teal-700 text-white ring-teal-700" : "bg-white text-stone-700 ring-stone-200"}`}>
-              {r === "all" ? `${t.common.all} ${summaries.length}` : `${t.people.relationships[r]} ${summaries.filter((x) => x.relationship === r).length}`}
-            </Link>
-          ))}
+        <nav aria-label={t.people.relationship} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+          {(["all", ...RELS] as const).filter((r) => r === "all" || summaries.some((x) => x.relationship === r)).map((r) => {
+            const n = r === "all" ? summaries.length : summaries.filter((x) => x.relationship === r).length;
+            const on = rel === r;
+            return (
+              <Link key={r} href={r === "all" ? "/people" : `/people?rel=${r}`} aria-current={on ? "page" : undefined}
+                className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-2xl px-4 text-sm font-semibold transition ${on ? "bg-teal-700 text-white shadow-md shadow-teal-900/20" : "bg-white text-stone-700 shadow-sm ring-1 ring-stone-200 hover:ring-teal-300"}`}>
+                <span aria-hidden>{REL_ICON[r]}</span>
+                {r === "all" ? t.common.all : t.people.relationships[r]}
+                <span className={`rounded-full px-1.5 text-xs ${on ? "bg-white/25" : "bg-stone-100 text-stone-500"}`}>{n}</span>
+              </Link>
+            );
+          })}
         </nav>
       )}
       {people.length === 0 ? (
         <Empty>{t.people.empty}</Empty>
       ) : (
-        <ul className="grid grid-cols-2 gap-3" aria-label={t.people.title}>
+        <ul className="space-y-3" aria-label={t.people.title}>
           {shown.map((p) => {
             const tone = REL_TONE[p.relationship] ?? REL_TONE.other!;
             const empty = !p.nextDate && !p.latest && p.loves.length === 0;
             return (
               <li key={p.id}>
-                <Link href={`/people/${p.id}`} className="flex h-full flex-col rounded-3xl bg-white p-3.5 shadow-sm ring-1 ring-stone-200/70 transition hover:shadow-md hover:ring-teal-300">
-                  <span className="flex items-start gap-2.5">
-                    <span aria-hidden className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg font-bold ring-2 ring-white ${tone.avatar}`}>
-                      {Array.from(p.nickname.trim())[0]?.toUpperCase() ?? "?"}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate font-semibold text-stone-900">{p.nickname}</span>
-                      <span className="mt-0.5 flex flex-wrap items-center gap-1">
-                        <span className={`rounded-full px-1.5 py-px text-[10px] font-semibold ${tone.pill}`}>{t.people.relationships[p.relationship as (typeof RELS)[number]] ?? p.relationship}</span>
-                        {p.connected && (
-                          <span className="rounded-full bg-teal-100 px-1.5 py-px text-[10px] font-bold text-teal-800">
-                            <span aria-hidden>🔗 </span>
-                            {t.people.connected}
-                          </span>
-                        )}
-                      </span>
-                    </span>
+                <Link href={`/people/${p.id}`} className="flex gap-3.5 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-stone-200/70 transition hover:shadow-md hover:ring-teal-300">
+                  <span aria-hidden className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-xl font-bold ${tone.avatar}`}>
+                    {Array.from(p.nickname.trim())[0]?.toUpperCase() ?? "?"}
                   </span>
-                  <span className="mt-3 space-y-1.5 text-xs leading-5 text-stone-700">
-                    {p.nextDate && (
-                      <span className={`flex gap-1.5 ${p.nextDate.daysUntil <= 14 ? "font-semibold text-rose-700" : ""}`}>
-                        <span aria-hidden>{p.nextDate.kind === "birthday" ? "🎂" : "📅"}</span>
-                        <span className="min-w-0">
-                          <span className="line-clamp-1">{p.nextDate.label}</span>
-                          <span className="block text-[11px] text-stone-500">{md(p.nextDate.date)} · {t.home.inDays(p.nextDate.daysUntil)}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      <span className="truncate text-base font-bold text-stone-900">{p.nickname}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${tone.pill}`}>{t.people.relationships[p.relationship as (typeof RELS)[number]] ?? p.relationship}</span>
+                      {p.connected && (
+                        <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[11px] font-bold text-teal-800">
+                          <span aria-hidden>🔗 </span>
+                          {t.people.connected}
                         </span>
-                      </span>
-                    )}
-                    {p.latest && (
-                      <span className="flex gap-1.5"><span aria-hidden>🕊</span><span className="line-clamp-2 min-w-0">{p.latest.text}</span></span>
-                    )}
-                    {p.loves.length > 0 && (
-                      <span className="flex gap-1.5"><span aria-hidden>♡</span><span className="line-clamp-2 min-w-0">{p.loves.join(locale === "ja" ? "・" : ", ")}</span></span>
-                    )}
-                    {empty && <span className="block text-stone-400">{t.people.panelEmpty}</span>}
+                      )}
+                    </span>
+                    <span className="mt-2 block space-y-1 text-sm leading-5 text-stone-700">
+                      {p.nextDate && (
+                        <span className={`flex gap-2 ${p.nextDate.daysUntil <= 14 ? "font-semibold text-rose-700" : ""}`}>
+                          <span aria-hidden className="w-4 shrink-0 text-center">{p.nextDate.kind === "birthday" ? "🎂" : "📅"}</span>
+                          <span className="min-w-0 truncate">{p.nextDate.label} · {md(p.nextDate.date)}（{t.home.inDays(p.nextDate.daysUntil)}）</span>
+                        </span>
+                      )}
+                      {p.latest && (
+                        <span className="flex gap-2"><span aria-hidden className="w-4 shrink-0 text-center">🕊</span><span className="min-w-0 truncate">{p.latest.text}</span></span>
+                      )}
+                      {p.loves.length > 0 && (
+                        <span className="flex gap-2"><span aria-hidden className="w-4 shrink-0 text-center">♡</span><span className="min-w-0 truncate">{p.loves.join(locale === "ja" ? "・" : ", ")}</span></span>
+                      )}
+                      {empty && <span className="block text-stone-400">{t.people.panelEmpty}</span>}
+                    </span>
+                    <span className="mt-2 flex gap-3 text-xs text-stone-400">
+                      <span title={t.people.notes}>📝 {p.counts.notes}</span>
+                      <span title={t.people.events}>📸 {p.counts.events}</span>
+                      <span title={t.people.gifts}>🎁 {p.counts.gifts}</span>
+                    </span>
                   </span>
-                  <span className="mt-auto flex gap-2.5 pt-3 text-[11px] text-stone-400">
-                    <span title={t.people.notes}>📝 {p.counts.notes}</span>
-                    <span title={t.people.events}>📸 {p.counts.events}</span>
-                    <span title={t.people.gifts}>🎁 {p.counts.gifts}</span>
-                  </span>
+                  <span aria-hidden className="self-center text-stone-300">›</span>
                 </Link>
               </li>
             );
