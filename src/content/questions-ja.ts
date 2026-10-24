@@ -5,6 +5,8 @@
  * translation does not change what a question asks, so it must not create a new question
  * version or detach existing answers. tests/unit/discovery.test.ts enforces completeness.
  */
+import { AXIS_QUESTIONS_JA } from "./questions-axes";
+
 export interface QuestionJa {
   prompt: string;
   options?: Record<string, string>;
@@ -13,7 +15,7 @@ export interface QuestionJa {
 
 const AGREE: [string, string] = ["1 = まったく当てはまらない", "5 = とても当てはまる"];
 
-export const QUESTION_JA: Record<string, QuestionJa> = {
+const BASE_JA: Record<string, QuestionJa> = {
   "p.weekend_plan": {
     prompt: "予定のない週末ができました。まず何をしますか？",
     options: { plan: "予定を立てる", see: "その時の気分で決める", rest: "休むために何も入れない" },
@@ -191,3 +193,5 @@ export const QUESTION_JA: Record<string, QuestionJa> = {
   "c.mood_week": { prompt: "今週は全体的にどうでしたか？", scale: ["1 = とてもつらかった", "5 = とても良かった"] },
   "c.habit": { prompt: "最近始めた習慣、またはやめた習慣は？" },
 };
+
+export const QUESTION_JA: Record<string, QuestionJa> = { ...BASE_JA, ...AXIS_QUESTIONS_JA };

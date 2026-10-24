@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { FeedbackPrompt } from "@/components/feedback-prompt";
 import { Flash } from "@/components/flash";
 import { QuestionForm } from "@/components/question-form";
 import { Card, Page } from "@/components/ui";
@@ -18,6 +19,7 @@ export default async function QuestionPage({ params, searchParams }: { params: P
   return (
     <Page title={t.discover.title} back="/discover">
       <Flash t={t} sp={sp} />
+      <FeedbackPrompt sp={sp} back={`/discover/q/${encodeURIComponent(r.question.id)}`} t={t} />
       <Card>
         {r.latest?.status === "answered" && (
           <p className="mb-2 text-xs text-stone-500">

@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/server/auth/session";
 import {
+  setQuestionFeedback,
   answerQuestion,
   deleteResponse,
   requestAnotherQuestion,
@@ -35,6 +36,7 @@ export async function answerAction(form: FormData) {
       questionVersion: str(form, "questionVersion"),
       answer: answerFrom(form),
       privacy: bool(form, "comparable") ? "comparable" : "private",
+      note: str(form, "note"),
     }),
   );
   if (!r.ok) redirect(withParam(back, "e", r.error));
@@ -42,7 +44,15 @@ export async function answerAction(form: FormData) {
   revalidatePath("/home");
   if (r.value.changedFromPrevious) redirect(`/discover?changed=${r.value.responseId}`);
   if (r.value.followUpQuestionId) redirect(`/discover/q/${encodeURIComponent(r.value.followUpQuestionId)}?ok=answered`);
-  redirect(withParam(back, "ok", "answered"));
+  // Ask once, lightly, how the question was (fb = the question just answered).
+  redirect(withParam(withParam(back, "ok", "answered"), "fb", str(form, "questionId")));
+}
+
+export async function feedbackAction(form: FormData) {
+  const uid = await requireUser();
+  const back = safeNext(str(form, "back"), "/discover");
+  const r = await attempt("discover.feedback", () => setQuestionFeedback(uid, str(form, "questionId"), str(form, "rating")));
+  redirect(withParam(back, r.ok ? "fbdone" : "e", r.ok ? "1" : r.error));
 }
 
 export async function skipAction(form: FormData) {

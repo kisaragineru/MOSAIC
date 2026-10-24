@@ -1,3 +1,5 @@
+import { AXIS_QUESTIONS } from "./questions-axes";
+
 /**
  * Daily Discovery question bank.
  *
@@ -67,6 +69,15 @@ export const TENDENCY_KEYS = [
   "conflict",
   "saving",
   "expressiveness",
+  "calm",
+  "pace",
+  "independence",
+  "detail",
+  "closeness",
+  "care_style",
+  "giving",
+  "ambition",
+  "tradition",
 ] as const;
 export type TendencyKey = (typeof TENDENCY_KEYS)[number];
 
@@ -104,6 +115,42 @@ export const TENDENCY_TEXT: Record<TendencyKey, { pos: I18nText; neg: I18nText }
     pos: { en: "You often share your feelings openly.", vi: "Bạn thường chia sẻ cảm xúc một cách cởi mở." , ja: "気持ちを率直に伝えることが多いようです。" },
     neg: { en: "You often keep your feelings to yourself.", vi: "Bạn thường giữ cảm xúc cho riêng mình." , ja: "気持ちを自分の中にしまっておくことが多いようです。" },
   },
+  calm: {
+    pos: { en: "You often stay steady when things go wrong.", vi: "Bạn thường giữ được bình tĩnh khi mọi chuyện không suôn sẻ.", ja: "うまくいかないときも、気持ちが揺れにくいことが多いようです。" },
+    neg: { en: "You often feel things deeply and they stay with you.", vi: "Bạn thường cảm nhận sâu sắc và mọi chuyện đọng lại lâu trong bạn.", ja: "物事を深く感じ取り、気持ちが長く残ることが多いようです。" },
+  },
+  pace: {
+    pos: { en: "You often act quickly and adjust as you go.", vi: "Bạn thường hành động nhanh và điều chỉnh trên đường đi.", ja: "まず動いて、走りながら調整することが多いようです。" },
+    neg: { en: "You often take your time before acting.", vi: "Bạn thường dành thời gian suy nghĩ trước khi hành động.", ja: "動く前にじっくり時間をかけることが多いようです。" },
+  },
+  independence: {
+    pos: { en: "You often prefer to work things out on your own.", vi: "Bạn thường thích tự mình giải quyết mọi việc.", ja: "自分の力で考えて進めるのを好むことが多いようです。" },
+    neg: { en: "You often prefer to work things out together with others.", vi: "Bạn thường thích cùng người khác giải quyết mọi việc.", ja: "人と相談しながら一緒に進めるのを好むことが多いようです。" },
+  },
+  detail: {
+    pos: { en: "You often notice the details.", vi: "Bạn thường để ý đến từng chi tiết.", ja: "細かいところによく気がつくことが多いようです。" },
+    neg: { en: "You often focus on the big picture.", vi: "Bạn thường tập trung vào bức tranh tổng thể.", ja: "細部より全体の流れを見ることが多いようです。" },
+  },
+  closeness: {
+    pos: { en: "You often prefer a few deep relationships.", vi: "Bạn thường thích một vài mối quan hệ sâu sắc.", ja: "少数の人と深くつながるのを好むことが多いようです。" },
+    neg: { en: "You often enjoy a wide circle of people.", vi: "Bạn thường thích có nhiều mối quan hệ rộng rãi.", ja: "幅広い人とのつながりを楽しむことが多いようです。" },
+  },
+  care_style: {
+    pos: { en: "You often show care with words.", vi: "Bạn thường thể hiện sự quan tâm bằng lời nói.", ja: "気持ちを言葉で伝えることが多いようです。" },
+    neg: { en: "You often show care through actions.", vi: "Bạn thường thể hiện sự quan tâm bằng hành động.", ja: "気持ちを行動で示すことが多いようです。" },
+  },
+  giving: {
+    pos: { en: "You often put other people's needs first.", vi: "Bạn thường đặt nhu cầu của người khác lên trước.", ja: "自分より周りの人を優先することが多いようです。" },
+    neg: { en: "You often look after your own needs and limits.", vi: "Bạn thường biết giữ gìn nhu cầu và giới hạn của bản thân.", ja: "自分の気持ちや限度を大切にすることが多いようです。" },
+  },
+  ambition: {
+    pos: { en: "You are often driven to grow and achieve more.", vi: "Bạn thường có động lực phát triển và đạt được nhiều hơn.", ja: "もっと成長したい、上を目指したいという気持ちが強いことが多いようです。" },
+    neg: { en: "You often value contentment and balance.", vi: "Bạn thường coi trọng sự hài lòng và cân bằng.", ja: "いまの満足やバランスを大切にすることが多いようです。" },
+  },
+  tradition: {
+    pos: { en: "You often value tradition and established ways.", vi: "Bạn thường coi trọng truyền thống và những cách làm đã có.", ja: "伝統や昔からのやり方を大切にすることが多いようです。" },
+    neg: { en: "You often question conventions and find your own way.", vi: "Bạn thường đặt câu hỏi với lề lối cũ và tìm cách riêng.", ja: "慣習を問い直し、自分なりのやり方を探すことが多いようです。" },
+  },
 };
 
 const agree5 = {
@@ -118,10 +165,10 @@ const scaleSignals = (claimKey: TendencyKey): Signal[] => [
 ];
 const opt = (value: string, en: string, vi: string): QuestionOption => ({ value, label: { en, vi } });
 
-export const QUESTION_BANK: QuestionDef[] = [
+const BASE_QUESTIONS: Omit<QuestionDef, "comparable">[] = [
   // --- personality -------------------------------------------------------
   {
-    id: "p.weekend_plan", version: 1, category: "personality", sensitivity: "low", comparable: true, format: "single",
+    id: "p.weekend_plan", version: 1, category: "personality", sensitivity: "low", format: "single",
     prompt: { en: "A free weekend appears. What do you do first?", vi: "Bạn có một cuối tuần rảnh. Việc đầu tiên bạn làm là gì?" },
     options: [
       opt("plan", "Make a plan for it", "Lên kế hoạch cho nó"),
@@ -134,7 +181,7 @@ export const QUESTION_BANK: QuestionDef[] = [
     ],
   },
   {
-    id: "p.recharge", version: 1, category: "personality", sensitivity: "low", comparable: true, format: "single",
+    id: "p.recharge", version: 1, category: "personality", sensitivity: "low", format: "single",
     prompt: { en: "After a tiring week, what recharges you most?", vi: "Sau một tuần mệt mỏi, điều gì giúp bạn hồi phục nhất?" },
     options: [
       opt("friends", "Meeting friends", "Gặp gỡ bạn bè"),
@@ -148,17 +195,17 @@ export const QUESTION_BANK: QuestionDef[] = [
     ],
   },
   {
-    id: "p.lists", version: 1, category: "personality", sensitivity: "low", comparable: false, format: "scale",
+    id: "p.lists", version: 1, category: "personality", sensitivity: "low", format: "scale",
     prompt: { en: "\"I like to have a to-do list for the day.\"", vi: "\"Tôi thích có danh sách việc cần làm trong ngày.\"" },
     scale: agree5, signals: scaleSignals("planning"),
   },
   {
-    id: "p.party", version: 1, category: "personality", sensitivity: "low", comparable: false, format: "scale",
+    id: "p.party", version: 1, category: "personality", sensitivity: "low", format: "scale",
     prompt: { en: "\"At a party, I enjoy meeting people I don't know.\"", vi: "\"Ở một bữa tiệc, tôi thích làm quen với người lạ.\"" },
     scale: agree5, signals: scaleSignals("social_energy"),
   },
   {
-    id: "p.decide", version: 1, category: "personality", sensitivity: "low", comparable: true, format: "single",
+    id: "p.decide", version: 1, category: "personality", sensitivity: "low", format: "single",
     prompt: { en: "When making an important choice, what do you trust more?", vi: "Khi đưa ra lựa chọn quan trọng, bạn tin vào điều gì hơn?" },
     options: [
       opt("facts", "Facts and comparisons", "Dữ kiện và so sánh"),
@@ -171,7 +218,7 @@ export const QUESTION_BANK: QuestionDef[] = [
     ],
   },
   {
-    id: "p.disagree", version: 1, category: "personality", sensitivity: "medium", comparable: true, format: "single",
+    id: "p.disagree", version: 1, category: "personality", sensitivity: "medium", format: "single",
     prompt: { en: "When you disagree with someone close, you usually…", vi: "Khi bất đồng với người thân thiết, bạn thường…" },
     options: [
       opt("talk_now", "Talk about it right away", "Nói ra ngay"),
@@ -184,12 +231,12 @@ export const QUESTION_BANK: QuestionDef[] = [
     ],
   },
   {
-    id: "p.feelings", version: 1, category: "personality", sensitivity: "medium", comparable: false, format: "scale",
+    id: "p.feelings", version: 1, category: "personality", sensitivity: "medium", format: "scale",
     prompt: { en: "\"When I'm upset, the people close to me usually know.\"", vi: "\"Khi tôi buồn, những người thân thiết thường nhận ra.\"" },
     scale: agree5, signals: scaleSignals("expressiveness"),
   },
   {
-    id: "p.new_food", version: 1, category: "personality", sensitivity: "low", comparable: true, format: "single",
+    id: "p.new_food", version: 1, category: "personality", sensitivity: "low", format: "single",
     prompt: { en: "At a restaurant you know well, you usually…", vi: "Ở một nhà hàng quen, bạn thường…" },
     options: [
       opt("favorite", "Order my usual favourite", "Gọi món quen thuộc"),
@@ -201,18 +248,18 @@ export const QUESTION_BANK: QuestionDef[] = [
     ],
   },
   {
-    id: "p.risk", version: 1, category: "personality", sensitivity: "low", comparable: false, format: "scale",
+    id: "p.risk", version: 1, category: "personality", sensitivity: "low", format: "scale",
     prompt: { en: "\"I'd rather try and fail than never try.\"", vi: "\"Tôi thà thử rồi thất bại còn hơn không bao giờ thử.\"" },
     scale: agree5, signals: scaleSignals("risk"),
   },
   {
-    id: "p.morning", version: 1, category: "personality", sensitivity: "low", comparable: true, format: "single",
+    id: "p.morning", version: 1, category: "personality", sensitivity: "low", format: "single",
     prompt: { en: "Are you more of a morning or a night person?", vi: "Bạn là người của buổi sáng hay buổi tối?" },
     options: [opt("morning", "Morning", "Buổi sáng"), opt("night", "Night", "Buổi tối"), opt("depends", "It depends", "Tùy lúc")],
   },
   // --- values ------------------------------------------------------------
   {
-    id: "v.top_values", version: 1, category: "values", sensitivity: "low", comparable: true, format: "multi",
+    id: "v.top_values", version: 1, category: "values", sensitivity: "low", format: "multi",
     prompt: { en: "Which of these matter most to you right now? (up to 3)", vi: "Điều nào quan trọng nhất với bạn lúc này? (tối đa 3)" },
     maxChoices: 3,
     options: [
@@ -231,7 +278,7 @@ export const QUESTION_BANK: QuestionDef[] = [
     ],
   },
   {
-    id: "v.success", version: 1, category: "values", sensitivity: "low", comparable: true, format: "single",
+    id: "v.success", version: 1, category: "values", sensitivity: "low", format: "single",
     prompt: { en: "What does a successful life look like to you?", vi: "Với bạn, một cuộc sống thành công trông như thế nào?" },
     options: [
       opt("peace", "A peaceful, stable life", "Bình yên, ổn định"),
@@ -241,7 +288,7 @@ export const QUESTION_BANK: QuestionDef[] = [
     ],
   },
   {
-    id: "v.honesty_kindness", version: 1, category: "values", sensitivity: "medium", comparable: true, format: "single",
+    id: "v.honesty_kindness", version: 1, category: "values", sensitivity: "medium", format: "single",
     prompt: { en: "A friend asks your opinion on something you don't like. You…", vi: "Bạn bè hỏi ý kiến về điều bạn không thích. Bạn…" },
     options: [
       opt("honest", "Say honestly what I think", "Nói thật suy nghĩ của mình"),
@@ -251,16 +298,16 @@ export const QUESTION_BANK: QuestionDef[] = [
     signals: [{ claimKey: "conflict", direction: 1, whenValue: "honest" }],
   },
   {
-    id: "v.believe", version: 1, category: "values", sensitivity: "medium", comparable: false, format: "free",
+    id: "v.believe", version: 1, category: "values", sensitivity: "medium", format: "free",
     prompt: { en: "What is something you believe that many people around you don't?", vi: "Điều gì bạn tin mà nhiều người xung quanh không tin?" },
   },
   {
-    id: "v.proud", version: 1, category: "values", sensitivity: "low", comparable: false, format: "short",
+    id: "v.proud", version: 1, category: "values", sensitivity: "low", format: "short",
     prompt: { en: "What is one thing about yourself you are quietly proud of?", vi: "Một điều về bản thân mà bạn thầm tự hào là gì?" },
   },
   // --- relationships -----------------------------------------------------
   {
-    id: "r.love_language", version: 1, category: "relationships", sensitivity: "medium", comparable: true, format: "single",
+    id: "r.love_language", version: 1, category: "relationships", sensitivity: "medium", format: "single",
     prompt: { en: "What makes you feel most cared for?", vi: "Điều gì khiến bạn cảm thấy được quan tâm nhất?" },
     options: [
       opt("words", "Kind words", "Lời nói yêu thương"),
@@ -271,7 +318,7 @@ export const QUESTION_BANK: QuestionDef[] = [
     ],
   },
   {
-    id: "r.reply_speed", version: 1, category: "relationships", sensitivity: "low", comparable: true, format: "single",
+    id: "r.reply_speed", version: 1, category: "relationships", sensitivity: "low", format: "single",
     prompt: { en: "How quickly do you expect replies from close friends?", vi: "Bạn mong bạn thân trả lời tin nhắn nhanh đến đâu?" },
     options: [
       opt("fast", "Within the hour", "Trong vòng một giờ"),
@@ -280,11 +327,11 @@ export const QUESTION_BANK: QuestionDef[] = [
     ],
   },
   {
-    id: "r.grateful_person", version: 1, category: "relationships", sensitivity: "medium", comparable: false, format: "short",
+    id: "r.grateful_person", version: 1, category: "relationships", sensitivity: "medium", format: "short",
     prompt: { en: "Who is someone you're grateful for this week, and why?", vi: "Tuần này bạn biết ơn ai, và vì sao?" },
   },
   {
-    id: "r.apology", version: 1, category: "relationships", sensitivity: "medium", comparable: true, format: "single",
+    id: "r.apology", version: 1, category: "relationships", sensitivity: "medium", format: "single",
     prompt: { en: "After an argument, who usually reaches out first?", vi: "Sau khi cãi nhau, ai thường là người làm lành trước?" },
     options: [
       opt("me", "Usually me", "Thường là tôi"),
@@ -294,7 +341,7 @@ export const QUESTION_BANK: QuestionDef[] = [
   },
   // --- food --------------------------------------------------------------
   {
-    id: "f.spicy", version: 1, category: "food", sensitivity: "low", comparable: true, format: "scale",
+    id: "f.spicy", version: 1, category: "food", sensitivity: "low", format: "scale",
     prompt: { en: "How much do you enjoy spicy food?", vi: "Bạn thích đồ ăn cay đến mức nào?" },
     scale: {
       min: 1, max: 5,
@@ -303,11 +350,11 @@ export const QUESTION_BANK: QuestionDef[] = [
     },
   },
   {
-    id: "f.comfort", version: 1, category: "food", sensitivity: "low", comparable: false, format: "short",
+    id: "f.comfort", version: 1, category: "food", sensitivity: "low", format: "short",
     prompt: { en: "What is your comfort food?", vi: "Món ăn \"chữa lành\" của bạn là gì?" },
   },
   {
-    id: "f.drink", version: 1, category: "food", sensitivity: "low", comparable: true, format: "single",
+    id: "f.drink", version: 1, category: "food", sensitivity: "low", format: "single",
     prompt: { en: "Your go-to drink?", vi: "Đồ uống quen thuộc của bạn?" },
     options: [
       opt("coffee", "Coffee", "Cà phê"),
@@ -318,7 +365,7 @@ export const QUESTION_BANK: QuestionDef[] = [
     ],
   },
   {
-    id: "f.cuisines", version: 1, category: "food", sensitivity: "low", comparable: true, format: "multi",
+    id: "f.cuisines", version: 1, category: "food", sensitivity: "low", format: "multi",
     prompt: { en: "Which cuisines do you love?", vi: "Bạn yêu thích ẩm thực nào?" },
     options: [
       opt("vietnamese", "Vietnamese", "Việt Nam"),
@@ -332,13 +379,13 @@ export const QUESTION_BANK: QuestionDef[] = [
     ],
   },
   {
-    id: "f.sweet_savory", version: 1, category: "food", sensitivity: "low", comparable: true, format: "single",
+    id: "f.sweet_savory", version: 1, category: "food", sensitivity: "low", format: "single",
     prompt: { en: "Sweet or savoury?", vi: "Ngọt hay mặn?" },
     options: [opt("sweet", "Sweet", "Ngọt"), opt("savory", "Savoury", "Mặn"), opt("both", "Both!", "Cả hai!")],
   },
   // --- travel ------------------------------------------------------------
   {
-    id: "t.style", version: 1, category: "travel", sensitivity: "low", comparable: true, format: "single",
+    id: "t.style", version: 1, category: "travel", sensitivity: "low", format: "single",
     prompt: { en: "Your ideal trip is…", vi: "Chuyến đi lý tưởng của bạn là…" },
     options: [
       opt("beach", "Relaxing by the sea", "Thư giãn bên biển"),
@@ -348,7 +395,7 @@ export const QUESTION_BANK: QuestionDef[] = [
     ],
   },
   {
-    id: "t.itinerary", version: 1, category: "travel", sensitivity: "low", comparable: true, format: "single",
+    id: "t.itinerary", version: 1, category: "travel", sensitivity: "low", format: "single",
     prompt: { en: "When traveling, do you prefer a detailed itinerary?", vi: "Khi đi du lịch, bạn có thích lịch trình chi tiết không?" },
     options: [
       opt("detailed", "Yes, hour by hour", "Có, chi tiết từng giờ"),
@@ -361,17 +408,17 @@ export const QUESTION_BANK: QuestionDef[] = [
     ],
   },
   {
-    id: "t.dream_place", version: 1, category: "travel", sensitivity: "low", comparable: false, format: "short",
+    id: "t.dream_place", version: 1, category: "travel", sensitivity: "low", format: "short",
     prompt: { en: "Where would you go if you could leave tomorrow?", vi: "Nếu có thể đi ngay ngày mai, bạn sẽ đi đâu?" },
   },
   {
-    id: "t.new_place", version: 1, category: "travel", sensitivity: "low", comparable: false, format: "scale",
+    id: "t.new_place", version: 1, category: "travel", sensitivity: "low", format: "scale",
     prompt: { en: "\"I prefer going somewhere new over returning to a place I love.\"", vi: "\"Tôi thích đến nơi mới hơn là quay lại nơi mình yêu thích.\"" },
     scale: agree5, signals: scaleSignals("novelty"),
   },
   // --- music -------------------------------------------------------------
   {
-    id: "m.genres", version: 1, category: "music", sensitivity: "low", comparable: true, format: "multi",
+    id: "m.genres", version: 1, category: "music", sensitivity: "low", format: "multi",
     prompt: { en: "Which kinds of music do you enjoy?", vi: "Bạn thích thể loại nhạc nào?" },
     options: [
       opt("pop", "Pop", "Pop"),
@@ -386,11 +433,11 @@ export const QUESTION_BANK: QuestionDef[] = [
     ],
   },
   {
-    id: "m.song_now", version: 1, category: "music", sensitivity: "low", comparable: false, format: "short",
+    id: "m.song_now", version: 1, category: "music", sensitivity: "low", format: "short",
     prompt: { en: "Which song is stuck in your head lately?", vi: "Gần đây bài hát nào cứ vang trong đầu bạn?" },
   },
   {
-    id: "m.when", version: 1, category: "music", sensitivity: "low", comparable: true, format: "single",
+    id: "m.when", version: 1, category: "music", sensitivity: "low", format: "single",
     prompt: { en: "When do you listen to music most?", vi: "Bạn nghe nhạc nhiều nhất khi nào?" },
     options: [
       opt("commute", "Commuting", "Khi di chuyển"),
@@ -401,7 +448,7 @@ export const QUESTION_BANK: QuestionDef[] = [
   },
   // --- hobbies -----------------------------------------------------------
   {
-    id: "h.free_time", version: 1, category: "hobbies", sensitivity: "low", comparable: true, format: "multi",
+    id: "h.free_time", version: 1, category: "hobbies", sensitivity: "low", format: "multi",
     prompt: { en: "How do you like to spend free time?", vi: "Bạn thích dành thời gian rảnh như thế nào?" },
     options: [
       opt("reading", "Reading", "Đọc sách"),
@@ -418,17 +465,17 @@ export const QUESTION_BANK: QuestionDef[] = [
     ],
   },
   {
-    id: "h.learn", version: 1, category: "hobbies", sensitivity: "low", comparable: false, format: "short",
+    id: "h.learn", version: 1, category: "hobbies", sensitivity: "low", format: "short",
     prompt: { en: "What is something you'd like to learn this year?", vi: "Năm nay bạn muốn học điều gì?" },
   },
   {
-    id: "h.pets", version: 1, category: "hobbies", sensitivity: "low", comparable: true, format: "single",
+    id: "h.pets", version: 1, category: "hobbies", sensitivity: "low", format: "single",
     prompt: { en: "Cats, dogs, or neither?", vi: "Mèo, chó, hay không con nào?" },
     options: [opt("cats", "Cats", "Mèo"), opt("dogs", "Dogs", "Chó"), opt("both", "Both", "Cả hai"), opt("neither", "Neither", "Không con nào")],
   },
   // --- money & work ------------------------------------------------------
   {
-    id: "w.bonus", version: 1, category: "money_work", sensitivity: "medium", comparable: true, format: "single",
+    id: "w.bonus", version: 1, category: "money_work", sensitivity: "medium", format: "single",
     prompt: { en: "You receive an unexpected bonus. You would mostly…", vi: "Bạn nhận được một khoản thưởng bất ngờ. Bạn sẽ chủ yếu…" },
     options: [
       opt("save", "Save or invest it", "Tiết kiệm hoặc đầu tư"),
@@ -443,7 +490,7 @@ export const QUESTION_BANK: QuestionDef[] = [
     ],
   },
   {
-    id: "w.job_choice", version: 1, category: "money_work", sensitivity: "medium", comparable: true, format: "single",
+    id: "w.job_choice", version: 1, category: "money_work", sensitivity: "medium", format: "single",
     prompt: { en: "Two job offers: which do you lean toward?", vi: "Có hai lời mời làm việc: bạn nghiêng về bên nào?" },
     options: [
       opt("stable", "A stable job with steady pay", "Công việc ổn định, lương đều"),
@@ -455,38 +502,38 @@ export const QUESTION_BANK: QuestionDef[] = [
     ],
   },
   {
-    id: "w.budget", version: 1, category: "money_work", sensitivity: "medium", comparable: false, format: "scale",
+    id: "w.budget", version: 1, category: "money_work", sensitivity: "medium", format: "scale",
     prompt: { en: "\"I usually know where my money went this month.\"", vi: "\"Tôi thường biết tiền của mình tháng này đã tiêu vào đâu.\"" },
     scale: agree5, signals: scaleSignals("saving"),
   },
   {
-    id: "w.meaning", version: 1, category: "money_work", sensitivity: "low", comparable: false, format: "short",
+    id: "w.meaning", version: 1, category: "money_work", sensitivity: "low", format: "short",
     prompt: { en: "What part of your work (or study) feels most meaningful?", vi: "Phần nào trong công việc (hoặc việc học) khiến bạn thấy ý nghĩa nhất?" },
   },
   // --- past --------------------------------------------------------------
   {
-    id: "past.childhood_memory", version: 1, category: "past", sensitivity: "medium", comparable: false, format: "free",
+    id: "past.childhood_memory", version: 1, category: "past", sensitivity: "medium", format: "free",
     prompt: { en: "Describe a small, happy memory from childhood.", vi: "Hãy kể một kỷ niệm nhỏ mà vui từ thời thơ ấu." },
   },
   {
-    id: "past.turning_point", version: 1, category: "past", sensitivity: "high", comparable: false, format: "free",
+    id: "past.turning_point", version: 1, category: "past", sensitivity: "high", format: "free",
     prompt: { en: "Was there a moment that changed the direction of your life?", vi: "Có khoảnh khắc nào đã thay đổi hướng đi cuộc đời bạn không?" },
   },
   {
-    id: "past.lesson", version: 1, category: "past", sensitivity: "medium", comparable: false, format: "short",
+    id: "past.lesson", version: 1, category: "past", sensitivity: "medium", format: "short",
     prompt: { en: "What is a lesson you learned the hard way?", vi: "Bài học nào bạn đã phải trả giá mới học được?" },
   },
   // --- future ------------------------------------------------------------
   {
-    id: "fut.five_years", version: 1, category: "future", sensitivity: "low", comparable: false, format: "free",
+    id: "fut.five_years", version: 1, category: "future", sensitivity: "low", format: "free",
     prompt: { en: "What would you like your life to look like in five years?", vi: "Bạn muốn cuộc sống của mình như thế nào sau năm năm nữa?" },
   },
   {
-    id: "fut.one_thing", version: 1, category: "future", sensitivity: "low", comparable: false, format: "short",
+    id: "fut.one_thing", version: 1, category: "future", sensitivity: "low", format: "short",
     prompt: { en: "One thing you want to do before the end of this year?", vi: "Một điều bạn muốn làm trước khi hết năm nay?" },
   },
   {
-    id: "fut.where_live", version: 1, category: "future", sensitivity: "low", comparable: true, format: "single",
+    id: "fut.where_live", version: 1, category: "future", sensitivity: "low", format: "single",
     prompt: { en: "Where would you most like to live someday?", vi: "Sau này bạn muốn sống ở đâu nhất?" },
     options: [
       opt("big_city", "A big city", "Thành phố lớn"),
@@ -499,17 +546,17 @@ export const QUESTION_BANK: QuestionDef[] = [
   },
   // --- change ------------------------------------------------------------
   {
-    id: "c.changed_mind", version: 1, category: "change", sensitivity: "low", comparable: false, format: "single",
+    id: "c.changed_mind", version: 1, category: "change", sensitivity: "low", format: "single",
     prompt: { en: "Have you changed your mind about something important recently?", vi: "Gần đây bạn có thay đổi suy nghĩ về điều gì quan trọng không?" },
     options: [opt("yes", "Yes", "Có"), opt("no", "No", "Không"), opt("unsure", "Not sure", "Không chắc")],
     followUps: [{ whenValue: "yes", questionId: "c.changed_mind_what" }],
   },
   {
-    id: "c.changed_mind_what", version: 1, category: "change", sensitivity: "medium", comparable: false, followUpOnly: true, format: "free",
+    id: "c.changed_mind_what", version: 1, category: "change", sensitivity: "medium", followUpOnly: true, format: "free",
     prompt: { en: "What changed, and what made you see it differently?", vi: "Điều gì đã thay đổi, và điều gì khiến bạn nhìn nhận khác đi?" },
   },
   {
-    id: "c.mood_week", version: 1, category: "change", sensitivity: "low", comparable: false, format: "scale",
+    id: "c.mood_week", version: 1, category: "change", sensitivity: "low", format: "scale",
     prompt: { en: "How was this week for you overall?", vi: "Nhìn chung tuần này của bạn thế nào?" },
     scale: {
       min: 1, max: 5,
@@ -518,10 +565,22 @@ export const QUESTION_BANK: QuestionDef[] = [
     },
   },
   {
-    id: "c.habit", version: 1, category: "change", sensitivity: "low", comparable: false, format: "short",
+    id: "c.habit", version: 1, category: "change", sensitivity: "low", format: "short",
     prompt: { en: "A habit you've started or stopped recently?", vi: "Một thói quen bạn vừa bắt đầu hoặc vừa bỏ gần đây?" },
   },
 ];
+
+/**
+ * One rule decides which answers can be used in a comparison (and only when their author marks
+ * them "allowed"): answers picked from fixed options or a 1–5 scale can be lined up side by side;
+ * written answers are the person's own words and never are; neither are follow-ups, highly
+ * sensitive questions, or "change" questions about a passing week or mood.
+ */
+export function isComparable(q: Pick<QuestionDef, "format" | "sensitivity" | "category" | "followUpOnly">): boolean {
+  return !q.followUpOnly && q.sensitivity !== "high" && q.category !== "change" && (q.format === "single" || q.format === "multi" || q.format === "scale");
+}
+
+export const QUESTION_BANK: QuestionDef[] = [...BASE_QUESTIONS, ...AXIS_QUESTIONS].map((q) => ({ ...q, comparable: isComparable(q) }));
 
 export const QUESTION_CATEGORIES: { id: QuestionCategory; label: I18nText }[] = [
   { id: "personality", label: { en: "Personality", vi: "Tính cách", ja: "性格" } },

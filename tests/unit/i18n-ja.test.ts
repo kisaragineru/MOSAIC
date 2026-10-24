@@ -49,7 +49,7 @@ describe("Japanese translations", () => {
       }
     };
     walk(ja, en, "");
-    expect(same.sort()).toEqual([".common.appName", ".common.tagline", ".compare.scopeNames.tuvi", ".discover.title", ".insights.aiReasons.not_requested", ".nav.tuvi", ".nav.tabs.tuvi", ".tuvi.title", ".tuvi.ui.stateLabel.unknown", ".tuvi.tuanTriet"].sort());
+    expect(same.sort()).toEqual([".common.appName", ".common.tagline", ".compare.scopeNames.tuvi", ".insights.aiReasons.not_requested", ".nav.tuvi", ".nav.tabs.tuvi", ".tuvi.title", ".tuvi.ui.stateLabel.unknown", ".tuvi.tuanTriet"].sort());
   });
 
   const base: BirthInput = { calendar: "solar", solar: { year: 1990, month: 6, day: 7 }, time: { hour: 6, minute: 30 }, timeZone: "Asia/Ho_Chi_Minh", sex: "male", lateRatHour: null, leapMonthRule: null };

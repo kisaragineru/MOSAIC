@@ -132,3 +132,22 @@ export function SegmentedTabs({ items, current }: { items: { href: string; label
     </nav>
   );
 }
+
+// Widths as classes (the CSP blocks inline styles on server-rendered pages), in 5% steps.
+const WIDTH = [
+  "w-0", "w-[5%]", "w-[10%]", "w-[15%]", "w-[20%]", "w-[25%]", "w-[30%]", "w-[35%]", "w-[40%]", "w-[45%]", "w-1/2",
+  "w-[55%]", "w-[60%]", "w-[65%]", "w-[70%]", "w-[75%]", "w-[80%]", "w-[85%]", "w-[90%]", "w-[95%]", "w-full",
+];
+export function widthClass(value: number, max: number) {
+  if (max <= 0 || value <= 0) return WIDTH[0]!;
+  // At least one step for any progress, so a started bar never looks empty.
+  return WIDTH[Math.min(20, Math.max(1, Math.round((value / max) * 20)))]!;
+}
+
+export function ProgressBar({ value, max, label, className = "" }: { value: number; max: number; label: string; className?: string }) {
+  return (
+    <div role="progressbar" aria-valuemin={0} aria-valuemax={max} aria-valuenow={value} aria-label={label} className={`h-2 overflow-hidden rounded-full bg-stone-100 ${className}`}>
+      <div className={`h-full rounded-full bg-linear-to-r from-teal-400 to-violet-400 transition-all motion-reduce:transition-none ${widthClass(value, max)}`} />
+    </div>
+  );
+}

@@ -35,6 +35,7 @@ export async function buildExport(userId: string) {
     const qversions = qids.length ? await tx.select().from(s.questionVersions).where(inArray(s.questionVersions.questionId, qids)) : [];
     const qdefs = qids.length ? await tx.select().from(s.questionDefinitions).where(inArray(s.questionDefinitions.id, qids)) : [];
 
+    const feedback = await tx.select().from(s.questionFeedback).where(eq(s.questionFeedback.userId, userId));
     const claims = await tx.select().from(s.tendencyClaims).where(eq(s.tendencyClaims.userId, userId));
     const evidence = await tx.select().from(s.tendencyEvidence).where(eq(s.tendencyEvidence.userId, userId));
 
@@ -96,6 +97,7 @@ export async function buildExport(userId: string) {
       })),
       questions: qdefs.map((d) => ({ ...d, versions: qversions.filter((v) => v.questionId === d.id) })),
       questionResponses: responses,
+      questionFeedback: feedback,
       tendencies: claims.map((c) => ({ ...c, evidence: evidence.filter((e) => e.claimId === c.id) })),
       tuvi: {
         birthProfile: birth ?? null,

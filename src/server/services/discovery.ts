@@ -5,9 +5,13 @@ import { localizeQuestionContent } from "@/content/questions-i18n";
 import { followUpFor, normalizeAnswer, sameAnswer, type Answer } from "@/lib/discovery/answers";
 import { selectQuestion, type HistoryEvent } from "@/lib/discovery/select";
 import { todayIn, uuid } from "@/lib/validation/common";
+import { AXIS_CHAPTER, chapterOf, CHAPTERS, type Chapter } from "@/content/axes";
+import { QUESTION_BANK } from "@/content/questions";
+import { ANSWER_COOLDOWN_DAYS } from "@/lib/discovery/select";
 import {
   dailyQuestionAssignments,
   profiles,
+  questionFeedback,
   questionDefinitions,
   questionResponses,
   questionVersions,
@@ -259,6 +263,8 @@ const answerSchema = z.object({
   privacy: z.enum(["private", "comparable"]).default("private"),
   /** Required only when the new answer differs from the previous one. */
   changeKind: z.enum(["reanswer", "changed_mind", "correction"]).optional(),
+  /** Optional private "why"; blank means none. */
+  note: z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? undefined : v), z.string().trim().max(1000).optional()),
 });
 
 export interface AnswerResult {
@@ -300,6 +306,7 @@ export async function answerQuestion(userId: string, input: unknown): Promise<An
         changeKind,
         previousResponseId: prev?.id ?? null,
         privacy: data.privacy,
+        note: data.note ?? null,
       })
       .returning({ id: questionResponses.id });
     await recomputeTendencies(tx, userId);
@@ -396,6 +403,8 @@ export interface HistoryItem {
     privacy: string;
     answeredAt: Date;
     questionVersion: number;
+    /** The user's private note, if any. */
+    note: string | null;
   }[];
 }
 
@@ -424,6 +433,7 @@ export async function getHistory(userId: string, opts: { category?: string } = {
             privacy: r.privacy,
             answeredAt: r.answeredAt,
             questionVersion: r.questionVersion,
+            note: r.note,
           })),
       });
     }
@@ -444,4 +454,76 @@ export async function getQuestion(userId: string, questionId: string) {
 export async function questionsByIds(tx: Tx, ids: string[]) {
   if (ids.length === 0) return [];
   return tx.select().from(questionDefinitions).where(inArray(questionDefinitions.id, ids));
+}
+
+// ---------------------------------------------------------------------------
+// Question feedback ("was this a good question?")
+// ---------------------------------------------------------------------------
+
+export async function setQuestionFeedback(userId: string, questionId: string, rating: unknown) {
+  const r = z.union([z.literal(1), z.literal(-1)]).parse(Number(rating));
+  const id = z.string().min(1).max(100).parse(questionId);
+  if (!QUESTION_BANK.some((q) => q.id === id)) throw notFound();
+  await withUser(userId, (tx) =>
+    tx
+      .insert(questionFeedback)
+      .values({ userId, questionId: id, rating: r })
+      .onConflictDoUpdate({ target: [questionFeedback.userId, questionFeedback.questionId], set: { rating: r, updatedAt: new Date() } }),
+  );
+}
+
+export async function getQuestionFeedback(userId: string, questionId: string): Promise<1 | -1 | null> {
+  const [row] = await withUser(userId, (tx) =>
+    tx.select({ r: questionFeedback.rating }).from(questionFeedback).where(and(eq(questionFeedback.userId, userId), eq(questionFeedback.questionId, questionId))),
+  );
+  return row ? (row.r as 1 | -1) : null;
+}
+
+// ---------------------------------------------------------------------------
+// Chapters: answer the bank theme by theme, at your own pace
+// ---------------------------------------------------------------------------
+
+export interface ChapterProgress {
+  chapter: Chapter;
+  total: number;
+  answered: number;
+  /** Next question to offer in this chapter, or null when nothing is left for now. */
+  nextId: string | null;
+}
+
+/** Questions that belong in chapters: active, not follow-ups. */
+const CHAPTER_QUESTIONS = QUESTION_BANK.filter((q) => !q.followUpOnly && q.active !== false);
+
+/**
+ * Progress per chapter from the user's latest response to each question. The next question is the
+ * first one never answered (skips come back after a while), in bank order; once all are answered,
+ * the oldest answer past the re-ask period is offered again, so a chapter can be revisited.
+ */
+export async function chapterProgress(userId: string, now = new Date()): Promise<ChapterProgress[]> {
+  return withUser(userId, async (tx) => {
+    const latest = await tx.execute<{ question_id: string; status: string; answered_at: Date }>(sql`
+      select distinct on (question_id) question_id, status, answered_at
+      from question_responses where user_id = ${userId}
+      order by question_id, answered_at desc, id desc`);
+    const by = new Map(latest.rows.map((r) => [r.question_id, { status: r.status, at: new Date(r.answered_at) }]));
+    const days = (d: Date) => (now.getTime() - d.getTime()) / 86400_000;
+    return CHAPTERS.map((chapter) => {
+      const qs = CHAPTER_QUESTIONS.filter((q) => chapterOf(q) === chapter);
+      const answered = qs.filter((q) => by.get(q.id)?.status === "answered");
+      const fresh = qs.find((q) => {
+        const r = by.get(q.id);
+        return !r || (r.status === "skipped" && days(r.at) >= 7);
+      });
+      const revisit = answered
+        .filter((q) => days(by.get(q.id)!.at) >= ANSWER_COOLDOWN_DAYS)
+        .sort((a, b) => by.get(a.id)!.at.getTime() - by.get(b.id)!.at.getTime())[0];
+      return { chapter, total: qs.length, answered: answered.length, nextId: fresh?.id ?? revisit?.id ?? null };
+    });
+  });
+}
+
+/** Axes a question informs (for showing what an answer contributes to). */
+export function axesOf(questionId: string) {
+  const q = QUESTION_BANK.find((x) => x.id === questionId);
+  return [...new Set((q?.signals ?? []).map((s) => s.claimKey))].map((k) => ({ key: k, chapter: AXIS_CHAPTER[k] }));
 }

@@ -22,7 +22,7 @@ async function newUser(browser: Browser, name: string) {
 async function answer(page: Page, questionId: string, choose: (p: Page) => Promise<void>, comparable: boolean) {
   await page.goto(`/discover/q/${questionId}`);
   await choose(page);
-  if (comparable) await page.getByLabel(/Allow this answer in comparisons/).check();
+  if (comparable) await page.getByLabel(/Show in comparisons/).check();
   await page.getByRole("button", { name: "Save answer" }).click();
   await expect(page.getByText(/Answer saved|This is different/)).toBeVisible();
 }

@@ -363,6 +363,8 @@ export const questionResponses = pgTable(
     previousResponseId: uuid("previous_response_id"),
     purpose: text("purpose").notNull().default("self_understanding"),
     privacy: text("privacy").notNull().default("private"),
+    /** Optional "why" in the user's own words. Always private: never read by comparisons. */
+    note: text("note"),
     answeredAt: ts("answered_at").notNull().defaultNow(),
   },
   (t) => [
@@ -373,6 +375,26 @@ export const questionResponses = pgTable(
     check("responses_change_ck", sql`${t.changeKind} in ('first','reanswer','changed_mind','correction')`),
     check("responses_privacy_ck", sql`${t.privacy} in ('private','comparable')`),
     check("responses_answer_ck", sql`(${t.status} = 'skipped') = (${t.answer} is null)`),
+    check("responses_note_ck", sql`${t.note} is null or char_length(${t.note}) <= 1000`),
+  ],
+);
+
+/** "Was this a good question?" — one rating per user and question, used to improve the bank. */
+export const questionFeedback = pgTable(
+  "question_feedback",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: userRef(),
+    questionId: text("question_id")
+      .notNull()
+      .references(() => questionDefinitions.id),
+    rating: smallint("rating").notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex("question_feedback_uq").on(t.userId, t.questionId),
+    check("question_feedback_rating_ck", sql`${t.rating} in (-1, 1)`),
   ],
 );
 

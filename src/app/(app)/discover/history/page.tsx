@@ -15,7 +15,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
   const items = await getHistory(uid);
   return (
     <Page title={t.discover.title}>
-      <SegmentedTabs current="/discover/history" items={[{ href: "/discover", label: t.nav.todayQuestions }, { href: "/discover/history", label: t.nav.history }]} />
+      <SegmentedTabs current="/discover/history" items={[{ href: "/discover", label: t.nav.todayQuestions }, { href: "/discover/chapters", label: t.discover.chaptersTab }, { href: "/discover/history", label: t.nav.history }]} />
       <Flash t={t} sp={sp} />
       <Link href="/me/preview" className="inline-block text-sm text-teal-700 underline">{t.discover.privacyLink} →</Link>
       {items.length === 0 && <Empty>{t.history.empty}</Empty>}
@@ -30,6 +30,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
                   {r.status === "answered" && <Pill tone={r.privacy === "comparable" ? "amber" : "stone"}>{r.privacy === "comparable" ? t.history.comparable : t.history.private}</Pill>}
                 </div>
                 <p className="mt-1 text-sm text-stone-900">{r.status === "skipped" ? t.history.skipped : answerLabel(h.question.options, r.answer, locale)}</p>
+                {r.note && <p className="mt-1 whitespace-pre-line rounded-xl bg-white/70 px-2 py-1 text-xs text-stone-600">🔒 {r.note}</p>}
                 <div className="mt-2 flex flex-wrap gap-2">
                   {r.status === "answered" && h.question.comparable && (
                     <form action={privacyAction}>
