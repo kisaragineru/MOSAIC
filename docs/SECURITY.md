@@ -45,6 +45,12 @@ keys, anonymous access, role privilege escalation, and identity leakage across p
   peer_requests / peer_responses. Anonymous answers reach the owner only as per-axis counts and
   unordered comments, and only once three exist; each responder counts once (latest answer) and
   can withdraw at any time. The owner is not told who chose anonymity.
+- Showing your manual (migration 0010): the owner chooses, per connection, "friend" or "partner"
+  through `manual_share_set`; the other participant reads it only through
+  `manual_shared_with_me`, which returns nothing once the connection has ended and otherwise only
+  the owner's name and bio, the counts of non-rejected tendencies on the preset's axes (never
+  notes or evidence) and answers to "likes" questions the owner marked as shown. Records, written
+  answers, private answers, others' comments and Tử Vi are never part of it.
 - Linking a connection to an entry in "people" (`people.connection_session_id`) is stored on the
   owner's row only; the other participant never sees it or any notes about them.
 

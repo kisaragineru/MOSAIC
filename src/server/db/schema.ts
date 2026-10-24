@@ -812,3 +812,24 @@ export const peerResponses = pgTable(
   },
   (t) => [check("peer_responses_comment_ck", sql`${t.comment} is null or char_length(${t.comment}) <= 1000`)],
 );
+
+/**
+ * "Show my manual to this person": one row per (connection, owner). Only the owner writes it,
+ * through manual_share_set(); the other participant reads the shared parts through
+ * manual_shared_with_me(), which applies the preset (friend / partner) on the database side.
+ */
+export const manualShares = pgTable(
+  "manual_shares",
+  {
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => comparisonSessions.id, { onDelete: "cascade" }),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    preset: text("preset").notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [primaryKey({ columns: [t.sessionId, t.ownerId] }), check("manual_shares_preset_ck", sql`${t.preset} in ('friend','partner')`)],
+);

@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { addPersonFromConnectionAction, consentAction, endComparisonAction, recomputeAction } from "@/app/actions/sharing";
+import { addPersonFromConnectionAction, consentAction, endComparisonAction, manualShareAction, recomputeAction } from "@/app/actions/sharing";
+import { MANUAL_PRESETS, SHARED_TEXT } from "@/content/manual-text";
+import { myManualShare, sharedManualFor } from "@/server/services/manual-share";
 import { askPeerAction } from "@/app/actions/peers";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
@@ -33,6 +35,8 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
   const tr = (x: Partial<Record<string, string>> | undefined) => x?.[locale] ?? x?.en ?? "";
   const v = await getComparison(uid, id).catch(() => null);
   if (!v) notFound();
+  const myShare = await myManualShare(uid, v.id);
+  const theirManual = v.status === "revoked" ? null : await sharedManualFor(uid, v.id, locale);
   const personId = (await listComparisons(uid)).find((c) => c.id === v.id)?.personId ?? null;
   const scopeNames = (s: string[]) => s.map((x) => t.compare.scopeNames[x as (typeof SCOPES)[number]] ?? x).join(", ");
   const r = v.result;
@@ -64,6 +68,43 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
         <Card title={t.compare.bioTitle(v.otherName)}>
           <p className="whitespace-pre-line text-sm leading-relaxed text-stone-800">{v.otherBio}</p>
         </Card>
+      )}
+      {theirManual && (
+        <Link href={`/compare/${v.id}/manual`} className="flex items-center justify-between gap-3 rounded-3xl bg-linear-to-br from-amber-50 to-teal-50 px-5 py-4 shadow-sm ring-1 ring-amber-100 transition hover:shadow-md">
+          <span>
+            <span className="block font-semibold text-stone-900">📖 {t.manual.theirTitle(v.otherName)}</span>
+            <span className="block text-xs text-stone-600">{SHARED_TEXT.presetName[theirManual.preset][locale]}</span>
+          </span>
+          <span className="text-sm font-semibold text-teal-700">{t.manual.theirOpen} →</span>
+        </Link>
+      )}
+      {v.status !== "revoked" && (
+        <div id="manual" className="scroll-mt-20">
+          <Card title={`📖 ${t.manual.shareTitle}`}>
+            <p className="mb-3 text-sm text-stone-600">{t.manual.shareHelp}</p>
+            {myShare && <p className="mb-2 text-xs font-semibold text-teal-800">✓ {t.manual.shareNow(SHARED_TEXT.presetName[myShare][locale])}</p>}
+            <form action={manualShareAction} className="space-y-2">
+              <input type="hidden" name="sessionId" value={v.id} />
+              <fieldset className="space-y-2">
+                <legend className="sr-only">{t.manual.shareTitle}</legend>
+                {(["none", ...MANUAL_PRESETS] as const).map((p) => (
+                  <label key={p} className="flex cursor-pointer items-start gap-3 rounded-2xl border border-stone-200 bg-white/80 p-3 has-checked:border-teal-400 has-checked:bg-teal-50/60">
+                    <input type="radio" name="preset" value={p} defaultChecked={(myShare ?? "none") === p} className="mt-1 accent-teal-700" />
+                    <span>
+                      <span className="block text-sm font-semibold text-stone-900">{p === "none" ? t.manual.shareNone : SHARED_TEXT.presetName[p][locale]}</span>
+                      {p !== "none" && <span className="block text-xs leading-5 text-stone-600">{SHARED_TEXT.presetWhat[p][locale]}</span>}
+                      {p !== "none" && (
+                        <Link href={`/me/manual/shared?preset=${p}&back=${encodeURIComponent(`/compare/${v.id}`)}`} className="text-xs text-teal-700 underline">{t.manual.sharePreview} →</Link>
+                      )}
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
+              <p className="text-xs leading-5 text-stone-500">🔒 {SHARED_TEXT.never[locale]}</p>
+              <Button type="submit" variant="secondary">{t.manual.shareSave}</Button>
+            </form>
+          </Card>
+        </div>
       )}
       {personId ? (
         <Link href={`/people/${personId}`} className="block text-sm font-medium text-teal-700 underline">♡ {t.compare.personLink} →</Link>

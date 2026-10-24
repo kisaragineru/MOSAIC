@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AXIS_CHAPTER, type Chapter } from "@/content/axes";
 import { PrintButton } from "@/components/print-button";
+import { MANUAL_PRESETS, SHARED_TEXT } from "@/content/manual-text";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { buildManual, type ManualBlock } from "@/server/services/manual";
@@ -139,6 +140,17 @@ export default async function ManualPage() {
           ))}
         </ol>
       </nav>
+
+      <section className="mt-4 rounded-3xl bg-white/85 p-5 shadow-sm ring-1 ring-teal-100 print:hidden">
+        <h2 className="text-sm font-semibold text-stone-800">🔗 {tm.shareFromManual}</h2>
+        <p className="mt-1 text-xs leading-5 text-stone-600">{tm.shareFromManualHelp}</p>
+        <div className="mt-3 flex flex-wrap gap-2 text-sm">
+          {MANUAL_PRESETS.map((p) => (
+            <Link key={p} href={`/me/manual/shared?preset=${p}`} className="rounded-full border border-teal-200 bg-teal-50/70 px-3 py-1 font-semibold text-teal-800">👁 {SHARED_TEXT.presetName[p][locale]}</Link>
+          ))}
+          <Link href="/share" className="rounded-full px-3 py-1 text-teal-700 underline">{tm.shareGoConnections} →</Link>
+        </div>
+      </section>
 
       <article className="mt-6 space-y-10">
         {m.sections.map((s) => (

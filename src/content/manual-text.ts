@@ -163,4 +163,48 @@ export const MANUAL_PHRASE = {
   chapterLink: { ja: "この章の質問へ", en: "Questions for this chapter", vi: "Câu hỏi của chương này" } as I18nText,
 };
 
+export type ManualPreset = "friend" | "partner";
+export const MANUAL_PRESETS: ManualPreset[] = ["friend", "partner"];
+
+/** Chapters each preset shows (the database applies the same rule: manual_preset_keys). */
+export const PRESET_CHAPTERS: Record<ManualPreset, Chapter[]> = {
+  friend: ["self", "people"],
+  partner: ["self", "mind", "people", "life"],
+};
+
+export const SHARED_TEXT = {
+  presetName: { friend: { ja: "友人向け", en: "For friends", vi: "Dành cho bạn bè" }, partner: { ja: "パートナー向け", en: "For a partner", vi: "Dành cho người thương" } } as Record<ManualPreset, I18nText>,
+  presetWhat: {
+    friend: { ja: "ひとことで言うと・気質・人との関わり・好きなもの・付き合うためのヒント", en: "In a few words, temperament, with other people, favourites, and tips for getting along", vi: "Tóm tắt, khí chất, cách đối xử với mọi người, sở thích và gợi ý để hòa hợp" },
+    partner: { ja: "友人向けの内容に加えて、考え方（決め方・挑戦）と暮らし・価値観（お金・向上心・伝統）", en: "Everything for friends, plus how you think (deciding, risk) and life and values (money, drive, tradition)", vi: "Mọi nội dung dành cho bạn bè, thêm cách suy nghĩ (quyết định, mạo hiểm) và cuộc sống, giá trị (tiền bạc, động lực, truyền thống)" },
+  } as Record<ManualPreset, I18nText>,
+  never: {
+    ja: "どちらの場合も、記録・メモ・自由記述の答え・「自分だけ」にした答え・周りの人からの声・Tử Vi は含まれません（Tử Vi は比べる内容の同意で別に決めます）。",
+    en: "Either way, records, notes, written answers, answers kept to yourself, what others said about you and Tử Vi are never included (Tử Vi is chosen separately when you agree what to compare).",
+    vi: "Dù chọn gì, ghi chép, ghi chú, câu trả lời tự viết, câu trả lời “chỉ mình tôi”, nhận xét của người khác và Tử Vi đều không bao giờ được đưa vào (Tử Vi được chọn riêng khi đồng ý nội dung so sánh).",
+  } as I18nText,
+  heading: (name: string, preset: ManualPreset): I18nText => ({
+    ja: `${name}さんの取扱説明書（${SHARED_PRESET_JA[preset]}）`,
+    en: `${name}'s manual (${preset === "friend" ? "for friends" : "for a partner"})`,
+    vi: `Cẩm nang về ${name} (${preset === "friend" ? "dành cho bạn bè" : "dành cho người thương"})`,
+  }),
+  lead: (name: string): I18nText => ({
+    ja: `${name}さんが、あなたに見せることにした部分です。${name}さん自身の答えから見えてきた傾向で、決めつけではありません。`,
+    en: `This is what ${name} chose to show you. These are tendencies drawn from ${name}'s own answers — not labels.`,
+    vi: `Đây là những gì ${name} chọn cho bạn xem. Đó là các xu hướng rút ra từ chính câu trả lời của ${name} — không phải nhãn dán.`,
+  }),
+  consistent: (name: string, pole: I18nText): I18nText => ({ ja: `${name}さんは「${pole.ja}」ことが多いようです。`, en: `Usually, ${name} ${pole.en}.`, vi: `${name} thường ${pole.vi}.` }),
+  emerging: (name: string, pole: I18nText): I18nText => ({ ja: `${name}さんは「${pole.ja}」傾向が見えはじめています。`, en: `It's starting to show that ${name} ${pole.en}.`, vi: `${name} có vẻ ${pole.vi}.` }),
+  mixed: (name: string, a: I18nText, b: I18nText): I18nText => ({ ja: `${name}さんは「${a.ja}」ときも「${b.ja}」ときもあるようです。`, en: `${name} sometimes ${a.en}, and sometimes ${b.en}.`, vi: `${name} lúc thì ${a.vi}, lúc thì ${b.vi}.` }),
+  askLabel: (name: string): I18nText => ({ ja: `${name}さんから`, en: `From ${name}`, vi: `Lời ${name}` }),
+  likesTitle: { ja: "好きなもの", en: "Favourites", vi: "Sở thích" } as I18nText,
+  nothing: (name: string): I18nText => ({ ja: `${name}さんの答えがまだ少ないため、見せられる内容がありません。`, en: `${name} hasn't answered enough yet for there to be anything to show.`, vi: `${name} chưa trả lời đủ nhiều nên chưa có gì để hiển thị.` }),
+  outro: (name: string): I18nText => ({
+    ja: `ここにあるのは、${name}さんが見せることにした部分だけです。いちばん確かなのは、${name}さん本人に聞くことです。`,
+    en: `This is only what ${name} chose to share. The surest way to know ${name} is still to ask.`,
+    vi: `Đây chỉ là phần ${name} chọn chia sẻ. Cách chắc chắn nhất để hiểu ${name} vẫn là hỏi trực tiếp.`,
+  }),
+};
+const SHARED_PRESET_JA: Record<ManualPreset, string> = { friend: "友人向け", partner: "パートナー向け" };
+
 export const MANUAL_CHAPTERS: Chapter[] = ["self", "mind", "people", "life"];

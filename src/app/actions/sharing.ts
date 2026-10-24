@@ -1,4 +1,5 @@
 "use server";
+import { setManualShare } from "@/server/services/manual-share";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import QRCode from "qrcode";
@@ -99,4 +100,12 @@ export async function unlinkPersonAction(form: FormData) {
   const r = await attempt("person.unlink", () => unlinkPerson(uid, personId));
   revalidatePath("/people");
   redirect(`/people/${personId}?${r.ok ? "ok=saved" : `e=${r.error}`}`);
+}
+
+export async function manualShareAction(form: FormData) {
+  const uid = await requireUser();
+  const id = str(form, "sessionId");
+  const r = await attempt("manual.share", () => setManualShare(uid, id, str(form, "preset")));
+  revalidatePath(`/compare/${id}`);
+  redirect(r.ok ? `/compare/${id}?ok=saved#manual` : `/compare/${id}?e=${r.error}#manual`);
 }

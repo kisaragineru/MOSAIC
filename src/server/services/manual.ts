@@ -146,7 +146,7 @@ export function composeManual(d: ManualInput, locale: Locale): Manual {
   // 1. In a few words
   const top = d.claims
     .filter(said)
-    .sort((a, b) => (a.state === b.state ? b.confidence - a.confidence : a.state === "consistent" ? -1 : 1))
+    .sort((a, b) => (a.state === b.state ? b.confidence - a.confidence || a.key.localeCompare(b.key) : a.state === "consistent" ? -1 : 1))
     .slice(0, 3);
   const summary: ManualBlock[] = [];
   if (top.length) summary.push({ t: "list", items: top.map((c) => L(poleOf(c.key, c.direction))) });

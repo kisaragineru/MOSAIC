@@ -116,11 +116,14 @@ export interface ClaimView {
   evidence: { responseId: string; questionId: string; polarity: number; answer: Answer | null; answeredAt: Date }[];
 }
 
-function stateOf(c: typeof tendencyClaims.$inferSelect): ClaimState {
-  if (c.evidenceCount < MIN_EVIDENCE) return "insufficient";
-  if (c.supportCount / c.evidenceCount < AGREEMENT_THRESHOLD) return "mixed";
-  return c.confidence >= 0.5 ? "consistent" : "emerging";
+/** How sure a tendency is, from its counts (also used for what others are shown). */
+export function claimState(evidence: number, support: number, confidence: number): ClaimState {
+  if (evidence < MIN_EVIDENCE) return "insufficient";
+  if (support / evidence < AGREEMENT_THRESHOLD) return "mixed";
+  return confidence >= 0.5 ? "consistent" : "emerging";
 }
+
+const stateOf = (c: typeof tendencyClaims.$inferSelect): ClaimState => claimState(c.evidenceCount, c.supportCount, c.confidence);
 
 export async function listTendencies(userId: string): Promise<ClaimView[]> {
   return withUser(userId, async (tx) => {

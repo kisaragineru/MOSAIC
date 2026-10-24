@@ -40,6 +40,7 @@ export async function buildExport(userId: string) {
     // others said about me — anonymous answers only as the summary the app shows.
     const peerRequests = (await tx.execute(sql`select * from peer_requests_mine() order by created_at`)).rows;
     const peerResults = (await tx.execute(sql`select * from peer_results()`)).rows;
+    const manualShares = await tx.select().from(s.manualShares).where(eq(s.manualShares.ownerId, userId));
     const claims = await tx.select().from(s.tendencyClaims).where(eq(s.tendencyClaims.userId, userId));
     const evidence = await tx.select().from(s.tendencyEvidence).where(eq(s.tendencyEvidence.userId, userId));
 
@@ -104,6 +105,7 @@ export async function buildExport(userId: string) {
       questionFeedback: feedback,
       peerRequests,
       peerResults,
+      manualShares,
       tendencies: claims.map((c) => ({ ...c, evidence: evidence.filter((e) => e.claimId === c.id) })),
       tuvi: {
         birthProfile: birth ?? null,
