@@ -11,7 +11,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const initial = Array.from(acc.profile.displayName.trim())[0]?.toUpperCase() ?? "?";
   return (
     <>
-      <header className="sticky top-0 z-10 border-b border-white/60 bg-[#fbf7f3]/75 backdrop-blur-md">
+      <header className="sticky top-0 z-10 print:hidden border-b border-white/60 bg-[#fbf7f3]/75 backdrop-blur-md">
         <div className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-2">
           <Link href="/home" className="flex items-center gap-2">
             <span className="mosaic-mark h-6 w-6 rounded-md" aria-hidden />

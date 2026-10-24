@@ -38,7 +38,7 @@ const PATHS: Record<NavIcon, React.ReactNode> = {
 export function BottomNav({ items }: { items: { href: string; label: string; icon: NavIcon }[] }) {
   const path = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 rounded-t-3xl border-t border-white/70 bg-white/85 pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_24px_-14px_rgba(110,80,50,0.25)] backdrop-blur-md">
+    <nav className="fixed inset-x-0 bottom-0 z-20 print:hidden rounded-t-3xl border-t border-white/70 bg-white/85 pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_24px_-14px_rgba(110,80,50,0.25)] backdrop-blur-md">
       {/* A class, not an inline style: the CSP blocks style attributes in server-rendered HTML. */}
       <ul className="mx-auto grid max-w-2xl grid-cols-6">
         {items.map((it) => {

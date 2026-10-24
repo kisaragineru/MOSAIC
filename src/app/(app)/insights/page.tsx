@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { headers } from "next/headers";
 import { tendencyFeedbackAction } from "@/app/actions/discovery";
 import { Flash } from "@/components/flash";
@@ -40,6 +41,13 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
         <p className="mb-1 text-sm font-semibold text-stone-800">{t.mosaic.summary(p.revealed, p.axes)}</p>
         <ProgressBar value={p.revealed} max={p.axes} label={t.mosaic.title} className="mb-4" />
         <Mosaic tiles={tileViews(p, t, locale)} labels={{ hint: t.mosaic.hint, evidence: t.mosaic.evidence, levels: t.mosaic.levels }} />
+        <Link href="/me/manual" className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-linear-to-br from-amber-50 to-teal-50 px-4 py-3 ring-1 ring-amber-100 transition hover:shadow-md">
+          <span>
+            <span className="block font-semibold text-stone-900">📖 {t.manual.open}</span>
+            <span className="block text-xs text-stone-600">{t.manual.teaser}</span>
+          </span>
+          <span aria-hidden className="text-teal-700">→</span>
+        </Link>
       </Card>
       <Card title={t.insights.tendencies}>
         <p className="mb-3 text-sm text-stone-600">{t.insights.tendenciesIntro}</p>

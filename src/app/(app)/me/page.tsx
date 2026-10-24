@@ -23,6 +23,13 @@ export default async function MePage({ searchParams }: { searchParams: Promise<R
       <Link href="/me/preview" className="flex items-center justify-between rounded-3xl bg-linear-to-br from-teal-50 to-violet-50 px-5 py-4 font-semibold text-teal-900 shadow-sm transition hover:shadow-md">
         <span>👁 {t.me.preview}</span><span aria-hidden>→</span>
       </Link>
+      <Link href="/me/manual" className="flex items-center justify-between rounded-3xl bg-linear-to-br from-amber-50 to-teal-50 px-5 py-4 shadow-sm transition hover:shadow-md">
+        <span>
+          <span className="block font-semibold text-stone-900">📖 {t.manual.meLink}</span>
+          <span className="block text-xs text-stone-600">{t.manual.teaser}</span>
+        </span>
+        <span aria-hidden>→</span>
+      </Link>
       <Link href="/me/others" className="flex items-center justify-between rounded-3xl bg-linear-to-br from-violet-50 to-rose-50 px-5 py-4 font-semibold text-violet-900 shadow-sm transition hover:shadow-md">
         <span>💭 {t.peers.meLink}</span><span aria-hidden>→</span>
       </Link>
