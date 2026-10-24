@@ -59,6 +59,13 @@ keys, anonymous access, role privilege escalation, and identity leakage across p
   rate-limited. A box can be handed over only from its date, and closes for good when handed over
   (to the child's own account, or as a book printed by the owner); writers keep read-only copies
   of their own part. A removed writer loses access; the owner chooses whether their entries stay.
+- Sharing a record (migration 0014): records are private unless the owner picks, per record,
+  "everyone I'm connected with" or chosen connections, through `memory_set_audience` (owner only;
+  chosen connections must be the owner's active ones; letters to the future always stay private).
+  Others read them only through `connection_feed`, which returns the current title and text, kind
+  and dates for active connections only — never people, tags, mood, reasons, earlier versions or
+  sealed letters — and nothing once the connection has ended. The comparison itself still never
+  reads records.
 - Linking a connection to an entry in "people" (`people.connection_session_id`) is stored on the
   owner's row only; the other participant never sees it or any notes about them.
 

@@ -8,7 +8,9 @@ import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { getAccount, getNotificationPrefs } from "@/server/services/account";
 import { getDaily } from "@/server/services/discovery";
-import { listMemories } from "@/server/services/memories";
+import { recentTimeline } from "@/server/services/memory-share";
+import { Timeline } from "@/components/timeline";
+import { buildTimeline } from "@/lib/timeline";
 import { upcomingDates } from "@/server/services/people";
 import { listComparisons } from "@/server/services/sharing";
 import { myPeerRequests } from "@/server/services/peers";
@@ -29,7 +31,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const daily = await getDaily(uid);
   // A year ahead (366 days, so a date just passed still shows its next occurrence in a leap year).
   const dates = await upcomingDates(uid, 366);
-  const recent = await listMemories(uid, { limit: 5 });
+  const recent = buildTimeline(await recentTimeline(uid), account.profile.timeZone);
   const first = daily.slots[0];
   const due = dates.filter((d) => d.reminderDue);
   const np = await getNotificationPrefs(uid);
@@ -175,16 +177,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         {recent.length === 0 ? (
           <p className="text-sm text-stone-500">{t.memories.empty}</p>
         ) : (
-          <ul className="divide-y divide-stone-100">
-            {recent.map((m) => (
-              <li key={m.id}>
-                <Link href={`/memories/${m.id}`} className="block py-2">
-                  <Pill>{t.memories.kinds[m.kind]}</Pill>{" "}
-                  <span className="text-sm text-stone-800">{m.sealed ? t.memories.sealed(m.revealOn!) : (m.title ?? m.body ?? "").slice(0, 80)}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <div className="space-y-3">
+            <Timeline t={t} locale={locale} tz={account.profile.timeZone} days={recent} compact />
+            <Link href="/memories" className="block text-right text-sm text-teal-700 underline">{t.memories.timeline.seeAll} →</Link>
+          </div>
         )}
       </Card>
     </Page>

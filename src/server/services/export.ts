@@ -29,6 +29,7 @@ export async function buildExport(userId: string) {
     const versions = await tx.select().from(s.memoryEntryVersions).where(eq(s.memoryEntryVersions.userId, userId)).orderBy(asc(s.memoryEntryVersions.version));
     const tags = await tx.select().from(s.memoryTags).where(eq(s.memoryTags.userId, userId));
     const mpeople = await tx.select().from(s.memoryPeople).where(eq(s.memoryPeople.userId, userId));
+    const audience = await tx.select().from(s.memoryAudience).where(eq(s.memoryAudience.ownerId, userId));
 
     const responses = await tx.select().from(s.questionResponses).where(eq(s.questionResponses.userId, userId)).orderBy(asc(s.questionResponses.answeredAt));
     const qids = [...new Set(responses.map((r) => r.questionId))];
@@ -103,6 +104,7 @@ export async function buildExport(userId: string) {
         versions: versions.filter((v) => v.entryId === e.id),
         tags: tags.filter((t) => t.entryId === e.id).map((t) => t.tag),
         personIds: mpeople.filter((m) => m.entryId === e.id).map((m) => m.personId),
+        sharedWithSessionIds: audience.filter((a) => a.entryId === e.id).map((a) => a.sessionId),
       })),
       questions: qdefs.map((d) => ({ ...d, versions: qversions.filter((v) => v.questionId === d.id) })),
       questionResponses: responses,

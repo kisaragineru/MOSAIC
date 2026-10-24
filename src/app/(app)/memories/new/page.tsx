@@ -5,6 +5,7 @@ import { Card, Page } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { listPeople } from "@/server/services/people";
+import { audienceChoices } from "@/server/services/memory-share";
 
 /** Prefill only well-formed dates (links from the Tử Vi life stages). */
 const dateParam = (v: string | undefined) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
@@ -14,11 +15,12 @@ export default async function NewMemoryPage({ searchParams }: { searchParams: Pr
   const sp = await searchParams;
   const { t } = await getT();
   const people = await listPeople(uid);
+  const audience = await audienceChoices(uid);
   return (
     <Page title={t.memories.new} back="/memories">
       <Flash t={t} sp={sp} />
       <Card>
-        <MemoryForm t={t} action={createMemoryAction} people={people} back="/memories/new" d={{ kind: sp.kind, revealOn: dateParam(sp.reveal), occurredOn: dateParam(sp.occurred) }} submitLabel={t.common.save} />
+        <MemoryForm t={t} action={createMemoryAction} people={people} back="/memories/new" d={{ kind: sp.kind, revealOn: dateParam(sp.reveal), occurredOn: dateParam(sp.occurred) }} submitLabel={t.common.save} audience={audience} />
       </Card>
     </Page>
   );

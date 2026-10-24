@@ -249,7 +249,8 @@ export const memoryEntries = pgTable(
       "memory_kind_ck",
       sql`${t.kind} in ('thought','feeling','memory','decision','goal','dream','regret','achievement','value','letter_to_future')`,
     ),
-    check("memory_visibility_ck", sql`${t.visibility} in ('private')`),
+    /** private: only you. connections: everyone you're connected with. selected: the connections in memory_audience. */
+    check("memory_visibility_ck", sql`${t.visibility} in ('private','connections','selected')`),
   ],
 );
 
@@ -957,4 +958,22 @@ export const giftViews = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [primaryKey({ columns: [t.boxId, t.authorId] }), check("gift_views_comment_ck", sql`${t.comment} is null or char_length(${t.comment}) <= 1000`)],
+);
+
+/** For records shared with "selected" connections: which ones. Written only via memory_set_audience(). */
+export const memoryAudience = pgTable(
+  "memory_audience",
+  {
+    entryId: uuid("entry_id")
+      .notNull()
+      .references(() => memoryEntries.id, { onDelete: "cascade" }),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => comparisonSessions.id, { onDelete: "cascade" }),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.entryId, t.sessionId] }), index("memory_audience_session_idx").on(t.sessionId)],
 );

@@ -151,6 +151,8 @@ export interface MemorySummary {
   mood: number | null;
   tags: string[];
   people: { id: string; nickname: string }[];
+  /** Who else may read it: private, connections (everyone you're connected with) or selected. */
+  visibility: "private" | "connections" | "selected";
 }
 
 export const memoryFilters = z.object({
@@ -238,6 +240,7 @@ async function hydrate(
       mood: sealed ? null : v.mood,
       tags: tagRows.filter((t) => t.entryId === e.id).map((t) => t.tag).sort(),
       people: personRows.filter((p) => p.entryId === e.id).map(({ id, nickname }) => ({ id, nickname })),
+      visibility: e.visibility as MemorySummary["visibility"],
     };
   });
 }

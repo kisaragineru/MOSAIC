@@ -8,13 +8,16 @@ import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { AppError } from "@/server/errors";
 import { getMemory } from "@/server/services/memories";
+import { getAccount } from "@/server/services/account";
 import { listPeople } from "@/server/services/people";
+import { audienceChoices, memoryAudienceOf } from "@/server/services/memory-share";
 
 export default async function MemoryPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
   const { id } = await params;
   const sp = await searchParams;
-  const { t } = await getT();
+  const { t, locale } = await getT();
+  const tz = (await getAccount(uid)).profile.timeZone;
   let m;
   try {
     m = await getMemory(uid, id);
@@ -24,17 +27,26 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
   }
   const editing = sp.edit === "1" && !m.sealed;
   const people = await listPeople(uid);
+  const choices = await audienceChoices(uid);
+  const sessionIds = m.visibility === "selected" ? await memoryAudienceOf(uid, m.id) : [];
+  const ta = t.memories.audience;
   return (
     <Page title={m.title ?? t.memories.kinds[m.kind]} back="/memories">
       <Flash t={t} sp={sp} />
       <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500">
         <Pill tone="teal">{t.memories.kinds[m.kind]}</Pill>
         {m.occurredOn && <span>{m.occurredOn}</span>}
-        <span>{t.common.created} {m.createdAt.toISOString().slice(0, 10)}</span>
+        <span>{t.common.created} {new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: tz }).format(m.createdAt)}</span>
         <span>{t.common.version} {m.version}</span>
         {m.tags.map((x) => <Pill key={x}>#{x}</Pill>)}
         {m.people.map((p) => <Pill key={p.id} tone="rose">{p.nickname}</Pill>)}
       </div>
+      {m.kind !== "letter_to_future" && (
+        <p className={`rounded-2xl px-4 py-2 text-xs ${m.visibility === "private" ? "bg-stone-100 text-stone-600" : "bg-rose-50 text-rose-900"}`}>
+          {m.visibility === "private" ? `🔒 ${ta.private}` : m.visibility === "connections" ? `🔗 ${t.memories.timeline.sharedAll}` : `👥 ${t.memories.timeline.sharedSelected}`}
+          {m.visibility === "selected" && `：${choices.filter((c) => sessionIds.includes(c.sessionId)).map((c) => c.name).join(locale === "ja" ? "、" : ", ")}`}
+        </p>
+      )}
       {m.sealed ? (
         <Notice>✉ {t.memories.sealed(m.revealOn!)}</Notice>
       ) : editing ? (
@@ -46,7 +58,8 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
               action={editMemoryAction}
               people={people}
               back={`/memories/${m.id}?edit=1`}
-              d={{ ...m, personIds: m.people.map((p) => p.id), body: m.body, reason: m.reason }}
+              d={{ ...m, personIds: m.people.map((p) => p.id), body: m.body, reason: m.reason, sessionIds }}
+              audience={choices}
               submitLabel={t.common.save}
             />
           </div>

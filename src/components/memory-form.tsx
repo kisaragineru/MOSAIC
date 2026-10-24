@@ -13,7 +13,11 @@ export interface MemoryDefaults {
   revealOn?: string | null;
   tags?: string[];
   personIds?: string[];
+  visibility?: "private" | "connections" | "selected";
+  sessionIds?: string[];
 }
+
+const radio = "flex items-center gap-2 rounded-xl border border-stone-200 px-3 py-2 text-sm has-[:checked]:border-teal-600 has-[:checked]:bg-teal-50";
 
 export function MemoryForm({
   t,
@@ -22,6 +26,7 @@ export function MemoryForm({
   d = {},
   back,
   submitLabel,
+  audience = [],
 }: {
   t: Dict;
   action: (f: FormData) => Promise<void>;
@@ -29,6 +34,8 @@ export function MemoryForm({
   d?: MemoryDefaults;
   back: string;
   submitLabel: string;
+  /** Active connections a record can be shared with. */
+  audience?: { sessionId: string; name: string }[];
 }) {
   const isLetter = d.kind === "letter_to_future";
   return (
@@ -48,6 +55,40 @@ export function MemoryForm({
       <Field label={t.memories.fields.body}>
         <Textarea name="body" required defaultValue={d.body ?? ""} maxLength={20000} rows={6} />
       </Field>
+      {isLetter ? (
+        <p className="text-xs text-stone-500">🔒 {t.memories.audience.letterPrivate}</p>
+      ) : (
+        <fieldset className="space-y-1.5">
+          <legend className="mb-1 text-sm font-medium text-stone-700">{t.memories.audience.label}</legend>
+          <label className={radio}>
+            <input type="radio" name="visibility" value="private" defaultChecked={(d.visibility ?? "private") === "private"} className="accent-teal-700" />
+            🔒 {t.memories.audience.private}
+          </label>
+          {audience.length > 0 ? (
+            <>
+              <label className={radio}>
+                <input type="radio" name="visibility" value="connections" defaultChecked={d.visibility === "connections"} className="accent-teal-700" />
+                🔗 {t.memories.audience.connections}
+              </label>
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-stone-200 px-3 py-2 text-sm has-[:checked]:border-teal-600 has-[:checked]:bg-teal-50">
+                <input type="radio" id="visibility-selected" name="visibility" value="selected" defaultChecked={d.visibility === "selected"} className="peer accent-teal-700" />
+                <label htmlFor="visibility-selected">👥 {t.memories.audience.selected}</label>
+                <div className="hidden w-full basis-full flex-wrap gap-3 pl-6 pt-1 peer-checked:flex">
+                  {audience.map((a) => (
+                    <label key={a.sessionId} className="flex items-center gap-1">
+                      <input type="checkbox" name="sessionIds" value={a.sessionId} defaultChecked={d.sessionIds?.includes(a.sessionId)} className="accent-teal-700" />
+                      {a.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-stone-500">{t.memories.audience.noConnections}</p>
+          )}
+          <p className="text-[11px] leading-5 text-stone-500">{t.memories.audience.help}</p>
+        </fieldset>
+      )}
       <details className="rounded-xl border border-stone-200 p-3" open={!!(d.reason || d.occurredOn || d.revealOn || d.tags?.length || d.personIds?.length || d.mood)}>
         <summary className="cursor-pointer text-sm text-stone-600">{t.common.more}</summary>
         <div className="mt-3 space-y-3">
