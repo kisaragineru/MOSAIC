@@ -68,7 +68,7 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
         <Card>
           <p className="whitespace-pre-line text-stone-900">{m.body}</p>
           {m.reason && <p className="mt-3 whitespace-pre-line text-sm text-stone-600">→ {m.reason}</p>}
-          {m.mood && <p className="mt-2 text-xs text-stone-500">{t.memories.fields.mood}: {m.mood}</p>}
+          {m.mood && <p className="mt-2 text-xs text-stone-500">{t.memories.fields.mood}: <span aria-label={String(m.mood)}>{["😞", "😕", "😐", "🙂", "😄"][m.mood - 1]}</span></p>}
           <div className="mt-4">
             <LinkButton href={`/memories/${m.id}?edit=1`}>{t.common.edit}</LinkButton>
           </div>

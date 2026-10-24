@@ -126,3 +126,18 @@ body {
   .book-flow { page: bookFlow; break-before: page; max-width: none !important; box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; }
   .book-entry { break-inside: avoid; }
 }
+
+/* Memory form: what shows depends on the chosen kind and audience, without script. */
+.memory-form .letter-only,
+.memory-form .aud-pick {
+  display: none;
+}
+.memory-form:has(input[name="kind"][value="letter_to_future"]:checked) .letter-only {
+  display: block;
+}
+.memory-form:has(input[name="kind"][value="letter_to_future"]:checked) .not-letter {
+  display: none;
+}
+.memory-form:has(input[name="visibility"][value="selected"]:checked) .aud-pick {
+  display: flex;
+}

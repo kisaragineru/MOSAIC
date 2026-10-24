@@ -59,7 +59,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
   const people = await listPeople(uid);
   const tl = t.memories.timeline;
   return (
-    <Page title={t.memories.title} actions={<LinkButton href="/memories/new" variant="primary">+ {t.memories.write}</LinkButton>}>
+    <Page title={t.memories.title}>
       <Flash t={t} sp={sp} />
       {filterError && <Flash t={t} sp={{ e: "invalid_input" }} />}
       <nav aria-label={t.memories.title} className="flex gap-1 rounded-full bg-white/80 p-1 text-sm shadow-sm ring-1 ring-stone-200">
@@ -112,6 +112,15 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
           {hasOlder && <Link className="text-teal-700 underline" href={pageHref(page + 1)}>{t.memories.older} →</Link>}
         </nav>
       )}
+      <div aria-hidden className="h-16" />
+      {/* Writing is the main thing here: a floating button above the tab bar, always in reach. */}
+      <Link
+        href="/memories/new"
+        className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-[max(1rem,calc(50%-20rem))] z-30 inline-flex items-center gap-2 rounded-full bg-linear-to-br from-teal-600 to-violet-600 px-6 py-4 text-base font-bold text-white shadow-lg shadow-teal-900/25 ring-4 ring-white/80 transition hover:shadow-xl active:scale-95 print:hidden"
+      >
+        <span aria-hidden className="text-xl leading-none">✎</span>
+        {t.memories.write}
+      </Link>
     </Page>
   );
 }

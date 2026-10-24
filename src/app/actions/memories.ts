@@ -8,14 +8,16 @@ import { setMemoryAudience } from "@/server/services/memory-share";
 import { attempt, safeNext, str, withParam } from "./util";
 
 function fromForm(f: FormData) {
+  const kind = str(f, "kind") || "thought";
   return {
-    kind: str(f, "kind") || "thought",
+    kind,
     title: str(f, "title"),
     body: str(f, "body"),
     reason: str(f, "reason"),
     mood: str(f, "mood"),
     occurredOn: str(f, "occurredOn"),
-    revealOn: str(f, "revealOn"),
+    // The opening day is only shown for letters; a date left there after switching kind is dropped.
+    revealOn: kind === "letter_to_future" ? str(f, "revealOn") : "",
     tags: splitTags(str(f, "tags")),
     personIds: f.getAll("personIds").filter((x): x is string => typeof x === "string" && x !== ""),
   };

@@ -42,19 +42,26 @@ test("records on a timeline, and a record shared with a connection", async ({ br
 
   await hana.goto("/memories/new");
   await expect(hana.getByRole("radio", { name: /自分だけ/ })).toBeChecked();
-  await hana.getByLabel("タイトル (任意)").fill("海に行った");
+  await expect(hana.getByLabel("タイトル (任意)")).toHaveCount(0);
   await hana.getByLabel("あったこと・考えていること").fill("みんなで海に行って、夕日を見た。");
-  await hana.getByRole("radio", { name: /つながっている全員/ }).check();
+  await hana.getByRole("radio", { name: /つながっている全員/ }).check({ force: true });
   await hana.getByRole("button", { name: "保存" }).click();
   await hana.waitForURL(/\/memories\/[0-9a-f-]+\?ok=saved/);
   const record = new URL(hana.url()).pathname;
+  // Letters can't be shared: picking one swaps the audience for the opening day.
+  await hana.goto("/memories/new");
+  await expect(hana.getByLabel("手紙を開く日")).toBeHidden();
+  await hana.getByRole("radio", { name: /未来の自分への手紙/ }).check({ force: true });
+  await expect(hana.getByLabel("手紙を開く日")).toBeVisible();
+  await expect(hana.getByRole("radio", { name: /つながっている全員/ })).toBeHidden();
+  await hana.goto(record);
   await expect(hana.getByText("🔗 つながっている人に公開中")).toBeVisible();
 
   // Hana's own timeline: today's header, the time it was written, the shared badge.
   await hana.goto("/memories");
   await expect(hana.getByRole("heading", { level: 3 }).first()).toContainText("今日");
-  await expect(hana.getByRole("link", { name: /海に行った/ })).toContainText(/\d{2}:\d{2}/);
-  await expect(hana.getByRole("link", { name: /海に行った/ })).toContainText("つながっている人に公開中");
+  await expect(hana.getByRole("link", { name: /夕日を見た/ })).toContainText(/\d{2}:\d{2}/);
+  await expect(hana.getByRole("link", { name: /夕日を見た/ })).toContainText("つながっている人に公開中");
 
   // Sora sees it on Home and in the timeline, read-only.
   await sora.goto("/home");
@@ -67,7 +74,7 @@ test("records on a timeline, and a record shared with a connection", async ({ br
 
   // Hana makes it private again: gone for Sora.
   await hana.goto(`${record}?edit=1`);
-  await hana.getByRole("radio", { name: /自分だけ/ }).check();
+  await hana.getByRole("radio", { name: /自分だけ/ }).check({ force: true });
   await hana.getByRole("button", { name: "保存" }).click();
   await hana.waitForURL(/ok=saved/);
   await expect(hana.getByText("🔒 自分だけ")).toBeVisible();

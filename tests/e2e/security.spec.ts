@@ -11,7 +11,7 @@ test("AUD-02: AI reflection is never triggered by a cross-site navigation", asyn
   await page.waitForURL(/welcome/);
   await page.goto("/home");
   await page.goto("/memories/new");
-  await page.getByLabel("Kind").selectOption("value");
+  await page.getByRole("radio", { name: "Value" }).check({ force: true });
   await page.getByLabel("What happened / what's on your mind").fill("Family");
   await page.getByRole("button", { name: "Save" }).click();
   await page.waitForURL(/ok=saved/);

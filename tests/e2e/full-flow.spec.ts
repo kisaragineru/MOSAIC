@@ -60,7 +60,7 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   await pa.getByRole("button", { name: "Save" }).click();
   await expect(pa.getByText("Saved.")).toBeVisible();
   await pa.goto("/memories/new");
-  await pa.getByLabel("Kind").selectOption("value");
+  await pa.getByRole("radio", { name: "Value" }).check({ force: true });
   await pa.getByLabel("What happened / what's on your mind").fill("Career comes first.");
   await pa.getByRole("button", { name: "Save" }).click();
   await expect(pa).toHaveURL(/\/memories\/[0-9a-f-]+\?ok=saved/);
@@ -101,7 +101,7 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   await expect(letter).toHaveAttribute("href", /kind=letter_to_future&reveal=\d{4}-\d{2}-\d{2}/);
   await letter.click();
   await pa.waitForURL(/\/memories\/new/);
-  await expect(pa.locator('select[name="kind"]')).toHaveValue("letter_to_future");
+  await expect(pa.getByRole("radio", { name: "Letter to future me" })).toBeChecked();
   await expect(pa.locator('input[name="revealOn"]')).toHaveValue(/^\d{4}-\d{2}-\d{2}$/);
   await pa.goto("/tuvi");
   // Tapping a palace shows what it stands for.
