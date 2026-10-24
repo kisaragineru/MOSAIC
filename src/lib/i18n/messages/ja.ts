@@ -632,6 +632,8 @@ export const ja: Dict = {
       relationship: "「大切な人」での関係",
       create: "テスト相手をつくる",
       write: "記録を書かせる",
+      enrich: (n: number) => `プロフィールを充実させる（あと${n}問）`,
+      enriched: "プロフィール充実済み",
       delete: "削除",
       deleteConfirm: "このテスト相手と、そのデータをすべて削除しますか？",
     },

@@ -630,6 +630,8 @@ export const en = {
       relationship: "How you file it in People",
       create: "Create a test companion",
       write: "Make it write a record",
+      enrich: (n: number) => `Fill in profile (${n} answers left)`,
+      enriched: "Profile filled",
       delete: "Remove",
       deleteConfirm: "Remove this test companion and everything in it?",
     },

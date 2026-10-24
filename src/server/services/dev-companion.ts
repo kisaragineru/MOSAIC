@@ -6,11 +6,11 @@
  * owner can make it write another record, or remove it (which deletes the account entirely).
  */
 import { randomUUID } from "node:crypto";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { randomToken } from "../auth/crypto";
 import { hashPassword } from "../auth/password";
-import { devCompanions, notificationPreferences, profiles, users } from "../db/schema";
+import { devCompanions, notificationPreferences, people, profiles, users } from "../db/schema";
 import { withUser } from "../db/tx";
 import { AppError, forbidden, notFound } from "../errors";
 import { audit } from "./audit";
@@ -18,8 +18,13 @@ import { answerQuestion } from "./discovery";
 import { setManualShare } from "./manual-share";
 import { createMemory } from "./memories";
 import { setMemoryAudience } from "./memory-share";
-import { addPreference } from "./people";
-import { addPersonFromConnection, createShare, giveConsent, openComparison } from "./sharing";
+import { addPreference, updatePerson } from "./people";
+import { ANSWERS, BIO, BIRTH, FAVOURITES, INTRO, LEAN, MORE, RECORDS } from "./dev-persona";
+import { saveIntro } from "./intro";
+import { listMemories } from "./memories";
+import { saveBirthProfile } from "./tuvi";
+import { QUESTION_BANK } from "@/content/questions";
+import { addPersonFromConnection, createShare, giveConsent, listComparisons, openComparison } from "./sharing";
 
 export const devToolsEnabled = () => process.env.DEV_TOOLS === "on";
 const MAX = 3;
@@ -31,19 +36,6 @@ function guard() {
 }
 
 const day = (back: number) => new Date(Date.now() - back * 86400_000).toISOString().slice(0, 10);
-
-const RECORDS: { kind: string; body: string; back: number; audience: { visibility: string; circles?: string[] } }[] = [
-  { kind: "memory", body: "駅前に新しいカフェができてた。窓際の席が静かで、ずっと本を読んでいられそう。今度いっしょに行こう。", back: 0, audience: { visibility: "connections" } },
-  { kind: "feeling", body: "今週は少し疲れ気味。でも夕方の散歩で金木犀の匂いがして、それだけでちょっと元気になった。", back: 1, audience: { visibility: "circles", circles: ["partner", "family", "friend"] } },
-  { kind: "decision", body: "来年はちゃんと休みをとって、ひとり旅に行くと決めた。行き先はまだ迷い中。", back: 3, audience: { visibility: "circles", circles: ["family"] } },
-  { kind: "thought", body: "（これは自分だけの記録。テスト相手から見せていないので、あなたには見えないはず）", back: 4, audience: { visibility: "private" } },
-];
-const MORE = [
-  "新しいアルバムをずっと聴いてる。歌詞がいまの気分にぴったり。",
-  "久しぶりに料理をした。思ったよりうまくできて満足。",
-  "朝いちばんに窓を開けたら、空気がもう冬の匂いだった。",
-  "友だちと長電話。くだらない話で笑いすぎた。",
-];
 
 export async function listCompanions(ownerId: string) {
   if (!devToolsEnabled()) return [];
@@ -68,39 +60,20 @@ export async function createCompanion(ownerId: string, relationship: unknown): P
     await audit(tx, id, "account.dev_companion");
   });
 
-  // A few answers and favourites, shown in comparisons and the shared manual.
-  const answers: [string, unknown][] = [
-    ["p.weekend_plan", { choice: "see" }],
-    ["ax.plan_pack", { choice: "morning" }],
-    ["l.season", { choice: "autumn" }],
-    ["l.coffee_tea", { choice: "coffee" }],
-    ["l.music_genres", { choices: ["jpop", "folk"] }],
-    ["l.fashion_style", { choices: ["simple", "vintage"] }],
-  ];
-  for (const [questionId, answer] of answers) {
-    await answerQuestion(id, { questionId, questionVersion: 1, answer, privacy: "comparable" }).catch(() => undefined);
-  }
-  for (const [categoryId, label] of [["music", "宇多田ヒカル"], ["food", "浅煎りのコーヒー"], ["brand", "無印良品"]] as const) {
-    await addPreference(id, { personId: null, categoryId, label, sentiment: "love", source: "self_stated" }).catch(() => undefined);
-  }
-
   // Connected, both consents given; each files the other in People.
   const share = await createShare(id);
   const sid = await openComparison(ownerId, share.token);
   await giveConsent(id, sid, { scopes: ["preferences", "values"], agree: true });
   await giveConsent(ownerId, sid, { scopes: ["preferences", "values"], agree: true });
-  await addPersonFromConnection(id, sid, "friend");
+  await addPersonFromConnection(id, sid, "family");
   await addPersonFromConnection(ownerId, sid, rel);
   await setManualShare(id, sid, "friend").catch(() => undefined);
 
-  for (const r of RECORDS) {
-    const entry = await createMemory(id, { kind: r.kind, body: r.body, occurredOn: day(r.back) });
-    if (r.audience.visibility !== "private") await setMemoryAudience(id, entry, r.audience);
-  }
   await withUser(ownerId, async (tx) => {
     await tx.insert(devCompanions).values({ ownerId, companionId: id });
     await audit(tx, ownerId, "dev.companion_created");
   });
+  await fill(id);
   return id;
 }
 
@@ -110,6 +83,86 @@ async function own(ownerId: string, companionId: string) {
   const [row] = await withUser(ownerId, (tx) => tx.select().from(devCompanions).where(and(eq(devCompanions.ownerId, ownerId), eq(devCompanions.companionId, cid))));
   if (!row) throw notFound();
   return cid;
+}
+
+/**
+ * Fill the companion with the made-up persona (dev-persona.ts): bio and intro, a Tử Vi chart,
+ * an answer to every question (axes leaning her way), favourites and a few months of records
+ * shared in each way. Safe to run again: answers are re-saved, records already there are kept.
+ */
+/** Questions the persona answers that the companion hasn't answered yet. */
+async function unanswered(cid: string) {
+  const done = new Set(
+    (await withUser(cid, (tx) => tx.execute<{ q: string }>(sql`select distinct question_id as q from question_responses where user_id = ${cid} and status = 'answered'`))).rows.map((r) => r.q),
+  );
+  return QUESTION_BANK.filter((q) => !q.followUpOnly && q.active !== false && !done.has(q.id)).flatMap((q) => {
+    const answer = ANSWERS[q.id] ?? leaning(q);
+    return answer ? [{ q, answer }] : [];
+  });
+}
+
+/**
+ * A serverless request has only seconds, and every answer recomputes tendencies: answer for at
+ * most this long, then stop; the next "fill" carries on where this one left off.
+ */
+const BUDGET_MS = 6000;
+
+async function fill(cid: string): Promise<number> {
+  const started = Date.now();
+  await withUser(cid, (tx) => tx.update(profiles).set({ bio: BIO, updatedAt: new Date() }).where(eq(profiles.userId, cid)));
+  await saveIntro(cid, INTRO);
+  await saveBirthProfile(cid, BIRTH).catch(() => undefined);
+
+  for (const f of FAVOURITES) {
+    await addPreference(cid, { personId: null, ...f, source: "self_stated" }).catch(() => undefined);
+  }
+
+  // She files the owner as family, so family-only records reach them.
+  const [conn] = (await listComparisons(cid)).filter((c) => c.status === "active");
+  if (conn) {
+    const pid = await addPersonFromConnection(cid, conn.id, "family");
+    const [p] = await withUser(cid, (tx) => tx.select({ nickname: people.nickname }).from(people).where(eq(people.id, pid)));
+    await updatePerson(cid, pid, { nickname: p?.nickname ?? conn.otherName, relationship: "family" });
+    await setManualShare(cid, conn.id, "friend").catch(() => undefined);
+  }
+
+  const have = new Set((await listMemories(cid, { limit: 200 })).map((m) => m.body));
+  for (const r of [...RECORDS].reverse()) {
+    if (have.has(r.body)) continue;
+    const entry = await createMemory(cid, { kind: r.kind, title: r.title, body: r.body, occurredOn: day(r.back) });
+    if (r.audience.visibility !== "private") await setMemoryAudience(cid, entry, r.audience);
+  }
+
+  const todo = await unanswered(cid);
+  let left = todo.length;
+  for (const { q, answer } of todo) {
+    if (Date.now() - started > BUDGET_MS) break;
+    await answerQuestion(cid, { questionId: q.id, questionVersion: q.version, answer, privacy: q.comparable ? "comparable" : "private" }).catch(() => undefined);
+    left--;
+  }
+  return left;
+}
+
+/** How many answers are still to fill in, per companion (0 when its profile is complete). */
+export async function companionPending(companionId: string) {
+  return (await unanswered(companionId)).length;
+}
+
+/** For a question that feeds an axis: the option (or scale end) on her side of it. */
+function leaning(q: (typeof QUESTION_BANK)[number]) {
+  for (const sig of q.signals ?? []) {
+    const want = LEAN[sig.claimKey];
+    if (sig.whenValue !== undefined && sig.direction === want) {
+      return q.format === "multi" ? { choices: [sig.whenValue] } : { choice: sig.whenValue };
+    }
+    if (q.format === "scale" && sig.whenScaleAtLeast !== undefined) return { scale: sig.direction === want ? 4 : 2 };
+  }
+  return null;
+}
+
+/** Fill (or refill) an existing companion with the persona. */
+export async function enrichCompanion(ownerId: string, companionId: string): Promise<number> {
+  return fill(await own(ownerId, companionId));
 }
 
 /** The companion writes one more record, shared with everyone it's connected with. */

@@ -632,6 +632,8 @@ export const vi: Dict = {
       relationship: "Mối quan hệ trong mục Người thân",
       create: "Tạo người thử nghiệm",
       write: "Cho viết một ghi chép",
+      enrich: (n: number) => `Bổ sung hồ sơ (còn ${n} câu)`,
+      enriched: "Hồ sơ đã đầy đủ",
       delete: "Xoá",
       deleteConfirm: "Xoá người thử nghiệm này và toàn bộ dữ liệu?",
     },

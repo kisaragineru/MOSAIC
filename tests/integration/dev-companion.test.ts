@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { companionWrites, createCompanion, deleteCompanion, listCompanions } from "@/server/services/dev-companion";
+import { companionPending, companionWrites, createCompanion, deleteCompanion, enrichCompanion, listCompanions } from "@/server/services/dev-companion";
+import { getAccount } from "@/server/services/account";
+import { portrait } from "@/server/services/mosaic";
 import { connectionFeed, shareTargets } from "@/server/services/memory-share";
 import { listComparisons } from "@/server/services/sharing";
 import { makeUser } from "../helpers/factory";
@@ -24,12 +26,24 @@ describe("development test companion", () => {
     expect(c).toMatchObject({ id, name: "ミナ（テスト）" });
     expect((await listComparisons(u.userId))[0]).toMatchObject({ status: "active", otherName: "ミナ（テスト）" });
     expect((await shareTargets(u.userId))[0]!.circle).toBe("family");
-    // The companion files the owner as a friend: everyone + friend-circle records, not family-only or private.
-    const feed = await connectionFeed(u.userId);
-    expect(feed).toHaveLength(2);
-    expect(feed.some((x) => x.body.includes("自分だけの記録"))).toBe(false);
+    // A made-up woman in her sixties: bio, intro, a chart, answers to everything, months of records.
+    // Answers come in time-boxed batches; keep filling until none are left.
+    for (let i = 0; i < 10 && (await companionPending(id)) > 0; i++) await enrichCompanion(u.userId, id);
+    expect(await companionPending(id)).toBe(0);
+    const acc = await getAccount(id);
+    expect(acc.profile.bio).toMatch(/小学校の先生/);
+    expect(acc.profile.intro).toMatch(/段取り/);
+    const p = await portrait(id);
+    expect(p.revealed).toBeGreaterThanOrEqual(17);
+    // She files the owner as family: everything but her private records reaches them.
+    const feed = await connectionFeed(u.userId, { limit: 100 });
+    expect(feed).toHaveLength(10);
+    expect(feed.some((x) => x.body.includes("自分だけの記録") || x.body.includes("運動会"))).toBe(false);
+    // Filling again adds nothing twice.
+    await enrichCompanion(u.userId, id);
+    expect(await connectionFeed(u.userId, { limit: 100 })).toHaveLength(10);
     await companionWrites(u.userId, id);
-    expect(await connectionFeed(u.userId)).toHaveLength(3);
+    expect(await connectionFeed(u.userId, { limit: 100 })).toHaveLength(11);
     // Not someone else's companion.
     await expect(companionWrites(other.userId, id)).rejects.toMatchObject({ code: "not_found" });
     await expect(deleteCompanion(other.userId, id)).rejects.toMatchObject({ code: "not_found" });
