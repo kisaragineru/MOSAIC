@@ -62,7 +62,7 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   await pa.goto("/memories/new");
   await pa.getByRole("radio", { name: "Value" }).check({ force: true });
   await pa.getByLabel("What happened / what's on your mind").fill("Career comes first.");
-  await pa.getByRole("button", { name: "Save" }).click();
+  await pa.getByRole("button", { name: "Add to journal" }).click();
   await expect(pa).toHaveURL(/\/memories\/[0-9a-f-]+\?ok=saved/);
   await pa.getByRole("link", { name: "Edit" }).click();
   await pa.getByLabel("What happened / what's on your mind").fill("Family comes first.");

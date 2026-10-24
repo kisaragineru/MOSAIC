@@ -45,7 +45,7 @@ test("records on a timeline, and a record shared with a connection", async ({ br
   await expect(hana.getByLabel("タイトル (任意)")).toHaveCount(0);
   await hana.getByLabel("あったこと・考えていること").fill("みんなで海に行って、夕日を見た。");
   await hana.getByRole("radio", { name: /つながっている全員/ }).check({ force: true });
-  await hana.getByRole("button", { name: "保存" }).click();
+  await hana.getByRole("button", { name: "記録する" }).click();
   await hana.waitForURL(/\/memories\/[0-9a-f-]+\?ok=saved/);
   const record = new URL(hana.url()).pathname;
   // Letters can't be shared: picking one swaps the audience for the opening day.
@@ -92,7 +92,7 @@ test("write in place from the floating button, or close it with ✕", async ({ b
   await sheet.getByLabel("あったこと・考えていること").fill("駅まで歩いて、金木犀の匂いがした。");
   await sheet.locator("label", { hasText: "気持ち" }).click();
   await expect(sheet.getByRole("radio", { name: /気持ち/ })).toBeChecked();
-  await sheet.getByRole("button", { name: "保存" }).click();
+  await sheet.getByRole("button", { name: "記録する" }).click();
   await expect(sheet).toBeHidden();
   await expect(page).toHaveURL(/\/memories$/);
   await expect(page.getByRole("link", { name: /金木犀の匂いがした/ })).toContainText("気持ち");
@@ -121,7 +121,7 @@ test("share by relationship, and a test companion from settings (development)", 
   await hana.getByLabel("あったこと・考えていること").fill("家族だけに伝えたいこと。");
   await hana.getByRole("radio", { name: /関係で選ぶ/ }).check({ force: true });
   await hana.getByRole("checkbox", { name: /家族/ }).check({ force: true });
-  await hana.getByRole("button", { name: "保存" }).click();
+  await hana.getByRole("button", { name: "記録する" }).click();
   await hana.waitForURL(/ok=saved/);
   await expect(hana.getByText(/家族に公開中/)).toBeVisible();
   await sora.goto("/memories?view=friends");

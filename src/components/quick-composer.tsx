@@ -17,6 +17,7 @@ export interface ComposerText {
   connections: string;
   circles: Record<string, string>;
   save: string;
+  saveShared: string;
   saving: string;
   close: string;
   discard: string;
@@ -43,6 +44,8 @@ export function QuickComposer({ tx, canShare }: { tx: ComposerText; canShare: bo
   const [text, setText] = useState("");
   const [state, action, pending] = useActionState<QuickState, FormData>(quickMemoryAction, null);
   const [handled, setHandled] = useState<number | null>(null);
+  // The button says whether this goes to others' timelines too.
+  const [shared, setShared] = useState(false);
   const area = useRef<HTMLTextAreaElement>(null);
 
   // Saved: close and start the next one empty (the list refreshes from the server).
@@ -50,6 +53,7 @@ export function QuickComposer({ tx, canShare }: { tx: ComposerText; canShare: bo
     setHandled(state.at);
     setOpen(false);
     setText("");
+    setShared(false);
   }
 
   useEffect(() => {
@@ -116,7 +120,7 @@ export function QuickComposer({ tx, canShare }: { tx: ComposerText; canShare: bo
             </div>
           </fieldset>
           {canShare && (
-            <fieldset className="flex flex-wrap items-center gap-1.5">
+            <fieldset className="flex flex-wrap items-center gap-1.5" onChange={(e) => setShared((e.target as unknown as HTMLInputElement).value !== "private")}>
               <legend className="sr-only">{tx.audience}</legend>
               <label className={chip}><input type="radio" name="visibility" value="private" defaultChecked className="sr-only" />🔒 {tx.private}</label>
               <label className={chip}><input type="radio" name="visibility" value="connections" className="sr-only" />🔗 {tx.connections}</label>
@@ -127,9 +131,9 @@ export function QuickComposer({ tx, canShare }: { tx: ComposerText; canShare: bo
           )}
           {state && !state.ok && <p role="alert" className="text-sm text-rose-700">{tx.errors[state.error] ?? tx.errors.generic}</p>}
           <div className="flex items-center justify-between gap-3">
-            <Link href="/memories/new" className="text-sm text-teal-700 underline">{tx.more}</Link>
-            <button type="submit" disabled={pending || !text.trim()} className="min-h-11 rounded-full bg-teal-700 px-7 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-50">
-              {pending ? tx.saving : tx.save}
+            <Link href="/memories/new" className="shrink-0 rounded-full px-2 py-2 text-sm text-stone-500 hover:bg-stone-100 hover:text-stone-800">{tx.more}</Link>
+            <button type="submit" disabled={pending || !text.trim()} className="min-h-12 flex-1 whitespace-nowrap rounded-full bg-teal-700 px-6 text-base font-bold text-white shadow-md shadow-teal-900/15 transition hover:bg-teal-800 active:scale-[0.98] disabled:opacity-40 disabled:shadow-none sm:flex-none sm:px-10">
+              {pending ? tx.saving : shared ? tx.saveShared : tx.save}
             </button>
           </div>
         </form>

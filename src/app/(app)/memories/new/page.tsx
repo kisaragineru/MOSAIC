@@ -20,7 +20,7 @@ export default async function NewMemoryPage({ searchParams }: { searchParams: Pr
     <Page title={t.memories.new} back="/memories">
       <Flash t={t} sp={sp} />
       <Card>
-        <MemoryForm t={t} action={createMemoryAction} people={people} back="/memories/new" d={{ kind: sp.kind, revealOn: dateParam(sp.reveal), occurredOn: dateParam(sp.occurred) }} submitLabel={t.common.save} canShare={canShare} />
+        <MemoryForm t={t} action={createMemoryAction} people={people} back="/memories/new" d={{ kind: sp.kind, revealOn: dateParam(sp.reveal), occurredOn: dateParam(sp.occurred) }} submitLabel={t.memories.composer.record} canShare={canShare} />
       </Card>
     </Page>
   );
