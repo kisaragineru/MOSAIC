@@ -11,7 +11,7 @@ import { getAccount } from "@/server/services/account";
 import { listMemories, listTags, type MemorySummary } from "@/server/services/memories";
 import { shareTargets, connectionFeed, feedForPage, feedToEntry, mineToEntry } from "@/server/services/memory-share";
 import { listPeople } from "@/server/services/people";
-import { commentInbox, countsByEntry } from "@/server/services/comments";
+import { commentInbox, commentPreviews, countsByEntry } from "@/server/services/comments";
 
 const PAGE_SIZE = 50;
 
@@ -52,6 +52,8 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
     }
   }
   const days = buildTimeline(entries, tz);
+  const counts = countsByEntry(await commentInbox(uid));
+  const previews = await commentPreviews(uid, entries.filter((e) => counts.has(e.id)).map((e) => e.id));
   const pageHref = (n: number) => {
     const q = new URLSearchParams(Object.entries(filters).filter(([, v]) => v !== ""));
     if (view !== "all") q.set("view", view);
@@ -124,7 +126,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
       {days.length === 0 ? (
         <Empty>{view === "friends" ? tl.friendsEmpty : t.memories.empty}</Empty>
       ) : (
-        <Timeline t={t} locale={locale} tz={tz} days={days} comments={countsByEntry(await commentInbox(uid))} />
+        <Timeline t={t} locale={locale} tz={tz} days={days} comments={counts} previews={previews} />
       )}
       {(page > 0 || hasOlder) && (
         <nav className="flex justify-between text-sm" aria-label="pagination">

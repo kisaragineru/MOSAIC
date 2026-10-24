@@ -912,6 +912,8 @@ export const en = {
     resumeSub: "Your first tile is only a few answers away.",
   },
   comments: {
+    you: "You",
+    more: (n: number) => `${n} more →`,
     title: "Comments",
     private: (name: string) => `🔒 Only you and ${name} can see this conversation.`,
     privateOwner: "🔒 Each person's comments are a separate conversation, seen only by them and you.",

@@ -9,7 +9,7 @@ import { requireUser } from "@/server/auth/session";
 import { getAccount, getNotificationPrefs } from "@/server/services/account";
 import { getDaily } from "@/server/services/discovery";
 import { recentTimeline } from "@/server/services/memory-share";
-import { commentInbox, countsByEntry } from "@/server/services/comments";
+import { commentInbox, commentPreviews, countsByEntry } from "@/server/services/comments";
 import { Timeline } from "@/components/timeline";
 import { buildTimeline } from "@/lib/timeline";
 import { upcomingDates } from "@/server/services/people";
@@ -47,6 +47,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const lookBack = await lookBackDue(uid);
   const inbox = await commentInbox(uid);
   const newComments = inbox.filter((x) => x.unread > 0);
+  const counts = countsByEntry(inbox);
+  const previews = await commentPreviews(uid, recent.flatMap((d) => d.items.map((x) => x.entry.id)).filter((id) => counts.has(id)));
   const nowStage = chart ? lifeStages(chart, locale, tv.currentAge).find((x) => x.state === "current") : undefined;
   return (
     <Page title={t.home.hello(account.profile.displayName)}>
@@ -202,7 +204,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           <p className="text-sm text-stone-500">{t.memories.empty}</p>
         ) : (
           <div className="space-y-3">
-            <Timeline t={t} locale={locale} tz={account.profile.timeZone} days={recent} compact comments={countsByEntry(inbox)} />
+            <Timeline t={t} locale={locale} tz={account.profile.timeZone} days={recent} compact comments={counts} previews={previews} />
             <Link href="/memories" className="block text-right text-sm text-teal-700 underline">{t.memories.timeline.seeAll} →</Link>
           </div>
         )}

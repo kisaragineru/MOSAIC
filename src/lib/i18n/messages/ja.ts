@@ -914,6 +914,8 @@ export const ja: Dict = {
     resumeSub: "最初のタイルまで、あと少しです。",
   },
   comments: {
+    you: "あなた",
+    more: (n: number) => `ほか${n}件のコメント →`,
     title: "コメント",
     private: (name: string) => `🔒 このやりとりは、あなたと${name}さんの2人だけに見えます。`,
     privateOwner: "🔒 コメントは1人ずつ別々のやりとりです。書いた本人とあなたにしか見えません。",

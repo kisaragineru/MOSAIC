@@ -135,6 +135,31 @@ export async function deleteComment(userId: string, commentId: string) {
   });
 }
 
+export interface CommentPreview {
+  authorName: string;
+  mine: boolean;
+  body: string;
+  createdAt: Date;
+}
+
+/** The newest comments (up to `per`, oldest first) on each of these records that I may read. */
+export async function commentPreviews(userId: string, entryIds: string[], per = 2): Promise<Map<string, CommentPreview[]>> {
+  const ids = [...new Set(entryIds)].filter((x) => uuid.safeParse(x).success).slice(0, 100);
+  const out = new Map<string, CommentPreview[]>();
+  if (!ids.length) return out;
+  const r = await run(userId, (tx) =>
+    tx.execute<{ entry_id: string; author_id: string; author_name: string; body: string; created_at: string | Date }>(
+      sql`select * from memory_comment_previews(${`{${ids.join(",")}}`}::uuid[], ${per})`,
+    ),
+  );
+  for (const x of r.rows) {
+    const list = out.get(x.entry_id) ?? [];
+    list.push({ authorName: x.author_name, mine: x.author_id === userId, body: x.body, createdAt: new Date(x.created_at) });
+    out.set(x.entry_id, list);
+  }
+  return out;
+}
+
 /** Comment counts per record, from the inbox (for the timeline). */
 export function countsByEntry(threads: Thread[]) {
   const m = new Map<string, { count: number; unread: number }>();

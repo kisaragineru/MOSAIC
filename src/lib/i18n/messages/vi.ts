@@ -914,6 +914,8 @@ export const vi: Dict = {
     resumeSub: "Chỉ còn vài câu nữa là ô đầu tiên hiện ra.",
   },
   comments: {
+    you: "Bạn",
+    more: (n: number) => `Thêm ${n} bình luận →`,
     title: "Bình luận",
     private: (name: string) => `🔒 Chỉ bạn và ${name} thấy cuộc trò chuyện này.`,
     privateOwner: "🔒 Bình luận của mỗi người là một cuộc trò chuyện riêng, chỉ người đó và bạn thấy.",

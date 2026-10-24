@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
-import { addComment, commentInbox, countsByEntry, deleteComment, readThread, sharedEntry } from "@/server/services/comments";
+import { addComment, commentInbox, commentPreviews, countsByEntry, deleteComment, readThread, sharedEntry } from "@/server/services/comments";
 import { createMemory, deleteMemory } from "@/server/services/memories";
 import { setMemoryAudience } from "@/server/services/memory-share";
 import { createShare, giveConsent, openComparison, revokeComparison } from "@/server/services/sharing";
@@ -57,6 +57,14 @@ describe("one-to-one comments on shared records", () => {
     expect((await commentInbox(sora.userId))[0]).toMatchObject({ otherName: "Hana", iOwn: false, unread: 0, lastBody: "ありがとう", lastMine: false });
     await addComment(hana.userId, id, sora.userId, "また行こうね");
     expect((await commentInbox(sora.userId))[0]).toMatchObject({ unread: 1, lastBody: "また行こうね" });
+
+    // Timeline previews: the owner sees the newest of everyone's, each writer only their own thread.
+    const ownerView = (await commentPreviews(hana.userId, [id], 2)).get(id)!;
+    expect(ownerView.map((c) => [c.authorName, c.body, c.mine])).toEqual([["Hana", "ありがとう", true], ["Hana", "また行こうね", true]]);
+    expect((await commentPreviews(hana.userId, [id], 5)).get(id)!.map((c) => c.authorName)).toEqual(["Sora", "Ren", "Hana", "Hana"]);
+    expect((await commentPreviews(ren.userId, [id])).get(id)!.map((c) => c.body)).toEqual(["どこの海？"]);
+    expect((await commentPreviews(sora.userId, [id], 5)).get(id)!.map((c) => c.body)).toEqual(["楽しそう！", "ありがとう", "また行こうね"]);
+    expect((await commentPreviews(stranger.userId, [id])).size).toBe(0);
 
     // Only your own comments can be taken back.
     const [first] = await readThread(sora.userId, id, null);

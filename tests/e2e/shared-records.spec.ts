@@ -199,6 +199,13 @@ test("one-to-one comments on a shared record", async ({ browser }) => {
   await expect(sora.getByText("おいしそう！")).toBeVisible();
   const shared = new URL(sora.url()).pathname;
 
+  // The comment shows on Sora's timeline under the record; Ren's timeline doesn't show it.
+  await sora.goto("/memories?view=friends");
+  await expect(sora.getByRole("list", { name: "コメント" }).getByText("おいしそう！")).toBeVisible();
+  await ren.goto("/memories?view=friends");
+  await expect(ren.getByText("はじめてパンを焼いた。")).toBeVisible();
+  await expect(ren.getByText("おいしそう！")).toHaveCount(0);
+
   // Ren sees the record but not Sora's comment.
   await ren.goto(shared);
   await expect(ren.getByText("はじめてパンを焼いた。")).toBeVisible();
@@ -216,10 +223,16 @@ test("one-to-one comments on a shared record", async ({ browser }) => {
   await expect(hana.getByText("ありがとう、今度持っていくね")).toBeVisible();
   await hana.goto("/home");
   await expect(hana.getByText("新しいコメント")).toHaveCount(0);
+  // Her own timeline shows both lines of the conversation.
+  await hana.goto("/memories");
+  const lines = hana.getByRole("list", { name: "コメント" });
+  await expect(lines.getByText("おいしそう！")).toBeVisible();
+  await expect(lines.getByText("ありがとう、今度持っていくね")).toBeVisible();
 
   await sora.goto("/home");
   await sora.getByRole("link", { name: /ハナさんから返信/ }).click();
-  await expect(sora.getByText("ありがとう、今度持っていくね")).toBeVisible();
+  await sora.waitForURL(/\/memories\/shared\//);
+  await expect(sora.locator("#comments").getByText("ありがとう、今度持っていくね")).toBeVisible();
   // Taking back her own comment.
   sora.once("dialog", (d) => d.accept());
   await sora.getByRole("button", { name: "取り消す" }).click();
