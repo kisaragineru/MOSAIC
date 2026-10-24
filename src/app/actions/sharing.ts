@@ -81,7 +81,7 @@ export async function recomputeAction(form: FormData) {
 export async function addPersonFromConnectionAction(form: FormData) {
   const uid = await requireUser();
   const id = str(form, "sessionId");
-  const r = await attempt("person.fromConnection", () => addPersonFromConnection(uid, id));
+  const r = await attempt("person.fromConnection", () => addPersonFromConnection(uid, id, str(form, "relationship") || "friend"));
   revalidatePath("/people");
   redirect(r.ok ? `/people/${r.value}?ok=saved` : `/compare/${id}?e=${r.error}`);
 }

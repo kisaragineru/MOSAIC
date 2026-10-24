@@ -10,7 +10,8 @@ import { AppError } from "@/server/errors";
 import { getMemory } from "@/server/services/memories";
 import { getAccount } from "@/server/services/account";
 import { listPeople } from "@/server/services/people";
-import { audienceChoices, memoryAudienceOf } from "@/server/services/memory-share";
+import { shareTargets } from "@/server/services/memory-share";
+import { CIRCLE_ICON } from "@/components/circle-icon";
 
 export default async function MemoryPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
@@ -27,8 +28,7 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
   }
   const editing = sp.edit === "1" && !m.sealed;
   const people = await listPeople(uid);
-  const choices = await audienceChoices(uid);
-  const sessionIds = m.visibility === "selected" ? await memoryAudienceOf(uid, m.id) : [];
+  const canShare = (await shareTargets(uid)).length > 0;
   const ta = t.memories.audience;
   return (
     <Page title={m.title ?? t.memories.kinds[m.kind]} back="/memories">
@@ -43,8 +43,11 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
       </div>
       {m.kind !== "letter_to_future" && (
         <p className={`rounded-2xl px-4 py-2 text-xs ${m.visibility === "private" ? "bg-stone-100 text-stone-600" : "bg-rose-50 text-rose-900"}`}>
-          {m.visibility === "private" ? `🔒 ${ta.private}` : m.visibility === "connections" ? `🔗 ${t.memories.timeline.sharedAll}` : `👥 ${t.memories.timeline.sharedSelected}`}
-          {m.visibility === "selected" && `：${choices.filter((c) => sessionIds.includes(c.sessionId)).map((c) => c.name).join(locale === "ja" ? "、" : ", ")}`}
+          {m.visibility === "private"
+            ? `🔒 ${ta.private}`
+            : m.visibility === "connections"
+              ? `🔗 ${t.memories.timeline.sharedAll}`
+              : `👪 ${t.memories.timeline.sharedCircles(m.circles.map((c) => `${CIRCLE_ICON[c]}${t.people.relationships[c]}`).join(locale === "ja" ? "・" : ", "))}`}
         </p>
       )}
       {m.sealed ? (
@@ -58,8 +61,8 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
               action={editMemoryAction}
               people={people}
               back={`/memories/${m.id}?edit=1`}
-              d={{ ...m, personIds: m.people.map((p) => p.id), body: m.body, reason: m.reason, sessionIds }}
-              audience={choices}
+              d={{ ...m, personIds: m.people.map((p) => p.id), body: m.body, reason: m.reason }}
+              canShare={canShare}
               submitLabel={t.common.save}
             />
           </div>

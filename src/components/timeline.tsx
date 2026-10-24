@@ -27,7 +27,7 @@ export function Timeline({ t, locale, tz, days, compact = false }: { t: Dict; lo
                   <span aria-hidden className={`absolute -left-[1.85rem] top-3 flex h-5 w-5 items-center justify-center rounded-full text-[11px] ring-4 ring-white ${it.entry.mine ? "bg-teal-100" : "bg-rose-100"}`}>
                     {KIND_ICON[it.entry.kind] ?? "•"}
                   </span>
-                  {it.entry.mine ? <Mine t={t} it={it} compact={compact} /> : <Theirs t={t} it={it} />}
+                  {it.entry.mine ? <Mine t={t} locale={locale} it={it} compact={compact} /> : <Theirs t={t} it={it} />}
                 </li>
               ))}
             </ol>
@@ -46,7 +46,7 @@ function Stamp({ t, it }: { t: Dict; it: TimelineItem }) {
   );
 }
 
-function Mine({ t, it, compact }: { t: Dict; it: TimelineItem; compact: boolean }) {
+function Mine({ t, locale, it, compact }: { t: Dict; locale: Locale; it: TimelineItem; compact: boolean }) {
   const m = it.entry;
   const tl = t.memories.timeline;
   return (
@@ -55,7 +55,7 @@ function Mine({ t, it, compact }: { t: Dict; it: TimelineItem; compact: boolean 
         <Stamp t={t} it={it} />
         <Pill tone={m.kind === "letter_to_future" ? "violet" : "teal"}>{t.memories.kinds[m.kind as keyof Dict["memories"]["kinds"]]}</Pill>
         {m.audience !== "private" && (
-          <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-800">🔗 {m.audience === "connections" ? tl.sharedAll : tl.sharedSelected}</span>
+          <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-800">{m.audience === "connections" ? `🔗 ${tl.sharedAll}` : `👪 ${tl.sharedCircles(m.circles.map((c) => t.people.relationships[c as keyof Dict["people"]["relationships"]]).join(locale === "ja" ? "・" : ", "))}`}</span>
         )}
         {!compact && m.version > 1 && <Pill>v{m.version}</Pill>}
         {!compact && m.tags.map((x) => <Pill key={x}>#{x}</Pill>)}

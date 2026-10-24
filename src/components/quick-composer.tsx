@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useActionState, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { quickMemoryAction, type QuickState } from "@/app/actions/memories";
 import { KIND_ICON } from "@/lib/timeline";
+import { CIRCLE_ICON } from "./circle-icon";
 
 export interface ComposerText {
   write: string;
@@ -14,6 +15,7 @@ export interface ComposerText {
   audience: string;
   private: string;
   connections: string;
+  circles: Record<string, string>;
   save: string;
   saving: string;
   close: string;
@@ -118,6 +120,9 @@ export function QuickComposer({ tx, canShare }: { tx: ComposerText; canShare: bo
               <legend className="sr-only">{tx.audience}</legend>
               <label className={chip}><input type="radio" name="visibility" value="private" defaultChecked className="sr-only" />🔒 {tx.private}</label>
               <label className={chip}><input type="radio" name="visibility" value="connections" className="sr-only" />🔗 {tx.connections}</label>
+              {Object.entries(tx.circles).map(([c, name]) => (
+                <label key={c} className={chip}><input type="radio" name="visibility" value={`circle:${c}`} className="sr-only" />{CIRCLE_ICON[c]} {name}</label>
+              ))}
             </fieldset>
           )}
           {state && !state.ok && <p role="alert" className="text-sm text-rose-700">{tx.errors[state.error] ?? tx.errors.generic}</p>}

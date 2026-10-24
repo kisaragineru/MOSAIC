@@ -23,12 +23,16 @@ function fromForm(f: FormData) {
   };
 }
 
-/** Who may read it; letters always stay private (the field isn't shown for them). */
+/**
+ * Who may read it; letters always stay private (the field isn't shown for them). The full form
+ * sends visibility + circle checkboxes; the quick composer sends one value ("circle:family").
+ */
 function audienceFromForm(f: FormData) {
   const v = str(f, "visibility");
+  if (v.startsWith("circle:")) return { visibility: "circles", circles: [v.slice(7)] };
   return {
-    visibility: v === "connections" || v === "selected" ? v : "private",
-    sessions: v === "selected" ? f.getAll("sessionIds").filter((x): x is string => typeof x === "string" && x !== "") : [],
+    visibility: v === "connections" || v === "circles" ? v : "private",
+    circles: v === "circles" ? f.getAll("circles").filter((x): x is string => typeof x === "string" && x !== "") : [],
   };
 }
 

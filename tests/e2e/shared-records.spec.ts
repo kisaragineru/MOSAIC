@@ -105,3 +105,39 @@ test("write in place from the floating button, or close it with ✕", async ({ b
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByText("下書き")).toHaveCount(0);
 });
+
+test("share by relationship, and a test companion from settings (development)", async ({ browser }) => {
+  const hana = await user(browser, "ハナ");
+  const sora = await user(browser, "ソラ");
+  await connect(hana, sora);
+
+  // Hana files Sora as family, then shares a record with family only.
+  await hana.goto("/people");
+  await hana.getByLabel("関係").first().selectOption("family");
+  await hana.getByRole("button", { name: /大切な人に追加/ }).click();
+  await hana.waitForURL(/\/people\/[0-9a-f-]+/);
+  await expect(hana.getByText("あなたの記録のうち 0 件が見えています")).toBeVisible();
+  await hana.goto("/memories/new");
+  await hana.getByLabel("あったこと・考えていること").fill("家族だけに伝えたいこと。");
+  await hana.getByRole("radio", { name: /関係で選ぶ/ }).check({ force: true });
+  await hana.getByRole("checkbox", { name: /家族/ }).check({ force: true });
+  await hana.getByRole("button", { name: "保存" }).click();
+  await hana.waitForURL(/ok=saved/);
+  await expect(hana.getByText(/家族に公開中/)).toBeVisible();
+  await sora.goto("/memories?view=friends");
+  await expect(sora.getByText("家族だけに伝えたいこと。")).toBeVisible();
+
+  // A test companion: connected right away, with records to read.
+  await hana.goto("/settings");
+  await hana.getByRole("button", { name: /テスト相手をつくる/ }).click();
+  await hana.waitForURL(/settings\?ok=saved/);
+  await expect(hana.getByText("ミナ（テスト）")).toBeVisible();
+  await hana.goto("/memories?view=friends");
+  await expect(hana.getByText(/駅前に新しいカフェができてた/)).toBeVisible();
+  await expect(hana.getByText(/自分だけの記録/)).toHaveCount(0);
+  await hana.goto("/settings");
+  hana.once("dialog", (d) => d.accept());
+  await hana.getByRole("button", { name: "削除" }).last().click();
+  await hana.waitForURL(/ok=deleted/);
+  await expect(hana.getByText("ミナ（テスト）")).toHaveCount(0);
+});

@@ -484,13 +484,14 @@ export async function unlinkPerson(userId: string, personId: string) {
 }
 
 /** Adds the other participant to the user's people (named as they appear), or returns the entry already linked. */
-export async function addPersonFromConnection(userId: string, sessionId: string): Promise<string> {
+export async function addPersonFromConnection(userId: string, sessionId: string, relationship = "friend"): Promise<string> {
+  const rel = z.enum(["partner", "family", "friend", "colleague", "other"]).catch("friend").parse(relationship);
   return withUser(userId, async (tx) => {
     const c = await ownConnection(tx, userId, sessionId);
     const [existing] = await tx.select({ id: people.id }).from(people).where(and(eq(people.userId, userId), eq(people.connectionSessionId, c.id)));
     if (existing) return existing.id;
     if (c.status === "revoked") throw new AppError("connection_ended", 409);
-    const [p] = await tx.insert(people).values({ userId, nickname: c.otherName.slice(0, 80), relationship: "friend", connectionSessionId: c.id }).returning({ id: people.id });
+    const [p] = await tx.insert(people).values({ userId, nickname: c.otherName.slice(0, 80), relationship: rel, connectionSessionId: c.id }).returning({ id: people.id });
     await audit(tx, userId, "person.linked", "person", p!.id);
     return p!.id;
   });

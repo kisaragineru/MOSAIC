@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, inArray, lte, gte, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { escapeLike, isoDate, optionalDate, optionalText, tagList, todayIn, uuid } from "@/lib/validation/common";
-import { MEMORY_KINDS, memoryEntries, memoryEntryVersions, memoryPeople, memoryTags, people, profiles } from "../db/schema";
+import { MEMORY_CIRCLES, MEMORY_KINDS, memoryCircles, memoryEntries, memoryEntryVersions, memoryPeople, memoryTags, people, profiles } from "../db/schema";
 import { withUser, type Tx } from "../db/tx";
 import { invalid, notFound } from "../errors";
 
@@ -151,8 +151,10 @@ export interface MemorySummary {
   mood: number | null;
   tags: string[];
   people: { id: string; nickname: string }[];
-  /** Who else may read it: private, connections (everyone you're connected with) or selected. */
-  visibility: "private" | "connections" | "selected";
+  /** Who else may read it: private, connections (everyone you're connected with) or circles (by relationship). */
+  visibility: "private" | "connections" | "circles";
+  /** For "circles": the relationships it is shown to. */
+  circles: (typeof MEMORY_CIRCLES)[number][];
 }
 
 export const memoryFilters = z.object({
@@ -224,6 +226,7 @@ async function hydrate(
         .innerJoin(people, eq(people.id, memoryPeople.personId))
         .where(inArray(memoryPeople.entryId, ids))
     : [];
+  const circleRows = ids.length ? await tx.select().from(memoryCircles).where(inArray(memoryCircles.entryId, ids)) : [];
   return rows.map(({ e, v }) => {
     const sealed = e.revealOn !== null && e.revealOn > today;
     return {
@@ -241,6 +244,7 @@ async function hydrate(
       tags: tagRows.filter((t) => t.entryId === e.id).map((t) => t.tag).sort(),
       people: personRows.filter((p) => p.entryId === e.id).map(({ id, nickname }) => ({ id, nickname })),
       visibility: e.visibility as MemorySummary["visibility"],
+      circles: MEMORY_CIRCLES.filter((c) => circleRows.some((r) => r.entryId === e.id && r.circle === c)),
     };
   });
 }

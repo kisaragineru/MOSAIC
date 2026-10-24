@@ -5,7 +5,7 @@
  */
 import { todayIn } from "./validation/common";
 
-export type Audience = "private" | "connections" | "selected";
+export type Audience = "private" | "connections" | "circles";
 
 export interface TimelineEntry {
   id: string;
@@ -20,6 +20,7 @@ export interface TimelineEntry {
   occurredOn: string | null;
   createdAt: Date;
   audience: Audience;
+  circles: string[];
   version: number;
   tags: string[];
   people: { id: string; nickname: string }[];

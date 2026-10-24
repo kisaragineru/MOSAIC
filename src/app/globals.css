@@ -138,7 +138,7 @@ body {
 .memory-form:has(input[name="kind"][value="letter_to_future"]:checked) .not-letter {
   display: none;
 }
-.memory-form:has(input[name="visibility"][value="selected"]:checked) .aud-pick {
+.memory-form:has(input[name="visibility"][value="circles"]:checked) .aud-pick {
   display: flex;
 }
 

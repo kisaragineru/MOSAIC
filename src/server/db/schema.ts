@@ -249,8 +249,8 @@ export const memoryEntries = pgTable(
       "memory_kind_ck",
       sql`${t.kind} in ('thought','feeling','memory','decision','goal','dream','regret','achievement','value','letter_to_future')`,
     ),
-    /** private: only you. connections: everyone you're connected with. selected: the connections in memory_audience. */
-    check("memory_visibility_ck", sql`${t.visibility} in ('private','connections','selected')`),
+    /** private: only you. connections: everyone you're connected with. circles: the relationships in memory_circles. */
+    check("memory_visibility_ck", sql`${t.visibility} in ('private','connections','circles')`),
   ],
 );
 
@@ -960,20 +960,38 @@ export const giftViews = pgTable(
   (t) => [primaryKey({ columns: [t.boxId, t.authorId] }), check("gift_views_comment_ck", sql`${t.comment} is null or char_length(${t.comment}) <= 1000`)],
 );
 
-/** For records shared with "selected" connections: which ones. Written only via memory_set_audience(). */
-export const memoryAudience = pgTable(
-  "memory_audience",
+export const MEMORY_CIRCLES = ["partner", "family", "friend", "colleague"] as const;
+
+/**
+ * For records shared by relationship: which ones (as set on the person linked to each connection).
+ * Written only via memory_set_audience().
+ */
+export const memoryCircles = pgTable(
+  "memory_circles",
   {
     entryId: uuid("entry_id")
       .notNull()
       .references(() => memoryEntries.id, { onDelete: "cascade" }),
-    sessionId: uuid("session_id")
-      .notNull()
-      .references(() => comparisonSessions.id, { onDelete: "cascade" }),
+    circle: text("circle").notNull(),
     ownerId: uuid("owner_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     createdAt: createdAt(),
   },
-  (t) => [primaryKey({ columns: [t.entryId, t.sessionId] }), index("memory_audience_session_idx").on(t.sessionId)],
+  (t) => [primaryKey({ columns: [t.entryId, t.circle] }), check("memory_circles_ck", sql`${t.circle} in ('partner','family','friend','colleague')`)],
+);
+
+/** Development only (DEV_TOOLS=on): test companions an account created, so it can remove them. */
+export const devCompanions = pgTable(
+  "dev_companions",
+  {
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    companionId: uuid("companion_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.ownerId, t.companionId] })],
 );

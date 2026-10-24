@@ -9,7 +9,7 @@ import { requireUser } from "@/server/auth/session";
 import { MEMORY_KINDS } from "@/server/db/schema";
 import { getAccount } from "@/server/services/account";
 import { listMemories, listTags, type MemorySummary } from "@/server/services/memories";
-import { audienceChoices, connectionFeed, feedForPage, feedToEntry, mineToEntry } from "@/server/services/memory-share";
+import { shareTargets, connectionFeed, feedForPage, feedToEntry, mineToEntry } from "@/server/services/memory-share";
 import { listPeople } from "@/server/services/people";
 
 const PAGE_SIZE = 50;
@@ -59,7 +59,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
   const tags = await listTags(uid);
   const people = await listPeople(uid);
   const tl = t.memories.timeline;
-  const choices = await audienceChoices(uid);
+  const canShare = (await shareTargets(uid)).length > 0;
   return (
     <Page title={t.memories.title}>
       <Flash t={t} sp={sp} />
@@ -117,7 +117,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
       <div aria-hidden className="h-16" />
       {/* Writing is the main thing here: a floating button that opens a composer in place. */}
       <QuickComposer
-        canShare={choices.length > 0}
+        canShare={canShare}
         tx={{
           write: t.memories.write,
           title: t.memories.composer.title,
@@ -128,6 +128,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
           audience: t.memories.audience.label,
           private: t.memories.audience.private,
           connections: t.memories.audience.connections,
+          circles: { partner: t.people.relationships.partner, family: t.people.relationships.family, friend: t.people.relationships.friend, colleague: t.people.relationships.colleague },
           save: t.common.save,
           saving: t.memories.composer.saving,
           close: t.memories.composer.close,

@@ -23,6 +23,7 @@ import { requireUser } from "@/server/auth/session";
 import { suggestGifts } from "@/server/services/gifts";
 import { getPerson, listCategories, nextOccurrence } from "@/server/services/people";
 import { connectionForPerson, listComparisons } from "@/server/services/sharing";
+import { visibleCount } from "@/server/services/memory-share";
 
 const RELS = ["partner", "family", "friend", "colleague", "other"] as const;
 
@@ -72,6 +73,8 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
   const { person, entries, events, gifts, dates, preferences } = data;
   const categories = await listCategories();
   const connection = await connectionForPerson(uid, person.connectionSessionId);
+  const circle = (["partner", "family", "friend", "colleague"] as const).find((c) => c === person.relationship) ?? null;
+  const seen = connection && connection.status === "active" ? await visibleCount(uid, circle) : null;
   const linkable = connection ? [] : (await listComparisons(uid)).filter((c) => c.status !== "revoked" && !c.personId);
   const today = todayIn((await getAccount(uid)).profile.timeZone);
   const fmt = (y: number, m: number, d: number, withYear = true) =>
@@ -96,6 +99,12 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
             <p className="text-stone-600">{t.people.connectionEnded}</p>
           ) : (
             <Link href={`/compare/${connection.id}`} className="inline-block rounded-full bg-teal-700 px-4 py-1.5 font-semibold text-white">{t.people.openComparison} →</Link>
+          )}
+          {seen !== null && (
+            <p className="rounded-2xl bg-white/80 px-3 py-2 text-stone-700">
+              📖 {t.people.circleSeen(seen)}
+              {!circle && <span className="mt-1 block text-xs text-stone-500">{person.relationship === "other" ? t.people.circleOther : t.people.circleNone}</span>}
+            </p>
           )}
           <p className="text-xs text-stone-600">🔒 {t.people.connectionPrivate}</p>
           <form action={unlinkPersonAction}>

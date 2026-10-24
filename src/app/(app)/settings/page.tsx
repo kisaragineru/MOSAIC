@@ -10,6 +10,8 @@ import { DEFAULT_RULESET, ENGINE_VERSION } from "@/lib/tuvi/ruleset";
 import { requireUser } from "@/server/auth/session";
 import { aiConfigured } from "@/server/ai/claude";
 import { getAccount, getNotificationPrefs } from "@/server/services/account";
+import { devToolsEnabled, listCompanions } from "@/server/services/dev-companion";
+import { companionWritesAction, createCompanionAction, deleteCompanionAction } from "@/app/actions/dev";
 
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
@@ -18,6 +20,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const { t } = await getT();
   const acc = await getAccount(uid);
   const np = await getNotificationPrefs(uid);
+  const companions = await listCompanions(uid);
+  const td = t.settings.dev;
   return (
     <Page title={t.settings.title}>
       <Flash t={t} sp={sp} />
@@ -76,6 +80,39 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       <p className="text-center text-xs text-stone-500">
         MOSAIC · {t.tuvi.rulesetInfo(DEFAULT_RULESET.id, ENGINE_VERSION)}
       </p>
+      {devToolsEnabled() && (
+        <section id="dev" className="scroll-mt-20 space-y-3 rounded-3xl border-2 border-dashed border-amber-300 bg-amber-50/70 p-5">
+          <h2 className="font-semibold text-amber-950">🧪 {td.title}</h2>
+          <p className="text-xs leading-5 text-amber-900">{td.help}</p>
+          {companions.length > 0 && (
+            <ul className="space-y-2">
+              {companions.map((c) => (
+                <li key={c.id} className="flex flex-wrap items-center gap-2 rounded-2xl bg-white p-3 text-sm">
+                  <span className="flex-1 font-medium">{c.name}</span>
+                  <form action={companionWritesAction}>
+                    <input type="hidden" name="id" value={c.id} />
+                    <Button type="submit" variant="secondary" className="min-h-8 px-3 py-1 text-xs">✎ {td.write}</Button>
+                  </form>
+                  <form action={deleteCompanionAction}>
+                    <input type="hidden" name="id" value={c.id} />
+                    <ConfirmButton message={td.deleteConfirm}>{td.delete}</ConfirmButton>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          )}
+          {companions.length < 3 && (
+            <form action={createCompanionAction} className="flex flex-wrap items-end gap-2">
+              <Field label={td.relationship}>
+                <Select name="relationship" defaultValue="friend">
+                  {(["partner", "family", "friend", "colleague", "other"] as const).map((r) => <option key={r} value={r}>{t.people.relationships[r]}</option>)}
+                </Select>
+              </Field>
+              <Button type="submit">＋ {td.create}</Button>
+            </form>
+          )}
+        </section>
+      )}
     </Page>
   );
 }

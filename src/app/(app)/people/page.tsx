@@ -29,8 +29,11 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
             {unlinked.map((c) => (
               <li key={c.id} className="flex items-center justify-between gap-2 rounded-2xl bg-white p-3">
                 <Link href={`/compare/${c.id}`} className="font-medium hover:text-teal-700">{c.otherName}</Link>
-                <form action={addPersonFromConnectionAction}>
+                <form action={addPersonFromConnectionAction} className="flex items-center gap-1.5">
                   <input type="hidden" name="sessionId" value={c.id} />
+                  <Select name="relationship" defaultValue="friend" aria-label={t.people.relationship} className="!w-auto min-h-8 py-1 text-xs">
+                    {RELS.map((r) => <option key={r} value={r}>{t.people.relationships[r]}</option>)}
+                  </Select>
                   <Button type="submit" className="min-h-8 px-3 py-1 text-xs">+ {t.people.addFromConnection}</Button>
                 </form>
               </li>

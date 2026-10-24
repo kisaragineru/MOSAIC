@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildTimeline } from "@/lib/timeline";
 import { createMemory, getMemory } from "@/server/services/memories";
-import { audienceChoices, connectionFeed, feedForPage, memoryAudienceOf, recentTimeline, setMemoryAudience } from "@/server/services/memory-share";
-import { createShare, giveConsent, openComparison, revokeComparison } from "@/server/services/sharing";
+import { connectionFeed, feedForPage, recentTimeline, setMemoryAudience, shareTargets, visibleCount } from "@/server/services/memory-share";
+import { addPersonFromConnection, createShare, giveConsent, openComparison, revokeComparison } from "@/server/services/sharing";
+import { updatePerson } from "@/server/services/people";
 import { makeUser } from "../helpers/factory";
 
 async function connect(a: string, b: string) {
@@ -14,7 +15,7 @@ async function connect(a: string, b: string) {
 }
 
 describe("records shared with connections", () => {
-  it("are private by default and shown, as current text only, to everyone or to the chosen ones", async () => {
+  it("are private by default and shown, as current text only, to everyone or by relationship", async () => {
     const a = await makeUser("Hana");
     const b = await makeUser("Sora");
     const c = await makeUser("Ren");
@@ -32,30 +33,38 @@ describe("records shared with connections", () => {
     expect(await connectionFeed(c.userId)).toHaveLength(1);
     expect(await connectionFeed(stranger.userId)).toEqual([]);
 
-    await setMemoryAudience(a.userId, id, { visibility: "selected", sessions: [ac] });
-    expect(await memoryAudienceOf(a.userId, id)).toEqual([ac]);
-    expect(await connectionFeed(b.userId)).toEqual([]);
+    // By relationship: Sora is family to Hana, Ren a friend; nobody unlisted sees it.
+    await setMemoryAudience(a.userId, id, { visibility: "circles", circles: ["family"] });
+    expect((await getMemory(a.userId, id)).circles).toEqual(["family"]);
+    expect(await connectionFeed(b.userId)).toEqual([]); // not in Hana's people yet
+    await addPersonFromConnection(a.userId, ab, "family");
+    const ren = await addPersonFromConnection(a.userId, ac, "friend");
+    expect((await connectionFeed(b.userId)).map((x) => x.id)).toEqual([id]);
+    expect(await connectionFeed(c.userId)).toEqual([]);
+    expect(await visibleCount(a.userId, "family")).toBe(1);
+    expect(await visibleCount(a.userId, null)).toBe(0);
+    expect((await shareTargets(a.userId)).map((x) => x.circle).sort()).toEqual(["family", "friend"]);
+
+    // Ren becomes family later: what was already shared with family reaches him too.
+    await updatePerson(a.userId, ren, { nickname: "Ren", relationship: "family" });
     expect((await connectionFeed(c.userId)).map((x) => x.id)).toEqual([id]);
 
     await setMemoryAudience(a.userId, id, { visibility: "private" });
-    expect(await connectionFeed(c.userId)).toEqual([]);
-    expect(await memoryAudienceOf(a.userId, id)).toEqual([]);
+    expect(await connectionFeed(b.userId)).toEqual([]);
+    expect((await getMemory(a.userId, id)).circles).toEqual([]);
   });
 
-  it("refuses letters, other people's records, strangers as an audience and an empty choice", async () => {
+  it("refuses letters, other people's records, unknown circles and an empty choice", async () => {
     const a = await makeUser();
     const b = await makeUser();
-    const stranger = await makeUser();
-    const ab = await connect(a.userId, b.userId);
+    await connect(a.userId, b.userId);
     const letter = await createMemory(a.userId, { kind: "letter_to_future", body: "未来へ", revealOn: "2030-01-01" });
     await expect(setMemoryAudience(a.userId, letter, { visibility: "connections" })).rejects.toMatchObject({ code: "letters_stay_private" });
     const id = await createMemory(a.userId, { kind: "thought", body: "x" });
     await expect(setMemoryAudience(b.userId, id, { visibility: "connections" })).rejects.toMatchObject({ code: "not_found" });
-    const other = await connect(stranger.userId, b.userId);
-    await expect(setMemoryAudience(a.userId, id, { visibility: "selected", sessions: [other] })).rejects.toMatchObject({ code: "invalid_audience" });
-    await expect(setMemoryAudience(a.userId, id, { visibility: "selected", sessions: [] })).rejects.toMatchObject({ code: "choose_audience" });
+    await expect(setMemoryAudience(a.userId, id, { visibility: "circles", circles: [] })).rejects.toMatchObject({ code: "choose_audience" });
+    await expect(setMemoryAudience(a.userId, id, { visibility: "circles", circles: ["other"] })).rejects.toThrow();
     await expect(setMemoryAudience(a.userId, id, { visibility: "everyone" })).rejects.toThrow();
-    expect((await audienceChoices(a.userId)).map((x) => x.sessionId)).toEqual([ab]);
   });
 
   it("stops showing anything once the connection ends, and not before it is active", async () => {
@@ -66,7 +75,7 @@ describe("records shared with connections", () => {
     const id = await createMemory(a.userId, { kind: "thought", body: "共有" });
     await setMemoryAudience(a.userId, id, { visibility: "connections" });
     expect(await connectionFeed(b.userId)).toEqual([]); // not consented yet
-    expect(await audienceChoices(a.userId)).toEqual([]);
+    expect(await shareTargets(a.userId)).toEqual([]);
     await giveConsent(a.userId, pending, { scopes: ["preferences"], agree: true });
     await giveConsent(b.userId, pending, { scopes: ["preferences"], agree: true });
     expect(await connectionFeed(b.userId)).toHaveLength(1);

@@ -33,6 +33,7 @@ export default defineConfig({
       // limit applies per simulated device rather than to the whole suite.
       TRUST_PROXY: "1",
       CLIENT_IP_HEADER: "x-e2e-client-ip",
+      DEV_TOOLS: "on",
     },
   },
 });

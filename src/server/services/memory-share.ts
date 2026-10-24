@@ -1,14 +1,16 @@
 /**
  * Sharing a record with the people you're connected with, and reading what they shared with
- * you. Records are private unless you choose otherwise, per record; letters to the future always
- * stay private. Rules live in memory_set_audience() and connection_feed() (migration 0014): only
- * the current text is shared (no people, tags, mood, reasons or history), never once a
- * connection has ended.
+ * you. Records are private unless you choose otherwise, per record: everyone you're connected
+ * with, or by relationship ("circles": partner, family, friends, colleagues — as set on the person
+ * linked to each connection, so someone added later sees what was already shared with their
+ * circle). Letters to the future always stay private. Rules live in memory_set_audience() and
+ * connection_feed() (migrations 0014–0015): only the current text is shared (no people, tags,
+ * mood, reasons or history), only with active connections.
  */
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { uuid } from "@/lib/validation/common";
-import { MEMORY_KINDS, memoryAudience } from "../db/schema";
+import { MEMORY_CIRCLES, MEMORY_KINDS, memoryCircles, memoryEntries, people } from "../db/schema";
 import { withUser } from "../db/tx";
 import { invalid, mapDbError } from "../errors";
 import { audit } from "./audit";
@@ -16,8 +18,9 @@ import { listComparisons } from "./sharing";
 import { listMemories, type MemorySummary } from "./memories";
 import type { TimelineEntry } from "@/lib/timeline";
 
-export const VISIBILITIES = ["private", "connections", "selected"] as const;
+export const VISIBILITIES = ["private", "connections", "circles"] as const;
 export type Visibility = (typeof VISIBILITIES)[number];
+export type Circle = (typeof MEMORY_CIRCLES)[number];
 
 export interface FeedItem {
   id: string;
@@ -37,15 +40,15 @@ export interface FeedItem {
 const dateStr = (v: string | Date) => (typeof v === "string" ? v.slice(0, 10) : `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, "0")}-${String(v.getDate()).padStart(2, "0")}`);
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
-const audienceSchema = z.object({ visibility: z.enum(VISIBILITIES), sessions: z.array(uuid).max(200).default([]) });
+const audienceSchema = z.object({ visibility: z.enum(VISIBILITIES), circles: z.array(z.enum(MEMORY_CIRCLES)).max(4).default([]) });
 
 export async function setMemoryAudience(userId: string, entryId: string, input: unknown) {
   const id = uuid.parse(entryId);
   const d = audienceSchema.parse(input);
-  if (d.visibility === "selected" && d.sessions.length === 0) throw invalid("choose_audience");
+  if (d.visibility === "circles" && d.circles.length === 0) throw invalid("choose_audience");
   await withUser(userId, async (tx) => {
     try {
-      await tx.execute(sql`select memory_set_audience(${id}, ${d.visibility}, ${`{${d.sessions.join(",")}}`}::uuid[])`);
+      await tx.execute(sql`select memory_set_audience(${id}, ${d.visibility}, ${`{${d.circles.join(",")}}`}::text[])`);
     } catch (e) {
       mapDbError(e);
     }
@@ -53,16 +56,38 @@ export async function setMemoryAudience(userId: string, entryId: string, input: 
   });
 }
 
-export async function memoryAudienceOf(userId: string, entryId: string): Promise<string[]> {
-  const id = uuid.parse(entryId);
-  return withUser(userId, async (tx) =>
-    (await tx.select({ s: memoryAudience.sessionId }).from(memoryAudience).where(and(eq(memoryAudience.entryId, id), eq(memoryAudience.ownerId, userId)))).map((r) => r.s),
-  );
+export interface ShareTarget {
+  sessionId: string;
+  name: string;
+  personId: string | null;
+  /** The relationship on the linked person; null when the connection isn't in "people" yet. */
+  circle: Circle | null;
 }
 
-/** Connections a record can be shared with (active), with the other person's name. */
-export async function audienceChoices(userId: string): Promise<{ sessionId: string; name: string }[]> {
-  return (await listComparisons(userId)).filter((c) => c.status === "active").map((c) => ({ sessionId: c.id, name: c.otherName }));
+/** Active connections, with the relationship that decides which "circles" records they see. */
+export async function shareTargets(userId: string): Promise<ShareTarget[]> {
+  const active = (await listComparisons(userId)).filter((c) => c.status === "active");
+  const ids = active.map((c) => c.personId).filter((x): x is string => !!x);
+  const rel = ids.length
+    ? await withUser(userId, (tx) => tx.select({ id: people.id, r: people.relationship }).from(people).where(and(eq(people.userId, userId), inArray(people.id, ids))))
+    : [];
+  return active.map((c) => {
+    const r = rel.find((x) => x.id === c.personId)?.r;
+    return { sessionId: c.id, name: c.otherName, personId: c.personId, circle: (MEMORY_CIRCLES as readonly string[]).includes(r ?? "") ? (r as Circle) : null };
+  });
+}
+
+/** How many of my records a connection can read now (for the person page). */
+export async function visibleCount(userId: string, circle: Circle | null): Promise<number> {
+  return withUser(userId, async (tx) => {
+    const r = await tx.execute<{ n: number }>(sql`
+      select count(*)::int as n from ${memoryEntries} e
+      where e.user_id = ${userId} and e.kind <> 'letter_to_future'
+        and (e.visibility = 'connections'
+             or (e.visibility = 'circles' and ${circle}::text is not null
+                 and exists (select 1 from ${memoryCircles} mc where mc.entry_id = e.id and mc.circle = ${circle})))`);
+    return r.rows[0]?.n ?? 0;
+  });
 }
 
 /**
@@ -107,6 +132,7 @@ export const mineToEntry = (m: MemorySummary): TimelineEntry => ({
   occurredOn: m.occurredOn,
   createdAt: m.createdAt,
   audience: m.visibility,
+  circles: m.circles,
   version: m.version,
   tags: m.tags,
   people: m.people,
@@ -124,6 +150,7 @@ export const feedToEntry = (f: FeedItem): TimelineEntry => ({
   occurredOn: f.occurredOn,
   createdAt: f.createdAt,
   audience: "connections",
+  circles: [],
   version: 1,
   tags: [],
   people: [],
