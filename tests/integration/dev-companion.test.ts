@@ -5,7 +5,7 @@ import { answerQuestion } from "@/server/services/discovery";
 import { askPeer, myPeerRequests, peerResults } from "@/server/services/peers";
 import { portrait } from "@/server/services/mosaic";
 import { connectionFeed, shareTargets } from "@/server/services/memory-share";
-import { listComparisons, revokeComparison } from "@/server/services/sharing";
+import { getComparison, giveConsent, listComparisons, revokeComparison } from "@/server/services/sharing";
 import { makeUser } from "../helpers/factory";
 
 afterEach(() => {
@@ -40,15 +40,22 @@ describe("development test companion", () => {
     expect(acc.profile.intro).toMatch(/段取り/);
     const p = await portrait(id);
     expect(p.revealed).toBeGreaterThanOrEqual(17);
-    // She files the owner as family: everything but her private records reaches them.
+    // She shares every record but the one kept private to check that.
     const feed = await connectionFeed(u.userId, { limit: 100 });
-    expect(feed).toHaveLength(10);
-    expect(feed.some((x) => x.body.includes("自分だけの記録") || x.body.includes("運動会"))).toBe(false);
+    expect(feed).toHaveLength(11);
+    expect(feed.some((x) => x.body.includes("自分だけの記録"))).toBe(false);
     // Filling again adds nothing twice.
     await enrichCompanion(u.userId, id);
-    expect(await connectionFeed(u.userId, { limit: 100 })).toHaveLength(10);
-    await companionWrites(u.userId, id);
     expect(await connectionFeed(u.userId, { limit: 100 })).toHaveLength(11);
+    await companionWrites(u.userId, id);
+    expect(await connectionFeed(u.userId, { limit: 100 })).toHaveLength(12);
+    // She agreed to every scope; her chart shows once the owner agrees to Tử Vi too.
+    const sid = (await listComparisons(u.userId)).find((c) => c.status === "active")!.id;
+    expect((await getComparison(u.userId, sid))!.result!.tuviDetail).toBeNull();
+    await giveConsent(u.userId, sid, { scopes: ["tuvi", "tuvi_detail", "preferences", "values"], agree: true });
+    const r = (await getComparison(u.userId, sid))!.result!;
+    expect(r.agreedScopes).toEqual(expect.arrayContaining(["tuvi", "tuvi_detail", "preferences", "values"]));
+    expect(r.tuviDetail?.a ?? r.tuviDetail?.b).toBeTruthy();
     // Not someone else's companion.
     await expect(companionWrites(other.userId, id)).rejects.toMatchObject({ code: "not_found" });
     await expect(deleteCompanion(other.userId, id)).rejects.toMatchObject({ code: "not_found" });
@@ -77,7 +84,7 @@ describe("development test companion", () => {
     expect(await companionConnected(id)).toBe(true);
     const now = (await listComparisons(u.userId)).find((c) => c.status === "active")!;
     expect(now.personId).toBe(before.personId);
-    expect(await connectionFeed(u.userId, { limit: 100 })).toHaveLength(11);
+    expect(await connectionFeed(u.userId, { limit: 100 })).toHaveLength(12);
     await deleteCompanion(u.userId, id);
     expect(await listCompanions(u.userId)).toEqual([]);
     expect(await connectionFeed(u.userId)).toEqual([]);

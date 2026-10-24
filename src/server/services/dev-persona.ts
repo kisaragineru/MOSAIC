@@ -119,19 +119,20 @@ export const FAVOURITES: { categoryId: string; label: string; sentiment: "love" 
 ];
 
 type Audience = { visibility: string; circles?: string[] };
+/** All shared with every connection (she is as open as she can be), except one kept private to check that. */
 export const RECORDS: { kind: string; title?: string; body: string; back: number; audience: Audience }[] = [
   { kind: "memory", body: "駅前に新しいカフェができてた。窓際の席が静かで、ずっと本を読んでいられそう。今度いっしょに行こう。", back: 0, audience: { visibility: "connections" } },
-  { kind: "feeling", body: "今週は少し疲れ気味。でも夕方の散歩で金木犀の匂いがして、それだけでちょっと元気になった。", back: 1, audience: { visibility: "circles", circles: ["partner", "family", "friend"] } },
-  { kind: "decision", body: "来年はちゃんと休みをとって、ひとり旅に行くと決めた。行き先はまだ迷い中。", back: 3, audience: { visibility: "circles", circles: ["family"] } },
+  { kind: "feeling", body: "今週は少し疲れ気味。でも夕方の散歩で金木犀の匂いがして、それだけでちょっと元気になった。", back: 1, audience: { visibility: "connections" } },
+  { kind: "decision", body: "来年はちゃんと休みをとって、ひとり旅に行くと決めた。行き先はまだ迷い中。", back: 3, audience: { visibility: "connections" } },
   { kind: "thought", body: "（これは自分だけの記録。テスト相手から見せていないので、あなたには見えないはず）", back: 4, audience: { visibility: "private" } },
   { kind: "achievement", title: "大根、豊作", body: "畑の大根が今年はよく育った。半分はお隣におすそ分け。残りは煮物と、切り干しにする。", back: 6, audience: { visibility: "connections" } },
   { kind: "memory", title: "読み聞かせ", body: "図書館の読み聞かせで『100万回生きたねこ』を読んだ。最後のページで、5歳の子が小さく「よかったね」と言った。", back: 9, audience: { visibility: "connections" } },
-  { kind: "feeling", body: "お父さんの検診の結果が問題なしでほっとした。帰りに二人でお蕎麦を食べた。", back: 14, audience: { visibility: "circles", circles: ["family"] } },
-  { kind: "thought", body: "このごろ、昔の教え子から年賀状の住所変更の連絡が続く。みんな、それぞれの場所でがんばっているんだな。", back: 21, audience: { visibility: "circles", circles: ["family", "friend"] } },
+  { kind: "feeling", body: "お父さんの検診の結果が問題なしでほっとした。帰りに二人でお蕎麦を食べた。", back: 14, audience: { visibility: "connections" } },
+  { kind: "thought", body: "このごろ、昔の教え子から年賀状の住所変更の連絡が続く。みんな、それぞれの場所でがんばっているんだな。", back: 21, audience: { visibility: "connections" } },
   { kind: "value", body: "ものは少なくていいけれど、手紙だけは捨てられない。書いた人の時間がそこに残っている気がする。", back: 30, audience: { visibility: "connections" } },
-  { kind: "goal", body: "来年の春までに、スマホで撮った写真を一冊のアルバムにまとめる。", back: 40, audience: { visibility: "circles", circles: ["family"] } },
+  { kind: "goal", body: "来年の春までに、スマホで撮った写真を一冊のアルバムにまとめる。", back: 40, audience: { visibility: "connections" } },
   { kind: "dream", body: "いつかオーロラを見たい。寒いのは苦手だけど、一度だけでいいから。", back: 55, audience: { visibility: "connections" } },
-  { kind: "regret", body: "現役のころ、自分の子の運動会に一度も行けなかった。いまでも少し心残り。", back: 70, audience: { visibility: "private" } },
+  { kind: "regret", body: "現役のころ、自分の子の運動会に一度も行けなかった。いまでも少し心残り。", back: 70, audience: { visibility: "connections" } },
 ];
 
 export const MORE = [

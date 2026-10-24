@@ -225,7 +225,7 @@ export const en = {
     submit: "Save answer",
     allowCompare: "Allow this answer in comparisons I approve",
     privacyLink: "👁 Who sees your answers (how others see you)",
-    privacyShort: "Who sees",
+    privacyShort: "Visibility",
     privacyLinkLabel: "Who can see your answers (how others see you)",
     allowCompareHelp: "Off by default. Even when on, it is only used if you and the other person both consent.",
     changedTitle: "This is different from your previous answer",

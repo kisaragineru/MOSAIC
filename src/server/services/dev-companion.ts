@@ -10,7 +10,7 @@ import { and, asc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { randomToken } from "../auth/crypto";
 import { hashPassword } from "../auth/password";
-import { devCompanions, notificationPreferences, people, profiles, users } from "../db/schema";
+import { COMPARISON_SCOPES, comparisonConsents, devCompanions, notificationPreferences, people, profiles, users } from "../db/schema";
 import { withUser } from "../db/tx";
 import { AppError, forbidden, notFound } from "../errors";
 import { audit } from "./audit";
@@ -67,11 +67,11 @@ export async function createCompanion(ownerId: string, relationship: unknown): P
   // Connected, both consents given; each files the other in People.
   const share = await createShare(id);
   const sid = await openComparison(ownerId, share.token);
-  await giveConsent(id, sid, { scopes: ["preferences", "values"], agree: true });
+  await giveConsent(id, sid, { scopes: OPEN, agree: true });
   await giveConsent(ownerId, sid, { scopes: ["preferences", "values"], agree: true });
   await addPersonFromConnection(id, sid, "family");
   await addPersonFromConnection(ownerId, sid, rel);
-  await setManualShare(id, sid, "friend").catch(() => undefined);
+  await setManualShare(id, sid, "partner").catch(() => undefined);
 
   await withUser(ownerId, async (tx) => {
     await tx.insert(devCompanions).values({ ownerId, companionId: id });
@@ -119,6 +119,9 @@ async function unanswered(cid: string) {
  */
 const BUDGET_MS = 6000;
 
+/** She agrees to every scope in her connection. */
+const OPEN = [...COMPARISON_SCOPES];
+
 async function fill(cid: string): Promise<number> {
   const started = Date.now();
   await withUser(cid, (tx) => tx.update(profiles).set({ bio: BIO, updatedAt: new Date() }).where(eq(profiles.userId, cid)));
@@ -135,14 +138,20 @@ async function fill(cid: string): Promise<number> {
     const pid = await addPersonFromConnection(cid, conn.id, "family");
     const [p] = await withUser(cid, (tx) => tx.select({ nickname: people.nickname }).from(people).where(eq(people.id, pid)));
     await updatePerson(cid, pid, { nickname: p?.nickname ?? conn.otherName, relationship: "family" });
-    await setManualShare(cid, conn.id, "friend").catch(() => undefined);
+    // As open as she can be: every scope and the fuller manual (what the owner sees still
+    // depends on what the owner agreed to as well).
+    const [mine] = await withUser(cid, (tx) =>
+      tx.select({ scopes: comparisonConsents.scopes }).from(comparisonConsents)
+        .where(and(eq(comparisonConsents.sessionId, conn.id), eq(comparisonConsents.userId, cid), sql`${comparisonConsents.withdrawnAt} is null`)),
+    );
+    if (OPEN.some((x) => !mine?.scopes.includes(x))) await giveConsent(cid, conn.id, { scopes: OPEN, agree: true });
+    await setManualShare(cid, conn.id, "partner").catch(() => undefined);
   }
 
-  const have = new Set((await listMemories(cid, { limit: 200 })).map((m) => m.body));
+  const have = new Map((await listMemories(cid, { limit: 200 })).map((m) => [m.body, m.id]));
   for (const r of [...RECORDS].reverse()) {
-    if (have.has(r.body)) continue;
-    const entry = await createMemory(cid, { kind: r.kind, title: r.title, body: r.body, occurredOn: day(r.back) });
-    if (r.audience.visibility !== "private") await setMemoryAudience(cid, entry, r.audience);
+    const entry = have.get(r.body) ?? (await createMemory(cid, { kind: r.kind, title: r.title, body: r.body, occurredOn: day(r.back) }));
+    if (r.audience.visibility !== "private" || have.has(r.body)) await setMemoryAudience(cid, entry, r.audience);
   }
 
   const todo = await unanswered(cid);
@@ -195,7 +204,7 @@ export async function reconnectCompanion(ownerId: string, companionId: string) {
   const ownerPerson = (await listComparisons(ownerId)).find((c) => ended.includes(c.id) && c.personId)?.personId ?? null;
   const share = await createShare(cid);
   const sid = await openComparison(ownerId, share.token);
-  await giveConsent(cid, sid, { scopes: ["preferences", "values"], agree: true });
+  await giveConsent(cid, sid, { scopes: OPEN, agree: true });
   await giveConsent(ownerId, sid, { scopes: ["preferences", "values"], agree: true });
   if (ownerPerson) await linkPersonToConnection(ownerId, ownerPerson, sid);
   else await addPersonFromConnection(ownerId, sid, "family");
