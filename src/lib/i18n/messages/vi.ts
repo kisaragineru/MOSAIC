@@ -1021,6 +1021,11 @@ export const vi: Dict = {
     plus: (n: number) => `+${n}`,
   },
   manual: {
+    homeTitle: "Sách hướng dẫn về bạn",
+    homeLead: "Bạn lúc này, trong vài chữ",
+    homeEmpty: "Khi bạn trả lời câu hỏi, sách hướng dẫn về bạn sẽ dần được viết: cách bạn ở bên mọi người, cách quyết định, điều bạn coi trọng.",
+    homeStart: "Trả lời câu hỏi",
+    homeOpen: "Đọc sách hướng dẫn",
     written: (n: number, all: number) => `Đã viết ${n}/${all} chương`,
     lockedLabel: "Chưa được viết",
     levelConsistent: "Rõ ràng",

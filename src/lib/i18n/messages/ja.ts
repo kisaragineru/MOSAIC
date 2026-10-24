@@ -1021,6 +1021,11 @@ export const ja: Dict = {
     plus: (n: number) => `+${n}`,
   },
   manual: {
+    homeTitle: "あなたの取扱説明書",
+    homeLead: "いまのあなたを、ひとことで",
+    homeEmpty: "質問に答えると、あなたの取扱説明書が少しずつ書かれていきます。人との過ごし方、決め方、大切にしていること。",
+    homeStart: "質問に答える",
+    homeOpen: "取扱説明書を読む",
     written: (n: number, all: number) => `${all}章中${n}章が書かれています`,
     lockedLabel: "まだ書かれていません",
     levelConsistent: "はっきり",

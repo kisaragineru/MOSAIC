@@ -9,6 +9,9 @@ import { requireUser } from "@/server/auth/session";
 import { getAccount, getNotificationPrefs } from "@/server/services/account";
 import { getDaily } from "@/server/services/discovery";
 import { recentTimeline } from "@/server/services/memory-share";
+import { listTendencies } from "@/server/services/tendencies";
+import { AXIS_CHAPTER, PEER_POLES } from "@/content/axes";
+import { MANUAL_CHAPTERS } from "@/content/manual-text";
 import { commentInbox, commentPreviews, countsByEntry } from "@/server/services/comments";
 import { Timeline } from "@/components/timeline";
 import { buildTimeline } from "@/lib/timeline";
@@ -49,6 +52,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const newComments = inbox.filter((x) => x.unread > 0);
   const counts = countsByEntry(inbox);
   const previews = await commentPreviews(uid, recent.flatMap((d) => d.items.map((x) => x.entry.id)).filter((id) => counts.has(id)));
+  // The manual at a glance, from the tendencies the page already reads (no extra queries).
+  const traits = (await listTendencies(uid))
+    .filter((c) => c.userStatus !== "rejected" && (c.state === "consistent" || c.state === "emerging"))
+    .sort((a, b) => (a.state === b.state ? b.confidence - a.confidence : a.state === "consistent" ? -1 : 1));
+  const writtenChapters = MANUAL_CHAPTERS.filter((ch) => traits.some((c) => AXIS_CHAPTER[c.claimKey] === ch)).length;
   const nowStage = chart ? lifeStages(chart, locale, tv.currentAge).find((x) => x.state === "current") : undefined;
   return (
     <Page title={t.home.hello(account.profile.displayName)}>
@@ -100,6 +108,27 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           <span className="shrink-0 rounded-full bg-white px-3 py-1 font-semibold text-rose-800">{t.home.review} →</span>
         </Link>
       ))}
+      <Link
+        href={traits.length ? "/me/manual" : "/discover"}
+        className="group block overflow-hidden rounded-3xl bg-linear-to-br from-amber-100 via-rose-50 to-orange-100 p-5 text-amber-950 shadow-[0_10px_30px_-14px_rgba(160,90,40,0.35)] transition-transform hover:-translate-y-0.5 motion-reduce:transition-none"
+      >
+        <span className="text-xs uppercase tracking-[0.2em] text-amber-800">📖 {t.manual.homeTitle}</span>
+        {traits.length ? (
+          <>
+            <span className="mt-1 block text-xs text-amber-900/70">{t.manual.homeLead}</span>
+            <span className="mt-0.5 block text-xl font-semibold leading-snug">
+              {traits.slice(0, 3).map((c) => (c.direction === 1 ? PEER_POLES[c.claimKey].pos : PEER_POLES[c.claimKey].neg)[locale]).join(" · ")}
+            </span>
+            <span className="mt-1 block text-sm text-amber-900/80">{t.manual.written(writtenChapters, MANUAL_CHAPTERS.length)}</span>
+            <span className="mt-3 inline-block rounded-full bg-white/80 px-3 py-1 text-sm font-semibold text-amber-900 group-hover:bg-white">{t.manual.homeOpen} →</span>
+          </>
+        ) : (
+          <>
+            <span className="mt-1 block text-sm text-amber-900/80">{t.manual.homeEmpty}</span>
+            <span className="mt-3 inline-block rounded-full bg-amber-700 px-3 py-1 text-sm font-semibold text-white">{t.manual.homeStart} →</span>
+          </>
+        )}
+      </Link>
       <Link
         href="/tuvi"
         className="group block overflow-hidden rounded-3xl bg-linear-to-br from-teal-100 via-sky-50 to-violet-200 p-5 text-teal-950 shadow-[0_10px_30px_-14px_rgba(91,70,160,0.35)] transition-transform hover:-translate-y-0.5 motion-reduce:transition-none"

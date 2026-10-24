@@ -1019,6 +1019,11 @@ export const en = {
     plus: (n: number) => `+${n}`,
   },
   manual: {
+    homeTitle: "Your user manual",
+    homeLead: "You, in a few words",
+    homeEmpty: "As you answer questions, your user manual writes itself, bit by bit: how you spend time with people, how you decide, what matters to you.",
+    homeStart: "Answer questions",
+    homeOpen: "Read your manual",
     written: (n: number, all: number) => `${n} of ${all} chapters written`,
     lockedLabel: "Not written yet",
     levelConsistent: "Clear",
