@@ -12,6 +12,8 @@ import { listMemories } from "@/server/services/memories";
 import { upcomingDates } from "@/server/services/people";
 import { listComparisons } from "@/server/services/sharing";
 import { getTuvi } from "@/server/services/tuvi";
+import { portrait, tileViews } from "@/server/services/mosaic";
+import { Mosaic } from "@/components/mosaic";
 import { lifeStages } from "@/lib/tuvi/interpret";
 import { STAR_INFO } from "@/lib/tuvi/stars";
 
@@ -32,6 +34,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const chart = tv.chart;
   const menhStars = chart && chart.menh !== null ? chart.palaces[chart.menh]!.mainStars.map((s) => STAR_INFO[s.id].vi) : [];
   const waiting = (await listComparisons(uid)).filter((c) => c.waitingOn === "you");
+  const pic = await portrait(uid);
   const nowStage = chart ? lifeStages(chart, locale, tv.currentAge).find((x) => x.state === "current") : undefined;
   return (
     <Page title={t.home.hello(account.profile.displayName)}>
@@ -94,6 +97,16 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           <p className="text-sm text-stone-500">{t.discover.noQuestion}</p>
         )}
       </Card>
+      <Link href="/insights" className="block rounded-3xl border border-stone-200/80 bg-white/80 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md motion-reduce:transition-none">
+        <span className="flex items-baseline justify-between gap-2">
+          <span className="font-semibold text-stone-900">{t.mosaic.title}</span>
+          <span className="text-xs text-stone-500">{t.mosaic.summary(pic.revealed, pic.axes)}</span>
+        </span>
+        <span className="mt-3 block">
+          <Mosaic compact tiles={tileViews(pic, t, locale)} labels={{ hint: t.mosaic.hint, evidence: t.mosaic.evidence, levels: t.mosaic.levels }} />
+        </span>
+        <span className="mt-3 block text-right text-sm font-semibold text-teal-700">{t.mosaic.open} →</span>
+      </Link>
       <Card title={t.home.quickNote}>
         <form action={createMemoryAction} className="space-y-2">
           <input type="hidden" name="back" value="/home" />

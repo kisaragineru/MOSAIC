@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { tendencyFeedbackAction } from "@/app/actions/discovery";
 import { Flash } from "@/components/flash";
-import { Button, Card, Checkbox, Empty, Input, Notice, Page, Pill, Select } from "@/components/ui";
+import { Button, Card, Checkbox, Empty, Input, Notice, Page, Pill, ProgressBar, Select } from "@/components/ui";
 import { LOCALIZED_BANK } from "@/content/questions-i18n";
 import { answerLabel } from "@/lib/discovery/format";
 import { getT } from "@/lib/i18n/server";
@@ -9,6 +9,8 @@ import { requireUser } from "@/server/auth/session";
 import { listPeople } from "@/server/services/people";
 import { reflect, REFLECTION_KINDS, REFLECTION_QUESTIONS, type Reflection } from "@/server/services/reflection";
 import { listTendencies } from "@/server/services/tendencies";
+import { portrait, tileViews } from "@/server/services/mosaic";
+import { Mosaic } from "@/components/mosaic";
 
 const QMAP = new Map(LOCALIZED_BANK.map((q) => [q.id, q]));
 
@@ -17,6 +19,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
   const sp = await searchParams;
   const { t, locale } = await getT();
   const claims = await listTendencies(uid);
+  const p = await portrait(uid);
   const people = await listPeople(uid);
   let reflection: Reflection | null = null;
   let reflectError: string | null = null;
@@ -33,6 +36,11 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
   return (
     <Page title={t.insights.title}>
       <Flash t={t} sp={sp} />
+      <Card title={t.mosaic.title}>
+        <p className="mb-1 text-sm font-semibold text-stone-800">{t.mosaic.summary(p.revealed, p.axes)}</p>
+        <ProgressBar value={p.revealed} max={p.axes} label={t.mosaic.title} className="mb-4" />
+        <Mosaic tiles={tileViews(p, t, locale)} labels={{ hint: t.mosaic.hint, evidence: t.mosaic.evidence, levels: t.mosaic.levels }} />
+      </Card>
       <Card title={t.insights.tendencies}>
         <p className="mb-3 text-sm text-stone-600">{t.insights.tendenciesIntro}</p>
         {claims.length === 0 ? (
@@ -40,7 +48,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
         ) : (
           <ul className="space-y-3">
             {claims.map((c) => (
-              <li key={c.id} className="rounded-xl border border-stone-200 p-3">
+              <li key={c.id} id={`t-${c.claimKey}`} className="scroll-mt-24 rounded-xl border border-stone-200 p-3 target:ring-2 target:ring-teal-400">
                 <div className="flex flex-wrap items-center gap-1">
                   <Pill tone={c.state === "consistent" ? "teal" : c.state === "mixed" ? "amber" : "stone"}>{t.insights.states[c.state]}</Pill>
                   <Pill tone={c.userStatus === "rejected" ? "rose" : c.userStatus === "confirmed" ? "teal" : "stone"}>{t.insights.status[c.userStatus]}</Pill>
