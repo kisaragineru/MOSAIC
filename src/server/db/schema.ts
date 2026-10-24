@@ -96,6 +96,8 @@ export const profiles = pgTable("profiles", {
   timeZone: text("time_zone").notNull().default("Asia/Ho_Chi_Minh"),
   /** Explicit opt-in before any record excerpt is sent to the external AI provider. */
   aiOptIn: boolean("ai_opt_in").notNull().default(false),
+  /** When the user finished or skipped the first-run guide (null: not yet). */
+  onboardedAt: ts("onboarded_at"),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });

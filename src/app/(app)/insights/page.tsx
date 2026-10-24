@@ -117,6 +117,10 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
           </ul>
         )}
       </Card>
+      <Link href="/reflection" className="flex items-center justify-between gap-3 rounded-3xl bg-white/85 px-5 py-4 shadow-sm ring-1 ring-sky-100 hover:shadow-md">
+        <span className="font-semibold text-stone-900">🗓 {t.monthly.title}</span>
+        <span aria-hidden className="text-teal-700">→</span>
+      </Link>
       <Card title={t.insights.reflections}>
         <p className="mb-3 text-sm text-stone-600">{t.insights.reflectionsIntro}</p>
         <form method="get" className="space-y-2">

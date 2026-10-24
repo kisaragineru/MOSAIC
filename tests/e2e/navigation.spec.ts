@@ -7,7 +7,9 @@ test("bottom tabs: one row on a server-rendered page, Tử Vi first-class, clear
   await page.getByLabel("Email").fill(`nav-${randomUUID().slice(0, 8)}@example.test`);
   await page.getByLabel(/^Password/).fill("e2e correct horse battery");
   await page.getByRole("button", { name: "Create account" }).click();
-  await page.waitForURL(/home/);
+  // New accounts start with the welcome guide.
+  await page.waitForURL(/welcome/);
+  await page.goto("/home");
 
   // A full page load (no client-side styling) must still lay the tabs out in a single row.
   await page.goto("/memories");

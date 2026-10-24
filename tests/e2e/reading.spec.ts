@@ -16,7 +16,9 @@ test("insights read even from one answer; the manual ends with a story", async (
   await page.getByLabel("メールアドレス").fill(`${randomUUID().slice(0, 8)}@example.test`);
   await page.getByLabel(/^パスワード/).fill("e2e correct horse battery");
   await page.getByRole("button", { name: "アカウントを作成" }).click();
-  await page.waitForURL(/home/);
+  // New accounts start with the welcome guide.
+  await page.waitForURL(/welcome/);
+  await page.goto("/home");
   await expect(page.getByRole("heading", { name: "MOSAICが知っているあなた" })).toBeVisible();
   await expect(page.getByTestId("pieces")).toHaveText("0");
 

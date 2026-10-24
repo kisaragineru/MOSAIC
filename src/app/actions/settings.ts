@@ -4,11 +4,11 @@ import { redirect } from "next/navigation";
 import { clearSessionCookie, requireUser, sessionToken } from "@/server/auth/session";
 import { changePassword, deleteAccount, getAccount, updateNotificationPrefs, updateProfile } from "@/server/services/account";
 import { setAiOptIn } from "@/server/services/reflection";
-import { attempt, bool, str } from "./util";
+import { attempt, bool, str, withParam } from "./util";
 
 export async function updateProfileAction(form: FormData) {
   const uid = await requireUser();
-  const back = str(form, "back") === "/me" ? "/me" : "/settings";
+  const back = str(form, "back") === "/me" ? "/me" : str(form, "back") === "/welcome?step=4" ? "/welcome?step=4" : "/settings";
   const current = await getAccount(uid);
   const r = await attempt("settings.profile", () =>
     updateProfile(uid, {
@@ -19,7 +19,7 @@ export async function updateProfileAction(form: FormData) {
     }),
   );
   revalidatePath("/", "layout");
-  redirect(r.ok ? `${back}?ok=saved` : `${back}?e=${r.error}`);
+  redirect(withParam(back, r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
 }
 
 export async function notificationsAction(form: FormData) {

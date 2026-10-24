@@ -7,7 +7,9 @@ test("AUD-13: the timeline pages back to the oldest record (no silent cap)", asy
   await page.getByLabel("Email").fill(`pager-${randomUUID().slice(0, 8)}@example.test`);
   await page.getByLabel(/^Password/).fill("e2e correct horse battery");
   await page.getByRole("button", { name: "Create account" }).click();
-  await page.waitForURL(/home/);
+  // New accounts start with the welcome guide.
+  await page.waitForURL(/welcome/);
+  await page.goto("/home");
   for (let i = 0; i < 52; i++) {
     await page.goto("/home");
     await page.getByLabel("Jot something down").fill(`note-${String(i).padStart(3, "0")}`);

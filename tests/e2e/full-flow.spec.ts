@@ -14,6 +14,9 @@ async function newUser(browser: Browser, name: string) {
   await page.getByLabel(/^Password|^Mật khẩu/).fill(PASSWORD);
   await page.getByLabel(/^Language|^Ngôn ngữ/).selectOption("en");
   await page.getByRole("button", { name: "Create account" }).click();
+  // New accounts start with the welcome guide.
+  await page.waitForURL(/welcome/);
+  await page.goto("/home");
   await expect(page).toHaveURL(/\/home$/);
   await expect(page.getByRole("heading", { name: `Hello, ${name}` })).toBeVisible();
   return { context, page, email };

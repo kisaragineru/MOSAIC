@@ -17,7 +17,8 @@ export async function registerAction(form: FormData) {
   );
   if (!r.ok) redirect(withParam(`/register?next=${encodeURIComponent(next)}`, "e", r.error));
   await setSessionCookie(r.value);
-  redirect(next);
+  // A new account starts with the first-run guide, unless it came from somewhere (e.g. a QR link).
+  redirect(next === "/home" ? "/welcome" : next);
 }
 
 export async function loginAction(form: FormData) {

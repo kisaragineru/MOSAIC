@@ -9,6 +9,9 @@ async function user(browser: Browser, name: string) {
   await page.getByLabel("メールアドレス").fill(`${randomUUID().slice(0, 8)}@example.test`);
   await page.getByLabel(/^パスワード/).fill("e2e correct horse battery");
   await page.getByRole("button", { name: "アカウントを作成" }).click();
+  // New accounts start with the welcome guide.
+  await page.waitForURL(/welcome/);
+  await page.goto("/home");
   await expect(page.getByRole("heading", { name: `こんにちは、${name}さん` })).toBeVisible();
   await page.goto("/discover/q/f.drink");
   await page.getByLabel("お茶", { exact: true }).check();

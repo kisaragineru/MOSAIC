@@ -9,7 +9,9 @@ test("saving settings keeps the time zone (it used to fall back to Africa/Abidja
   await page.getByLabel("メールアドレス").fill(`${randomUUID().slice(0, 8)}@example.test`);
   await page.getByLabel(/^パスワード/).fill("e2e correct horse battery");
   await page.getByRole("button", { name: "アカウントを作成" }).click();
-  await page.waitForURL(/home/);
+  // New accounts start with the welcome guide.
+  await page.waitForURL(/welcome/);
+  await page.goto("/home");
   await expect(page.getByText(/タイムゾーンが「.*」になっていて/)).toHaveCount(0);
 
   await page.goto("/settings");

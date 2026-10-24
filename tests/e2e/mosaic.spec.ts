@@ -16,7 +16,9 @@ test("the mosaic fills in as answers agree, and a tile explains itself", async (
   await page.getByLabel("メールアドレス").fill(`${randomUUID().slice(0, 8)}@example.test`);
   await page.getByLabel(/^パスワード/).fill("e2e correct horse battery");
   await page.getByRole("button", { name: "アカウントを作成" }).click();
-  await page.waitForURL(/home/);
+  // New accounts start with the welcome guide.
+  await page.waitForURL(/welcome/);
+  await page.goto("/home");
   await expect(page.getByText("17枚のうち0枚が見えてきました")).toBeVisible();
 
   await choose(page, "p.weekend_plan", "予定を立てる");

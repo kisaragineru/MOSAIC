@@ -13,6 +13,9 @@ test("Japanese UI end to end: auto-detected, registration, question, Tử Vi, gi
   await page.getByLabel("メールアドレス").fill(`hana-${randomUUID().slice(0, 8)}@example.test`);
   await page.getByLabel(/^パスワード/).fill("e2e correct horse battery");
   await page.getByRole("button", { name: "アカウントを作成" }).click();
+  // New accounts start with the welcome guide.
+  await page.waitForURL(/welcome/);
+  await page.goto("/home");
   await expect(page.getByRole("heading", { name: "こんにちは、ハナさん" })).toBeVisible();
 
   await page.goto("/discover/q/f.drink");

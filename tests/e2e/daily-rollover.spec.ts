@@ -8,7 +8,9 @@ test("a page left open past midnight re-renders when the user comes back to it",
   await page.getByLabel("Email").fill(`night-${randomUUID().slice(0, 8)}@example.test`);
   await page.getByLabel(/^Password/).fill("e2e correct horse battery");
   await page.getByRole("button", { name: "Create account" }).click();
-  await page.waitForURL(/home/);
+  // New accounts start with the welcome guide.
+  await page.waitForURL(/welcome/);
+  await page.goto("/home");
   // The card says which day the question is for.
   await expect(page.getByRole("heading", { name: /^Today's question · / })).toBeVisible();
 

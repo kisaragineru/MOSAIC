@@ -7,7 +7,9 @@ test("AUD-02: AI reflection is never triggered by a cross-site navigation", asyn
   await page.getByLabel("Email").fill(`sec-${randomUUID().slice(0, 8)}@example.test`);
   await page.getByLabel(/^Password/).fill("e2e correct horse battery");
   await page.getByRole("button", { name: "Create account" }).click();
-  await page.waitForURL(/home/);
+  // New accounts start with the welcome guide.
+  await page.waitForURL(/welcome/);
+  await page.goto("/home");
   await page.goto("/memories/new");
   await page.getByLabel("Kind").selectOption("value");
   await page.getByLabel("What happened / what's on your mind").fill("Family");

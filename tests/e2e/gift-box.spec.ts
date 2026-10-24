@@ -9,7 +9,9 @@ async function user(browser: Browser, name: string) {
   await page.getByLabel("メールアドレス").fill(`${randomUUID().slice(0, 8)}@example.test`);
   await page.getByLabel(/^パスワード/).fill("e2e correct horse battery");
   await page.getByRole("button", { name: "アカウントを作成" }).click();
-  await page.waitForURL(/home/);
+  // New accounts start with the welcome guide.
+  await page.waitForURL(/welcome/);
+  await page.goto("/home");
   return page;
 }
 
