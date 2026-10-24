@@ -72,7 +72,7 @@ export default async function GiftBoxPage({ params, searchParams }: { params: Pr
       ) : (
         <>
           <SegmentedTabs current={`${base}?tab=${tab}`} items={tabs.map((x) => ({ href: `${base}?tab=${x}`, label: g.tabs[x] }))} />
-          {tab === "growth" && <Entries box={box} kind="growth" help={g.growthHelp} nameOf={nameOf} t={t} />}
+          {tab === "growth" && <Entries box={box} kind="growth" help={g.growthHelp} nameOf={nameOf} t={t} draft={sp.draft?.slice(0, 5000)} />}
           {tab === "letters" && <Entries box={box} kind="letter" help={g.lettersHelp} nameOf={nameOf} t={t} />}
           {tab === "view" && (
             <form action={giftViewAction} className="space-y-4">
@@ -174,7 +174,7 @@ export default async function GiftBoxPage({ params, searchParams }: { params: Pr
   );
 }
 
-function Entries({ box, kind, help, nameOf, t }: { box: GiftBox; kind: GiftEntry["kind"]; help: string; nameOf: (id: string) => string; t: Awaited<ReturnType<typeof getT>>["t"] }) {
+function Entries({ box, kind, help, nameOf, t, draft }: { box: GiftBox; kind: GiftEntry["kind"]; help: string; nameOf: (id: string) => string; t: Awaited<ReturnType<typeof getT>>["t"]; draft?: string }) {
   const g = t.giftBox;
   const list = box.entries.filter((e) => e.kind === kind);
   const tab = kind === "letter" ? "letters" : "growth";
@@ -189,7 +189,7 @@ function Entries({ box, kind, help, nameOf, t }: { box: GiftBox; kind: GiftEntry
             <Field label={g.occurredOn}><Input type="date" name="occurredOn" max={kind === "growth" ? todayIso() : undefined} /></Field>
             <Field label={g.entryTitle}><Input name="title" maxLength={120} /></Field>
           </div>
-          <Field label={g.body}><Textarea name="body" required rows={kind === "letter" ? 8 : 4} maxLength={5000} /></Field>
+          <Field label={g.body}><Textarea name="body" required rows={kind === "letter" ? 8 : 4} maxLength={5000} defaultValue={draft} autoFocus={!!draft} /></Field>
           <Button type="submit">{g.add}</Button>
         </form>
       </Card>

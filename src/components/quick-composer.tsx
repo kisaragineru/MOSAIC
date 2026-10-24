@@ -22,7 +22,14 @@ export interface ComposerText {
   close: string;
   discard: string;
   more: string;
+  giftHelp: string;
   errors: Record<string, string>;
+}
+
+/** Gift boxes I write in: the composer links to each one's growth record. */
+export interface ComposerGiftBox {
+  id: string;
+  label: string;
 }
 
 const KINDS = ["thought", "feeling", "memory", "decision", "goal", "dream", "regret", "achievement", "value"];
@@ -38,7 +45,7 @@ const noop = () => () => {};
  * without leaving the page (✕ closes it). Before the page is interactive it is a plain link to
  * the full form.
  */
-export function QuickComposer({ tx, canShare }: { tx: ComposerText; canShare: boolean }) {
+export function QuickComposer({ tx, canShare, giftBoxes = [] }: { tx: ComposerText; canShare: boolean; giftBoxes?: ComposerGiftBox[] }) {
   const hydrated = useSyncExternalStore(noop, () => true, () => false);
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
@@ -137,6 +144,22 @@ export function QuickComposer({ tx, canShare }: { tx: ComposerText; canShare: bo
             </button>
           </div>
         </form>
+        {giftBoxes.length > 0 && (
+          <div className="mt-3 border-t border-stone-100 pt-3">
+            <p className="mb-1.5 text-[11px] text-stone-500">{tx.giftHelp}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {giftBoxes.map((b) => (
+                <Link
+                  key={b.id}
+                  href={`/gifts/${b.id}?tab=growth${text.trim() ? `&draft=${encodeURIComponent(text.slice(0, 2000))}` : ""}`}
+                  className="inline-flex min-h-10 items-center rounded-full bg-amber-50 px-3.5 text-sm font-semibold text-amber-900 ring-1 ring-amber-200 transition hover:bg-amber-100 active:scale-95"
+                >
+                  🎁 {b.label} →
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

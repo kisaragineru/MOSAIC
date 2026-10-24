@@ -169,6 +169,8 @@ export const ja: Dict = {
     bodyPlaceholder: "思ったまま、ひとことでも。",
     details: "詳しく（日付・タグ・人）",
     composer: {
+      toGift: (name: string) => `${name}の成長の記録に書く`,
+      giftHelp: "ギフトボックスに書く（書き手全員で見られ、渡す日に届きます）",
       title: "いま、書く",
       close: "閉じる",
       discard: "書いた内容を消して閉じますか？",

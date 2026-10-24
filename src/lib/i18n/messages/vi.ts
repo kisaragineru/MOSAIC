@@ -169,6 +169,8 @@ export const vi: Dict = {
     bodyPlaceholder: "Cứ viết như bạn nghĩ — một dòng cũng đủ.",
     details: "Thêm (ngày, thẻ, người)",
     composer: {
+      toGift: (name: string) => `Viết vào nhật ký lớn lên của ${name}`,
+      giftHelp: "Viết vào hộp quà (mọi người cùng viết đều thấy, trao vào ngày đã định)",
       title: "Viết ngay",
       close: "Đóng",
       discard: "Bỏ nội dung vừa viết?",

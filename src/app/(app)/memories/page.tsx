@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Flash } from "@/components/flash";
 import { QuickComposer } from "@/components/quick-composer";
+import { myGiftBoxes } from "@/server/services/gift-boxes";
 import { Timeline } from "@/components/timeline";
 import { Button, Card, Empty, Input, LinkButton, Notice, Page, Select } from "@/components/ui";
 import { buildTimeline, type TimelineEntry } from "@/lib/timeline";
@@ -155,8 +156,10 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
           close: t.memories.composer.close,
           discard: t.memories.composer.discard,
           more: t.memories.composer.more,
+          giftHelp: t.memories.composer.giftHelp,
           errors: t.errors,
         }}
+        giftBoxes={(await myGiftBoxes(uid)).filter((b) => b.status === "open" && b.my_role !== "child").map((b) => ({ id: b.id, label: t.memories.composer.toGift(b.child_name) }))}
       />
     </Page>
   );

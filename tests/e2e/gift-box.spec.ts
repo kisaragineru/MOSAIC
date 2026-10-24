@@ -44,6 +44,15 @@ test("a gift box: parents write, letters stay private, the child receives it as 
   await mom.getByRole("button", { name: "追加" }).click();
   await expect(mom.getByText("生まれてきてくれてありがとう。", { exact: false }).first()).toBeVisible();
 
+  // From the journal's Write sheet: a link to the box's growth record, carrying what she typed.
+  await mom.goto("/memories");
+  await mom.getByRole("button", { name: "書く" }).click();
+  await mom.getByRole("dialog").getByLabel("あったこと・考えていること").fill("はじめて自転車に乗れた");
+  await mom.getByRole("link", { name: /ハナの成長の記録に書く/ }).click();
+  await mom.waitForURL(/tab=growth/);
+  await expect(mom.getByLabel("本文").first()).toHaveValue("はじめて自転車に乗れた");
+  await mom.goto(boxUrl);
+
   // Mom invites Dad.
   await mom.getByRole("link", { name: "管理" }).click();
   await mom.waitForURL(/tab=manage/);

@@ -167,6 +167,8 @@ export const en = {
     bodyPlaceholder: "Write it the way it comes — a line is enough.",
     details: "More (date, tags, people)",
     composer: {
+      toGift: (name: string) => `Write in ${name}'s growth record`,
+      giftHelp: "Write in a gift box (seen by all its writers, given on the day)",
       title: "Write it down",
       close: "Close",
       discard: "Discard what you wrote?",
