@@ -209,6 +209,9 @@ export const vi: Dict = {
   },
   discover: {
     likesAdd: "Thêm vào sở thích",
+    likesAdded: (n: number, max: number) => `Đã thêm (${n}/${max})`,
+    likesOneMore: "Thêm một nữa?",
+    likesDone: "Vậy là đủ",
     likesPrivate: "Được lưu vào sở thích của bạn, có trong cẩm nang và không bao giờ hiện cho người khác.",
     likesOwnTitle: "Bằng lời của bạn: thích và không thích",
     likesOwnHelp: "Ghi lại những điều cụ thể bạn yêu hay không chịu được — chi tiết mà câu hỏi không nắm được.",

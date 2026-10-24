@@ -207,6 +207,9 @@ export const en = {
   },
   discover: {
     likesAdd: "Add to favourites",
+    likesAdded: (n: number, max: number) => `Added (${n}/${max})`,
+    likesOneMore: "One more?",
+    likesDone: "That's all",
     likesPrivate: "Saved to your likes. It goes into your manual and is never shown to others.",
     likesOwnTitle: "In your own words: likes and dislikes",
     likesOwnHelp: "Note the specific things you love or can't stand — the detail questions can't capture.",

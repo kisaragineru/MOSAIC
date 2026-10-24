@@ -209,6 +209,9 @@ export const ja: Dict = {
   },
   discover: {
     likesAdd: "好きなものに追加",
+    likesAdded: (n: number, max: number) => `追加しました（${n}/${max}）`,
+    likesOneMore: "もうひとつあれば",
+    likesDone: "これで終わり",
     likesPrivate: "あなたの「好き・苦手」に保存されます。取扱説明書に載り、相手には見せません。",
     likesOwnTitle: "自分の言葉で：好き・苦手",
     likesOwnHelp: "質問では拾えない、具体的な「好き」と「苦手」を書き留めておけます。",

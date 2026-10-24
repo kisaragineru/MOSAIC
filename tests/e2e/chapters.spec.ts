@@ -42,3 +42,28 @@ test("answer by chapter: badges, private note, progress, feedback, note in histo
   await expect(page.getByText("🔒 いつもそうしている気がする")).toBeVisible();
   await ctx.close();
 });
+
+test("likes: fashion, then several brands one after another", async ({ browser }) => {
+  const ctx = await browser.newContext({ locale: "ja-JP", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.7.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
+  const page = await ctx.newPage();
+  await page.goto("/register");
+  await page.getByLabel("なんと呼べばいいですか？").fill("リン");
+  await page.getByLabel("メールアドレス").fill(`${randomUUID().slice(0, 8)}@example.test`);
+  await page.getByLabel(/^パスワード/).fill("e2e correct horse battery");
+  await page.getByRole("button", { name: "アカウントを作成" }).click();
+  await page.waitForURL(/welcome/);
+  await page.goto("/discover/q/l.fashion_style");
+  await page.getByLabel("シンプル", { exact: true }).check();
+  await page.getByLabel("古着", { exact: true }).check();
+  await page.getByRole("button", { name: "回答を保存" }).click();
+  await expect(page.getByText("好きなブランドは？")).toBeVisible();
+  await page.getByPlaceholder("例：無印良品、COS").fill("無印良品");
+  await page.getByRole("button", { name: "好きなものに追加" }).click();
+  await expect(page.getByText("追加しました（1/3）")).toBeVisible();
+  await expect(page.getByText("もうひとつあれば")).toBeVisible();
+  await page.getByPlaceholder("例：無印良品、COS").fill("COS");
+  await page.getByRole("button", { name: "好きなものに追加" }).click();
+  await expect(page.getByText("追加しました（2/3）")).toBeVisible();
+  await page.getByRole("link", { name: "これで終わり" }).click();
+  await expect(page.getByText("もうひとつあれば")).toHaveCount(0);
+});

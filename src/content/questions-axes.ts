@@ -629,6 +629,149 @@ const SPECS: Spec[] = [
       ["exercise", ["Exercise", "Tập thể dục", "運動"]], ["out", ["Heading out early", "Ra ngoài từ sớm", "早めに出かける"]],
     ],
   },
+  // ── likes: fashion ─────────────────────────────────────────────────────
+  {
+    id: "l.fashion_style", category: "hobbies", format: "multi", maxChoices: 3,
+    prompt: ["What's your style? (up to 3)", "Phong cách ăn mặc của bạn? (tối đa 3)", "服のテイストは？（3つまで）"],
+    options: [
+      ["simple", ["Simple", "Đơn giản", "シンプル"]], ["smart", ["Smart and neat", "Thanh lịch, gọn gàng", "きれいめ"]], ["casual", ["Casual", "Thoải mái", "カジュアル"]],
+      ["street", ["Street", "Đường phố", "ストリート"]], ["vintage", ["Vintage", "Đồ cũ, vintage", "古着"]], ["mode", ["Mode / avant-garde", "Thời trang cá tính", "モード"]],
+      ["natural", ["Natural", "Tự nhiên", "ナチュラル"]], ["sporty", ["Sporty", "Thể thao", "スポーティ"]],
+    ],
+  },
+  {
+    id: "l.fashion_priority", category: "hobbies", format: "single",
+    prompt: ["When you choose clothes, what matters most?", "Khi chọn quần áo, điều gì quan trọng nhất?", "服を選ぶとき、いちばん大事なのは？"],
+    options: [
+      ["comfort", ["How comfortable it is", "Mặc thoải mái", "着心地"]], ["suits", ["Whether it suits me", "Hợp với mình", "似合うかどうか"]],
+      ["trend", ["What's in now", "Hợp xu hướng", "いまの流行"]], ["lasting", ["That it lasts for years", "Dùng được lâu", "長く使えること"]], ["price", ["The price", "Giá cả", "値段"]],
+    ],
+  },
+  {
+    id: "l.fashion_colors", category: "hobbies", format: "multi", maxChoices: 3,
+    prompt: ["Colours you wear most? (up to 3)", "Màu bạn hay mặc nhất? (tối đa 3)", "よく着る色は？（3つまで）"],
+    options: [
+      ["mono", ["Black, white and grey", "Đen, trắng, xám", "白・黒・グレー"]], ["navy", ["Navy and blue", "Xanh navy, xanh dương", "ネイビー・青"]],
+      ["earth", ["Beige and brown", "Be, nâu", "ベージュ・茶"]], ["green", ["Green and khaki", "Xanh lá, kaki", "グリーン・カーキ"]],
+      ["pastel", ["Soft pastels", "Màu pastel nhẹ", "淡いパステル"]], ["vivid", ["Bright colours", "Màu rực rỡ", "鮮やかな色"]], ["pattern", ["Patterns and mixes", "Họa tiết, phối nhiều màu", "柄・いろいろ"]],
+    ],
+  },
+  {
+    id: "l.fashion_shopping", category: "hobbies", format: "single",
+    prompt: ["How do you usually buy clothes?", "Bạn thường mua quần áo thế nào?", "服はどうやって買うことが多い？"],
+    options: [
+      ["store", ["In a shop, trying things on", "Ra cửa hàng thử đồ", "お店で試着して"]], ["online", ["Online", "Mua online", "ネットで"]],
+      ["regular", ["At the same few shops", "Ở vài cửa hàng quen", "決まったお店で"]], ["someone", ["Someone picks for me", "Người khác chọn giúp", "人に選んでもらう"]],
+      ["rarely", ["I hardly buy clothes", "Hiếm khi mua", "あまり買わない"]],
+    ],
+  },
+  {
+    id: "l.accessories", category: "hobbies", format: "single",
+    prompt: ["Accessories — rings, necklaces, watches…", "Phụ kiện — nhẫn, dây chuyền, đồng hồ…", "アクセサリー（指輪・ネックレス・時計など）は？"],
+    options: [["daily", ["Every day", "Ngày nào cũng đeo", "毎日つける"]], ["sometimes", ["Now and then", "Thỉnh thoảng", "ときどき"]], ["never", ["Not really", "Hầu như không", "つけない"]]],
+  },
+  // ── likes: music, favourites ───────────────────────────────────────────
+  {
+    id: "l.music_genres", category: "music", format: "multi", maxChoices: 3,
+    prompt: ["What do you listen to most? (up to 3)", "Bạn nghe thể loại nhạc nào nhiều nhất? (tối đa 3)", "よく聴く音楽のジャンルは？（3つまで）"],
+    options: [
+      ["jpop", ["J-pop", "J-pop", "J-POP（邦楽）"]], ["kpop", ["K-pop", "K-pop", "K-POP（韓国）"]], ["vpop", ["V-pop", "V-pop", "V-POP（ベトナム）"]], ["rock", ["Rock", "Rock", "ロック"]],
+      ["hiphop", ["Hip-hop and R&B", "Hip-hop và R&B", "ヒップホップ・R&B"]], ["electronic", ["Electronic", "Nhạc điện tử", "エレクトロ"]],
+      ["jazz", ["Jazz", "Jazz", "ジャズ"]], ["classical", ["Classical", "Cổ điển", "クラシック"]], ["anime", ["Anime songs and Vocaloid", "Nhạc anime, Vocaloid", "アニソン・ボカロ"]],
+      ["folk", ["Acoustic and folk", "Acoustic, dân ca", "アコースティック・フォーク"]],
+    ],
+  },
+  {
+    id: "l.music_listen", category: "music", format: "single",
+    prompt: ["How does music fit into your life?", "Âm nhạc gắn với cuộc sống của bạn thế nào?", "音楽との付き合い方は？"],
+    options: [
+      ["live", ["I go to concerts", "Đi xem biểu diễn trực tiếp", "ライブに行く"]], ["alone", ["Headphones, on my own", "Đeo tai nghe, một mình", "イヤホンでひとりで聴く"]],
+      ["background", ["On in the background", "Bật làm nhạc nền", "作業中に流す"]], ["sing", ["Singing — karaoke and all", "Hát, karaoke", "歌う・カラオケ"]], ["rarely", ["I rarely listen", "Hiếm khi nghe", "あまり聴かない"]],
+    ],
+  },
+  {
+    id: "l.music_now", category: "music", format: "short",
+    prompt: ["A song you've had on repeat lately?", "Bài hát bạn nghe đi nghe lại gần đây?", "最近くり返し聴いている曲は？"],
+  },
+  {
+    id: "l.oshi", category: "hobbies", format: "single",
+    prompt: ["Is there someone you're a big fan of — an artist, idol, athlete or character?", "Bạn có thần tượng không — nghệ sĩ, idol, vận động viên hay nhân vật?", "推しはいる？（アーティスト・アイドル・選手・キャラクターなど）"],
+    options: [["now", ["Yes", "Có", "いる"]], ["past", ["I used to", "Từng có", "昔いた"]], ["none", ["Not really", "Không hẳn", "いない"]]],
+  },
+  {
+    id: "l.works", category: "hobbies", format: "multi", maxChoices: 3,
+    prompt: ["What kinds of stories do you love? (up to 3)", "Bạn thích loại tác phẩm nào? (tối đa 3)", "好きな作品のジャンルは？（3つまで）"],
+    options: [
+      ["manga", ["Manga and comics", "Truyện tranh", "漫画"]], ["anime", ["Anime", "Anime", "アニメ"]], ["games", ["Games", "Game", "ゲーム"]],
+      ["novels", ["Novels", "Tiểu thuyết", "小説"]], ["dramas", ["TV dramas", "Phim truyền hình", "ドラマ"]], ["videos", ["YouTube and streams", "YouTube, livestream", "YouTube・配信"]],
+    ],
+  },
+  // ── likes: food & drink ────────────────────────────────────────────────
+  {
+    id: "l.coffee_tea", category: "food", format: "single",
+    prompt: ["Coffee or tea?", "Cà phê hay trà?", "コーヒー派？お茶派？"],
+    options: [["coffee", ["Coffee", "Cà phê", "コーヒー"]], ["tea", ["Tea", "Trà", "お茶・紅茶"]], ["both", ["Both", "Cả hai", "どちらも"]], ["neither", ["Neither", "Không cái nào", "どちらも飲まない"]]],
+  },
+  {
+    id: "l.alcohol", category: "food", format: "single",
+    prompt: ["Do you drink alcohol?", "Bạn có uống rượu bia không?", "お酒は飲む？"],
+    options: [["love", ["Yes, I enjoy it", "Có, tôi thích", "好き"]], ["sometimes", ["Sometimes", "Thỉnh thoảng", "たまに"]], ["no", ["I don't", "Không uống", "飲まない"]]],
+  },
+  {
+    id: "l.cuisine", category: "food", format: "multi", maxChoices: 3,
+    prompt: ["Food you love most? (up to 3)", "Món ăn bạn thích nhất? (tối đa 3)", "好きな料理のジャンルは？（3つまで）"],
+    options: [
+      ["japanese", ["Japanese", "Nhật", "和食"]], ["chinese", ["Chinese", "Trung Hoa", "中華"]], ["korean", ["Korean", "Hàn", "韓国料理"]],
+      ["vietnamese", ["Vietnamese", "Việt", "ベトナム料理"]], ["italian", ["Italian", "Ý", "イタリアン"]], ["french", ["French", "Pháp", "フレンチ"]],
+      ["ethnic", ["Thai, Indian and other spicy food", "Thái, Ấn và món cay", "エスニック（タイ・インドなど）"]], ["home", ["Home cooking", "Cơm nhà", "家庭料理"]],
+    ],
+  },
+  {
+    id: "l.sweets", category: "food", format: "single",
+    prompt: ["Sweets and desserts?", "Đồ ngọt và tráng miệng?", "甘いものは？"],
+    options: [["love", ["Love them", "Rất thích", "大好き"]], ["sometimes", ["Now and then", "Thỉnh thoảng", "ときどき"]], ["not", ["Not for me", "Không thích lắm", "あまり食べない"]]],
+  },
+  {
+    id: "l.food_avoid", category: "food", sensitivity: "medium", format: "single",
+    prompt: ["Is there food you can't or won't eat?", "Có món nào bạn không ăn được hoặc không thích không?", "食べられないもの・苦手なものはある？"],
+    options: [
+      ["none", ["No, I eat anything", "Không, gì cũng ăn", "なんでも食べる"]], ["some", ["A few things", "Một vài món", "少しある"]],
+      ["many", ["Quite a few", "Khá nhiều", "けっこうある"]], ["allergy", ["I have an allergy", "Tôi bị dị ứng", "アレルギーがある"]],
+    ],
+  },
+  // ── likes: scent, home, things, travel ─────────────────────────────────
+  {
+    id: "l.scent", category: "hobbies", format: "multi", maxChoices: 2,
+    prompt: ["Scents you like? (up to 2)", "Mùi hương bạn thích? (tối đa 2)", "好きな香りは？（2つまで）"],
+    options: [
+      ["citrus", ["Citrus", "Cam chanh", "柑橘"]], ["floral", ["Floral", "Hương hoa", "花"]], ["woody", ["Woody", "Hương gỗ", "ウッディ"]],
+      ["soap", ["Clean, like soap", "Sạch, như xà phòng", "石けん"]], ["sweet", ["Sweet", "Ngọt ngào", "甘い香り"]], ["none", ["No scent at all", "Không mùi", "香りなしが好き"]],
+    ],
+  },
+  {
+    id: "l.interior", category: "hobbies", format: "single",
+    prompt: ["Your ideal room is…", "Căn phòng lý tưởng của bạn…", "理想の部屋は？"],
+    options: [
+      ["minimal", ["Clean and minimal", "Gọn gàng, tối giản", "すっきりミニマル"]], ["natural", ["Wood and plants", "Gỗ và cây xanh", "木と植物"]],
+      ["cozy", ["Full of favourite things", "Đầy những món mình thích", "好きなものに囲まれる"]], ["design", ["Design furniture", "Nội thất thiết kế", "デザイン家具"]],
+      ["retro", ["Retro and vintage", "Hoài cổ, vintage", "レトロ"]],
+    ],
+  },
+  {
+    id: "l.things", category: "hobbies", format: "single",
+    prompt: ["With things, you tend to…", "Với đồ đạc, bạn thường…", "モノの持ち方は？"],
+    options: [
+      ["few", ["Keep only a few", "Chỉ giữ ít đồ", "少なく持つ"]], ["between", ["Somewhere in between", "Ở giữa", "そのあいだ"]], ["collect", ["Collect what I love", "Sưu tầm những thứ mình thích", "好きなものは集める"]],
+    ],
+  },
+  {
+    id: "l.travel_style", category: "travel", format: "single",
+    prompt: ["On a trip, you most enjoy…", "Khi đi du lịch, bạn thích nhất…", "旅でいちばん楽しみなのは？"],
+    options: [
+      ["food", ["The food", "Ẩm thực", "食べ歩き"]], ["wander", ["Wandering the streets", "Dạo phố", "街歩き"]], ["nature", ["Nature", "Thiên nhiên", "自然"]],
+      ["culture", ["Museums and history", "Bảo tàng, lịch sử", "美術館・歴史"]], ["rest", ["Doing nothing at all", "Nghỉ ngơi, không làm gì", "何もしないこと"]],
+    ],
+  },
   // ── story (no axis) ────────────────────────────────────────────────────
   {
     id: "s.child_dream", category: "past", format: "short",
