@@ -84,7 +84,7 @@ export default async function PeerAnswerPage({ params, searchParams }: { params:
           <Card className="relative overflow-hidden text-center">
             <Confetti />
             <p className="animate-[pop_.6s_ease-out] text-3xl" aria-hidden>💌</p>
-            <p className="mt-2 font-semibold text-stone-900">{p.thanks(name)}</p>
+            <p className="mt-2 whitespace-pre-line text-lg font-semibold leading-relaxed text-stone-900">{p.thanks(name)}</p>
             <p className="mt-1 text-xs text-stone-500">{r.anonymous ? p.sentAnon : p.sentNamed}</p>
             <form action={askPeerAction} className="mt-4">
               <input type="hidden" name="sessionId" value={r.sessionId} />

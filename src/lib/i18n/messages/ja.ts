@@ -1313,7 +1313,7 @@ export const ja: Dict = {
     asAnon: "匿名で答える（匿名の回答が3人分そろうまで表示されません）",
     submit: "送る",
     decline: "今回は見送る",
-    thanks: (n: string) => `ありがとうございます。${n}さんに届きました。`,
+    thanks: (n: string) => `ありがとうございます。\n${n}さんに届きました。`,
     yourAnswer: "あなたが送った回答",
     yourComment: "あなたのひとこと",
     withdrawHelp: "送った回答は、いつでも取り消せます。",

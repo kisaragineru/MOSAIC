@@ -54,7 +54,7 @@ test("ask a connection how they see you; they answer with their name; you see th
   await sora.getByLabel("ハナさんへのひとこと（任意）").fill("いつも段取りが完璧");
   await sora.getByText(/名前を出す/).click();
   await sora.getByRole("button", { name: "送る", exact: true }).click();
-  await expect(sora.getByText("ありがとうございます。ハナさんに届きました。")).toBeVisible();
+  await expect(sora.getByText(/ありがとうございます。\s*ハナさんに届きました。/)).toBeVisible();
   // What was sent: both sides of each axis, the chosen one lit up.
   await expect(sora.getByText("ハナさんは…")).toBeVisible();
   await expect(sora.getByText("先に計画を立てる", { exact: true })).toHaveClass(/bg-teal-600/);

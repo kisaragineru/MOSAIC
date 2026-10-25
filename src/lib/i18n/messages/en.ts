@@ -1311,7 +1311,7 @@ export const en = {
     asAnon: "Answer anonymously (shown only once three anonymous answers arrive)",
     submit: "Send",
     decline: "Not this time",
-    thanks: (n: string) => `Thank you — ${n} has received it.`,
+    thanks: (n: string) => `Thank you!\n${n} has received it.`,
     yourAnswer: "What you sent",
     yourComment: "Your words",
     withdrawHelp: "You can take your answer back at any time.",

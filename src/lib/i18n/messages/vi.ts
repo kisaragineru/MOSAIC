@@ -1313,7 +1313,7 @@ export const vi: Dict = {
     asAnon: "Trả lời ẩn danh (chỉ hiện khi có đủ ba câu trả lời ẩn danh)",
     submit: "Gửi",
     decline: "Lần này thôi",
-    thanks: (n: string) => `Cảm ơn bạn — ${n} đã nhận được.`,
+    thanks: (n: string) => `Cảm ơn bạn!\n${n} đã nhận được.`,
     yourAnswer: "Những gì bạn đã gửi",
     yourComment: "Lời nhắn của bạn",
     withdrawHelp: "Bạn có thể rút lại câu trả lời bất cứ lúc nào.",
