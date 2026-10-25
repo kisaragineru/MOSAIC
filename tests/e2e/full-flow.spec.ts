@@ -145,6 +145,10 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   await expect(pa.getByText("This is different from your previous answer")).toBeVisible();
   await pa.getByRole("button", { name: "My view changed" }).click();
   await pa.goto("/discover/history");
+  // History is split by theme; the changed answer is under "Changed answers", one row per question.
+  await pa.getByTestId("history-chips").getByRole("link", { name: /Changed answers/ }).click();
+  await pa.waitForURL(/ch=changed/);
+  await pa.getByTestId("history-list").locator("summary").first().click();
   await expect(pa.getByText("View changed")).toBeVisible();
 
   // People & gifts

@@ -24,7 +24,7 @@ test("Japanese UI end to end: auto-detected, registration, question, Tử Vi, gi
   await page.getByRole("button", { name: "回答を保存" }).click();
   await expect(page.getByText("回答を保存しました。以前の回答も履歴に残っています。")).toBeVisible();
   await page.goto("/discover/history");
-  await expect(page.getByText("お茶", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("history-list").locator("summary").getByText("お茶", { exact: true })).toBeVisible();
 
   await page.goto("/tuvi");
   await page.getByLabel("生年月日 (新暦（グレゴリオ暦）)").fill("1990-06-07");

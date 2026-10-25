@@ -380,6 +380,12 @@ export const vi: Dict = {
     alwaysPrivateHelp: "Câu trả lời bằng lời của bạn không bao giờ dùng để so sánh, nên không có gì để bật tắt — chỉ bạn xem được.",
     scale: (n: number) => `${n}/5`,
     earlier: "Câu trả lời trước",
+    all: "Tất cả",
+    changedOnly: "Câu trả lời đã đổi",
+    filterLabel: "Lọc theo chủ đề",
+    countHint: (n: number) => `Đã trả lời ${n} câu. Chạm để xem câu trả lời trước và chế độ chia sẻ.`,
+    changedHint: (n: number) => `${n} câu có câu trả lời đã thay đổi. Chạm để so sánh.`,
+    noneHere: "Chưa có câu trả lời nào ở đây.",
   },
   insights: {
     readTitle: "Đọc về bạn",

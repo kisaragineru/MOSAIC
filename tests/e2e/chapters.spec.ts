@@ -39,6 +39,8 @@ test("answer by chapter: badges, private note, progress, feedback, note in histo
 
   // The note shows only in the user's own history.
   await page.goto("/discover/history");
+  // One row per question: open them to see the earlier answers and notes.
+  for (const row of await page.getByTestId("history-list").locator("summary").all()) await row.click();
   await expect(page.getByText("🔒 いつもそうしている気がする")).toBeVisible();
   await ctx.close();
 });

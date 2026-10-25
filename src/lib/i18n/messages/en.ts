@@ -378,6 +378,12 @@ export const en = {
     alwaysPrivateHelp: "Answers in your own words are never used in comparisons, so there's nothing to switch here — only you can see them.",
     scale: (n: number) => `${n} of 5`,
     earlier: "Earlier answer",
+    all: "All",
+    changedOnly: "Changed answers",
+    filterLabel: "Filter by theme",
+    countHint: (n: number) => `${n} question${n === 1 ? "" : "s"} answered. Tap one for earlier answers and sharing.`,
+    changedHint: (n: number) => `${n} question${n === 1 ? "" : "s"} with a changed answer. Tap one to compare.`,
+    noneHere: "No answers here yet.",
   },
   insights: {
     readTitle: "Read about you",

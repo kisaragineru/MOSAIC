@@ -380,6 +380,12 @@ export const ja: Dict = {
     alwaysPrivateHelp: "文章で答える質問は、比較に使われることがないため切り替えはありません。いつもあなただけが見られます。",
     scale: (n: number) => `5段階中 ${n}`,
     earlier: "以前の回答",
+    all: "すべて",
+    changedOnly: "答えが変わった質問",
+    filterLabel: "テーマで絞り込む",
+    countHint: (n: number) => `${n}問に答えています。タップすると、以前の回答や公開設定を見られます。`,
+    changedHint: (n: number) => `答えが変わった質問が${n}問あります。タップすると、前の答えと比べられます。`,
+    noneHere: "ここにはまだ回答がありません。",
   },
   insights: {
     readTitle: "あなたを読む",
