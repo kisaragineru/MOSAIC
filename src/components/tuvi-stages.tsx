@@ -40,7 +40,11 @@ export interface StageLabels {
   strength: string;
   caution: string;
   starNotes: string;
+  starNotesLead: string;
   support: string;
+  supportLead: string;
+  supportWhere: { trine: string; opposite: string };
+  supportNone: string;
   recordsTitle: string;
   recordsOpen: string;
   recordsNone: string;
@@ -213,21 +217,28 @@ export function TuviStages({ stages, labels, currentAge }: { stages: StageView[]
           </div>
         )}
         {s.hints.support.length > 0 && (
-          <div>
-            <p className="mb-1 text-xs font-semibold text-stone-500">{labels.support}</p>
-            <div className="grid grid-cols-3 gap-1.5">
+          <div className="rounded-2xl bg-violet-50/60 p-3">
+            <p className="text-xs font-semibold text-violet-800">{labels.support}</p>
+            <p className="mt-1 text-[13px] leading-6 text-stone-700">{labels.supportLead}</p>
+            <ul className="mt-2 divide-y divide-violet-100 rounded-xl bg-white/80">
               {s.hints.support.map((x) => (
-                <div key={x.label} className="rounded-2xl bg-violet-50/70 p-2">
-                  <p className="text-[11px] font-bold leading-tight text-stone-800">{x.label}</p>
-                  <p className="mt-0.5 text-[11px] leading-tight text-rose-800">{x.stars.join("・") || "—"}</p>
-                </div>
+                <li key={x.label} className="px-3 py-2">
+                  <p className="flex flex-wrap items-center gap-x-2 text-sm font-bold text-stone-900">
+                    {x.label}
+                    <span className="rounded-md bg-violet-100 px-1.5 py-px text-[10px] font-semibold text-violet-800">{labels.supportWhere[x.where]}</span>
+                  </p>
+                  <p className="mt-0.5 flex flex-wrap gap-x-3 text-[13px] leading-6 text-stone-700">
+                    {x.stars.length ? x.stars.map((st) => <span key={st}>{st}</span>) : <span className="text-stone-500">{labels.supportNone}</span>}
+                  </p>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         )}
         {s.hints.notes.length > 0 && (
           <Toggle title={labels.starNotes}>
-            <ul className="list-disc space-y-1 pl-4">{s.hints.notes.map((n) => <li key={n}>{n}</li>)}</ul>
+            <p className="mb-2 leading-6 text-stone-600">{labels.starNotesLead}</p>
+            <ul className="list-disc space-y-2 pl-4 leading-6">{s.hints.notes.map((n) => <li key={n}>{n}</li>)}</ul>
           </Toggle>
         )}
 

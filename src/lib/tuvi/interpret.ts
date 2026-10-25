@@ -11,6 +11,7 @@ import { lunarToSolar } from "./calendar";
 import { BRANCHES } from "./canchi";
 import type { Chart, Palace } from "./engine";
 import { MAIN_EXTRA, PALACE_BY_AGE, PALACE_JA, PALACE_ROLE, PALACE_SHORT } from "./interpret-detail";
+import { PALACE_CELL, STAR_SHORT } from "./plain-names";
 import { GLOSSARY, PALACE_PLAIN, PLAIN_PHRASE, SECTION_PLAIN, STAR_PLAIN, type GlossaryKey } from "./plain";
 import { HOA_INFO, PALACE_INFO, STAR_INFO, type AuxStarId, type HoaId, type MainStarId, type PalaceId } from "./stars";
 
@@ -143,33 +144,33 @@ const MAIN: Record<MainStarId, { keywords: T } & Record<Domain, T>> = {
 };
 
 const AUX_NOTES: Partial<Record<AuxStarId, T>> = {
-  loc_ton: { en: "Lộc Tồn here traditionally adds steadiness and preservation of resources.", vi: "Lộc Tồn ở đây theo truyền thống thêm sự vững vàng và giữ gìn tài lộc.", ja: "ここにあるLộc Tồn（禄存）は、伝統的に安定と財の保持をもたらすとされます。" },
-  ta_phu: { en: "Tả Phù here traditionally suggests support from others.", vi: "Tả Phù ở đây theo truyền thống cho thấy được người khác hỗ trợ.", ja: "ここにあるTả Phù（左輔）は、伝統的に周囲からの支えを示すとされます。" },
-  huu_bat: { en: "Hữu Bật here traditionally suggests help and cooperation.", vi: "Hữu Bật ở đây theo truyền thống cho thấy được giúp đỡ và hợp tác.", ja: "ここにあるHữu Bật（右弼）は、伝統的に助けと協力を示すとされます。" },
-  van_xuong: { en: "Văn Xương here traditionally adds a love of learning and writing.", vi: "Văn Xương ở đây theo truyền thống thêm sự ham học, giỏi văn chương.", ja: "ここにあるVăn Xương（文昌）は、伝統的に学ぶことや書くことへの愛着をもたらすとされます。" },
-  van_khuc: { en: "Văn Khúc here traditionally adds eloquence and artistic sense.", vi: "Văn Khúc ở đây theo truyền thống thêm tài ăn nói và năng khiếu nghệ thuật.", ja: "ここにあるVăn Khúc（文曲）は、伝統的に話術と芸術的な感性をもたらすとされます。" },
-  thien_khoi: { en: "Thiên Khôi here traditionally suggests help from senior or respected people.", vi: "Thiên Khôi ở đây theo truyền thống cho thấy được quý nhân, bề trên giúp đỡ.", ja: "ここにあるThiên Khôi（天魁）は、伝統的に目上や尊敬される人からの助けを示すとされます。" },
-  thien_viet: { en: "Thiên Việt here traditionally suggests timely help from others.", vi: "Thiên Việt ở đây theo truyền thống cho thấy được giúp đỡ kịp thời.", ja: "ここにあるThiên Việt（天鉞）は、伝統的にタイミングのよい助けを示すとされます。" },
-  thien_ma: { en: "Thiên Mã here traditionally adds movement, travel and change of place.", vi: "Thiên Mã ở đây theo truyền thống thêm sự di chuyển, đi xa, thay đổi chỗ ở.", ja: "ここにあるThiên Mã（天馬）は、伝統的に移動、旅、住まいの変化をもたらすとされます。" },
-  kinh_duong: { en: "Kình Dương here is traditionally read as sharp energy and competition that can be channelled well.", vi: "Kình Dương ở đây theo truyền thống là năng lượng sắc bén, tính cạnh tranh, có thể phát huy nếu biết điều tiết.", ja: "ここにあるKình Dương（擎羊）は、伝統的に鋭いエネルギーや競争心と読まれ、うまく向ければ力になるとされます。" },
-  da_la: { en: "Đà La here is traditionally read as delays that reward persistence.", vi: "Đà La ở đây theo truyền thống là sự chậm trễ, đòi hỏi kiên trì.", ja: "ここにあるĐà La（陀羅）は、伝統的に遅れと読まれ、粘り強さが報われるとされます。" },
-  dia_khong: { en: "Địa Không here is traditionally read as unconventional ideas and unexpected turns.", vi: "Địa Không ở đây theo truyền thống là ý tưởng khác thường và những biến chuyển bất ngờ.", ja: "ここにあるĐịa Không（地空）は、伝統的に型にはまらない発想や思いがけない展開と読まれます。" },
-  dia_kiep: { en: "Địa Kiếp here is traditionally read as volatility that calls for caution.", vi: "Địa Kiếp ở đây theo truyền thống là sự biến động, cần thận trọng.", ja: "ここにあるĐịa Kiếp（地劫）は、伝統的に変動と読まれ、慎重さが求められるとされます。" },
-  hoa_tinh: { en: "Hỏa Tinh here is traditionally read as quick, fiery energy.", vi: "Hỏa Tinh ở đây theo truyền thống là năng lượng nhanh, nóng.", ja: "ここにあるHỏa Tinh（火星）は、伝統的にすばやく熱いエネルギーと読まれます。" },
-  linh_tinh: { en: "Linh Tinh here is traditionally read as inner tension that benefits from patience.", vi: "Linh Tinh ở đây theo truyền thống là căng thẳng nội tâm, cần kiên nhẫn.", ja: "ここにあるLinh Tinh（鈴星）は、伝統的に内面の緊張と読まれ、忍耐が助けになるとされます。" },
-  dao_hoa: { en: "Đào Hoa here traditionally adds charm and attractiveness.", vi: "Đào Hoa ở đây theo truyền thống thêm duyên dáng, thu hút.", ja: "ここにあるĐào Hoa（桃花）は、伝統的に魅力と人を惹きつける力をもたらすとされます。" },
-  hong_loan: { en: "Hồng Loan here traditionally adds warmth in affection.", vi: "Hồng Loan ở đây theo truyền thống thêm sự ấm áp trong tình cảm.", ja: "ここにあるHồng Loan（紅鸞）は、伝統的に愛情面の温かさをもたらすとされます。" },
-  thien_hy: { en: "Thiên Hỷ here traditionally adds joyful occasions.", vi: "Thiên Hỷ ở đây theo truyền thống thêm những dịp vui.", ja: "ここにあるThiên Hỷ（天喜）は、伝統的に喜ばしい出来事をもたらすとされます。" },
-  hoa_cai: { en: "Hoa Cái here traditionally adds refinement and a taste for the arts or spirituality.", vi: "Hoa Cái ở đây theo truyền thống thêm sự thanh cao, yêu nghệ thuật hoặc tâm linh.", ja: "ここにあるHoa Cái（華蓋）は、伝統的に洗練と、芸術や精神性への関心をもたらすとされます。" },
-  co_than: { en: "Cô Thần here traditionally suggests a need for time alone.", vi: "Cô Thần ở đây theo truyền thống cho thấy nhu cầu có thời gian riêng.", ja: "ここにあるCô Thần（孤辰）は、伝統的に一人の時間の必要を示すとされます。" },
-  qua_tu: { en: "Quả Tú here traditionally suggests a reserved side.", vi: "Quả Tú ở đây theo truyền thống cho thấy một mặt kín đáo.", ja: "ここにあるQuả Tú（寡宿）は、伝統的に控えめな一面を示すとされます。" },
+  loc_ton: { en: "Lộc Tồn here traditionally adds steadiness and preservation of resources.", vi: "Lộc Tồn ở đây theo truyền thống thêm sự vững vàng và giữ gìn tài lộc.", ja: "脇役の星「Lộc Tồn（禄存）」がいます。伝統的に、暮らしを安定させ、お金や持ちものを大事に守る力を表すとされます。" },
+  ta_phu: { en: "Tả Phù here traditionally suggests support from others.", vi: "Tả Phù ở đây theo truyền thống cho thấy được người khác hỗ trợ.", ja: "脇役の星「Tả Phù（左輔）」がいます。伝統的に、まわりの人が手を貸してくれる、支えてもらえる縁を表すとされます。" },
+  huu_bat: { en: "Hữu Bật here traditionally suggests help and cooperation.", vi: "Hữu Bật ở đây theo truyền thống cho thấy được giúp đỡ và hợp tác.", ja: "脇役の星「Hữu Bật（右弼）」がいます。伝統的に、人から助けてもらったり、力を合わせたりできる縁を表すとされます。" },
+  van_xuong: { en: "Văn Xương here traditionally adds a love of learning and writing.", vi: "Văn Xương ở đây theo truyền thống thêm sự ham học, giỏi văn chương.", ja: "脇役の星「Văn Xương（文昌）」がいます。伝統的に、学ぶことや文章を書くことが好き・得意な一面を表すとされます。" },
+  van_khuc: { en: "Văn Khúc here traditionally adds eloquence and artistic sense.", vi: "Văn Khúc ở đây theo truyền thống thêm tài ăn nói và năng khiếu nghệ thuật.", ja: "脇役の星「Văn Khúc（文曲）」がいます。伝統的に、話のうまさや、芸術を感じとるセンスを表すとされます。" },
+  thien_khoi: { en: "Thiên Khôi here traditionally suggests help from senior or respected people.", vi: "Thiên Khôi ở đây theo truyền thống cho thấy được quý nhân, bề trên giúp đỡ.", ja: "脇役の星「Thiên Khôi（天魁）」がいます。伝統的に、目上の人や尊敬される人から助けてもらえる縁を表すとされます。" },
+  thien_viet: { en: "Thiên Việt here traditionally suggests timely help from others.", vi: "Thiên Việt ở đây theo truyền thống cho thấy được giúp đỡ kịp thời.", ja: "脇役の星「Thiên Việt（天鉞）」がいます。伝統的に、困ったときにちょうどよく助けが来る縁を表すとされます。" },
+  thien_ma: { en: "Thiên Mã here traditionally adds movement, travel and change of place.", vi: "Thiên Mã ở đây theo truyền thống thêm sự di chuyển, đi xa, thay đổi chỗ ở.", ja: "脇役の星「Thiên Mã（天馬）」がいます。伝統的に、よく動くこと――旅や引っ越し、場所の変化を表すとされます。" },
+  kinh_duong: { en: "Kình Dương here is traditionally read as sharp energy and competition that can be channelled well.", vi: "Kình Dương ở đây theo truyền thống là năng lượng sắc bén, tính cạnh tranh, có thể phát huy nếu biết điều tiết.", ja: "脇役の星「Kình Dương（擎羊）」がいます。伝統的に、鋭いエネルギーや負けず嫌いな気持ちを表し、うまく向ければ力になるとされます。" },
+  da_la: { en: "Đà La here is traditionally read as delays that reward persistence.", vi: "Đà La ở đây theo truyền thống là sự chậm trễ, đòi hỏi kiên trì.", ja: "脇役の星「Đà La（陀羅）」がいます。伝統的に、物事が少し遅れがちなことを表し、あきらめずに続けることで報われるとされます。" },
+  dia_khong: { en: "Địa Không here is traditionally read as unconventional ideas and unexpected turns.", vi: "Địa Không ở đây theo truyền thống là ý tưởng khác thường và những biến chuyển bất ngờ.", ja: "脇役の星「Địa Không（地空）」がいます。伝統的に、型にはまらない発想や、思いがけない展開を表すとされます。" },
+  dia_kiep: { en: "Địa Kiếp here is traditionally read as volatility that calls for caution.", vi: "Địa Kiếp ở đây theo truyền thống là sự biến động, cần thận trọng.", ja: "脇役の星「Địa Kiếp（地劫）」がいます。伝統的に、浮き沈みや変動を表し、慎重に進むのがよいとされます。" },
+  hoa_tinh: { en: "Hỏa Tinh here is traditionally read as quick, fiery energy.", vi: "Hỏa Tinh ở đây theo truyền thống là năng lượng nhanh, nóng.", ja: "脇役の星「Hỏa Tinh（火星）」がいます。伝統的に、すばやくて熱い、勢いのあるエネルギーを表すとされます。" },
+  linh_tinh: { en: "Linh Tinh here is traditionally read as inner tension that benefits from patience.", vi: "Linh Tinh ở đây theo truyền thống là căng thẳng nội tâm, cần kiên nhẫn.", ja: "脇役の星「Linh Tinh（鈴星）」がいます。伝統的に、心の中にためこむ緊張を表し、あせらず待つことが助けになるとされます。" },
+  dao_hoa: { en: "Đào Hoa here traditionally adds charm and attractiveness.", vi: "Đào Hoa ở đây theo truyền thống thêm duyên dáng, thu hút.", ja: "脇役の星「Đào Hoa（桃花）」がいます。伝統的に、人を惹きつける魅力や華やかさを表すとされます。" },
+  hong_loan: { en: "Hồng Loan here traditionally adds warmth in affection.", vi: "Hồng Loan ở đây theo truyền thống thêm sự ấm áp trong tình cảm.", ja: "脇役の星「Hồng Loan（紅鸞）」がいます。伝統的に、恋愛や愛情の面での温かさを表すとされます。" },
+  thien_hy: { en: "Thiên Hỷ here traditionally adds joyful occasions.", vi: "Thiên Hỷ ở đây theo truyền thống thêm những dịp vui.", ja: "脇役の星「Thiên Hỷ（天喜）」がいます。伝統的に、お祝いごとやうれしい出来事を表すとされます。" },
+  hoa_cai: { en: "Hoa Cái here traditionally adds refinement and a taste for the arts or spirituality.", vi: "Hoa Cái ở đây theo truyền thống thêm sự thanh cao, yêu nghệ thuật hoặc tâm linh.", ja: "脇役の星「Hoa Cái（華蓋）」がいます。伝統的に、上品さや、芸術・心の世界への関心を表すとされます。" },
+  co_than: { en: "Cô Thần here traditionally suggests a need for time alone.", vi: "Cô Thần ở đây theo truyền thống cho thấy nhu cầu có thời gian riêng.", ja: "脇役の星「Cô Thần（孤辰）」がいます。伝統的に、ひとりで過ごす時間を必要とする一面を表すとされます。" },
+  qua_tu: { en: "Quả Tú here traditionally suggests a reserved side.", vi: "Quả Tú ở đây theo truyền thống cho thấy một mặt kín đáo.", ja: "脇役の星「Quả Tú（寡宿）」がいます。伝統的に、あまり前に出ない、控えめな一面を表すとされます。" },
 };
 
 const HOA_NOTES: Record<HoaId, T> = {
-  loc: { en: "With Hóa Lộc here, this area is traditionally seen as a source of ease and opportunity.", vi: "Có Hóa Lộc ở đây, lĩnh vực này theo truyền thống là nguồn thuận lợi và cơ hội.", ja: "Hóa Lộc（化禄）があるため、この領域は伝統的にゆとりと機会の源とされます。" },
-  quyen: { en: "With Hóa Quyền here, this area is traditionally seen as one where you take charge.", vi: "Có Hóa Quyền ở đây, lĩnh vực này theo truyền thống là nơi bạn nắm quyền chủ động.", ja: "Hóa Quyền（化権）があるため、この領域は伝統的にあなたが主導権を握る場とされます。" },
-  khoa: { en: "With Hóa Khoa here, this area is traditionally linked with reputation and recognition.", vi: "Có Hóa Khoa ở đây, lĩnh vực này theo truyền thống gắn với danh tiếng và sự công nhận.", ja: "Hóa Khoa（化科）があるため、この領域は伝統的に評判や評価と結びつけられます。" },
-  ky: { en: "With Hóa Kỵ here, this area is traditionally seen as one needing extra care and patience.", vi: "Có Hóa Kỵ ở đây, lĩnh vực này theo truyền thống cần thêm sự cẩn trọng và kiên nhẫn.", ja: "Hóa Kỵ（化忌）があるため、この領域は伝統的に特に注意と忍耐が必要とされます。" },
+  loc: { en: "With Hóa Lộc here, this area is traditionally seen as a source of ease and opportunity.", vi: "Có Hóa Lộc ở đây, lĩnh vực này theo truyền thống là nguồn thuận lợi và cơ hội.", ja: "「めぐみ」の印（化禄・Hóa Lộc）がついています。伝統的に、この分野はゆとりやチャンスが生まれやすい場所とされます。" },
+  quyen: { en: "With Hóa Quyền here, this area is traditionally seen as one where you take charge.", vi: "Có Hóa Quyền ở đây, lĩnh vực này theo truyền thống là nơi bạn nắm quyền chủ động.", ja: "「チカラ」の印（化権・Hóa Quyền）がついています。伝統的に、この分野ではあなたが主導権を握りやすいとされます。" },
+  khoa: { en: "With Hóa Khoa here, this area is traditionally linked with reputation and recognition.", vi: "Có Hóa Khoa ở đây, lĩnh vực này theo truyền thống gắn với danh tiếng và sự công nhận.", ja: "「評判」の印（化科・Hóa Khoa）がついています。伝統的に、この分野は名声や人からの評価と結びつきやすいとされます。" },
+  ky: { en: "With Hóa Kỵ here, this area is traditionally seen as one needing extra care and patience.", vi: "Có Hóa Kỵ ở đây, lĩnh vực này theo truyền thống cần thêm sự cẩn trọng và kiên nhẫn.", ja: "「注意」の印（化忌・Hóa Kỵ）がついています。伝統的に、この分野は行き違いが起きやすく、ていねいさと忍耐が特に大切とされます。" },
 };
 
 const DOMAIN_OF: Record<Exclude<Section, "cycles">, Domain | "family" | null> = {
@@ -239,7 +240,7 @@ function palaceParagraphs(chart: Chart, palaceId: PalaceId, domain: Domain | "fa
         {
           vi: `Cung ${palaceName} (${BRANCHES[p.branch]}) vô chính diệu; theo truyền thống, xem các chính tinh xung chiếu từ cung đối diện: ${starsText(mains, locale) || "—"}.`,
           en: `The ${palaceName} palace (${BRANCHES[p.branch]}) has no main star; traditionally it is read through the main stars of the opposite palace: ${starsText(mains, locale) || "—"}.`,
-          ja: `${palaceLabel(palaceId, p.branch, "ja")}（${BRANCHES[p.branch]}）には主星がありません（vô chính diệu）。伝統的に、向かいの宮の主星で読みます：${starsText(mains, locale) || "—"}。`,
+          ja: `${areaName(palaceId, p.branch, "ja")}の宮には、主役の星（主星）がいません（vô chính diệu）。こういうときは、真向かいの宮の主役の星を借りて読むのが伝統的なやり方です。借りてくる星：${mains.map((m) => starPlain(m, "ja")).join("と") || "—"}。`,
         },
         locale,
       ),
@@ -276,7 +277,7 @@ function palaceParagraphs(chart: Chart, palaceId: PalaceId, domain: Domain | "fa
         {
           vi: `Cung này có ${which}; theo truyền thống, ảnh hưởng của các sao trong cung được xem là giảm bớt.`,
           en: `This palace holds ${which}; traditionally, the influence of its stars is considered softened.`,
-          ja: `この宮には${which}があります。伝統的に、宮内の星の影響は弱まるとされます。`,
+          ja: `この宮には「${which}」というしるしがかかっています。星の働きをやわらげるフィルターのようなもので、伝統的に、この宮にある星の影響は弱まるとされます。`,
         },
         locale,
       ),
@@ -304,25 +305,71 @@ export function relatedBranches(branch: number): { trine: [number, number]; oppo
   return { trine: [(branch + 4) % 12, (branch + 8) % 12], opposite: (branch + 6) % 12 };
 }
 
+/** "仕事（官禄宮）" — the everyday name first, the traditional one after. */
+function areaName(id: PalaceId | null, branch: number, locale: Locale) {
+  if (!id) return BRANCHES[branch]!;
+  const plain = PALACE_CELL[id][locale];
+  return locale === "ja" ? `${plain}（${PALACE_JA[id]}）` : `${plain} (${PALACE_INFO[id].vi})`;
+}
+
+/** "「のんびり屋」（Thiên Đồng）" — what the star is like, then its own name. */
+function starPlain(id: MainStarId, locale: Locale) {
+  return locale === "ja" ? `「${STAR_SHORT[id].ja}」（${STAR_INFO[id].vi}）` : `“${STAR_SHORT[id][locale]}” (${STAR_INFO[id].vi})`;
+}
+
+/**
+ * Tam phương tứ chính in plain words: what it is, each of the three palaces with its lead stars,
+ * and what the tradition does with them. Nothing beyond the traditional rule is claimed.
+ */
 function relatedParagraphs(chart: Chart, palaceId: PalaceId, locale: Locale): InterpretationParagraph[] {
   const p = palaceOf(chart, palaceId);
   if (!p) return [];
   const { trine, opposite } = relatedBranches(p.branch);
-  const parts = [...trine, opposite].map((b) => {
+  const here = areaName(palaceId, p.branch, locale);
+  const rule = `${palaceId}.tam_phuong_tu_chinh`;
+  const line = (b: number, role: "trine" | "opposite"): InterpretationParagraph => {
     const q = chart.palaces[b]!;
     const mains = q.mainStars.map((s) => s.id as MainStarId);
-    return `${palaceLabel(q.palace, q.branch, locale)} ${mains.length ? starsText(mains, locale) : "—"}`;
-  });
-  const sep = locale === "ja" ? "／" : " · ";
+    const where = pick(
+      role === "trine"
+        ? { ja: "三角形の位置", en: "one corner of the triangle", vi: "một góc tam giác" }
+        : { ja: "真向かい", en: "directly opposite", vi: "đối diện" },
+      locale,
+    );
+    const stars = mains.length
+      ? pick({ ja: `主役の星は${mains.map((m) => starPlain(m, "ja")).join("と")}。`, en: `Lead star: ${mains.map((m) => starPlain(m, "en")).join(" and ")}.`, vi: `Sao chính: ${mains.map((m) => starPlain(m, "vi")).join(" và ")}.` }, locale)
+      : pick({ ja: "主役の星はいません。", en: "No lead star.", vi: "Không có sao chính." }, locale);
+    return { ruleIds: [rule], kind: "related", text: locale === "ja" ? `・${areaName(q.palace, b, locale)}…${where}。${stars}` : `• ${areaName(q.palace, b, locale)} — ${where}. ${stars}` };
+  };
   return [
     {
-      ruleIds: [`${palaceId}.tam_phuong_tu_chinh`],
+      ruleIds: [rule],
       kind: "related",
       text: pick(
         {
-          vi: `Tam phương tứ chính của cung ${PALACE_INFO[palaceId].vi}: ${parts.join(sep)}. Theo truyền thống, các cung này được xem cùng nhau như những ảnh hưởng hỗ trợ.`,
-          en: `The related palaces (tam phương tứ chính) of ${PALACE_INFO[palaceId].vi}: ${parts.join(sep)}. Traditionally they are read together as supporting influences.`,
-          ja: `${palaceLabel(palaceId, p.branch, "ja")}の三方四正（tam phương tứ chính）：${parts.join(sep)}。伝統的に、これらの宮も合わせて読み、支える影響とみなします。`,
+          ja: `Tử Viでは、ひとつの宮だけを見て判断しません。命盤の上で「${PALACE_CELL[palaceId].ja}」の宮と三角形をつくる2つの宮と、真向かいにある1つの宮も、いっしょに読みます。この4つの組み合わせを、専門用語で「三方四正（さんぽうしせい／tam phương tứ chính）」と呼びます。命盤の宮をタップしたときに線でつながって浮かび上がるのが、この宮たちです。`,
+          en: `Tử Vi never reads one palace on its own. Two palaces that form a triangle with “${PALACE_CELL[palaceId].en}” on the chart, and the one directly opposite it, are read together with it. These four are called tam phương tứ chính. They are the palaces that light up, joined by lines, when you tap a palace on the chart.`,
+          vi: `Tử Vi không xem một cung riêng lẻ. Hai cung tạo thành tam giác với cung “${PALACE_CELL[palaceId].vi}” trên lá số, và cung đối diện, được xem cùng nhau. Bốn cung này gọi là tam phương tứ chính — chính là những cung nối bằng đường kẻ khi bạn chạm vào một cung trên lá số.`,
+        },
+        locale,
+      ),
+    },
+    {
+      ruleIds: [rule],
+      kind: "related",
+      text: pick({ ja: `${here}といっしょに読むのは、次の3つです。`, en: `Read together with ${here}:`, vi: `Xem cùng với ${here}:` }, locale),
+    },
+    line(trine[0], "trine"),
+    line(trine[1], "trine"),
+    line(opposite, "opposite"),
+    {
+      ruleIds: [rule],
+      kind: "related",
+      text: pick(
+        {
+          ja: `伝統的には、これらの宮の星も、${here}を支える影響として合わせて読みます。上の読みは${here}の星が中心ですが、ここに並んだ星の性格も、その分野に少しずつ色を添えていると考えてみてください。`,
+          en: `Traditionally, the stars of these palaces are read as supporting influences on ${here}. The reading above centres on ${here}'s own stars; think of the stars listed here as adding a little of their colour to that area.`,
+          vi: `Theo truyền thống, sao ở các cung này được xem là ảnh hưởng hỗ trợ cho ${here}. Phần đọc ở trên xoay quanh sao của chính cung đó; hãy xem các sao ở đây như góp thêm chút sắc màu cho lĩnh vực ấy.`,
         },
         locale,
       ),
@@ -374,7 +421,7 @@ export function interpret(chart: Chart, locale: Locale, currentAge?: number): In
           {
             vi: `Thân cư cung ${tp.palace ? PALACE_INFO[tp.palace].vi : BRANCHES[tp.branch]}: theo truyền thống, nửa sau cuộc đời chú trọng nhiều hơn đến lĩnh vực này.`,
             en: `Thân sits in the ${tp.palace ? PALACE_INFO[tp.palace].vi : BRANCHES[tp.branch]} palace: traditionally, this area grows in importance in the second half of life.`,
-            ja: `身宮（Thân）は${palaceLabel(tp.palace, tp.branch, "ja")}にあります。伝統的に、人生の後半でこの領域の重みが増すとされます。`,
+            ja: `命盤には、あなた自身を表す「命」のほかに、もうひとつ「身（しん／Thân）」という目印があります。あなたの「身」は${areaName(tp.palace, tp.branch, "ja")}の宮にあります（命盤で「身」のラベルがついている宮です）。伝統的に、人生の後半になるほど、この分野があなたにとって大きな意味を持つようになるとされます。`,
           },
           locale,
         ),
@@ -387,7 +434,7 @@ export function interpret(chart: Chart, locale: Locale, currentAge?: number): In
           {
             vi: "Mệnh Thân đồng cung: theo truyền thống, tính cách được xem là nhất quán suốt đời.",
             en: "Mệnh and Thân share a palace: traditionally read as a character that stays consistent through life.",
-            ja: "命宮と身宮が同じ宮にあります（Mệnh Thân đồng cung）。伝統的に、生涯を通じて一貫した性格と読まれます。",
+            ja: "命盤には、あなた自身を表す「命」と、もうひとつの目印「身（しん）」があります。あなたはこの2つが同じ宮に重なっています（Mệnh Thân đồng cung）。伝統的に、若いころから年を重ねても、性格の軸があまり変わらない人と読まれます。",
           },
           locale,
         ),
@@ -621,8 +668,8 @@ export interface LifeStage {
     /** A question for periods that get no advice: looking back on lived ones, or ahead to later life. */
     reflection: { mode: "back" | "ahead"; text: string } | null;
     notes: string[];
-    /** The period's related palaces (tam phương tứ chính) and their main stars. */
-    support: { label: string; stars: string[] }[];
+    /** The period's related palaces (tam phương tứ chính): where each sits and its main stars, in plain words. */
+    support: { label: string; where: "trine" | "opposite"; stars: string[] }[];
   };
 }
 
@@ -673,7 +720,7 @@ export function lifeStages(chart: Chart, locale: Locale, currentAge?: number | n
             {
               vi: "Cung của giai đoạn này có Tuần/Triệt; theo truyền thống, ảnh hưởng của các sao được xem là giảm bớt.",
               en: "This period's palace holds Tuần/Triệt; traditionally, the influence of its stars is considered softened.",
-              ja: "この10年の宮にはTuần／Triệtがあり、伝統的に星の影響は和らぐとされます。",
+              ja: "この10年の宮には「Tuần／Triệt（旬空・截空）」というしるしがかかっています。星の働きをやわらげるフィルターのようなもので、伝統的に、この宮にある星の影響は弱まるとされます。",
             },
             locale,
           ),
@@ -703,9 +750,9 @@ export function lifeStages(chart: Chart, locale: Locale, currentAge?: number | n
           cautions: advise ? voice.map((m) => pick(MAIN_EXTRA[m].caution, locale)) : [],
           reflection,
           notes,
-          support: [...trine, opposite].map((b) => {
+          support: [...trine, opposite].map((b, i) => {
             const q = chart.palaces[b]!;
-            return { label: palaceLabel(q.palace, q.branch, locale), stars: q.mainStars.map((x) => STAR_INFO[x.id].vi) };
+            return { label: areaName(q.palace, q.branch, locale), where: i < 2 ? ("trine" as const) : ("opposite" as const), stars: q.mainStars.map((x) => starPlain(x.id as MainStarId, locale)) };
           }),
         },
       };

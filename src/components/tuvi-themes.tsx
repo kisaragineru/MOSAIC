@@ -7,6 +7,8 @@ export interface ThemeLabels {
   strength: string;
   caution: string;
   notes: string;
+  /** What the supporting stars and marks are, before the list. */
+  notesLead: string;
   plain: string;
   detail: string;
   terms: string;
@@ -36,7 +38,7 @@ function Toggle({ title, children }: { title: string; children: React.ReactNode 
 
 function Lines({ items }: { items: InterpretationParagraph[] }) {
   return (
-    <ul className="space-y-1.5">
+    <ul className="space-y-2 leading-6">
       {items.map((p, i) => <li key={i}>{p.text}</li>)}
     </ul>
   );
@@ -98,7 +100,12 @@ export function TuviThemes({ sections, labels }: { sections: InterpretationSecti
           </div>
         )}
         {by("related").length > 0 && <Toggle title={labels.related}><Lines items={by("related")} /></Toggle>}
-        {by("note").length > 0 && <Toggle title={labels.notes}><Lines items={by("note")} /></Toggle>}
+        {by("note").length > 0 && (
+          <Toggle title={labels.notes}>
+            <p className="mb-2 leading-6 text-stone-600">{labels.notesLead}</p>
+            <Lines items={by("note")} />
+          </Toggle>
+        )}
         {s.terms && s.terms.length > 0 && (
           <Toggle title={`📖 ${labels.terms}`}>
             <dl className="space-y-2">
