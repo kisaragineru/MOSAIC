@@ -15,6 +15,9 @@ const POS: Record<number, [number, number]> = {
 };
 const COL = ["col-start-1", "col-start-2", "col-start-3", "col-start-4"];
 const ROW = ["row-start-1", "row-start-2", "row-start-3", "row-start-4"];
+// Corner cells follow the board's rounded corners (its radius less the 1px border), so an outline
+// on them is drawn whole instead of being cut off.
+const CORNER: Record<string, string> = { "0,0": "rounded-tl-[23px]", "3,0": "rounded-tr-[23px]", "0,3": "rounded-bl-[23px]", "3,3": "rounded-br-[23px]" };
 
 const HOA_SHORT: Record<HoaId, string> = { loc: "Lộc", quyen: "Quyền", khoa: "Khoa", ky: "Kỵ" };
 // Conventional colours of the four transformations on Vietnamese charts: Lộc green, Quyền red, Khoa blue, Kỵ black.
@@ -161,9 +164,10 @@ export function TuviChart({
                 onClick={() => pick(selected === p.branch ? null : p.branch)}
                 aria-pressed={selected === p.branch}
                 aria-label={`${x.plain} ${x.trad}`}
-                className={`${COL[c]} ${ROW[r]} relative flex min-h-28 min-w-0 flex-col gap-0.5 overflow-hidden p-1.5 text-left leading-tight transition-colors duration-150 motion-reduce:transition-none ${
-                  isMenh ? "bg-teal-50/70 shadow-[inset_0_0_0_2px_rgb(20_184_166)]" : now ? "bg-amber-50 shadow-[inset_0_0_0_2px_rgb(245_158_11)]" : isRel ? "bg-violet-50" : "bg-white hover:bg-stone-50"
-                } ${isSel && !isMenh && !now ? "bg-teal-50" : ""}`}
+                className={`${COL[c]} ${ROW[r]} ${CORNER[`${c},${r}`] ?? ""} relative flex min-h-28 min-w-0 flex-col gap-0.5 overflow-hidden p-1.5 text-left leading-tight transition-colors duration-150 motion-reduce:transition-none ${
+                  // The one outline on the board: the palace the panel below is reading.
+                  isSel ? "bg-teal-50 ring-2 ring-inset ring-teal-600" : isMenh ? "bg-teal-50/60" : now ? "bg-amber-50" : isRel ? "bg-violet-50" : "bg-white hover:bg-stone-50"
+                }`}
               >
                 <span className="block truncate text-[13.5px] font-extrabold text-stone-900">{x.plain}</span>
                 <span className="block truncate text-[10px] text-stone-500">{x.tradShort}</span>

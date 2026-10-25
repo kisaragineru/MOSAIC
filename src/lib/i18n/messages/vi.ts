@@ -490,7 +490,7 @@ export const vi: Dict = {
       plainRhythm: "Nhịp vận",
       plainYear: "",
       plainYinYang: { duong_nam: "Dương nam", am_nam: "Âm nam", duong_nu: "Dương nữ", am_nu: "Âm nữ" },
-      plainHelp: "Lá số là bản đồ 12 lĩnh vực cuộc đời, đọc từ ngày giờ sinh. Chữ đậm là sao chính (tính cách) của lĩnh vực đó. Chạm vào một cung để đọc chi tiết bên dưới.",
+      plainHelp: "Lá số là bản đồ 12 lĩnh vực cuộc đời, đọc từ ngày giờ sinh. Chữ đậm là sao chính (tính cách) của lĩnh vực đó. Chạm vào một cung để đọc chi tiết bên dưới (cung có viền là cung đang hiển thị). Cung có nhãn “Mệnh” là chính bạn; cung có nhãn “10 năm này” là giai đoạn bạn đang sống.",
       plainNoMain: "Không có chính tinh",
       plainBorrow: "Cung này không có chính tinh; được đọc bằng các sao của cung đối diện.",
       chartHelp: "Chạm vào một cung: cung đó và các cung tam phương tứ chính sẽ phóng to ngay trên lá số.",

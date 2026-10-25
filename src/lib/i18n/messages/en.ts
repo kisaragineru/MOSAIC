@@ -488,7 +488,7 @@ export const en = {
       plainRhythm: "Rhythm",
       plainYear: "",
       plainYinYang: { duong_nam: "Yang male", am_nam: "Yin male", duong_nu: "Yang female", am_nu: "Yin female" },
-      plainHelp: "Your chart is a map of twelve areas of life, read from when you were born. The dark words are each area's lead star (its character). Tap an area to read it below.",
+      plainHelp: "Your chart is a map of twelve areas of life, read from when you were born. The dark words are each area's lead star (its character). Tap an area to read it below (the outlined one is the area shown there). “Self” is the area that stands for you; “This decade” is the area for this time of your life.",
       plainNoMain: "No lead star",
       plainBorrow: "This area has no lead star of its own; it is read with the stars of the area opposite.",
       chartHelp: "Tap a palace: it and the palaces read with it open enlarged over the chart.",
