@@ -36,8 +36,8 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
       {record && (
         <div className="rounded-2xl border border-stone-200 bg-white/90 p-3">
           <p className="text-xs font-semibold text-stone-500">📄 {record.owner}</p>
-          {record.title && <p className="font-medium text-stone-900">{record.title}</p>}
-          <p className="line-clamp-3 whitespace-pre-line text-sm text-stone-700">{record.body}</p>
+          {record.title && <p className="emoji-color font-medium text-stone-900">{record.title}</p>}
+          <p className="emoji-color line-clamp-3 whitespace-pre-line text-sm text-stone-700">{record.body}</p>
           <p className="mt-2 text-[11px] leading-5 text-stone-500">{tm.shareHelp}</p>
         </div>
       )}

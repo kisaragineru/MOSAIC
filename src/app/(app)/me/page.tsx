@@ -61,7 +61,7 @@ export default async function MePage({ searchParams }: { searchParams: Promise<R
 
         <form action={updateProfileAction} className="space-y-2">
           <input type="hidden" name="back" value="/me" />
-          <Field label={`✍️ ${ti.ownTitle}`}><Textarea name="bio" defaultValue={acc.profile.bio ?? ""} maxLength={2000} rows={3} placeholder={ti.ownPlaceholder} /></Field>
+          <Field label={`📝 ${ti.ownTitle}`}><Textarea name="bio" defaultValue={acc.profile.bio ?? ""} maxLength={2000} rows={3} placeholder={ti.ownPlaceholder} /></Field>
           <Button type="submit" variant="secondary">{t.common.save}</Button>
         </form>
 
@@ -126,7 +126,7 @@ export default async function MePage({ searchParams }: { searchParams: Promise<R
 
       <section id="birth" aria-labelledby="birth-title" className="scroll-mt-20 space-y-3 rounded-3xl bg-white/85 p-5 shadow-sm ring-1 ring-white/80">
         <div>
-          <h2 id="birth-title" className="text-base font-semibold text-stone-900">🔮 {t.me.birthTitle}</h2>
+          <h2 id="birth-title" className="text-base font-semibold text-stone-900">⭐ {t.me.birthTitle}</h2>
           <p className="mt-1 text-xs leading-5 text-stone-500">🔒 {t.tuvi.birthPrivate}</p>
         </div>
         {bp && (

@@ -37,7 +37,7 @@ export function CommentThread({
         <ol className="stagger space-y-2">
           {comments.map((m) => (
             <li key={m.id} className={`flex flex-col ${m.mine ? "items-end" : "items-start"}`}>
-              <p className={`max-w-[85%] whitespace-pre-line rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${m.mine ? "rounded-br-md bg-teal-700 text-white" : "rounded-bl-md bg-white text-stone-900 ring-1 ring-stone-200"}`}>
+              <p className={`emoji-color max-w-[85%] whitespace-pre-line rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${m.mine ? "rounded-br-md bg-teal-700 text-white" : "rounded-bl-md bg-white text-stone-900 ring-1 ring-stone-200"}`}>
                 {m.body}
               </p>
               <span className="mt-0.5 flex items-center gap-2 px-1 text-[11px] text-stone-500">

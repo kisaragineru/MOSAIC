@@ -1030,7 +1030,7 @@ export const en = {
     lead: "MOSAIC is a place to draw the person you are, little piece by little piece.",
     cards: [
       ["🧩", "Answer", "One question a day is enough. Every answer adds a piece to your mosaic."],
-      ["✍️", "Record", "Write down moments and feelings, and they become your story."],
+      ["📝", "Record", "Write down moments and feelings, and they become your story."],
       ["📖", "Read", "Your pieces come together as your own user's manual."],
       ["🔒", "Only what you choose is shown", "Records are private by default. Even connections see only what you agree to."],
     ] as [string, string, string][],
@@ -1383,7 +1383,7 @@ export const en = {
     answersTitle: "💬 Answers",
     answersHelp: "Only answers marked “allowed in comparisons” are seen, in connections where that area is agreed.",
     answersShared: (p: number, v: number) => `Allowed in comparisons: ${p} preferences · ${v} values`,
-    tuviTitle: "🔮 Tử Vi",
+    tuviTitle: "⭐ Tử Vi",
     tuviHelp: "Your birth date itself is never shared. Per connection you choose “Tử Vi” and “full chart”.",
     tuviNone: "You haven't entered your birth details.",
     tuviNoChart: "Birth details entered, but there is no chart yet.",

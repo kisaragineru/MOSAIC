@@ -235,3 +235,16 @@ label:has(> input.sr-only:checked) { animation: pop 0.28s ease-out; }
   }
   .confetti { display: none; }
 }
+
+/* The app's face, then flat one-colour emoji for the icons the app draws with emoji. */
+.font-app {
+  font-family: var(--font-rounded), var(--font-emoji), system-ui, sans-serif;
+}
+/* What people write themselves (posts, messages, comments, feelings) keeps its colour emoji. */
+.emoji-color {
+  font-family: var(--font-rounded), "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", system-ui, sans-serif;
+}
+textarea,
+input {
+  font-family: var(--font-rounded), "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", system-ui, sans-serif;
+}

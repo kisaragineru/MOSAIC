@@ -29,7 +29,7 @@ describe("mosaic portrait", () => {
     expect(tile.level).toBe("gathering");
     const gathering = tileViews(await portrait(u.userId), ja, "ja").find((v) => v.id === "planning")!;
     expect(gathering.body).toMatch(/あと2問/);
-    expect(gathering).toMatchObject({ badge: "あと2問", progress: [1, 3], icons: ["CalendarCheck", "Waves"] });
+    expect(gathering).toMatchObject({ badge: "あと2問", icons: ["CalendarCheck", "Waves"] });
     await pick(u.userId, "ax.plan_pack", "packed_list");
     await pick(u.userId, "ax.plan_deadline", "early");
     const p = await portrait(u.userId);
@@ -42,7 +42,7 @@ describe("mosaic portrait", () => {
     expect(v.evidenceHref).toBe("/insights#t-planning");
     expect(v.href).toBe("/discover/chapter/self?axis=planning");
     // A filled tile says how clearly it shows and which side, never that it is finished.
-    expect(v).toMatchObject({ badge: "✓ Clear", icons: ["CalendarCheck"], progress: null });
+    expect(v).toMatchObject({ badge: "✓ Clear", icons: ["CalendarCheck"] });
   });
 
   it("shows both sides when answers disagree", async () => {
@@ -74,7 +74,6 @@ describe("mosaic portrait", () => {
     const v = tileViews(p, ja, "ja").find((x) => x.id === "likes")!;
     const left = tile.total - tile.done;
     expect(v.badge).toBe(left <= 3 ? `あと${left}問` : `${tile.done}/${tile.total}`);
-    expect(v.progress).toEqual([1, tile.total]);
   });
 
   it("counts every tile, Tử Vi and the chapters included, and focuses questions on one piece", async () => {

@@ -149,8 +149,8 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
                 {records.map((r) => (
                   <li key={r.id} className="rounded-xl bg-rose-50/50 p-2 ring-1 ring-rose-100">
                     <p className="text-[10px] text-stone-500"><span aria-hidden>{KIND_ICON[r.kind] ?? "📝"} </span>{r.occurredOn ?? r.createdAt.toISOString().slice(0, 10)}</p>
-                    {r.title && <p className="font-semibold text-stone-900">{r.title}</p>}
-                    <p className="line-clamp-2 whitespace-pre-line text-stone-800">{r.body}</p>
+                    {r.title && <p className="emoji-color font-semibold text-stone-900">{r.title}</p>}
+                    <p className="emoji-color line-clamp-2 whitespace-pre-line text-stone-800">{r.body}</p>
                     <span aria-hidden className="mt-1 inline-block rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-teal-700 ring-1 ring-stone-200">{t.compare.comment}</span>
                   </li>
                 ))}

@@ -47,7 +47,7 @@ export function DmInbox({ rows, searchLabel, mutedLabel }: { rows: InboxRow[]; s
                   <span className={`truncate ${r.unread ? "font-bold text-stone-900" : "font-medium text-stone-800"} ${r.inactive ? "opacity-60" : ""}`}>{r.title}</span>
                   {r.muted && <span aria-label={mutedLabel} className="text-xs text-stone-400">🔕</span>}
                 </span>
-                <span className={`block truncate text-sm ${r.unread ? "font-semibold text-stone-900" : "text-stone-500"}`}>
+                <span className={`emoji-color block truncate text-sm ${r.unread ? "font-semibold text-stone-900" : "text-stone-500"}`}>
                   {r.preview} <span className="font-normal text-stone-400">· {r.when}</span>
                 </span>
               </span>

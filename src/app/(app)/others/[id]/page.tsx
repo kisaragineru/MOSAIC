@@ -126,7 +126,7 @@ export default async function PeerAnswerPage({ params, searchParams }: { params:
             {r.comment && (
               <figure className="mt-5 rounded-2xl bg-linear-to-br from-amber-50 to-rose-50 p-4 ring-1 ring-amber-100">
                 <figcaption className="mb-1 text-xs font-semibold text-amber-900">💬 {p.yourComment}</figcaption>
-                <blockquote className="whitespace-pre-line text-sm leading-6 text-stone-800">{r.comment}</blockquote>
+                <blockquote className="emoji-color whitespace-pre-line text-sm leading-6 text-stone-800">{r.comment}</blockquote>
               </figure>
             )}
             <form action={withdrawPeerAction} className="mt-5 border-t border-stone-100 pt-4">

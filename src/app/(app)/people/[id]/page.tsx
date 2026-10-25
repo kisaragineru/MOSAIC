@@ -117,7 +117,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
             <span aria-hidden className="shrink-0 text-lg text-teal-700">→</span>
           </span>
           {(connection.otherBio || connection.otherIntro) && (
-            <span className="mt-3 line-clamp-3 block whitespace-pre-line rounded-2xl bg-white/80 px-3 py-2 text-sm leading-6 text-stone-800">{connection.otherBio || connection.otherIntro}</span>
+            <span className="emoji-color mt-3 line-clamp-3 block whitespace-pre-line rounded-2xl bg-white/80 px-3 py-2 text-sm leading-6 text-stone-800">{connection.otherBio || connection.otherIntro}</span>
           )}
         </Link>
       )}
@@ -251,7 +251,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
                     <Pill tone="amber">{t.people.sources[e.source as keyof typeof t.people.sources]}</Pill>
                     {e.occurredOn && <span className="text-xs text-stone-500">{e.occurredOn}</span>}
                   </div>
-                  <p className="mt-1 whitespace-pre-line">{e.body}</p>
+                  <p className="emoji-color mt-1 whitespace-pre-line">{e.body}</p>
                   <RecordActions kind="entry" id={e.id} back={back} t={acts} />
                 </>
               )}
@@ -290,7 +290,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
               ) : (
                 <>
                   <b>{e.title}</b>{e.place && ` · ${e.place}`}{e.occurredOn && ` · ${e.occurredOn}`}
-                  {e.description && <p className="whitespace-pre-line text-stone-600">{e.description}</p>}
+                  {e.description && <p className="emoji-color whitespace-pre-line text-stone-600">{e.description}</p>}
                   <RecordActions kind="event" id={e.id} back={back} t={acts} />
                 </>
               )}

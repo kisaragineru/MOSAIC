@@ -1032,7 +1032,7 @@ export const vi: Dict = {
     lead: "MOSAIC là nơi vẽ nên con người bạn, từng mảnh nhỏ một.",
     cards: [
       ["🧩", "Trả lời", "Mỗi ngày một câu là đủ. Mỗi câu trả lời thêm một mảnh vào bức tranh của bạn."],
-      ["✍️", "Ghi chép", "Ghi lại những khoảnh khắc và cảm xúc, chúng sẽ thành câu chuyện của bạn."],
+      ["📝", "Ghi chép", "Ghi lại những khoảnh khắc và cảm xúc, chúng sẽ thành câu chuyện của bạn."],
       ["📖", "Đọc", "Các mảnh ghép hợp lại thành cẩm nang về chính bạn."],
       ["🔒", "Chỉ hiện những gì bạn chọn", "Ghi chép mặc định là riêng tư. Ngay cả người kết nối cũng chỉ thấy những gì bạn đồng ý."],
     ] as [string, string, string][],
@@ -1385,7 +1385,7 @@ export const vi: Dict = {
     answersTitle: "💬 Câu trả lời",
     answersHelp: "Chỉ câu trả lời “cho phép so sánh” mới được thấy, trong kết nối đã đồng ý lĩnh vực đó.",
     answersShared: (p: number, v: number) => `Cho phép so sánh: ${p} sở thích · ${v} giá trị sống`,
-    tuviTitle: "🔮 Tử Vi",
+    tuviTitle: "⭐ Tử Vi",
     tuviHelp: "Ngày giờ sinh không bao giờ được chia sẻ. Với mỗi kết nối, bạn chọn “Tử Vi” và “lá số đầy đủ”.",
     tuviNone: "Bạn chưa nhập ngày giờ sinh.",
     tuviNoChart: "Đã nhập ngày giờ sinh nhưng chưa có lá số.",

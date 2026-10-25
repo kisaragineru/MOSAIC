@@ -1,12 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { M_PLUS_Rounded_1c } from "next/font/google";
+import { M_PLUS_Rounded_1c, Noto_Emoji } from "next/font/google";
 import { Suspense } from "react";
 import { NavProgress } from "@/components/nav-progress";
 import { getLocale, dictFor } from "@/lib/i18n/server";
 import "./globals.css";
 
 // A rounded face for a softer feel; covers Japanese, Vietnamese diacritics and Latin. Self-hosted by next/font.
-const rounded = M_PLUS_Rounded_1c({ weight: ["400", "500", "700"], subsets: ["latin", "vietnamese"], display: "swap", preload: false });
+const rounded = M_PLUS_Rounded_1c({ weight: ["400", "500", "700"], subsets: ["latin", "vietnamese"], display: "swap", preload: false, variable: "--font-rounded" });
+// Every emoji the app itself uses as an icon, drawn as one flat colour (the text's own). What
+// people write keeps their colour emoji: see .emoji-color in globals.css.
+const emoji = Noto_Emoji({ weight: "variable", subsets: ["emoji"], display: "swap", preload: false, variable: "--font-emoji" });
 
 const SITE = "MOSAIC";
 const TITLE = "MOSAIC — A lifetime, piece by piece.";
@@ -32,7 +35,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const locale = await getLocale();
   return (
     <html lang={locale}>
-      <body className={`${rounded.className} min-h-dvh`}>
+      <body className={`${rounded.variable} ${emoji.variable} font-app min-h-dvh`}>
         <Suspense fallback={null}>
           <NavProgress label={dictFor(locale).common.loading} />
         </Suspense>

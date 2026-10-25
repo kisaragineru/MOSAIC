@@ -13,7 +13,7 @@ test("birth details can be entered from the profile, the Tử Vi chart follows, 
 
   await page.goto("/me");
   const birth = page.locator("#birth");
-  await expect(birth.getByRole("heading", { name: "🔮 生年月日（Tử Vi用）" })).toBeVisible();
+  await expect(birth.getByRole("heading", { name: "⭐ 生年月日（Tử Vi用）" })).toBeVisible();
   // Nothing entered yet: the form is open.
   await birth.getByLabel("生年月日 (新暦（グレゴリオ暦）)").fill("1990-06-07");
   await birth.getByLabel("出生時刻（現地の時計）").fill("06:30");

@@ -27,7 +27,7 @@ export function PostAbout({ t, id, labels, by, feeling, ask }: { t: Dict; id: st
                 aria-pressed={feeling === f}
                 className={`flex w-full flex-col items-center gap-0.5 rounded-2xl py-1.5 text-[10px] transition active:scale-95 ${feeling === f ? "bg-teal-50 font-semibold text-teal-900 ring-2 ring-teal-500" : "text-stone-600 hover:bg-stone-50"} ${feeling && feeling !== f ? "opacity-50" : ""}`}
               >
-                <span aria-hidden className="text-2xl">{FEELING_EMOJI[f]}</span>
+                <span aria-hidden className="emoji-color text-2xl">{FEELING_EMOJI[f]}</span>
                 {tf.names[f]}
               </button>
             </form>

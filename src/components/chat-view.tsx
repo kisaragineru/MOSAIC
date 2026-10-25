@@ -606,7 +606,7 @@ export function ChatView({
     const bubble = mine ? "bg-linear-to-br from-teal-600 to-teal-700 text-white" : "bg-white text-stone-900 ring-1 ring-stone-200";
     const corner = mine ? `${first ? "" : "rounded-tr-md"} ${last ? "" : "rounded-br-md"}` : `${first ? "" : "rounded-tl-md"} ${last ? "" : "rounded-bl-md"}`;
     rows.push(
-      <li key={m.id} id={`m-${m.id}`} className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"} ${last ? "mb-2" : "mb-0.5"}`}>
+      <li key={m.id} id={`m-${m.id}`} className={`emoji-color flex items-end gap-2 ${mine ? "justify-end" : "justify-start"} ${last ? "mb-2" : "mb-0.5"}`}>
         {!mine && conv.kind === "group" && <span className="w-7 shrink-0">{last && <DmAvatar names={[m.senderName ?? "?"]} srcs={[conv.avatars[m.senderId ?? ""]]} size="sm" />}</span>}
         <div className={`flex max-w-[78%] flex-col ${mine ? "items-end" : "items-start"}`}>
           {!mine && conv.kind === "group" && first && <span className="mb-0.5 ml-3 text-[11px] text-stone-500">{m.senderName}</span>}
@@ -672,7 +672,7 @@ export function ChatView({
                       className="block w-64 max-w-full rounded-3xl bg-white p-3 text-stone-900 shadow-sm ring-1 ring-stone-200 transition hover:ring-teal-300"
                     >
                       <span className="block text-[11px] font-semibold text-rose-800">📄 {m.record.mine ? tx.yourRecord : fill(tx.recordOf, { name: m.record.ownerName })}</span>
-                      {m.record.title && <span className="block font-semibold">{m.record.title}</span>}
+                      {m.record.title && <span className="emoji-color block font-semibold">{m.record.title}</span>}
                       <span className="line-clamp-4 block whitespace-pre-line text-sm text-stone-700">{m.record.body}</span>
                       <span className="mt-1 block text-right text-xs font-semibold text-teal-700">{tx.openRecord} →</span>
                     </Link>
@@ -875,8 +875,8 @@ export function ChatView({
         <div className="fixed inset-0 z-40 flex items-end justify-center" role="presentation">
           <button type="button" aria-label={tx.cancel} tabIndex={-1} onClick={() => setMenu(null)} className="absolute inset-0 animate-[fadeIn_.15s_ease-out] bg-stone-900/30 motion-reduce:animate-none" />
           <div role="dialog" aria-modal="true" aria-label={tx.actions} className="relative w-full max-w-md animate-[sheetUp_.2s_ease-out] rounded-t-3xl bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl motion-reduce:animate-none">
-            <p className="mb-3 line-clamp-2 rounded-2xl bg-stone-50 px-3 py-2 text-sm text-stone-600">{preview(menu)}</p>
-            <div className="mb-3 flex justify-between">
+            <p className="emoji-color mb-3 line-clamp-2 rounded-2xl bg-stone-50 px-3 py-2 text-sm text-stone-600">{preview(menu)}</p>
+            <div className="emoji-color mb-3 flex justify-between">
               {reactions.map((e) => (
                 <button
                   key={e}

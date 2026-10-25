@@ -53,7 +53,7 @@ export const SECTION_TEXT: Record<ManualSectionId, { title: I18nText; icon: stri
     title: { ja: "周りから見た私", en: "As others see me", vi: "Tôi trong mắt người khác" },
   },
   tuvi: {
-    icon: "🌌",
+    icon: "⭐",
     title: { ja: "Tử Vi から見た私", en: "Through Tử Vi", vi: "Qua lá số Tử Vi" },
     lead: { ja: "ここはベトナムの伝統的な命術 Tử Vi の読み方です。あなたの答えから出したものではないので、読み物として楽しんでください。", en: "This is the traditional Vietnamese reading of your Tử Vi chart. It doesn't come from your answers — enjoy it as a different lens.", vi: "Đây là cách luận giải truyền thống của lá số Tử Vi. Nó không đến từ câu trả lời của bạn — hãy xem như một góc nhìn khác." },
   },

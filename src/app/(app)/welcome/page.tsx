@@ -101,7 +101,7 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
             </div>
           </form>
           <Card>
-            <p className="text-sm leading-6 text-stone-700">🌌 {w.tuviHint}</p>
+            <p className="text-sm leading-6 text-stone-700">⭐ {w.tuviHint}</p>
             <Link href="/tuvi" className="mt-2 inline-block text-sm font-semibold text-teal-700 underline underline-offset-4">{w.tuviLink} →</Link>
           </Card>
         </section>

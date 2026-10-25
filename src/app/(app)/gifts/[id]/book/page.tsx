@@ -106,8 +106,8 @@ export default async function GiftBookPage({ params }: { params: Promise<{ id: s
                   <li key={e.id} className="book-entry relative">
                     <span aria-hidden className="absolute -left-[25px] top-2 h-2.5 w-2.5 rounded-full bg-sky-400 ring-4 ring-white" />
                     <p className="font-sans text-[11px] text-stone-500">{e.occurred_on ? fmtDate(e.occurred_on, locale) : ""}</p>
-                    {e.title && <p className="mt-0.5 text-lg font-semibold text-[#2e3a4b]">{e.title}</p>}
-                    <p className="mt-1 whitespace-pre-line leading-8 text-stone-800">{e.body}</p>
+                    {e.title && <p className="emoji-color mt-0.5 text-lg font-semibold text-[#2e3a4b]">{e.title}</p>}
+                    <p className="emoji-color mt-1 whitespace-pre-line leading-8 text-stone-800">{e.body}</p>
                     <p className="mt-1 text-right text-xs text-stone-500">— {writerName(e.author_id)}</p>
                   </li>
                 ))}
@@ -157,7 +157,7 @@ export default async function GiftBookPage({ params }: { params: Promise<{ id: s
         <section key={e.id} id={i === 0 ? "ch-letters" : undefined} className="book-sheet mx-auto flex aspect-[148/210] w-full max-w-md flex-col rounded-2xl bg-[#fffdf7] p-10 shadow-sm ring-1 ring-amber-100">
           {i === 0 && <p className="mb-4 text-center font-sans text-[10px] tracking-[0.35em] text-amber-700">{chapters.findIndex((c) => c.id === "letters") + 1}. {b.lettersTitle}</p>}
           <p className="text-lg text-[#2e3a4b]">{b.to(box.child_name)}</p>
-          {e.title && <p className="mt-2 text-sm text-stone-500">{e.title}</p>}
+          {e.title && <p className="emoji-color mt-2 text-sm text-stone-500">{e.title}</p>}
           <div className="mt-6 flex-1 overflow-hidden whitespace-pre-line bg-[linear-gradient(transparent_calc(2rem-1px),#f1e6cf_calc(2rem-1px))] bg-size-[100%_2rem] leading-8 text-stone-800">{e.body}</div>
           <p className="mt-6 text-right text-stone-700">{b.letterFrom(writerName(e.author_id))}</p>
           {e.occurred_on && <p className="text-right font-sans text-[11px] text-stone-400">{fmtDate(e.occurred_on, locale)}</p>}

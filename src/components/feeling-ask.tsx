@@ -39,7 +39,7 @@ export function FeelingAsk({ tx, id, onDone }: { tx: FeelingText; id: string; on
                 onClick={() => start(async () => { if (await quickFeelingAction(id, f)) setDone(true); })}
                 className="flex flex-col items-center gap-0.5 rounded-2xl py-1.5 text-[10px] text-stone-600 transition hover:bg-teal-50 active:scale-95"
               >
-                <span aria-hidden className="text-2xl">{FEELING_EMOJI[f]}</span>
+                <span aria-hidden className="emoji-color text-2xl">{FEELING_EMOJI[f]}</span>
                 {tx.names[f]}
               </button>
             ))}

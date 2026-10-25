@@ -43,7 +43,7 @@ test("a new account is guided: three questions to a first tile, a bio, then home
   await page.getByRole("button", { name: "振り返りを記録する" }).click();
   await expect(page).toHaveURL(/ok=saved/);
   // What was written stays on the month's page, and more can be added.
-  await expect(page.getByRole("heading", { name: "✍️ この月の振り返り" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "📝 この月の振り返り" })).toBeVisible();
   await expect(page.locator("#lookback").getByText("はじめてMOSAICを使った。")).toBeVisible();
   await expect(page.getByText("＋ もう一度書く・書き足す")).toBeVisible();
   await page.goto("/memories");

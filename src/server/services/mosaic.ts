@@ -124,7 +124,6 @@ export function tileViews(p: Portrait, t: Dict, locale: Locale): TileView[] {
         // The side it leans to once it shows; until then both sides, as the open question.
         icons: pole ? [AXIS_ICON[tile.key][tile.direction === 1 ? "pos" : "neg"]] : [AXIS_ICON[tile.key].pos, AXIS_ICON[tile.key].neg],
         badge: tile.level === "gathering" ? m.need.replace("{n}", String(Math.max(1, needed(tile)))) : (said[tile.level] ?? null),
-        progress: tile.level === "gathering" ? [Math.min(MIN_EVIDENCE, tile.evidence), MIN_EVIDENCE] : null,
         // Straight to this piece's own questions (the chapter page focuses on it).
         href: `/discover/chapter/${tile.chapter}?axis=${tile.key}`,
         hrefLabel: m.answerPiece(lab.name[locale]),
@@ -135,7 +134,7 @@ export function tileViews(p: Portrait, t: Dict, locale: Locale): TileView[] {
       return {
         id: "tuvi", hue: "extra", level: tile.level, direction: null, label: "Tử Vi", title: "Tử Vi",
         body: tile.done ? m.tuviDone : m.tuviTodo, meta: "", rejected: false,
-        icons: ["Sparkles"], badge: tile.done ? m.tuviReady : null, progress: null,
+        icons: ["Sparkles"], badge: tile.done ? m.tuviReady : null,
         href: "/tuvi", hrefLabel: tile.done ? m.tuviOpen : m.tuviStart, evidenceHref: null,
       };
     }
@@ -146,7 +145,6 @@ export function tileViews(p: Portrait, t: Dict, locale: Locale): TileView[] {
       body: m.chapterBody(tile.done, tile.total), meta: "", rejected: false,
       icons: [tile.kind === "likes" ? "Star" : "BookOpen"],
       badge: tile.done ? chapterBadge(m, tile.done, tile.total) : null,
-      progress: tile.done && tile.done < tile.total ? [tile.done, tile.total] : null,
       href: `/discover/chapter/${tile.kind}`, hrefLabel: m.answerChapter(chapter), evidenceHref: null,
     };
   });

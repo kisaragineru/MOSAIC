@@ -119,7 +119,7 @@ export default async function OthersPage({ searchParams }: { searchParams: Promi
               <ul className="space-y-2">
                 {comments.map((c, i) => (
                   <li key={i} className="rounded-2xl bg-stone-50 p-3 text-sm text-stone-800">
-                    <p className="whitespace-pre-line">{c.text}</p>
+                    <p className="emoji-color whitespace-pre-line">{c.text}</p>
                     {c.who && <p className="mt-1 text-xs text-stone-500">— {c.who}</p>}
                   </li>
                 ))}

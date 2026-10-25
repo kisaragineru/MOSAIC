@@ -65,7 +65,7 @@ export default async function MonthPage({ params, searchParams }: { params: Prom
               <li key={h.id}>
                 <Link href={`/memories/${h.id}`} className="block rounded-2xl border border-stone-200 bg-white/80 px-4 py-2.5 hover:border-teal-300">
                   <span className="text-[11px] text-stone-500">{h.occurredOn ?? h.createdAt.toISOString().slice(0, 10)}</span>
-                  <span className="block text-sm font-semibold text-stone-900">{h.title ?? h.body?.slice(0, 60)}</span>
+                  <span className="emoji-color block text-sm font-semibold text-stone-900">{h.title ?? h.body?.slice(0, 60)}</span>
                 </Link>
               </li>
             ))}
@@ -99,14 +99,14 @@ export default async function MonthPage({ params, searchParams }: { params: Prom
 
       <section id="lookback" className="scroll-mt-24">
         {r.lookBacks.length > 0 ? (
-          <Card title={`✍️ ${mo.yourLookBack}`}>
+          <Card title={`📝 ${mo.yourLookBack}`}>
             <div className="space-y-4">
               {r.lookBacks.map((lb) => (
                 <article key={lb.id} className="space-y-3">
                   {lb.sections.map((x, i) => (
                     <div key={i}>
                       {x.prompt && <p className="text-xs font-semibold text-violet-800">{x.prompt}</p>}
-                      <p className="mt-0.5 whitespace-pre-line text-base leading-relaxed text-stone-900">{x.answer}</p>
+                      <p className="emoji-color mt-0.5 whitespace-pre-line text-base leading-relaxed text-stone-900">{x.answer}</p>
                     </div>
                   ))}
                   <p className="flex items-center justify-between text-xs text-stone-500">
@@ -122,7 +122,7 @@ export default async function MonthPage({ params, searchParams }: { params: Prom
             </details>
           </Card>
         ) : (
-          <Card title={`✍️ ${mo.write}`}>
+          <Card title={`📝 ${mo.write}`}>
             <LookBackForm m={m} mo={mo} />
           </Card>
         )}

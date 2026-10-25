@@ -205,8 +205,8 @@ function Entries({ box, kind, help, nameOf, t, draft }: { box: GiftBox; kind: Gi
                 {age && <span>（{g.age(age.y, age.m)}）</span>}
                 <span className="ml-auto">{g.from(nameOf(e.author_id))}</span>
               </p>
-              {e.title && <p className="mt-1 font-semibold text-stone-900">{e.title}</p>}
-              <p className="mt-1 whitespace-pre-line text-sm leading-7 text-stone-800">{e.body}</p>
+              {e.title && <p className="emoji-color mt-1 font-semibold text-stone-900">{e.title}</p>}
+              <p className="emoji-color mt-1 whitespace-pre-line text-sm leading-7 text-stone-800">{e.body}</p>
               {mine && (
                 <details className="mt-2">
                   <summary className="cursor-pointer text-xs text-teal-700">{g.edit}</summary>

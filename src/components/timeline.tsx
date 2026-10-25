@@ -75,7 +75,7 @@ function Comments({ t, items, total }: { t: Dict; items: CommentPreview[]; total
       {items.map((c, i) => (
         <li key={i} className="text-sm leading-snug">
           <span className={`mr-1.5 font-semibold ${c.mine ? "text-teal-800" : "text-sky-900"}`}>{c.mine ? t.comments.you : c.authorName}</span>
-          <span className="whitespace-pre-line text-stone-700 [overflow-wrap:anywhere]">{c.body}</span>
+          <span className="emoji-color whitespace-pre-line text-stone-700 [overflow-wrap:anywhere]">{c.body}</span>
         </li>
       ))}
       {total > items.length && <li className="text-xs text-sky-700">{t.comments.more(total - items.length)}</li>}
@@ -92,8 +92,8 @@ function Mine({ t, locale, it, compact, c, p, media, me }: { t: Dict; locale: Lo
       <Link href={`/memories/${m.id}`} className="block rounded-2xl border border-violet-200 bg-linear-to-br from-violet-50 via-white to-amber-50 p-3.5 shadow-sm transition hover:border-violet-300">
         <p className="flex items-center gap-1.5 text-sm font-semibold text-violet-900">{me && <Avatar name={me.name} src={me.src} className="h-6 w-6 text-[10px]" />}{tl.letterArrived}</p>
         <p className="mb-2 text-xs text-violet-800/80">{tl.letterFrom(written, it.letter.days)}</p>
-        {m.title && <p className="font-medium text-stone-900">{m.title}</p>}
-        <p className={`whitespace-pre-line text-sm leading-relaxed text-stone-800 ${compact ? "line-clamp-3" : "line-clamp-6"}`}>{m.body}</p>
+        {m.title && <p className="emoji-color font-medium text-stone-900">{m.title}</p>}
+        <p className={`emoji-color whitespace-pre-line text-sm leading-relaxed text-stone-800 ${compact ? "line-clamp-3" : "line-clamp-6"}`}>{m.body}</p>
       </Link>
     );
   }
@@ -102,7 +102,7 @@ function Mine({ t, locale, it, compact, c, p, media, me }: { t: Dict; locale: Lo
       <div className="mb-1 flex flex-wrap items-center gap-1.5">
         {me && <Avatar name={me.name} src={me.src} className="h-6 w-6 text-[10px]" />}
         <Stamp t={t} it={it} />
-        {m.feeling && <span aria-label={t.memories.feeling.names[m.feeling as keyof Dict["memories"]["feeling"]["names"]]} className="text-base leading-none">{FEELING_EMOJI[m.feeling as Feeling]}</span>}
+        {m.feeling && <span aria-label={t.memories.feeling.names[m.feeling as keyof Dict["memories"]["feeling"]["names"]]} className="emoji-color text-base leading-none">{FEELING_EMOJI[m.feeling as Feeling]}</span>}
         {m.kind === "letter_to_future" ? (
           <Pill tone="violet">{t.memories.kinds.letter_to_future}</Pill>
         ) : (
@@ -120,8 +120,8 @@ function Mine({ t, locale, it, compact, c, p, media, me }: { t: Dict; locale: Lo
         <p className="text-sm italic text-stone-500">✉ {t.memories.sealed(m.revealOn!)}</p>
       ) : (
         <>
-          {m.title && <p className="font-medium text-stone-900">{m.title}</p>}
-          {m.body && <p className={`whitespace-pre-line text-sm text-stone-700 ${compact ? "line-clamp-2" : "line-clamp-3"}`}>{m.body}</p>}
+          {m.title && <p className="emoji-color font-medium text-stone-900">{m.title}</p>}
+          {m.body && <p className={`emoji-color whitespace-pre-line text-sm text-stone-700 ${compact ? "line-clamp-2" : "line-clamp-3"}`}>{m.body}</p>}
           {media && <MediaGrid media={media} label={t.memories.media.label} />}
           {p && p.length > 0 && <Comments t={t} items={p} total={c?.count ?? p.length} />}
         </>
@@ -144,8 +144,8 @@ function Theirs({ t, it, compact, c, p, media, src }: { t: Dict; it: TimelineIte
         {m.kind !== "note" && <Pill tone="rose">{t.memories.kinds[m.kind as keyof Dict["memories"]["kinds"]]}</Pill>}
         {c && <CommentCount t={t} c={c} />}
       </div>
-      {m.title && <p className="font-medium text-stone-900">{m.title}</p>}
-      {m.body && <p className={`whitespace-pre-line text-sm text-stone-800 ${compact ? "line-clamp-2" : "line-clamp-4"}`}>{m.body}</p>}
+      {m.title && <p className="emoji-color font-medium text-stone-900">{m.title}</p>}
+      {m.body && <p className={`emoji-color whitespace-pre-line text-sm text-stone-800 ${compact ? "line-clamp-2" : "line-clamp-4"}`}>{m.body}</p>}
       {media && <MediaGrid media={media} label={t.memories.media.label} />}
       {p && p.length > 0 && <Comments t={t} items={p} total={c?.count ?? p.length} />}
       <p className="mt-2 text-right text-xs font-semibold text-rose-800">{t.comments.openRecord} →</p>

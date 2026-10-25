@@ -52,7 +52,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
                       ) : (
                         <p className={`mt-1.5 text-stone-900 ${latest ? "text-base font-medium" : "text-sm"}`}>{answerLabel(h.question.options, answer, locale)}</p>
                       )}
-                      {r.note && <p className="mt-1.5 whitespace-pre-line rounded-xl bg-white/70 px-2 py-1 text-xs text-stone-600">🔒 {r.note}</p>}
+                      {r.note && <p className="emoji-color mt-1.5 whitespace-pre-line rounded-xl bg-white/70 px-2 py-1 text-xs text-stone-600">🔒 {r.note}</p>}
                       {!latest && <p className="sr-only">{t.history.earlier}</p>}
                       <div className="mt-3 flex flex-wrap items-center gap-2">
                         {latest && (

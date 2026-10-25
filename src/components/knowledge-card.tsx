@@ -18,9 +18,9 @@ function action(a: NextAction, t: Dict, locale: Locale): { href: string; title: 
     case "axis":
       return { href: `/discover/chapter/${a.chapter}`, title: k.axis(AXIS_LABEL[a.key].name[locale], a.need), sub: k.axisSub(CHAPTER_INFO[a.chapter].title[locale]), plus: a.need * PIECE_WEIGHT.answer, icon: "🧩" };
     case "tuvi":
-      return { href: "/tuvi", title: k.tuvi, sub: k.tuviSub, plus: PIECE_WEIGHT.tuvi, icon: "🌌" };
+      return { href: "/tuvi", title: k.tuvi, sub: k.tuviSub, plus: PIECE_WEIGHT.tuvi, icon: "⭐" };
     case "record":
-      return { href: "/memories/new", title: k.record, sub: k.recordSub, plus: PIECE_WEIGHT.record, icon: "✍️" };
+      return { href: "/memories/new", title: k.record, sub: k.recordSub, plus: PIECE_WEIGHT.record, icon: "📝" };
     case "bio":
       return { href: "/me", title: k.bio, sub: k.bioSub, plus: PIECE_WEIGHT.bio, icon: "🪪" };
     case "likes":

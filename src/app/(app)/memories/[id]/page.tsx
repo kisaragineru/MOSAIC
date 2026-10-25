@@ -90,9 +90,9 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
         </Card>
       ) : (
         <Card>
-          {m.body && <p className="whitespace-pre-line text-stone-900">{m.body}</p>}
+          {m.body && <p className="emoji-color whitespace-pre-line text-stone-900">{m.body}</p>}
           {media.length > 0 && <div className={m.body ? "mt-3" : ""}><MediaGallery media={media} label={t.memories.media.label} /></div>}
-          {m.reason && <p className="mt-3 whitespace-pre-line text-sm text-stone-600">→ {m.reason}</p>}
+          {m.reason && <p className="emoji-color mt-3 whitespace-pre-line text-sm text-stone-600">→ {m.reason}</p>}
           <div className="mt-4 flex flex-wrap gap-2">
             <LinkButton href={`/memories/${m.id}?edit=1`}>{t.common.edit}</LinkButton>
             {m.visibility !== "private" && <LinkButton href={`/messages/new?record=${m.id}`} variant="secondary">{t.messages.shareRecord}</LinkButton>}
@@ -129,7 +129,7 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
               <li key={v.id} className="border-l-2 border-stone-200 pl-3">
                 <p className="text-xs text-stone-500">{t.memories.versionLabel(v.version)} · {v.createdAt.toISOString().slice(0, 16).replace("T", " ")}</p>
                 {v.title && <p className="text-sm font-medium">{v.title}</p>}
-                <p className="whitespace-pre-line text-sm text-stone-700">{v.body}</p>
+                <p className="emoji-color whitespace-pre-line text-sm text-stone-700">{v.body}</p>
               </li>
             ))}
           </ol>
