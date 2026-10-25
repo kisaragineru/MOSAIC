@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { BRANCHES } from "@/lib/tuvi/canchi";
 import type { Chart } from "@/lib/tuvi/engine";
 import type { PalaceDetail } from "@/lib/tuvi/interpret";
@@ -200,16 +200,7 @@ export function TuviChart({
             />
             {floatRing && (
               <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
-                <polygon
-                  points={floatRing.map((b) => FLOAT_CENTER[b]!.join(",")).join(" ")}
-                  pathLength={1}
-                  fill="rgb(167 139 250 / 0.10)"
-                  stroke="rgb(139 92 246 / 0.7)"
-                  strokeWidth="2"
-                  strokeLinejoin="round"
-                  vectorEffect="non-scaling-stroke"
-                  className="animate-[drawClosed_1.4s_ease-out_.4s_both] motion-reduce:animate-none"
-                />
+                <RingOutline points={floatRing.map((b) => FLOAT_CENTER[b]!.join(",")).join(" ")} />
               </svg>
             )}
             {[sel.branch, ...sel.related].map((b, i) => {
@@ -319,5 +310,50 @@ export function TuviChart({
         </section>
       )}
     </div>
+  );
+}
+
+/**
+ * The outline joining the palaces read together, drawn once around at an even speed and left whole.
+ * The stroke keeps its width on screen (non-scaling), so its dashes are measured on screen too: the
+ * outline's real length is taken from the drawn size, not from the 0–100 viewBox.
+ */
+function RingOutline({ points }: { points: string }) {
+  const ref = useRef<SVGPolygonElement>(null);
+  // Before the first paint, so the whole line never flashes before it is drawn.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const svg = el?.ownerSVGElement;
+    if (!el || !svg || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const { width, height } = svg.getBoundingClientRect();
+    const px = points.split(" ").map((p) => {
+      const [x, y] = p.split(",").map(Number) as [number, number];
+      return [(x / 100) * width, (y / 100) * height] as const;
+    });
+    const length = px.reduce((sum, [x, y], i) => {
+      const [nx, ny] = px[(i + 1) % px.length]!;
+      return sum + Math.hypot(nx - x, ny - y);
+    }, 0);
+    el.style.strokeDasharray = `${length} ${length}`;
+    el.style.strokeDashoffset = `${length}`;
+    const run = el.animate([{ strokeDashoffset: length }, { strokeDashoffset: 0 }], { duration: 1400, delay: 400, easing: "ease-in-out", fill: "forwards" });
+    run.onfinish = () => {
+      // Finished: a plain, unbroken line (no dash left to show a seam).
+      run.cancel();
+      el.style.strokeDasharray = "";
+      el.style.strokeDashoffset = "";
+    };
+    return () => run.cancel();
+  }, [points]);
+  return (
+    <polygon
+      ref={ref}
+      points={points}
+      fill="rgb(167 139 250 / 0.10)"
+      stroke="rgb(139 92 246 / 0.7)"
+      strokeWidth="2"
+      strokeLinejoin="round"
+      vectorEffect="non-scaling-stroke"
+    />
   );
 }
