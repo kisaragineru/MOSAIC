@@ -122,6 +122,7 @@ export function ChatView({
   reactions,
   editMinutes,
   maxPhotos,
+  startDraft = "",
 }: {
   me: string;
   conv: ConvView;
@@ -132,11 +133,13 @@ export function ChatView({
   reactions: string[];
   editMinutes: number;
   maxPhotos: number;
+  /** Text to start the box with (a conversation starter), not sent until the user sends it. */
+  startDraft?: string;
 }) {
   const [conv, setConv] = useState(initialConv);
   const [msgs, setMsgs] = useState<Msg[]>(initial);
   const [hasOlder, setHasOlder] = useState(initial.length >= 40);
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(startDraft);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [replyTo, setReplyTo] = useState<Msg | null>(null);
   const [editing, setEditing] = useState<Msg | null>(null);
@@ -159,6 +162,13 @@ export function ChatView({
     const id = window.setInterval(tick, 30_000);
     return () => window.clearInterval(id);
   }, []);
+  // A draft from a link is used once: drop it from the address so a reload doesn't bring it back.
+  useEffect(() => {
+    if (!startDraft) return;
+    const u = new URL(window.location.href);
+    u.searchParams.delete("draft");
+    window.history.replaceState(window.history.state, "", u);
+  }, [startDraft]);
   const outbox = useRef(new Map<string, Job>());
   // The site's sign-in ran out (any request answers 401): stop polling, offer a reload.
   const [signedOut, setSignedOut] = useState(false);

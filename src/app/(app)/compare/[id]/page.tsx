@@ -4,7 +4,10 @@ import { consentAction, recomputeAction } from "@/app/actions/sharing";
 import { SHARED_TEXT } from "@/content/manual-text";
 import { myManualShare, sharedManualFor } from "@/server/services/manual-share";
 import { askPeerAction } from "@/app/actions/peers";
-import { listPeople } from "@/server/services/people";
+import { listPeople, upcomingDates } from "@/server/services/people";
+import { dmOpenForConnectionAction } from "@/app/actions/dm";
+import { Avatar } from "@/components/avatar";
+import { avatarUrls } from "@/server/services/avatars";
 import { connectionFeed } from "@/server/services/memory-share";
 import { KIND_ICON } from "@/lib/timeline";
 import { Flash } from "@/components/flash";
@@ -38,6 +41,32 @@ const KIND_STYLE = {
   different: { box: "bg-violet-50 text-violet-900", pill: "bg-violet-100 text-violet-900", ring: "ring-violet-200", bar: "bg-violet-400" },
 };
 const SHARE_W = ["w-0", "w-1/12", "w-2/12", "w-3/12", "w-4/12", "w-5/12", "w-6/12", "w-7/12", "w-8/12", "w-9/12", "w-10/12", "w-11/12", "w-full"];
+
+const ACTION =
+  "flex min-h-16 w-full flex-col items-center justify-center gap-0.5 rounded-2xl bg-white/90 px-1 py-2 text-xs font-semibold text-stone-800 shadow-sm ring-1 ring-stone-200 transition hover:ring-teal-300 active:scale-[0.97]";
+const SMALL = "inline-flex shrink-0 items-center rounded-full bg-teal-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-800";
+
+function Starter({ icon, text, children }: { icon: string; text: string; children: React.ReactNode }) {
+  return (
+    <li className="flex items-center gap-3 rounded-2xl bg-white/90 p-3 shadow-sm ring-1 ring-stone-200/70">
+      <span aria-hidden className="text-xl">{icon}</span>
+      <p className="min-w-0 flex-1 text-sm leading-6 text-stone-800">{text}</p>
+      {children}
+    </li>
+  );
+}
+
+/** Opens the conversation with them, the draft already in the box. */
+function TalkButton({ id, draft, label }: { id: string; draft: string; label: string }) {
+  return (
+    <form action={dmOpenForConnectionAction} className="shrink-0">
+      <input type="hidden" name="sessionId" value={id} />
+      <input type="hidden" name="back" value={`/compare/${id}`} />
+      <input type="hidden" name="draft" value={draft} />
+      <button type="submit" className={SMALL}>💬 {label}</button>
+    </form>
+  );
+}
 
 export default async function ComparePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
@@ -88,6 +117,16 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
     : [];
   const count = (k: string) => items.filter((i) => i.kind === k).length;
   const cc = t.compare;
+  const active = v.status === "active";
+  const other = (await listComparisons(uid)).find((c) => c.id === v.id)?.otherId ?? null;
+  const pics = await avatarUrls(uid, [uid, other]);
+  // Conversation starters: from what the two of you share, each one action away.
+  const label = (q: string, a: unknown) => answerLabel((QMETA.get(q) ?? pref?.questions[q])?.options ?? null, a as never, locale);
+  const prompt = (q: string) => tr((QMETA.get(q) ?? pref?.questions[q])?.prompt);
+  const same = items.find((i) => i.kind === "same");
+  const diff = items.find((i) => i.kind === "different");
+  const date = personId && active ? (await upcomingDates(uid, 30)).filter((d) => d.personId === personId).sort((a, b) => a.daysUntil - b.daysUntil)[0] : undefined;
+  const theirsOnlyFirst = pref ? (v.myRole === "a" ? pref.onlyB : pref.onlyA)[0] : undefined;
   return (
     <Page title={cc.title(v.otherName)} back="/share">
       <Flash t={t} sp={sp} />
@@ -96,8 +135,8 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
       <section className="rounded-3xl bg-linear-to-br from-rose-50 via-white to-teal-50 p-5 shadow-sm ring-1 ring-white/80">
         <div className="flex items-center gap-3">
           <div className="flex -space-x-3" aria-hidden>
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100 text-lg font-bold text-teal-900 ring-4 ring-white">{initial(myName || "?")}</span>
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-lg font-bold text-rose-900 ring-4 ring-white">{initial(v.otherName)}</span>
+            <Avatar name={myName || "?"} src={pics.get(uid)} className="h-12 w-12 text-lg ring-4 ring-white" />
+            <Avatar name={v.otherName} src={pics.get(other ?? "")} className="h-12 w-12 text-lg ring-4 ring-white" />
           </div>
           <div className="min-w-0">
             <p className="truncate text-lg font-bold text-stone-900">{v.otherName}</p>
@@ -116,6 +155,25 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
             </span>
             <span className="shrink-0 text-sm font-semibold text-teal-700">{t.manual.theirOpen} →</span>
           </Link>
+        )}
+        {active && (
+          <div className="mt-4 grid grid-cols-3 gap-2" data-testid="connection-actions">
+            <form action={dmOpenForConnectionAction}>
+              <input type="hidden" name="sessionId" value={v.id} />
+              <input type="hidden" name="back" value={`/compare/${v.id}`} />
+              <button type="submit" className={ACTION}><span aria-hidden className="text-xl">💬</span>{cc.actMessage}</button>
+            </form>
+            {personId ? (
+              <Link href={`/people/${personId}?gifts=1#gifts`} className={ACTION}><span aria-hidden className="text-xl">🎁</span>{cc.actGift}</Link>
+            ) : (
+              <a href="#settings" className={ACTION}><span aria-hidden className="text-xl">🎁</span>{cc.actGift}</a>
+            )}
+            <form action={askPeerAction}>
+              <input type="hidden" name="sessionId" value={v.id} />
+              <input type="hidden" name="back" value="/me/others" />
+              <button type="submit" className={ACTION}><span aria-hidden className="text-xl">💭</span>{cc.actAsk}</button>
+            </form>
+          </div>
         )}
       </section>
 
@@ -167,12 +225,48 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                     <p className="mb-1 text-xs text-stone-500"><span aria-hidden>{KIND_ICON[x.kind]} </span>{x.effectiveOn}</p>
                     {x.title && <p className="text-sm font-semibold text-stone-900">{x.title}</p>}
                     <p className="line-clamp-3 whitespace-pre-line text-sm text-stone-800">{x.body}</p>
+                    <Link href={`/memories/shared/${x.id}`} className="mt-2 inline-block rounded-full bg-white px-3 py-1 text-xs font-semibold text-teal-700 ring-1 ring-stone-200 hover:ring-teal-300">{cc.comment}</Link>
                   </li>
                 ))}
               </ul>
               <Link href={`/memories?view=friends&with=${v.id}`} className="mt-2 block text-right text-sm text-teal-700 underline">{cc.moreRecords(v.otherName)} →</Link>
             </Card>
           )}
+        </section>
+      )}
+
+      {/* Doing something with it: starters that open a message, a comment, a question. */}
+      {active && (same || diff || date || theirRecords[0] || theirsOnlyFirst) && (
+        <section id="talk" className="scroll-mt-20 space-y-3">
+          <h2 className="px-1 text-base font-bold text-stone-900">🤝 {cc.startersTitle(v.otherName)}</h2>
+          <p className="px-1 text-xs leading-5 text-stone-500">{cc.startersHelp}</p>
+          <ul className="space-y-2" data-testid="starters">
+            {date && (
+              <Starter icon="🎂" text={cc.starterDate(date.label, date.daysUntil)}>
+                {date.daysUntil === 0 ? <TalkButton id={v.id} draft={cc.draftDate(date.label)} label={cc.talk} /> : <Link href={`/people/${personId}?gifts=1#gifts`} className={SMALL}>{cc.giftIdeas} →</Link>}
+              </Starter>
+            )}
+            {theirRecords[0] && (
+              <Starter icon={KIND_ICON[theirRecords[0].kind] ?? "📝"} text={`${cc.starterRecord(v.otherName)}${locale === "ja" ? "：" : ": "}${(theirRecords[0].title ?? theirRecords[0].body).slice(0, 40)}`}>
+                <Link href={`/memories/shared/${theirRecords[0].id}`} className={SMALL}>{cc.comment}</Link>
+              </Starter>
+            )}
+            {same && (
+              <Starter icon="🤝" text={cc.starterSame(prompt(same.questionId), label(same.questionId, same.mine))}>
+                <TalkButton id={v.id} draft={cc.draftSame(prompt(same.questionId), label(same.questionId, same.mine))} label={cc.talk} />
+              </Starter>
+            )}
+            {diff && (
+              <Starter icon="🔍" text={cc.starterDiff(prompt(diff.questionId), v.otherName, label(diff.questionId, diff.theirs))}>
+                <TalkButton id={v.id} draft={cc.draftDiff(prompt(diff.questionId), label(diff.questionId, diff.theirs))} label={cc.talk} />
+              </Starter>
+            )}
+            {theirsOnlyFirst && (
+              <Starter icon="❓" text={`${cc.starterAnswer(v.otherName)}${locale === "ja" ? "：" : ": "}${prompt(theirsOnlyFirst)}`}>
+                <Link href={`/discover/q/${theirsOnlyFirst}`} className={SMALL}>{cc.answerIt} →</Link>
+              </Starter>
+            )}
+          </ul>
         </section>
       )}
 
@@ -338,7 +432,7 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
 
       {/* Everything you decide about this connection. */}
       {/* The one thing to do from here: ask them how they see you. Settings live in People. */}
-      {v.status !== "revoked" && (
+      {v.status === "pending" && (
         <form action={askPeerAction}>
           <input type="hidden" name="sessionId" value={v.id} />
           <input type="hidden" name="back" value="/me/others" />

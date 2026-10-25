@@ -7,6 +7,10 @@ import { getT } from "@/lib/i18n/server";
 import { BRANCHES, ELEMENT_NAMES, STEMS } from "@/lib/tuvi/canchi";
 import { requireUser } from "@/server/auth/session";
 import { sharedPreview } from "@/server/services/sharing";
+import { sharedWithEveryone } from "@/server/services/memory-share";
+import { KIND_ICON } from "@/lib/timeline";
+import { Avatar } from "@/components/avatar";
+import { myAvatarUrl } from "@/server/services/avatars";
 import { getTuvi } from "@/server/services/tuvi";
 import { PhoneCard, PhoneFrame } from "@/components/phone-frame";
 import { IntroPair } from "@/components/intro-pair";
@@ -27,6 +31,8 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
   const sp = await searchParams;
   const { t, locale } = await getT();
   const p = await sharedPreview(uid);
+  const records = await sharedWithEveryone(uid, 3);
+  const photo = await myAvatarUrl(uid);
   // Which consent scopes the phone shows (all by default); toggled with ?s=a,b
   const on = new Set<PhoneScope>(sp.s === undefined ? PHONE_SCOPES : (sp.s.split(",").filter((x) => (PHONE_SCOPES as readonly string[]).includes(x)) as PhoneScope[]));
   const toggle = (x: PhoneScope) => {
@@ -63,6 +69,19 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
           </div>
         </div>
         <PhoneFrame title={t.compare.title(p.displayName)} label={t.preview.phoneTitle}>
+          {/* What their page offers them: the same buttons, shown but not pressable here. */}
+          <div className="rounded-2xl bg-linear-to-br from-rose-50 via-white to-teal-50 p-3 ring-1 ring-white" data-testid="phone-actions">
+            <div className="flex items-center gap-2">
+              <Avatar name={p.displayName} src={photo} className="h-9 w-9 text-sm ring-2 ring-white" />
+              <p className="truncate font-bold text-stone-900">{p.displayName}</p>
+            </div>
+            <div aria-hidden className="mt-2 grid grid-cols-3 gap-1.5">
+              {[["💬", t.compare.actMessage], ["🎁", t.compare.actGift], ["💭", t.compare.actAsk]].map(([i, l]) => (
+                <span key={l} className="flex flex-col items-center rounded-xl bg-white/90 py-1.5 text-[10px] font-semibold text-stone-700 ring-1 ring-stone-200"><span className="text-base">{i}</span>{l}</span>
+              ))}
+            </div>
+            <p className="mt-2 text-[10px] leading-4 text-stone-500">{t.preview.phoneActions}</p>
+          </div>
           {(p.bio || p.intro) && (
             <PhoneCard title={t.compare.bioTitle(p.displayName)}>
               <IntroPair bio={p.bio} intro={p.intro} name={p.displayName} t={t} small />
@@ -122,6 +141,24 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
               )}
             </PhoneCard>
           )}
+          <PhoneCard title={`📝 ${t.preview.phoneRecordsTitle(p.displayName)}`}>
+            {records.length === 0 ? (
+              <p className="text-stone-500">{t.preview.phoneNoRecords}</p>
+            ) : (
+              <ul className="space-y-1.5" data-testid="phone-records">
+                {records.map((r) => (
+                  <li key={r.id} className="rounded-xl bg-rose-50/50 p-2 ring-1 ring-rose-100">
+                    <p className="text-[10px] text-stone-500"><span aria-hidden>{KIND_ICON[r.kind] ?? "📝"} </span>{r.occurredOn ?? r.createdAt.toISOString().slice(0, 10)}</p>
+                    {r.title && <p className="font-semibold text-stone-900">{r.title}</p>}
+                    <p className="line-clamp-2 whitespace-pre-line text-stone-800">{r.body}</p>
+                    <span aria-hidden className="mt-1 inline-block rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-teal-700 ring-1 ring-stone-200">{t.compare.comment}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="mt-2 text-[10px] leading-4 text-stone-500">{t.preview.phoneRecordsHelp}</p>
+          </PhoneCard>
+          {(on.has("preferences") || on.has("values")) && shownAnswers.length > 0 && <p className="px-1 text-[10px] leading-4 text-stone-500">🤝 {t.preview.phoneStarters}</p>}
           {!p.bio && !p.intro && on.size === 0 && <p className="text-center text-stone-500">{t.preview.phoneEmpty}</p>}
         </PhoneFrame>
       </section>

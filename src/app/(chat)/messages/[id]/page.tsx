@@ -8,9 +8,10 @@ import { getAccount } from "@/server/services/account";
 import { avatarUrls } from "@/server/services/avatars";
 
 /** One conversation. Loads the newest messages; the client keeps it up to date. */
-export default async function ConversationPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ConversationPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ draft?: string }> }) {
   const uid = await requireUser();
   const { id } = await params;
+  const draft = ((await searchParams).draft ?? "").slice(0, 1000);
   if (!uuid.safeParse(id).success) notFound();
   const conv = await dmConversation(uid, id).catch(() => null);
   if (!conv) notFound();
@@ -79,5 +80,5 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
     members: conv.members.map((m) => ({ id: m.id, name: m.name, left: m.left, lastReadAt: m.lastReadAt?.toISOString() ?? null, typing: m.typing })),
     avatars: Object.fromEntries(await avatarUrls(uid, conv.members.map((m) => m.id))),
   };
-  return <ChatView me={uid} conv={view} initial={initial} tz={tz} locale={locale} text={text} reactions={[...DM_REACTIONS]} editMinutes={DM_EDIT_MINUTES} maxPhotos={DM_MAX_PHOTOS} />;
+  return <ChatView me={uid} conv={view} initial={initial} tz={tz} locale={locale} text={text} reactions={[...DM_REACTIONS]} editMinutes={DM_EDIT_MINUTES} maxPhotos={DM_MAX_PHOTOS} startDraft={draft} />;
 }

@@ -251,3 +251,50 @@ test("one-to-one comments on a shared record", async ({ browser }) => {
   const stranger = await user(browser, "X");
   expect((await stranger.goto(shared))?.status()).toBe(404);
 });
+
+test("a connection's page offers things to do: message, gift, ask, and conversation starters that open a drafted message", async ({ browser }) => {
+  const hana = await user(browser, "ハナ");
+  const sora = await user(browser, "ソラ");
+  // Both answer the same question the same way, shown in comparisons, then connect (sharing preferences).
+  for (const p of [hana, sora]) {
+    await p.goto("/discover/q/l.season");
+    await p.getByLabel("春", { exact: true }).check();
+    await p.getByLabel(/比較で見せる/).check();
+    await p.getByRole("button", { name: "回答を保存" }).click();
+    await expect(p.getByText(/回答を保存しました|違う/).first()).toBeVisible();
+  }
+  await connect(hana, sora);
+  const compare = sora.url();
+  // Sora shares a record with everyone they're connected with.
+  await sora.goto("/memories/new");
+  await sora.getByLabel("あったこと・考えていること").fill("桜を見に行った。");
+  await sora.getByRole("radio", { name: /つながっている全員/ }).check({ force: true });
+  await sora.getByRole("button", { name: "記録する" }).click();
+  await sora.waitForURL(/ok=saved/);
+
+  // Sora's preview shows the same: the buttons Hana gets, and the shared record.
+  await sora.goto("/me/preview");
+  await expect(sora.getByTestId("phone-actions").getByText("💬メッセージ")).toBeVisible();
+  await expect(sora.getByTestId("phone-records").getByText("桜を見に行った。")).toBeVisible();
+
+  await hana.goto(compare);
+  const actions = hana.getByTestId("connection-actions");
+  await expect(actions.getByRole("button", { name: /メッセージ/ })).toBeVisible();
+  await expect(actions.getByRole("link", { name: /プレゼント/ })).toBeVisible();
+  await expect(actions.getByRole("button", { name: /印象を聞く/ })).toBeVisible();
+  const starters = hana.getByTestId("starters");
+  await expect(starters.getByText(/ソラさんの最近の記録：桜を見に行った。/)).toBeVisible();
+  await expect(starters.getByText("「いちばん好きな季節は？」— お二人とも「春」")).toBeVisible();
+
+  // The same answer opens the conversation with a draft in the box, not sent.
+  await starters.locator("li", { hasText: "お二人とも" }).getByRole("button", { name: /メッセージで話す/ }).click();
+  await hana.waitForURL(/\/messages\/[0-9a-f-]+$/);
+  await expect(hana.getByRole("textbox")).toHaveValue("「いちばん好きな季節は？」、私も「春」なんだ！今度その話をしようよ。");
+  await expect(hana.locator("p", { hasText: "今度その話をしようよ" })).toHaveCount(0); // not sent: no bubble
+
+  // The record starter leads to the one-to-one comment page.
+  await hana.goto(compare);
+  await hana.getByTestId("starters").getByRole("link", { name: "💬 コメントする" }).click();
+  await hana.waitForURL(/\/memories\/shared\//);
+  await expect(hana.getByText("桜を見に行った。")).toBeVisible();
+});

@@ -62,7 +62,9 @@ export async function dmUpload(form: FormData) {
 export async function dmOpenForConnectionAction(form: FormData) {
   const uid = await requireUser();
   const r = await attempt("dm.open", () => openDirectForConnection(uid, str(form, "sessionId")));
-  redirect(r.ok ? `/messages/${r.value}` : withParam(safeNext(str(form, "back"), "/messages"), "e", r.error));
+  // A conversation starter comes with a draft, put in the box unsent.
+  const draft = str(form, "draft").slice(0, 1000);
+  redirect(r.ok ? `/messages/${r.value}${draft ? `?draft=${encodeURIComponent(draft)}` : ""}` : withParam(safeNext(str(form, "back"), "/messages"), "e", r.error));
 }
 
 /** New message: one person opens your conversation with them, several make a group. A record to share can come along. */

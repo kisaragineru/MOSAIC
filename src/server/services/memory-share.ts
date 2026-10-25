@@ -10,7 +10,7 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { uuid } from "@/lib/validation/common";
-import { MEMORY_CIRCLES, MEMORY_KINDS, memoryCircles, memoryEntries, people } from "../db/schema";
+import { MEMORY_CIRCLES, MEMORY_KINDS, memoryCircles, memoryEntries, memoryEntryVersions, people } from "../db/schema";
 import { withUser } from "../db/tx";
 import { invalid, mapDbError } from "../errors";
 import { audit } from "./audit";
@@ -88,6 +88,19 @@ export async function visibleCount(userId: string, circle: Circle | null): Promi
                  and exists (select 1 from ${memoryCircles} mc where mc.entry_id = e.id and mc.circle = ${circle})))`);
     return r.rows[0]?.n ?? 0;
   });
+}
+
+/** My latest records shared with everyone I'm connected with (what any connection sees; for the preview). */
+export async function sharedWithEveryone(userId: string, n = 3) {
+  return withUser(userId, (tx) =>
+    tx
+      .select({ id: memoryEntries.id, kind: memoryEntries.kind, title: memoryEntryVersions.title, body: memoryEntryVersions.body, occurredOn: memoryEntries.occurredOn, createdAt: memoryEntries.createdAt })
+      .from(memoryEntries)
+      .innerJoin(memoryEntryVersions, and(eq(memoryEntryVersions.entryId, memoryEntries.id), eq(memoryEntryVersions.version, memoryEntries.currentVersion)))
+      .where(and(eq(memoryEntries.userId, userId), eq(memoryEntries.visibility, "connections"), sql`${memoryEntries.kind} <> 'letter_to_future'`))
+      .orderBy(sql`coalesce(${memoryEntries.occurredOn}, ${memoryEntries.createdAt}::date) desc`, sql`${memoryEntries.createdAt} desc`)
+      .limit(n),
+  );
 }
 
 /**
