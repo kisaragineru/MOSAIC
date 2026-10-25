@@ -4,7 +4,7 @@
  */
 import { and, eq } from "drizzle-orm";
 import type { Hue, MosaicLabels, TileView } from "@/components/mosaic";
-import { AXES, AXIS_CHAPTER, AXIS_LABEL, CHAPTER_INFO, type Chapter } from "@/content/axes";
+import { AXES, AXIS_CHAPTER, AXIS_ICON, AXIS_LABEL, CHAPTER_INFO, type Chapter } from "@/content/axes";
 import { TENDENCY_TEXT, type TendencyKey } from "@/content/questions";
 import type { Locale } from "@/lib/i18n/locales";
 import type { Dict } from "@/lib/i18n/messages/en";
@@ -91,8 +91,14 @@ export const needed = (t: AxisTile) => Math.max(0, MIN_EVIDENCE - t.evidence);
 // Display: every string is prepared here, in the reader's language.
 // ---------------------------------------------------------------------------
 
+/** Answers left for a chapter: counted down near the end, else shown as answered / all. */
+const chapterBadge = (m: Dict["mosaic"], done: number, total: number) =>
+  done >= total ? m.allAnswered : total - done <= 3 ? m.need.replace("{n}", String(total - done)) : m.count(done, total);
+
 export function tileViews(p: Portrait, t: Dict, locale: Locale): TileView[] {
   const m = t.mosaic;
+  // The word on a tile that already says something, so "filled in" never reads as "finished".
+  const said = { emerging: m.levels.emerging, consistent: `✓ ${m.levels.consistent}`, mixed: m.levels.mixed } as Partial<Record<TileLevel, string>>;
   return p.tiles.map((tile): TileView => {
     if (tile.kind === "axis") {
       const lab = AXIS_LABEL[tile.key];
@@ -115,7 +121,10 @@ export function tileViews(p: Portrait, t: Dict, locale: Locale): TileView[] {
         body,
         meta: [tile.evidence ? m.basedOn(tile.evidence) : "", tile.rejected ? m.rejectedNote : ""].filter(Boolean).join(" · "),
         rejected: tile.rejected,
-        dots: Math.min(3, tile.evidence),
+        // The side it leans to once it shows; until then both sides, as the open question.
+        icons: pole ? [AXIS_ICON[tile.key][tile.direction === 1 ? "pos" : "neg"]] : [AXIS_ICON[tile.key].pos, AXIS_ICON[tile.key].neg],
+        badge: tile.level === "gathering" ? m.need.replace("{n}", String(Math.max(1, needed(tile)))) : (said[tile.level] ?? null),
+        progress: tile.level === "gathering" ? [Math.min(MIN_EVIDENCE, tile.evidence), MIN_EVIDENCE] : null,
         // Straight to this piece's own questions (the chapter page focuses on it).
         href: `/discover/chapter/${tile.chapter}?axis=${tile.key}`,
         hrefLabel: m.answerPiece(lab.name[locale]),
@@ -125,7 +134,8 @@ export function tileViews(p: Portrait, t: Dict, locale: Locale): TileView[] {
     if (tile.kind === "tuvi") {
       return {
         id: "tuvi", hue: "extra", level: tile.level, direction: null, label: "Tử Vi", title: "Tử Vi",
-        body: tile.done ? m.tuviDone : m.tuviTodo, meta: "", rejected: false, dots: 0,
+        body: tile.done ? m.tuviDone : m.tuviTodo, meta: "", rejected: false,
+        icons: ["🔮"], badge: tile.done ? m.tuviReady : null, progress: null,
         href: "/tuvi", hrefLabel: tile.done ? m.tuviOpen : m.tuviStart, evidenceHref: null,
       };
     }
@@ -133,7 +143,10 @@ export function tileViews(p: Portrait, t: Dict, locale: Locale): TileView[] {
     return {
       id: tile.kind, hue: "extra", level: tile.level, direction: null,
       label: tile.kind === "likes" ? m.likesShort : m.storyShort, title: chapter,
-      body: m.chapterBody(tile.done, tile.total), meta: "", rejected: false, dots: 0,
+      body: m.chapterBody(tile.done, tile.total), meta: "", rejected: false,
+      icons: [tile.kind === "likes" ? "❤️" : "📖"],
+      badge: tile.done ? chapterBadge(m, tile.done, tile.total) : null,
+      progress: tile.done && tile.done < tile.total ? [tile.done, tile.total] : null,
       href: `/discover/chapter/${tile.kind}`, hrefLabel: m.answerChapter(chapter), evidenceHref: null,
     };
   });
@@ -143,5 +156,5 @@ export function tileViews(p: Portrait, t: Dict, locale: Locale): TileView[] {
 export function mosaicLabels(t: Dict, locale: Locale): MosaicLabels {
   const m = t.mosaic;
   const chapters = (["self", "mind", "people", "life"] as const).map((c) => ({ hue: c as Hue, name: CHAPTER_INFO[c].title[locale] }));
-  return { hint: m.hint, evidence: m.evidence, levels: m.levels, need: m.need, deeper: m.deeper, hues: [...chapters, { hue: "extra", name: m.otherHue }] };
+  return { hint: m.hint, evidence: m.evidence, levels: m.levels, deeper: m.deeper, hues: [...chapters, { hue: "extra", name: m.otherHue }] };
 }

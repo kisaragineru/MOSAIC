@@ -905,7 +905,10 @@ export const vi: Dict = {
   },
   mosaic: {
     need: "còn {n} câu",
-    deeper: "Màu càng đậm, xu hướng càng rõ. ? là chưa có manh mối; ⇄ là tùy hoàn cảnh.",
+    deeper: "Màu càng đậm, xu hướng càng rõ. Bạn càng trả lời, màu càng sâu — không có điểm kết thúc. Hình vẽ cho biết bạn nghiêng về phía nào (cả hai khi chưa rõ).",
+    allAnswered: "✓ Đã trả lời hết",
+    tuviReady: "✓ Đã có lá số",
+    count: (n: number, all: number) => `${n}/${all}`,
     otherHue: "Khác",
     title: "Bức tranh ghép của bạn",
     summary: (n: number, all: number) => `${n}/${all} ô đã hiện ra`,

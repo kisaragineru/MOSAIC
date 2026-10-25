@@ -903,7 +903,10 @@ export const en = {
   },
   mosaic: {
     need: "{n} more",
-    deeper: "The deeper the colour, the clearer the tendency. ? means no clues yet; ⇄ means it depends on the situation.",
+    deeper: "The deeper the colour, the clearer the tendency. It keeps deepening as you answer, so there is no finish line. The picture shows which way it leans (both, until it shows).",
+    allAnswered: "✓ All answered",
+    tuviReady: "✓ Chart ready",
+    count: (n: number, all: number) => `${n}/${all}`,
     otherHue: "Other",
     title: "Your mosaic",
     summary: (n: number, all: number) => `${n} of ${all} tiles have come into view`,

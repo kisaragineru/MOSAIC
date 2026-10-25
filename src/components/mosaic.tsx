@@ -18,8 +18,12 @@ export interface TileView {
   body: string;
   meta: string;
   rejected: boolean;
-  /** Answers so far toward the three needed (gathering tiles). */
-  dots: number;
+  /** The picture: the side it leans to, or both sides while the question is still open. */
+  icons: string[];
+  /** A short word on the tile: answers left, or how clearly it shows. */
+  badge: string | null;
+  /** Answered / needed, while still on the way. */
+  progress: [number, number] | null;
   href: string;
   hrefLabel: string;
   evidenceHref: string | null;
@@ -29,8 +33,6 @@ export interface MosaicLabels {
   hint: string;
   evidence: string;
   levels: Record<Level, string>;
-  /** "{n} more" on a tile still gathering answers. */
-  need: string;
   /** What each colour stands for. */
   hues: { hue: Hue; name: string }[];
   deeper: string;
@@ -63,31 +65,55 @@ function fill(t: TileView): string {
   }
 }
 
-function Tile({ t, i, selected, need }: { t: TileView; i: number; selected?: boolean; need: (n: number) => string }) {
+function Tile({ t, i, selected }: { t: TileView; i: number; selected?: boolean }) {
+  const quiet = t.level === "empty" || t.level === "gathering";
   return (
     <span className="flex flex-col items-center gap-1">
       <span
-        className={`relative flex aspect-square w-full animate-[zoomIn_.45s_ease-out_both] items-center justify-center overflow-hidden rounded-2xl motion-reduce:animate-none ${DELAY[i % 5]} ${fill(t)} ${
+        className={`relative flex aspect-square w-full animate-[zoomIn_.45s_ease-out_both] flex-col items-center justify-center overflow-hidden rounded-2xl motion-reduce:animate-none ${DELAY[i % 5]} ${fill(t)} ${
           t.level === "empty" ? "border border-dashed border-stone-300" : "shadow-sm ring-1 ring-black/5"
         } ${selected ? "ring-2 ring-stone-800 ring-offset-2" : ""} ${t.rejected ? "opacity-45" : ""}`}
       >
-        {t.level === "empty" && <span aria-hidden className="text-lg font-bold text-stone-300">?</span>}
-        {t.level === "gathering" && <span className="px-1 text-center text-[10px] font-semibold leading-tight text-stone-600">{need(Math.max(1, 3 - t.dots))}</span>}
-        {t.level === "mixed" && <span aria-hidden className="text-base text-stone-600">⇄</span>}
+        <span aria-hidden className={`flex items-center justify-center leading-none ${quiet ? "gap-0.5 opacity-55 grayscale-[.4]" : ""} ${t.level === "empty" ? "opacity-35 grayscale" : ""}`}>
+          {t.icons.length > 1 ? (
+            <>
+              <span className="text-[1.15rem]">{t.icons[0]}</span>
+              <span className={`text-[10px] font-bold ${t.level === "mixed" ? "text-stone-700" : "text-stone-400"}`}>{t.level === "mixed" ? "⇄" : "?"}</span>
+              <span className="text-[1.15rem]">{t.icons[1]}</span>
+            </>
+          ) : (
+            // A pale disc keeps the picture readable on the deepest colours.
+            <span className={`flex items-center justify-center rounded-full ${quiet ? "text-[1.7rem]" : "h-12 w-12 bg-white/55 text-[1.75rem] shadow-inner ring-1 ring-white/60"}`}>{t.icons[0]}</span>
+          )}
+        </span>
+        {t.progress && quiet && (
+          <span aria-hidden className="mt-1.5 flex gap-0.5">
+            {dots(t.progress).map((on, k) => <span key={k} className={`h-1.5 w-1.5 rounded-full ${on ? "bg-stone-600" : "bg-stone-300/80"}`} />)}
+          </span>
+        )}
+        {t.badge && (
+          <span className="absolute inset-x-1 bottom-1 truncate rounded-full bg-white/85 px-1 py-px text-center text-[9px] font-bold leading-tight text-stone-700 shadow-sm">{t.badge}</span>
+        )}
       </span>
       <span className={`line-clamp-2 w-full text-center text-[11px] font-semibold leading-tight ${t.level === "empty" ? "text-stone-400" : "text-stone-800"}`}>{t.label}</span>
     </span>
   );
 }
 
+/** Progress as at most five dots: one per answer when few are needed, else a share of five. */
+function dots([done, total]: [number, number]): boolean[] {
+  const n = Math.min(total, 5);
+  const on = total <= 5 ? done : Math.min(n - 1, Math.max(1, Math.round((done / total) * n)));
+  return Array.from({ length: n }, (_, k) => k < on);
+}
+
 /** The portrait. Compact (Home): a link to the full view. Full: tap a tile for what it says. */
 export function Mosaic({ tiles, labels, compact = false }: { tiles: TileView[]; labels: MosaicLabels; compact?: boolean }) {
   const [sel, setSel] = useState<string | null>(null);
-  const need = (n: number) => labels.need.replace("{n}", String(n));
   if (compact) {
     return (
       <div className="grid grid-cols-4 gap-x-2.5 gap-y-3">
-        {tiles.map((t, i) => <Tile key={t.id} t={t} i={i} need={need} />)}
+        {tiles.map((t, i) => <Tile key={t.id} t={t} i={i} />)}
       </div>
     );
   }
@@ -104,7 +130,7 @@ export function Mosaic({ tiles, labels, compact = false }: { tiles: TileView[]; 
               onClick={() => setSel(sel === t.id ? null : t.id)}
               className="block w-full rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
             >
-              <Tile t={t} i={i} selected={sel === t.id} need={need} />
+              <Tile t={t} i={i} selected={sel === t.id} />
             </button>
           </li>
         ))}

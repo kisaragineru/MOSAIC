@@ -3,7 +3,8 @@ import { en } from "@/lib/i18n/messages/en";
 import { ja } from "@/lib/i18n/messages/ja";
 import { answerQuestion, axisProgress } from "@/server/services/discovery";
 import { QUESTION_BANK } from "@/content/questions";
-import { portrait, tileViews } from "@/server/services/mosaic";
+import { chapterOf } from "@/content/axes";
+import { portrait, tileViews, type ExtraTile } from "@/server/services/mosaic";
 import { saveBirthProfile } from "@/server/services/tuvi";
 import { makeUser } from "../helpers/factory";
 
@@ -26,7 +27,9 @@ describe("mosaic portrait", () => {
     await pick(u.userId, "p.weekend_plan", "plan");
     let tile = (await portrait(u.userId)).tiles.find((t) => t.kind === "axis" && t.key === "planning")!;
     expect(tile.level).toBe("gathering");
-    expect(tileViews(await portrait(u.userId), ja, "ja").find((v) => v.id === "planning")!.body).toMatch(/あと2問/);
+    const gathering = tileViews(await portrait(u.userId), ja, "ja").find((v) => v.id === "planning")!;
+    expect(gathering.body).toMatch(/あと2問/);
+    expect(gathering).toMatchObject({ badge: "あと2問", progress: [1, 3], icons: ["🗓️", "🌊"] });
     await pick(u.userId, "ax.plan_pack", "packed_list");
     await pick(u.userId, "ax.plan_deadline", "early");
     const p = await portrait(u.userId);
@@ -38,6 +41,8 @@ describe("mosaic portrait", () => {
     expect(v.body).toBe("You often prefer to plan ahead.");
     expect(v.evidenceHref).toBe("/insights#t-planning");
     expect(v.href).toBe("/discover/chapter/self?axis=planning");
+    // A filled tile says how clearly it shows and which side, never that it is finished.
+    expect(v).toMatchObject({ badge: "✓ Clear", icons: ["🗓️"], progress: null });
   });
 
   it("shows both sides when answers disagree", async () => {
@@ -57,6 +62,19 @@ describe("mosaic portrait", () => {
     await saveBirthProfile(u.userId, { calendarInput: "solar", solarDate: "1990-06-07", timeKnown: true, birthTime: "06:30", timeZone: "Asia/Ho_Chi_Minh", sex: "male" });
     const p = await portrait(u.userId);
     expect(p.tiles.find((t) => t.kind === "tuvi")!.level).toBe("consistent");
+    expect(tileViews(p, ja, "ja").find((v) => v.id === "tuvi")!.badge).toBe("✓ 命盤あり");
+  });
+
+  it("counts a chapter tile by its own questions, not the three an axis needs", async () => {
+    const u = await makeUser();
+    const q = QUESTION_BANK.find((x) => !x.followUpOnly && x.active !== false && chapterOf(x) === "likes" && x.format === "single")!;
+    await pick(u.userId, q.id, q.options![0]!.value);
+    const p = await portrait(u.userId);
+    const tile = p.tiles.find((t) => t.kind === "likes") as ExtraTile;
+    const v = tileViews(p, ja, "ja").find((x) => x.id === "likes")!;
+    const left = tile.total - tile.done;
+    expect(v.badge).toBe(left <= 3 ? `あと${left}問` : `${tile.done}/${tile.total}`);
+    expect(v.progress).toEqual([1, tile.total]);
   });
 
   it("counts every tile, Tử Vi and the chapters included, and focuses questions on one piece", async () => {

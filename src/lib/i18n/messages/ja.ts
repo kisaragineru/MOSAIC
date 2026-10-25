@@ -905,7 +905,10 @@ export const ja: Dict = {
   },
   mosaic: {
     need: "あと{n}問",
-    deeper: "色が濃いほど、はっきり見えている傾向です。？はまだ手がかりなし、⇄は場面によって変わるもの。",
+    deeper: "色が濃いほど、はっきり見えている傾向です。答えるほど深まっていくので、終わりはありません。絵はどちらの傾向か（まだのときは両方）を表します。",
+    allAnswered: "✓ ぜんぶ回答",
+    tuviReady: "✓ 命盤あり",
+    count: (n: number, all: number) => `${n}/${all}`,
     otherHue: "そのほか",
     title: "あなたのモザイク",
     summary: (n: number, all: number) => `${all}枚のうち${n}枚が見えてきました`,

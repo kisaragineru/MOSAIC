@@ -49,7 +49,7 @@ describe("Japanese translations", () => {
       }
     };
     walk(ja, en, "");
-    expect(same.sort()).toEqual([".comments.count", ".common.appName", ".common.tagline", ".compare.scopeNames.tuvi", ".insights.aiReasons.not_requested", ".nav.tuvi", ".nav.tabs.tuvi", ".privacyHub.tuviTitle", ".tuvi.title", ".tuvi.ui.stateLabel.unknown", ".tuvi.tuanTriet", ".knowledge.parts.tuvi", ".knowledge.level", ".knowledge.plus", ".welcome.cards.0.0", ".welcome.cards.1.0", ".welcome.cards.2.0", ".welcome.cards.3.0", ".welcome.progress", ".welcome.stepOf"].sort());
+    expect(same.sort()).toEqual([".comments.count", ".common.appName", ".common.tagline", ".compare.scopeNames.tuvi", ".insights.aiReasons.not_requested", ".mosaic.count", ".nav.tuvi", ".nav.tabs.tuvi", ".privacyHub.tuviTitle", ".tuvi.title", ".tuvi.ui.stateLabel.unknown", ".tuvi.tuanTriet", ".knowledge.parts.tuvi", ".knowledge.level", ".knowledge.plus", ".welcome.cards.0.0", ".welcome.cards.1.0", ".welcome.cards.2.0", ".welcome.cards.3.0", ".welcome.progress", ".welcome.stepOf"].sort());
   });
 
   const base: BirthInput = { calendar: "solar", solar: { year: 1990, month: 6, day: 7 }, time: { hour: 6, minute: 30 }, timeZone: "Asia/Ho_Chi_Minh", sex: "male", lateRatHour: null, leapMonthRule: null };
