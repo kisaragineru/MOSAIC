@@ -54,6 +54,9 @@ export const ja: Dict = {
     logout: "ログアウト",
   },
   auth: {
+    continueGoogle: "Googleで続ける",
+    continueFacebook: "Facebookで続ける",
+    orEmail: "またはメールアドレスで",
     loginTitle: "おかえりなさい",
     registerTitle: "MOSAICをはじめる",
     email: "メールアドレス",
@@ -70,6 +73,10 @@ export const ja: Dict = {
       "記録は初期設定で非公開です。あなたが共有リンクを作り、相手とあなたの両方が同意しない限り、誰とも共有されません。",
   },
   errors: {
+    oauth_unavailable: "このログイン方法は、いま使えません。",
+    oauth_cancelled: "ログインがキャンセルされました。",
+    oauth_failed: "ログインできませんでした。もう一度お試しください。",
+    oauth_email_in_use: "このメールアドレスはすでに登録されています。メールアドレスとパスワードでログインしてください。",
     translate_unavailable: "翻訳はいま使えません。",
     translate_failed: "翻訳できませんでした。もう一度お試しください。",
     translate_busy: "混み合っています。少し待ってからお試しください。",

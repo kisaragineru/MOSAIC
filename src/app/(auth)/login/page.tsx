@@ -7,6 +7,8 @@ import { Flash } from "@/components/flash";
 import { Button, Card, Field, Input } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
 import { currentUserId } from "@/server/auth/session";
+import { enabledProviders } from "@/server/auth/oauth";
+import { OAuthButtons } from "@/components/oauth-buttons";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const sp = await searchParams;
@@ -19,6 +21,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <form action={loginAction} className="space-y-3">
           <Flash t={t} sp={sp} />
           <input type="hidden" name="next" value={next} />
+          <OAuthButtons providers={enabledProviders()} next={next} from="login" labels={{ google: t.auth.continueGoogle, facebook: t.auth.continueFacebook, or: t.auth.orEmail }} />
           <Field label={t.auth.email}>
             <Input name="email" type="email" autoComplete="email" required />
           </Field>

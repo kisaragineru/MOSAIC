@@ -46,6 +46,12 @@ export default defineConfig({
       TRUST_PROXY: "1",
       CLIENT_IP_HEADER: "x-e2e-client-ip",
       DEV_TOOLS: "on",
+      // Sign-in with Google / Facebook goes to the stand-in provider above (never set outside tests).
+      OAUTH_TEST_BASE: "http://127.0.0.1:4599",
+      GOOGLE_CLIENT_ID: "test-google",
+      GOOGLE_CLIENT_SECRET: "test-google-secret",
+      FACEBOOK_APP_ID: "test-facebook",
+      FACEBOOK_APP_SECRET: "test-facebook-secret",
     },
   },
   ],

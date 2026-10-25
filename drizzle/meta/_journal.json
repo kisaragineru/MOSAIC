@@ -225,6 +225,20 @@
       "when": 1792941779067,
       "tag": "0031_dm_message_text",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1792945900135,
+      "tag": "0032_user_identities",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1792945905005,
+      "tag": "0033_user_identities_functions",
+      "breakpoints": true
     }
   ]
 }

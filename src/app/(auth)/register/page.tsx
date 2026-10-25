@@ -9,6 +9,8 @@ import { LOCALE_NAMES, SUPPORTED_LOCALES } from "@/lib/i18n/locales";
 import { getT } from "@/lib/i18n/server";
 import { currentUserId } from "@/server/auth/session";
 import { registrationCodeRequired } from "@/server/services/account";
+import { enabledProviders } from "@/server/auth/oauth";
+import { OAuthButtons } from "@/components/oauth-buttons";
 
 export default async function RegisterPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const sp = await searchParams;
@@ -21,6 +23,13 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
         <form action={registerAction} className="space-y-3">
           <Flash t={t} sp={sp} />
           <input type="hidden" name="next" value={next} />
+          {registrationCodeRequired() && (
+            <Field label={t.auth.inviteCode} hint={t.auth.inviteHint}>
+              <Input name="inviteCode" autoComplete="off" required maxLength={200} />
+            </Field>
+          )}
+          {/* Google / Facebook first: the quickest way in. The invite code above applies to them too. */}
+          <OAuthButtons providers={enabledProviders()} next={next} from="register" labels={{ google: t.auth.continueGoogle, facebook: t.auth.continueFacebook, or: t.auth.orEmail }} />
           <Field label={t.auth.displayName}>
             <Input name="displayName" autoComplete="nickname" required maxLength={80} />
           </Field>
@@ -30,11 +39,6 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
           <Field label={t.auth.password} hint={t.auth.passwordHint}>
             <Input name="password" type="password" autoComplete="new-password" minLength={10} required />
           </Field>
-          {registrationCodeRequired() && (
-            <Field label={t.auth.inviteCode} hint={t.auth.inviteHint}>
-              <Input name="inviteCode" autoComplete="off" required maxLength={200} />
-            </Field>
-          )}
           <Field label={t.common.language}>
             <Select name="locale" defaultValue={locale}>
               {SUPPORTED_LOCALES.map((l) => <option key={l} value={l}>{LOCALE_NAMES[l]}</option>)}

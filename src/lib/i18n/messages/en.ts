@@ -52,6 +52,9 @@ export const en = {
     logout: "Sign out",
   },
   auth: {
+    continueGoogle: "Continue with Google",
+    continueFacebook: "Continue with Facebook",
+    orEmail: "or with email",
     loginTitle: "Welcome back",
     registerTitle: "Start your MOSAIC",
     email: "Email",
@@ -68,6 +71,10 @@ export const en = {
       "Your records are private by default. Nothing is shared with anyone unless you explicitly create a share link and both people consent.",
   },
   errors: {
+    oauth_unavailable: "This way of signing in isn't available right now.",
+    oauth_cancelled: "Sign-in was cancelled.",
+    oauth_failed: "Couldn't sign you in. Please try again.",
+    oauth_email_in_use: "This email already has an account. Please sign in with your email and password.",
     translate_unavailable: "Translation isn't available right now.",
     translate_failed: "Couldn't translate. Please try again.",
     translate_busy: "Busy right now. Please try again in a moment.",

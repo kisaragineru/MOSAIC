@@ -67,6 +67,25 @@ export const users = pgTable(
   (t) => [uniqueIndex("users_email_lower_uq").on(sql`lower(${t.email})`)],
 );
 
+/** Sign-in with Google or Facebook: which outside account belongs to which user. */
+export const userIdentities = pgTable(
+  "user_identities",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: userRef(),
+    provider: text("provider").notNull(),
+    /** The provider's own, stable id for the account (never the email). */
+    subject: text("subject").notNull(),
+    email: text("email"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("user_identities_provider_subject_uq").on(t.provider, t.subject),
+    index("user_identities_user_idx").on(t.userId),
+    check("user_identities_provider_ck", sql`${t.provider} in ('google','facebook')`),
+  ],
+);
+
 export const sessions = pgTable(
   "sessions",
   {

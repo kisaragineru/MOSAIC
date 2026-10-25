@@ -54,6 +54,9 @@ export const vi: Dict = {
     logout: "Đăng xuất",
   },
   auth: {
+    continueGoogle: "Tiếp tục với Google",
+    continueFacebook: "Tiếp tục với Facebook",
+    orEmail: "hoặc bằng email",
     loginTitle: "Chào mừng trở lại",
     registerTitle: "Bắt đầu MOSAIC của bạn",
     email: "Email",
@@ -70,6 +73,10 @@ export const vi: Dict = {
       "Mọi ghi chép mặc định là riêng tư. Không có gì được chia sẻ trừ khi bạn tự tạo liên kết chia sẻ và cả hai người cùng đồng ý.",
   },
   errors: {
+    oauth_unavailable: "Cách đăng nhập này hiện chưa dùng được.",
+    oauth_cancelled: "Đã hủy đăng nhập.",
+    oauth_failed: "Không đăng nhập được. Hãy thử lại.",
+    oauth_email_in_use: "Email này đã có tài khoản. Hãy đăng nhập bằng email và mật khẩu.",
     translate_unavailable: "Hiện chưa dịch được.",
     translate_failed: "Không dịch được. Hãy thử lại.",
     translate_busy: "Đang bận. Hãy thử lại sau giây lát.",

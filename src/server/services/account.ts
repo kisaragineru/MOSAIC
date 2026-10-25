@@ -5,7 +5,8 @@ import { z } from "zod";
 import { randomToken, safeEqual, sha256 } from "../auth/crypto";
 import { dummyPasswordHash, hashPassword, PASSWORD_MAX, PASSWORD_MIN, verifyPassword } from "../auth/password";
 import { enforceRateLimit } from "../auth/rate-limit";
-import { notificationPreferences, profiles, sessions, users } from "../db/schema";
+import { notificationPreferences, profiles, sessions, userIdentities, users } from "../db/schema";
+import type { OAuthProfile } from "../auth/oauth";
 import { withAnon, withUser } from "../db/tx";
 import { AppError, invalid, unauthorized } from "../errors";
 import { audit } from "./audit";
@@ -96,6 +97,66 @@ export async function login(input: unknown, clientKey: string | null): Promise<N
     await audit(tx, row.user_id, "account.login");
     return createSession(tx, row.user_id);
   });
+}
+
+/**
+ * Sign in (or sign up) with an account from Google or Facebook.
+ * - Seen before: that user, signed in.
+ * - New, and the provider vouches for an email that already has an account (Google only): that
+ *   account gains the link. Facebook does not vouch for addresses, so such an email is refused.
+ * - Otherwise a new account; the same invite code rule applies as for email sign-up. It has no
+ *   usable password (a random one nobody knows): it signs in through the provider.
+ */
+export async function signInWithIdentity(
+  p: OAuthProfile,
+  opts: { inviteCode?: string; locale: (typeof SUPPORTED_LOCALES)[number]; clientKey: string | null },
+): Promise<{ session: NewSession; created: boolean }> {
+  if (opts.clientKey) await enforceRateLimit("login", opts.clientKey);
+  const known = await withAnon(async (tx) => {
+    const r = await tx.execute<{ uid: string | null }>(sql`select auth_find_identity(${p.provider}, ${p.subject}) as uid`);
+    return r.rows[0]?.uid ?? null;
+  });
+  if (known) {
+    const session = await withUser(known, async (tx) => {
+      await audit(tx, known, "account.login", "provider", p.provider);
+      return createSession(tx, known);
+    });
+    return { session, created: false };
+  }
+  const email = p.email ? z.string().trim().toLowerCase().email().max(254).safeParse(p.email) : null;
+  const address = email?.success ? email.data : null;
+  if (address) {
+    const owner = await withAnon(async (tx) => {
+      const r = await tx.execute<{ user_id: string }>(sql`select * from auth_find_user_by_email(${address})`);
+      return r.rows[0]?.user_id ?? null;
+    });
+    if (owner) {
+      if (!p.emailVerified) throw new AppError("oauth_email_in_use", 409);
+      const session = await withUser(owner, async (tx) => {
+        await tx.insert(userIdentities).values({ userId: owner, provider: p.provider, subject: p.subject, email: address });
+        await audit(tx, owner, "account.identity_linked", "provider", p.provider);
+        return createSession(tx, owner);
+      });
+      return { session, created: false };
+    }
+  }
+  await enforceRateLimit("register", opts.clientKey ?? "unknown-client");
+  const expected = process.env.REGISTRATION_CODE;
+  if (expected && !safeEqual(sha256(opts.inviteCode?.trim() ?? ""), sha256(expected))) throw new AppError("invite_required", 403);
+  const id = randomUUID();
+  // Without an address from the provider, a placeholder that can never receive mail (.invalid).
+  const userEmail = address ?? `${p.provider}-${p.subject}@users.mosaic.invalid`;
+  const displayName = (p.name ?? "").trim().slice(0, 80) || (address ? address.split("@")[0]!.slice(0, 80) : "MOSAIC");
+  const passwordHash = await hashPassword(randomToken());
+  const session = await withUser(id, async (tx) => {
+    await tx.insert(users).values({ id, email: userEmail, passwordHash });
+    await tx.insert(profiles).values({ userId: id, displayName, locale: opts.locale });
+    await tx.insert(notificationPreferences).values({ userId: id });
+    await tx.insert(userIdentities).values({ userId: id, provider: p.provider, subject: p.subject, email: address });
+    await audit(tx, id, "account.register", "provider", p.provider);
+    return createSession(tx, id);
+  });
+  return { session, created: true };
 }
 
 /** Returns the user id for a raw session token, or null. */
