@@ -392,6 +392,7 @@ async function listComparisonsUncached(userId: string) {
         /** Pending sessions split by whose consent is missing (the other side's state is not shown in detail). */
         waitingOn: s.status !== "pending" ? null : mine ? ("them" as const) : ("you" as const),
         otherName: parts.rows.find((p) => p.user_id !== userId)?.display_name ?? "?",
+        otherId: parts.rows.find((p) => p.user_id !== userId)?.user_id ?? null,
         createdAt: s.createdAt,
         revokedAt: s.revokedAt,
       });
@@ -470,6 +471,7 @@ async function ownConnection(tx: Tx, userId: string, sessionId: string) {
     id,
     status: s.status,
     otherName: parts.rows.find((p) => p.user_id !== userId)?.display_name ?? "?",
+    otherId: parts.rows.find((p) => p.user_id !== userId)?.user_id ?? null,
     otherBio: bio.rows[0]?.bio ?? null,
     otherIntro: bio.rows[0]?.intro ?? null,
   };

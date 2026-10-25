@@ -3,6 +3,7 @@ import type { Dict } from "@/lib/i18n/messages/en";
 import type { Locale } from "@/lib/i18n/locales";
 import { KIND_ICON, relativeDay, type TimelineDay, type TimelineItem } from "@/lib/timeline";
 import type { CommentPreview } from "@/server/services/comments";
+import { Avatar } from "./avatar";
 import { ExpandableText } from "./expandable-text";
 import { Pill } from "./ui";
 
@@ -13,7 +14,7 @@ const dayLabel = (day: string, locale: Locale) =>
 type Counts = Map<string, { count: number; unread: number }>;
 type Previews = Map<string, CommentPreview[]>;
 
-export function Timeline({ t, locale, tz, days, compact = false, comments = new Map(), previews = new Map() }: { t: Dict; locale: Locale; tz: string; days: TimelineDay[]; compact?: boolean; comments?: Counts; previews?: Previews }) {
+export function Timeline({ t, locale, tz, days, compact = false, comments = new Map(), previews = new Map(), avatars = new Map() }: { t: Dict; locale: Locale; tz: string; days: TimelineDay[]; compact?: boolean; comments?: Counts; previews?: Previews; avatars?: Map<string, string> }) {
   const tl = t.memories.timeline;
   return (
     <ol className="space-y-5" aria-label={t.memories.title}>
@@ -31,7 +32,7 @@ export function Timeline({ t, locale, tz, days, compact = false, comments = new 
                   <span aria-hidden className={`absolute -left-[1.85rem] top-3 flex h-5 w-5 items-center justify-center rounded-full text-[11px] ring-4 ring-white ${it.entry.mine ? "bg-teal-100" : "bg-rose-100"}`}>
                     {KIND_ICON[it.entry.kind] ?? "•"}
                   </span>
-                  {it.entry.mine ? <Mine t={t} locale={locale} it={it} compact={compact} c={comments.get(it.entry.id)} p={previews.get(it.entry.id)} /> : <Theirs t={t} it={it} c={comments.get(it.entry.id)} p={previews.get(it.entry.id)} />}
+                  {it.entry.mine ? <Mine t={t} locale={locale} it={it} compact={compact} c={comments.get(it.entry.id)} p={previews.get(it.entry.id)} /> : <Theirs t={t} it={it} c={comments.get(it.entry.id)} p={previews.get(it.entry.id)} src={avatars.get(it.entry.ownerId ?? "")} />}
                 </li>
               ))}
             </ol>
@@ -115,16 +116,14 @@ function Mine({ t, locale, it, compact, c, p }: { t: Dict; locale: Locale; it: T
   );
 }
 
-function Theirs({ t, it, c, p }: { t: Dict; it: TimelineItem; c?: { count: number; unread: number }; p?: CommentPreview[] }) {
+function Theirs({ t, it, c, p, src }: { t: Dict; it: TimelineItem; c?: { count: number; unread: number }; p?: CommentPreview[]; src?: string }) {
   const m = it.entry;
   const tl = t.memories.timeline;
   const name = m.ownerName ?? "?";
   return (
     <article className="rounded-2xl border border-rose-100 bg-rose-50/50 p-3">
       <div className="mb-1 flex flex-wrap items-center gap-1.5">
-        <span aria-hidden className="flex h-5 w-5 items-center justify-center rounded-full bg-linear-to-br from-rose-200 to-amber-200 text-[10px] font-bold text-stone-800">
-          {Array.from(name.trim())[0]?.toUpperCase() ?? "?"}
-        </span>
+        <Avatar name={name} src={src} className="h-6 w-6 text-[10px]" />
         <span className="text-xs font-semibold text-rose-900">{tl.theirs(name)}</span>
         <Stamp t={t} it={it} />
         <Pill tone="rose">{t.memories.kinds[m.kind as keyof Dict["memories"]["kinds"]]}</Pill>

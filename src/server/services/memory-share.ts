@@ -141,6 +141,7 @@ export const mineToEntry = (m: MemorySummary): TimelineEntry => ({
 export const feedToEntry = (f: FeedItem): TimelineEntry => ({
   id: f.id,
   mine: false,
+  ownerId: f.ownerId,
   ownerName: f.ownerName,
   kind: f.kind,
   title: f.title,

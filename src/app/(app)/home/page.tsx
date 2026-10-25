@@ -12,6 +12,7 @@ import { recentTimeline } from "@/server/services/memory-share";
 import { listTendencies } from "@/server/services/tendencies";
 import { AXIS_CHAPTER, PEER_POLES } from "@/content/axes";
 import { MANUAL_CHAPTERS } from "@/content/manual-text";
+import { avatarUrls } from "@/server/services/avatars";
 import { commentInbox, commentPreviews, countsByEntry } from "@/server/services/comments";
 import { Timeline } from "@/components/timeline";
 import { buildTimeline } from "@/lib/timeline";
@@ -78,7 +79,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           <p className="text-sm text-stone-500">{t.memories.empty}</p>
         ) : (
           <div className="space-y-3">
-            <Timeline t={t} locale={locale} tz={account.profile.timeZone} days={recent} compact comments={counts} previews={previews} />
+            <Timeline t={t} locale={locale} tz={account.profile.timeZone} days={recent} compact comments={counts} previews={previews} avatars={await avatarUrls(uid, recent.flatMap((d) => d.items.map((x) => x.entry.ownerId)))} />
             <Link href="/memories" className="block text-right text-sm text-teal-700 underline">{t.memories.timeline.seeAll} →</Link>
           </div>
         )}

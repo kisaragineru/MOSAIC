@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Avatar } from "@/components/avatar";
 import { CommentThread } from "@/components/comment-thread";
+import { avatarUrls } from "@/server/services/avatars";
 import { Flash } from "@/components/flash";
 import { Card, Page, Pill } from "@/components/ui";
 import { KIND_ICON } from "@/lib/timeline";
@@ -21,13 +23,12 @@ export default async function SharedRecordPage({ params, searchParams }: { param
   if (!e) notFound();
   const tz = (await getAccount(uid)).profile.timeZone;
   const comments = await readThread(uid, id, null).catch(() => []);
-  const initial = Array.from(e.ownerName.trim())[0]?.toUpperCase() ?? "?";
   return (
     <Page title={t.comments.recordOf(e.ownerName)} back="/memories?view=friends">
       <Flash t={t} sp={sp} />
       <article className="rounded-3xl border border-rose-100 bg-rose-50/50 p-4 shadow-sm">
         <div className="mb-2 flex flex-wrap items-center gap-1.5">
-          <span aria-hidden className="flex h-7 w-7 items-center justify-center rounded-full bg-linear-to-br from-rose-200 to-amber-200 text-xs font-bold text-stone-800">{initial}</span>
+          <Avatar name={e.ownerName} src={(await avatarUrls(uid, [e.ownerId])).get(e.ownerId)} className="h-8 w-8 text-xs" />
           <span className="text-sm font-semibold text-rose-900">{e.ownerName}</span>
           <Pill tone="rose">{KIND_ICON[e.kind]} {t.memories.kinds[e.kind]}</Pill>
           <time dateTime={e.createdAt.toISOString()} className="text-xs text-stone-500">

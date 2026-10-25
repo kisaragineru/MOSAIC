@@ -155,6 +155,20 @@
       "when": 1792872070595,
       "tag": "0021_dm_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1792900093516,
+      "tag": "0022_avatars",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792900094407,
+      "tag": "0023_avatar_functions",
+      "breakpoints": true
     }
   ]
 }

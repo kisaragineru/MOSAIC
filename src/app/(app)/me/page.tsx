@@ -1,3 +1,5 @@
+import { Avatar } from "@/components/avatar";
+import { myAvatarUrl } from "@/server/services/avatars";
 import Link from "next/link";
 import { logoutAction } from "@/app/actions/auth";
 import { updateProfileAction } from "@/app/actions/settings";
@@ -25,15 +27,19 @@ export default async function MePage({ searchParams }: { searchParams: Promise<R
   const sameOrigin = (await headers()).get("sec-fetch-site") === "same-origin";
   const draft = sp.draft ? await draftIntro(uid, { length: sp.len, tone: sp.tone, ai: sp.ai === "1" && sameOrigin }, locale) : null;
   const growth = await introGrowth(uid, acc.profile.introPieces);
-  const initial = Array.from(acc.profile.displayName.trim())[0]?.toUpperCase() ?? "?";
+  const avatar = await myAvatarUrl(uid);
   return (
     <Page title={t.me.title}>
       <Flash t={t} sp={sp} />
       <section className="flex items-center gap-4 rounded-3xl bg-white/85 p-5 shadow-sm ring-1 ring-white/80">
-        <span aria-hidden className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-sky-200 via-violet-200 to-amber-200 text-2xl font-bold text-stone-800 ring-4 ring-white">{initial}</span>
+        <Link href="/me/photo" aria-label={t.avatar.title} className="group relative shrink-0">
+          <Avatar name={acc.profile.displayName} src={avatar} className="h-16 w-16 text-2xl ring-4 ring-white" />
+          <span aria-hidden className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-teal-700 text-xs text-white ring-2 ring-white transition group-hover:scale-110">📷</span>
+        </Link>
         <div className="min-w-0">
           <p className="truncate text-xl font-bold text-stone-900">{acc.profile.displayName}</p>
           <p className="text-xs text-stone-500">{t.me.joined(acc.createdAt.toISOString().slice(0, 10))}</p>
+          {!avatar && <Link href="/me/photo" className="mt-1 inline-block text-xs font-semibold text-teal-700">📷 {t.avatar.edit} →</Link>}
         </div>
       </section>
 

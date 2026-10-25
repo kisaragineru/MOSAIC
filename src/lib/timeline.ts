@@ -12,6 +12,8 @@ export interface TimelineEntry {
   /** Mine (links to the record) or someone else's (shown in full, read-only). */
   mine: boolean;
   ownerName: string | null;
+  /** Someone else's record: who wrote it (for their photo). */
+  ownerId?: string | null;
   kind: string;
   title: string | null;
   body: string | null;

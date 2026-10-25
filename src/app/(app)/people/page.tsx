@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ConnectionPersonForm } from "@/components/connection-person-form";
+import { avatarUrls } from "@/server/services/avatars";
 import { Flash } from "@/components/flash";
 import { Button, Card, Empty, Field, Input, Page, Pill, Select } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
@@ -33,6 +34,12 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
   const connections = await listComparisons(uid);
   const live = new Set(connections.filter((c) => c.status !== "revoked" && c.personId).map((c) => c.personId));
   const unlinked = connections.filter((c) => c.status !== "revoked" && !c.personId);
+  // Connected people show their own photo (when they have one).
+  const pics = await avatarUrls(uid, connections.filter((c) => c.status === "active").map((c) => c.otherId));
+  const photoOf = (personId: string) => {
+    const c = connections.find((x) => x.personId === personId && x.status === "active");
+    return c?.otherId ? (pics.get(c.otherId) ?? null) : null;
+  };
   return (
     <Page title={t.people.title}>
       <Flash t={t} sp={sp} />
@@ -77,9 +84,14 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
               <li key={p.id} className="relative">
                 {/* The panel opens the person; the gear (a sibling, not nested) opens their settings. */}
                 <Link href={`/people/${p.id}`} className="flex gap-3.5 rounded-3xl bg-white p-4 pr-14 shadow-sm ring-1 ring-stone-200/70 transition hover:shadow-md hover:ring-teal-300">
-                  <span aria-hidden className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-xl font-bold ${tone.avatar}`}>
-                    {Array.from(p.nickname.trim())[0]?.toUpperCase() ?? "?"}
-                  </span>
+                  {photoOf(p.id) ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={photoOf(p.id)!} alt="" width={112} height={112} className="h-14 w-14 shrink-0 rounded-2xl object-cover" />
+                  ) : (
+                    <span aria-hidden className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-xl font-bold ${tone.avatar}`}>
+                      {Array.from(p.nickname.trim())[0]?.toUpperCase() ?? "?"}
+                    </span>
+                  )}
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-center gap-1.5">
                       <span className="truncate text-base font-bold text-stone-900">{p.nickname}</span>

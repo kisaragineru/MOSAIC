@@ -45,6 +45,8 @@ export async function buildExport(userId: string) {
     const commentsWritten = (await tx.execute(sql`select * from memory_comments_authored()`)).rows;
     // Messages I sent (others' messages to me stay theirs).
     const messagesSent = (await tx.execute(sql`select * from dm_messages_authored()`)).rows;
+    const photo = (await tx.execute<{ mime: string; bytes: Buffer; version: number }>(sql`select * from avatar_get(${userId})`)).rows[0];
+    const profilePhoto = photo ? { mime: photo.mime, base64: Buffer.from(photo.bytes).toString("base64") } : null;
     const manualShares = await tx.select().from(s.manualShares).where(eq(s.manualShares.ownerId, userId));
     // Gift boxes I write in or received, each as I may see it (see gift_box_read).
     const giftIds = (await tx.execute<{ id: string }>(sql`select id from gift_boxes_mine()`)).rows;
@@ -117,6 +119,7 @@ export async function buildExport(userId: string) {
       peerResults,
       commentsWritten,
       messagesSent,
+      profilePhoto,
       manualShares,
       giftBoxes,
       tendencies: claims.map((c) => ({ ...c, evidence: evidence.filter((e) => e.claimId === c.id) })),

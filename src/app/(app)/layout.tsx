@@ -5,12 +5,15 @@ import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { getAccount } from "@/server/services/account";
 import { dmUnreadTotal } from "@/server/services/dm";
+import { myAvatarUrl } from "@/server/services/avatars";
+import { Avatar } from "@/components/avatar";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const uid = await requireUser();
   const { t } = await getT();
   const acc = await getAccount(uid);
   const unread = await dmUnreadTotal(uid);
+  const avatar = await myAvatarUrl(uid);
   const initial = Array.from(acc.profile.displayName.trim())[0]?.toUpperCase() ?? "?";
   return (
     <>
@@ -54,9 +57,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               href="/me"
               aria-label={t.nav.profileMenu}
               title={t.nav.profileMenu}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-teal-200 to-violet-200 text-sm font-bold text-teal-900 ring-2 ring-white transition hover:ring-teal-300"
+              className="flex h-9 w-9 items-center justify-center rounded-full ring-2 ring-white transition hover:ring-teal-300"
             >
-              {initial}
+              <Avatar name={acc.profile.displayName} src={avatar} className="h-9 w-9 text-sm" />
             </Link>
           </div>
         </div>

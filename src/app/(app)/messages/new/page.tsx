@@ -8,6 +8,7 @@ import { uuid } from "@/lib/validation/common";
 import { requireUser } from "@/server/auth/session";
 import { sharedEntry } from "@/server/services/comments";
 import { dmContacts, dmInbox } from "@/server/services/dm";
+import { avatarUrls } from "@/server/services/avatars";
 import { getMemory } from "@/server/services/memories";
 
 /** Start a conversation (one person) or a group (several), optionally sending a record. */
@@ -28,6 +29,7 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
         })
     : null;
   const recent = recordId ? (await dmInbox(uid)).filter((c) => c.canSend).slice(0, 6) : [];
+  const pics = await avatarUrls(uid, [...contacts.map((c) => c.id), ...recent.flatMap((c) => c.others.map((o) => o.id))]);
   return (
     <Page title={record ? tm.shareTitle : tm.newMessage} back={record ? undefined : "/messages"}>
       <Flash t={t} sp={sp} />
@@ -48,7 +50,7 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
                   <input type="hidden" name="conversationId" value={c.id} />
                   <input type="hidden" name="record" value={recordId!} />
                   <button type="submit" className="flex w-full items-center gap-3 rounded-2xl px-2 py-2 text-left transition hover:bg-stone-50 active:scale-[0.99]">
-                    <DmAvatar names={c.others.map((o) => o.name)} size="sm" />
+                    <DmAvatar names={c.others.map((o) => o.name)} srcs={c.others.map((o) => pics.get(o.id))} size="sm" />
                     <span className="flex-1 truncate font-medium text-stone-800">{dmTitle(c, t)}</span>
                     <span className="rounded-full bg-teal-700 px-3 py-1 text-xs font-bold text-white">{tm.send}</span>
                   </button>
@@ -69,7 +71,7 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
               {contacts.map((c) => (
                 <li key={c.id}>
                   <label className="flex cursor-pointer items-center gap-3 rounded-2xl px-2 py-2 transition hover:bg-stone-50 has-[:checked]:bg-teal-50">
-                    <DmAvatar names={[c.name]} size="sm" />
+                    <DmAvatar names={[c.name]} srcs={[pics.get(c.id)]} size="sm" />
                     <span className="flex-1 font-medium text-stone-800">{c.name}</span>
                     <input type="checkbox" name="member" value={c.id} className="h-5 w-5 accent-teal-700" />
                   </label>

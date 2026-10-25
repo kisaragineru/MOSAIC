@@ -8,6 +8,7 @@ import { getT } from "@/lib/i18n/server";
 import { uuid } from "@/lib/validation/common";
 import { requireUser } from "@/server/auth/session";
 import { dmContacts, dmConversation } from "@/server/services/dm";
+import { avatarUrls } from "@/server/services/avatars";
 
 /** A conversation's details: who's in it, the group's name, mute, leave, delete for me. */
 export default async function ConversationInfoPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
@@ -22,6 +23,7 @@ export default async function ConversationInfoPage({ params, searchParams }: { p
   const active = conv.members.filter((m) => !m.left);
   const group = conv.kind === "group";
   const addable = group && !conv.me.left ? (await dmContacts(uid)).filter((c) => !active.some((m) => m.id === c.id)) : [];
+  const pics = await avatarUrls(uid, [...active.map((m) => m.id), ...addable.map((c) => c.id)]);
   const hidden = <input type="hidden" name="conversationId" value={conv.id} />;
   return (
     <Page title={tm.info} back={`/messages/${conv.id}`}>
@@ -39,7 +41,7 @@ export default async function ConversationInfoPage({ params, searchParams }: { p
         <ul className="space-y-2">
           {active.map((m) => (
             <li key={m.id} className="flex items-center gap-3">
-              <DmAvatar names={[m.name]} size="sm" />
+              <DmAvatar names={[m.name]} srcs={[pics.get(m.id)]} size="sm" />
               <span className="flex-1">
                 <span className="block font-medium text-stone-900">{m.id === uid ? `${m.name}（${tm.you}）` : m.name}</span>
                 {(m.role === "owner" && group) || (!m.connected && m.id !== uid) ? (
@@ -58,7 +60,7 @@ export default async function ConversationInfoPage({ params, searchParams }: { p
                 {addable.map((c) => (
                   <li key={c.id}>
                     <label className="flex cursor-pointer items-center gap-3 rounded-2xl px-2 py-2 hover:bg-stone-50 has-[:checked]:bg-teal-50">
-                      <DmAvatar names={[c.name]} size="sm" />
+                      <DmAvatar names={[c.name]} srcs={[pics.get(c.id)]} size="sm" />
                       <span className="flex-1">{c.name}</span>
                       <input type="checkbox" name="member" value={c.id} className="h-5 w-5 accent-teal-700" />
                     </label>

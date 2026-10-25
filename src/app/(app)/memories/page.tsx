@@ -12,6 +12,7 @@ import { getAccount } from "@/server/services/account";
 import { listMemories, listTags, type MemorySummary } from "@/server/services/memories";
 import { shareTargets, connectionFeed, feedForPage, feedToEntry, mineToEntry } from "@/server/services/memory-share";
 import { listPeople } from "@/server/services/people";
+import { avatarUrls } from "@/server/services/avatars";
 import { commentInbox, commentPreviews, countsByEntry } from "@/server/services/comments";
 
 const PAGE_SIZE = 50;
@@ -127,7 +128,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
       {days.length === 0 ? (
         <Empty>{view === "friends" ? tl.friendsEmpty : t.memories.empty}</Empty>
       ) : (
-        <Timeline t={t} locale={locale} tz={tz} days={days} comments={counts} previews={previews} />
+        <Timeline t={t} locale={locale} tz={tz} days={days} comments={counts} previews={previews} avatars={await avatarUrls(uid, entries.map((e) => e.ownerId))} />
       )}
       {(page > 0 || hasOlder) && (
         <nav className="flex justify-between text-sm" aria-label="pagination">

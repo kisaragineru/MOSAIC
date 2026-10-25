@@ -5,6 +5,7 @@ import { getT } from "@/lib/i18n/server";
 import { uuid } from "@/lib/validation/common";
 import { requireUser } from "@/server/auth/session";
 import { getAccount } from "@/server/services/account";
+import { avatarUrls } from "@/server/services/avatars";
 
 /** One conversation. Loads the newest messages; the client keeps it up to date. */
 export default async function ConversationPage({ params }: { params: Promise<{ id: string }> }) {
@@ -72,6 +73,7 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
     canSend: conv.canSend,
     left: conv.me.left,
     members: conv.members.map((m) => ({ id: m.id, name: m.name, left: m.left, lastReadAt: m.lastReadAt?.toISOString() ?? null, typing: m.typing })),
+    avatars: Object.fromEntries(await avatarUrls(uid, conv.members.map((m) => m.id))),
   };
   return <ChatView me={uid} conv={view} initial={initial} tz={tz} locale={locale} text={text} reactions={[...DM_REACTIONS]} editMinutes={DM_EDIT_MINUTES} maxPhotos={DM_MAX_PHOTOS} />;
 }

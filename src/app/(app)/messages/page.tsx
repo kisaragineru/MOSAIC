@@ -7,6 +7,7 @@ import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { getAccount } from "@/server/services/account";
 import { dmInbox } from "@/server/services/dm";
+import { avatarUrls } from "@/server/services/avatars";
 
 const nowMs = () => Date.now();
 
@@ -17,6 +18,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
   const { t, locale } = await getT();
   const tz = (await getAccount(uid)).profile.timeZone;
   const inbox = await dmInbox(uid);
+  const pics = await avatarUrls(uid, inbox.flatMap((c) => c.others.map((o) => o.id)));
   const now = nowMs();
   const when = (d: Date) => {
     const mins = (now - d.getTime()) / 60_000;
@@ -45,6 +47,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
             id: c.id,
             title: dmTitle(c, t),
             names: c.others.map((o) => o.name),
+            srcs: c.others.map((o) => pics.get(o.id) ?? null),
             preview: dmPreview(c, t, uid),
             when: when(c.last.at),
             unread: c.unread,

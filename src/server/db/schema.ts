@@ -1160,3 +1160,23 @@ export const dmAttachments = pgTable(
     check("dm_attachments_size_ck", sql`${t.size} between 1 and 2500000`),
   ],
 );
+
+/**
+ * A profile photo (already cropped to a square in the browser). Read and written only through
+ * the functions of migration 0023: shown to its owner, people they're connected with and people
+ * they share a conversation with.
+ */
+export const userAvatars = pgTable(
+  "user_avatars",
+  {
+    userId: uuid("user_id")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    mime: text("mime").notNull(),
+    bytes: bytea("bytes").notNull(),
+    size: integer("size").notNull(),
+    version: integer("version").notNull().default(1),
+    updatedAt: updatedAt(),
+  },
+  (t) => [check("user_avatars_mime_ck", sql`${t.mime} in ('image/jpeg','image/png','image/webp')`), check("user_avatars_size_ck", sql`${t.size} between 1 and 1000000`)],
+);
