@@ -108,6 +108,12 @@ body {
   from { stroke-dashoffset: 1; }
   to { stroke-dashoffset: 0; }
 }
+/* Draws a closed outline, then drops the dash so the finished line is whole (no seam or gap). */
+@keyframes drawClosed {
+  0% { stroke-dasharray: 1; stroke-dashoffset: 1; }
+  99% { stroke-dasharray: 1; stroke-dashoffset: 0; }
+  100% { stroke-dasharray: none; stroke-dashoffset: 0; }
+}
 @keyframes navProgress {
   0% { transform: translateX(-100%) scaleX(0.3); }
   50% { transform: translateX(0%) scaleX(0.6); }

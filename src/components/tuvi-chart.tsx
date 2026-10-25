@@ -135,8 +135,8 @@ export function TuviChart({
   }, [selected]);
   const sel = selected === null ? null : details.find((d) => d.branch === selected) ?? null;
   const related = new Set(sel?.related ?? []);
-  const floatTrine = sel && sel.related.length === 3 ? [sel.branch, sel.related[0]!, sel.related[1]!] : null;
-  const floatOpp = sel && sel.related.length === 3 ? sel.related[2]! : null;
+  // The four palaces read together, in their order around the board, so the outline runs through each in turn.
+  const floatRing = sel && sel.related.length === 3 ? [sel.branch, ...sel.related].sort((a, b) => ((a - sel.branch + 12) % 12) - ((b - sel.branch + 12) % 12)) : null;
   const isNow = (b: number) => {
     const p = chart.palaces[b]!;
     return currentAge !== null && !!p.daiHan && currentAge >= p.daiHan.from && currentAge <= p.daiHan.to;
@@ -198,28 +198,17 @@ export function TuviChart({
               onClick={() => pick(null)}
               className="absolute inset-0 animate-[fadeIn_.5s_ease-out] cursor-default rounded-3xl bg-white/45 motion-reduce:animate-none"
             />
-            {floatTrine && floatOpp !== null && (
+            {floatRing && (
               <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
                 <polygon
-                  points={floatTrine.map((b) => FLOAT_CENTER[b]!.join(",")).join(" ")}
+                  points={floatRing.map((b) => FLOAT_CENTER[b]!.join(",")).join(" ")}
                   pathLength={1}
                   fill="rgb(167 139 250 / 0.10)"
                   stroke="rgb(139 92 246 / 0.7)"
                   strokeWidth="2"
                   strokeLinejoin="round"
                   vectorEffect="non-scaling-stroke"
-                  className="animate-[draw_1.2s_ease-out_.4s_both] [stroke-dasharray:1] motion-reduce:animate-none"
-                />
-                <line
-                  x1={FLOAT_CENTER[sel.branch]![0]}
-                  y1={FLOAT_CENTER[sel.branch]![1]}
-                  x2={FLOAT_CENTER[floatOpp]![0]}
-                  y2={FLOAT_CENTER[floatOpp]![1]}
-                  stroke="rgb(139 92 246 / 0.7)"
-                  strokeWidth="2"
-                  strokeDasharray="6 5"
-                  vectorEffect="non-scaling-stroke"
-                  className="animate-[fadeIn_.7s_ease-out_.9s_both] motion-reduce:animate-none"
+                  className="animate-[drawClosed_1.4s_ease-out_.4s_both] motion-reduce:animate-none"
                 />
               </svg>
             )}
