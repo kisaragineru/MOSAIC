@@ -69,8 +69,28 @@ export function QuickComposer({ tx, canShare, giftBoxes = [], trigger = "fab" }:
     setAsk(state.id || null);
   }
 
+  const sheet = useRef<HTMLDivElement>(null);
+  const holder = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (open) area.current?.focus();
+    if (!open) return;
+    // Open at the top with the cursor in the text, without the browser scrolling the sheet away.
+    sheet.current?.scrollTo(0, 0);
+    area.current?.focus({ preventScroll: true });
+    // Where the page doesn't get shorter for the keyboard (iPhone Safari), lift the sheet above it.
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const fit = () => {
+      const covered = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      if (holder.current) holder.current.style.paddingBottom = `${covered}px`;
+      if (sheet.current) sheet.current.style.maxHeight = `${Math.round(vv.height * 0.92)}px`;
+    };
+    fit();
+    vv.addEventListener("resize", fit);
+    vv.addEventListener("scroll", fit);
+    return () => {
+      vv.removeEventListener("resize", fit);
+      vv.removeEventListener("scroll", fit);
+    };
   }, [open]);
 
   useEffect(() => {
@@ -109,9 +129,9 @@ export function QuickComposer({ tx, canShare, giftBoxes = [], trigger = "fab" }:
         </button>
       )}
       {open && (
-        <div className="fixed inset-0 z-40 flex items-end justify-center print:hidden">
+        <div ref={holder} className="fixed inset-0 z-40 flex items-end justify-center print:hidden">
           <button type="button" aria-label={tx.close} tabIndex={-1} onClick={close} className="absolute inset-0 animate-[fadeIn_.2s_ease-out] bg-stone-900/30 backdrop-blur-[2px] motion-reduce:animate-none" />
-          <div role="dialog" aria-modal="true" aria-labelledby="composer-title" className="relative max-h-[92dvh] w-full max-w-2xl animate-[sheetUp_.25s_ease-out] overflow-y-auto rounded-t-3xl bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl motion-reduce:animate-none">
+          <div ref={sheet} role="dialog" aria-modal="true" aria-labelledby="composer-title" className="relative max-h-[92dvh] w-full max-w-2xl animate-[sheetUp_.25s_ease-out] overflow-y-auto rounded-t-3xl bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl motion-reduce:animate-none">
             <div className="mb-2 flex items-center justify-between">
               <h2 id="composer-title" className="text-base font-semibold text-stone-900">{tx.title}</h2>
               <button type="button" onClick={close} aria-label={tx.close} className="flex h-9 w-9 items-center justify-center rounded-full text-xl text-stone-500 hover:bg-stone-100">✕</button>

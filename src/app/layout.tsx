@@ -24,7 +24,9 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#faf8f5" };
+// "resizes-content": when the on-screen keyboard opens, the page itself gets shorter (Android
+// Chrome), so sheets and the chat box sit above the keyboard instead of behind it.
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#faf8f5", interactiveWidget: "resizes-content" };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
