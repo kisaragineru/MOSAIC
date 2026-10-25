@@ -128,7 +128,8 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
   const date = personId && active ? (await upcomingDates(uid, 30)).filter((d) => d.personId === personId).sort((a, b) => a.daysUntil - b.daysUntil)[0] : undefined;
   const theirsOnlyFirst = pref ? (v.myRole === "a" ? pref.onlyB : pref.onlyA)[0] : undefined;
   return (
-    <Page title={cc.title(v.otherName)} back="/share">
+    // Back to where this is reached from: the person's own page (notes, gifts), else the people list.
+    <Page title={cc.title(v.otherName)} back={personId ? `/people/${personId}` : "/people"}>
       <Flash t={t} sp={sp} />
 
       {/* Who: the two of you, how you're connected, and where to go on this page. */}
