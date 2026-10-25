@@ -1,10 +1,10 @@
 /**
- * The first-run guide: three questions that reveal a first tile, a few words about yourself,
- * then home. Finishing or skipping it is remembered (profiles.onboarded_at).
+ * The first-run guide: your Tử Vi chart, three questions that reveal a first tile, a few words
+ * for the people who matter, then connecting with one. Finishing or skipping it is remembered (profiles.onboarded_at).
  */
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { TendencyKey } from "@/content/questions";
-import { profiles } from "../db/schema";
+import { profiles, tuviCharts } from "../db/schema";
 import { withUser } from "../db/tx";
 import { answeredQuestionIds } from "./discovery";
 import { listTendencies, type ClaimState } from "./tendencies";
@@ -21,10 +21,13 @@ export interface OnboardingState {
   /** The seed axis once it says something. */
   tile: { direction: 1 | -1; state: ClaimState } | null;
   bio: string | null;
+  /** A Tử Vi chart exists (the guide's chart step is done). */
+  hasChart: boolean;
 }
 
 export async function onboardingState(userId: string): Promise<OnboardingState> {
   const [p] = await withUser(userId, (tx) => tx.select({ at: profiles.onboardedAt, bio: profiles.bio }).from(profiles).where(eq(profiles.userId, userId)));
+  const [chart] = await withUser(userId, (tx) => tx.select({ id: tuviCharts.id }).from(tuviCharts).where(and(eq(tuviCharts.userId, userId), eq(tuviCharts.isCurrent, true))));
   const answered = await answeredQuestionIds(userId);
   const claim = (await listTendencies(userId)).find((c) => c.claimKey === SEED_AXIS);
   return {
@@ -32,6 +35,7 @@ export async function onboardingState(userId: string): Promise<OnboardingState> 
     left: SEED_QUESTIONS.filter((q) => !answered.has(q)),
     tile: claim && claim.state !== "insufficient" ? { direction: claim.direction, state: claim.state } : null,
     bio: p?.bio ?? null,
+    hasChart: !!chart,
   };
 }
 

@@ -8,7 +8,7 @@ import { attempt, bool, str, withParam } from "./util";
 
 export async function updateProfileAction(form: FormData) {
   const uid = await requireUser();
-  const back = str(form, "back") === "/me" ? "/me" : str(form, "back") === "/welcome?step=4" ? "/welcome?step=4" : "/settings";
+  const back = str(form, "back") === "/me" ? "/me" : str(form, "back") === "/welcome?step=6" ? "/welcome?step=6" : "/settings";
   const current = await getAccount(uid);
   const r = await attempt("settings.profile", () =>
     updateProfile(uid, {

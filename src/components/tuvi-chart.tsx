@@ -163,6 +163,8 @@ export function TuviChart({
                 key={p.branch}
                 onClick={() => pick(selected === p.branch ? null : p.branch)}
                 aria-pressed={selected === p.branch}
+                data-menh={isMenh || undefined}
+                data-now={now || undefined}
                 aria-label={`${x.plain} ${x.trad}`}
                 className={`${COL[c]} ${ROW[r]} ${CORNER[`${c},${r}`] ?? ""} relative flex min-h-28 min-w-0 flex-col gap-0.5 overflow-hidden p-1.5 text-left leading-tight transition-colors duration-150 motion-reduce:transition-none ${
                   // The one outline on the board: the palace the panel below is reading.

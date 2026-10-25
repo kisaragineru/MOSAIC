@@ -4,6 +4,10 @@ import { updateProfileAction } from "@/app/actions/settings";
 import { BrandMark } from "@/components/brand";
 import { KnowledgeCard } from "@/components/knowledge-card";
 import { QuestionForm } from "@/components/question-form";
+import { BirthForm } from "@/components/birth-form";
+import { ChartTour } from "@/components/chart-tour";
+import { Flash } from "@/components/flash";
+import { TuviChart } from "@/components/tuvi-chart";
 import { Button, Card, Textarea } from "@/components/ui";
 import { AXIS_LABEL } from "@/content/axes";
 import { MANUAL } from "@/content/manual-axes";
@@ -14,10 +18,17 @@ import { getAccount } from "@/server/services/account";
 import { getQuestion } from "@/server/services/discovery";
 import { knowledge } from "@/server/services/knowledge";
 import { onboardingState, SEED_AXIS } from "@/server/services/onboarding";
+import { getTuvi } from "@/server/services/tuvi";
+import { chartView } from "@/lib/tuvi/chart-view";
 
-const STEPS = 4;
+const STEPS = 6;
 
-/** The first-run guide: what MOSAIC is, three questions to a first tile, a bio, then home. */
+/**
+ * The first-run guide, following what MOSAIC is for — know yourself, share it, know the people
+ * who matter, grow closer: what MOSAIC is; your Tử Vi chart (asked for, not skippable: it is
+ * the most a new account can learn at once); the chart's result and a hands-on tour; three
+ * questions to a first tile; a few words for the people who matter; then connecting with one.
+ */
 export default async function WelcomePage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
   const sp = await searchParams;
@@ -26,6 +37,7 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
   const step = Math.min(STEPS, Math.max(1, Number(sp.step) || 1));
   const acc = await getAccount(uid);
   const st = await onboardingState(uid);
+  const tv = step === 2 || step === 3 ? await getTuvi(uid, locale) : null;
 
   const skip = (
     <form action={finishOnboardingAction}>
@@ -42,7 +54,8 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
             <li key={i} className={`h-1.5 w-8 rounded-full ${i < step ? "bg-teal-600" : "bg-stone-200"}`} />
           ))}
         </ol>
-        {step < STEPS && skip}
+        {/* No way out before the chart is made: it is what everything after builds on. */}
+        {step >= 3 && step < STEPS && skip}
       </div>
 
       {step === 1 && (
@@ -52,20 +65,55 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
             <h1 className="mt-4 text-2xl font-bold text-stone-900">{w.hello(acc.profile.displayName)}</h1>
             <p className="mt-2 leading-7 text-stone-600">{w.lead}</p>
           </div>
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {w.cards.map(([icon, title, body]) => (
+          <ol className="grid gap-3 sm:grid-cols-2">
+            {w.cards.map(([icon, title, body], i) => (
               <li key={title} className="rounded-3xl bg-white/85 p-4 shadow-sm ring-1 ring-white/80">
-                <p className="text-2xl" aria-hidden>{icon}</p>
-                <p className="mt-1 font-semibold text-stone-900">{title}</p>
+                <p className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-teal-700 text-xs font-bold text-white">{i + 1}</span>
+                  <span className="text-xl" aria-hidden>{icon}</span>
+                  <span className="font-semibold text-stone-900">{title}</span>
+                </p>
                 <p className="mt-1 text-sm leading-6 text-stone-600">{body}</p>
               </li>
             ))}
-          </ul>
-          <Link href="/welcome?step=2" className="block rounded-full bg-teal-700 py-3 text-center font-semibold text-white shadow-sm hover:bg-teal-800">{w.start}</Link>
+          </ol>
+          <p className="text-center text-xs text-stone-500">{w.privacyLine}</p>
+          <Link href={st.hasChart ? "/welcome?step=3" : "/welcome?step=2"} className="block rounded-full bg-teal-700 py-3 text-center font-semibold text-white shadow-sm hover:bg-teal-800">{w.start}</Link>
         </section>
       )}
 
-      {step === 2 && (st.left.length > 0 ? (
+      {(step === 2 || (step === 3 && !tv?.chart)) && tv && (
+        <section className="space-y-4">
+          <Flash t={t} sp={sp} />
+          <div>
+            <h1 className="text-2xl font-bold text-stone-900">{w.tuviTitle}</h1>
+            <p className="mt-2 text-sm leading-7 text-stone-600">{w.tuviLead}</p>
+          </div>
+          {/* What the chart gives, shown before it is asked for. */}
+          <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-teal-100 via-sky-50 to-violet-200 p-5 text-teal-950" data-testid="tuvi-preview">
+            <p className="text-xs font-semibold text-teal-700">{w.tuviPreviewTitle}</p>
+            <ul className="mt-2 space-y-1.5">
+              {w.tuviPreview.map((x) => (
+                <li key={x} className="flex items-center gap-2 text-sm font-semibold">
+                  <span aria-hidden className="text-violet-600">✦</span>
+                  {x}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 inline-block rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-violet-800">🔓 {w.tuviPreviewLock}</p>
+          </div>
+          <p className="rounded-2xl bg-rose-50/70 px-4 py-3 text-sm leading-6 text-rose-950">{w.tuviWhy}</p>
+          <Card>
+            <p className="mb-1 text-sm font-semibold text-stone-800">⏱ {w.tuviQuick}</p>
+            <p className="mb-4 text-xs leading-5 text-stone-500">{w.tuviPrivacy}</p>
+            <BirthForm t={t} p={tv.profile} needs={tv.needs} back="/welcome?step=3" simple />
+          </Card>
+        </section>
+      )}
+
+      {step === 3 && tv?.chart && <ChartResult t={t} locale={locale} tv={tv} />}
+
+      {step === 4 && (st.left.length > 0 ? (
         <SeedQuestion id={st.left[0]!} answered={3 - st.left.length} t={t} locale={locale} />
       ) : (
         <section className="space-y-5 text-center motion-safe:animate-[zoomIn_.5s_ease-out]">
@@ -84,37 +132,38 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
               {st.tile.state !== "mixed" && <p className="mt-2 text-sm leading-7 text-stone-600">{(st.tile.direction === 1 ? MANUAL[SEED_AXIS]!.pos : MANUAL[SEED_AXIS]!.neg).portrait[locale]}</p>}
             </Card>
           )}
-          <Link href="/welcome?step=3" className="block rounded-full bg-teal-700 py-3 text-center font-semibold text-white">{w.next}</Link>
+          <Link href="/welcome?step=5" className="block rounded-full bg-teal-700 py-3 text-center font-semibold text-white">{w.next}</Link>
         </section>
       ))}
 
-      {step === 3 && (
+      {step === 5 && (
         <section className="space-y-4">
           <h1 className="text-2xl font-bold text-stone-900">{w.aboutTitle}</h1>
           <p className="text-sm leading-7 text-stone-600">{w.aboutLead}</p>
           <form action={updateProfileAction} className="space-y-3">
-            <input type="hidden" name="back" value="/welcome?step=4" />
+            <input type="hidden" name="back" value="/welcome?step=6" />
             <Textarea name="bio" rows={4} maxLength={2000} defaultValue={st.bio ?? ""} placeholder={w.bioPlaceholder} aria-label={t.settings.bio} />
             <div className="flex items-center gap-4">
               <Button type="submit">{w.saveAndNext}</Button>
-              <Link href="/welcome?step=4" className="text-sm text-stone-500 underline underline-offset-4">{w.skip}</Link>
+              <Link href="/welcome?step=6" className="text-sm text-stone-500 underline underline-offset-4">{w.skip}</Link>
             </div>
           </form>
-          <Card>
-            <p className="text-sm leading-6 text-stone-700">⭐ {w.tuviHint}</p>
-            <Link href="/tuvi" className="mt-2 inline-block text-sm font-semibold text-teal-700 underline underline-offset-4">{w.tuviLink} →</Link>
-          </Card>
         </section>
       )}
 
-      {step === 4 && (
+      {step === 6 && (
         <section className="space-y-4">
           <h1 className="text-2xl font-bold text-stone-900">🎉 {w.doneTitle}</h1>
           <p className="leading-7 text-stone-600">{w.doneLead}</p>
           <KnowledgeCard k={await knowledge(uid)} t={t} locale={locale} />
+          {/* The guide ends where MOSAIC leads: to someone who matters. */}
           <form action={finishOnboardingAction}>
+            <input type="hidden" name="next" value="/share" />
+            <Button type="submit" className="w-full">🤝 {w.connectNow}</Button>
+          </form>
+          <form action={finishOnboardingAction} className="text-center">
             <input type="hidden" name="next" value="/home" />
-            <Button type="submit" className="w-full">{w.goHome}</Button>
+            <button type="submit" className="text-sm text-stone-500 underline underline-offset-4 hover:text-stone-800">{w.goHome}</button>
           </form>
         </section>
       )}
@@ -139,8 +188,39 @@ async function SeedQuestion({ id, answered, t, locale }: { id: string; answered:
         <span className="text-xs font-semibold text-teal-800">{w.progress(answered)}</span>
       </div>
       <Card key={id} className="motion-safe:animate-[fadeUp_.35s_ease-out]">
-        <QuestionForm q={q.question} t={t} locale={locale} back="/welcome?step=2" allowSkip={false} />
+        <QuestionForm q={q.question} t={t} locale={locale} back="/welcome?step=4" allowSkip={false} />
       </Card>
+    </section>
+  );
+}
+
+/** The chart's first result in a sentence, then the board itself with a hands-on tour. */
+async function ChartResult({ t, locale, tv }: { t: Awaited<ReturnType<typeof getT>>["t"]; locale: Awaited<ReturnType<typeof getT>>["locale"]; tv: Awaited<ReturnType<typeof getTuvi>> }) {
+  const w = t.welcome;
+  const c = tv.chart!;
+  const view = chartView(c, locale, t, { birth: true });
+  const persona = tv.sections.find((x) => x.section === "personality")?.persona;
+  // The plain reading opens with what the palace is and how many faces it has; the star portraits follow.
+  const plain = tv.sections.find((x) => x.section === "personality")?.plain?.slice(2, 4) ?? [];
+  const hasNow = tv.currentAge !== null && c.palaces.some((p) => p.daiHan && tv.currentAge! >= p.daiHan.from && tv.currentAge! <= p.daiHan.to);
+  return (
+    <section className="space-y-4">
+      <div className="rounded-3xl bg-linear-to-br from-teal-100 via-sky-50 to-violet-200 p-5 text-teal-950 shadow-[0_10px_30px_-14px_rgba(91,70,160,0.35)] motion-safe:animate-[zoomIn_.5s_ease-out]" data-testid="chart-result">
+        <p className="text-xs font-semibold text-teal-700">✨ {w.resultEyebrow}</p>
+        {persona && <p className="mt-2 text-xl font-bold leading-snug">{w.resultPersona(persona)}</p>}
+        {plain.map((x) => <p key={x} className="mt-2 text-sm leading-7 text-teal-950/90">{x}</p>)}
+        <p className="mt-3 text-xs leading-5 text-rose-900">{w.resultShare}</p>
+      </div>
+      {c.menh !== null ? (
+        <>
+          <h2 className="text-lg font-bold text-stone-900">{w.tourTitle}</h2>
+          <ChartTour steps={w.tourSteps} hasNow={hasNow} closeLabel={view.labels.close} done={w.tourDone} next={w.tourNext} nextHref="/welcome?step=4">
+            <TuviChart chart={c} details={view.details} center={view.center} currentAge={tv.currentAge} cells={view.cells} labels={view.labels} />
+          </ChartTour>
+        </>
+      ) : (
+        <Link href="/welcome?step=4" className="block rounded-full bg-teal-700 py-3 text-center font-semibold text-white">{w.tourNext} →</Link>
+      )}
     </section>
   );
 }

@@ -26,6 +26,7 @@ import { getTuvi } from "@/server/services/tuvi";
 import { mosaicLabels, portrait, tileViews } from "@/server/services/mosaic";
 import { Mosaic } from "@/components/mosaic";
 import { KnowledgeCard } from "@/components/knowledge-card";
+import { StarterChecklist } from "@/components/starter-checklist";
 import { knowledge } from "@/server/services/knowledge";
 import { lookBackDue, monthKey } from "@/server/services/monthly";
 import { lifeStages } from "@/lib/tuvi/interpret";
@@ -47,7 +48,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const tv = await getTuvi(uid, locale);
   const chart = tv.chart;
   const menhStars = chart && chart.menh !== null ? chart.palaces[chart.menh]!.mainStars.map((s) => STAR_INFO[s.id].vi) : [];
-  const waiting = (await listComparisons(uid)).filter((c) => c.waitingOn === "you");
+  const comparisons = await listComparisons(uid);
+  const waiting = comparisons.filter((c) => c.waitingOn === "you");
   const askedOfMe = (await myPeerRequests(uid)).filter((r) => r.role === "responder" && r.status === "pending");
   const pic = await portrait(uid);
   const know = await knowledge(uid);
@@ -65,6 +67,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   return (
     <Page title={t.home.hello(account.profile.displayName)}>
       <Flash t={t} sp={sp} />
+      <StarterChecklist
+        t={t}
+        resume={!account.profile.onboardedAt}
+        done={{ chart: !!chart, answers: know.parts.answers >= 3, bio: know.parts.bio, record: know.parts.records > 0, connect: comparisons.some((c) => c.status === "active") }}
+      />
       {/* Posting: the same sheet as on records. */}
       <QuickComposer trigger="inline" tx={composerText(t)} canShare={(await shareTargets(uid)).length > 0} giftBoxes={(await myGiftBoxes(uid)).filter((b) => b.status === "open" && b.my_role !== "child").map((b) => ({ id: b.id, label: t.memories.composer.toGift(b.child_name) }))} />
       <Card title={t.home.recent}>
@@ -187,15 +194,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           <p className="text-sm text-stone-500">{t.discover.noQuestion}</p>
         )}
       </Card>
-      {!account.profile.onboardedAt && (
-        <Link href="/welcome" className="flex items-center justify-between gap-3 rounded-3xl bg-linear-to-br from-teal-50 to-amber-50 px-5 py-4 shadow-sm ring-1 ring-teal-100">
-          <span>
-            <span className="block font-semibold text-teal-900">🧭 {t.welcome.resume}</span>
-            <span className="block text-xs text-stone-600">{t.welcome.resumeSub}</span>
-          </span>
-          <span aria-hidden className="text-teal-700">→</span>
-        </Link>
-      )}
       {lookBack && (
         <Link href={`/reflection/${monthKey(lookBack)}`} className="flex items-center justify-between gap-3 rounded-3xl bg-linear-to-br from-sky-50 to-amber-50 px-5 py-4 shadow-sm ring-1 ring-sky-100">
           <span>

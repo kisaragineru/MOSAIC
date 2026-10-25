@@ -5,34 +5,81 @@ import { preferredZone, timeZoneOptions } from "@/lib/timezones";
 import type { TuviView } from "@/server/services/tuvi";
 
 /** The birth details a Tử Vi chart is computed from (on the Tử Vi page and in the profile). */
-export function BirthForm({ t, p, needs, back }: { t: Dict; p: TuviView["profile"]; needs: TuviView["needs"]; back: string }) {
+export function BirthForm({ t, p, needs, back, simple = false }: { t: Dict; p: TuviView["profile"]; needs: TuviView["needs"]; back: string; simple?: boolean }) {
+  // The welcome guide asks for the birth date first; the rarer settings wait behind "More".
+  const rare = (children: React.ReactNode) =>
+    simple ? (
+      <details className="rounded-2xl bg-stone-50 px-3 py-2">
+        <summary className="cursor-pointer text-sm text-stone-600">{t.welcome.tuviMore}</summary>
+        <div className="mt-3 space-y-3">{children}</div>
+      </details>
+    ) : (
+      children
+    );
   const needsLate = needs.includes("late_rat_hour") || !!p?.lateRatHour;
   const needsLeap = needs.includes("leap_month_rule") || !!p?.leapMonthRule;
-  return (
-    <form action={saveBirthAction} className="space-y-3">
-      <input type="hidden" name="back" value={back} />
-      <fieldset className="flex gap-4 text-sm">
-        <legend className="mb-1 text-sm font-medium text-stone-700">{t.tuvi.calendar}</legend>
-        <label className="flex items-center gap-1"><input type="radio" name="calendarInput" value="solar" defaultChecked={(p?.calendarInput ?? "solar") === "solar"} className="accent-teal-700" /> {t.tuvi.solar}</label>
-        <label className="flex items-center gap-1"><input type="radio" name="calendarInput" value="lunar" defaultChecked={p?.calendarInput === "lunar"} className="accent-teal-700" /> {t.tuvi.lunar}</label>
-      </fieldset>
-      <Field label={`${t.tuvi.solarDate} (${t.tuvi.solar})`}>
-        <Input type="date" name="solarDate" defaultValue={p?.solarDate ?? ""} min="1900-01-01" max="2100-12-31" />
-      </Field>
+  const calendar = (
+    <fieldset className="flex gap-4 text-sm">
+      <legend className="mb-1 text-sm font-medium text-stone-700">{t.tuvi.calendar}</legend>
+      <label className="flex items-center gap-1"><input type="radio" name="calendarInput" value="solar" defaultChecked={(p?.calendarInput ?? "solar") === "solar"} className="accent-teal-700" /> {t.tuvi.solar}</label>
+      <label className="flex items-center gap-1"><input type="radio" name="calendarInput" value="lunar" defaultChecked={p?.calendarInput === "lunar"} className="accent-teal-700" /> {t.tuvi.lunar}</label>
+    </fieldset>
+  );
+  const date = (
+    <Field label={`${t.tuvi.solarDate} (${t.tuvi.solar})`}>
+      <Input type="date" name="solarDate" defaultValue={p?.solarDate ?? ""} min="1900-01-01" max="2100-12-31" required={simple} />
+    </Field>
+  );
+  const lunar = (
+    <>
       <div className="grid grid-cols-3 gap-2">
         <Field label={t.tuvi.lunarYear}><Input type="number" name="lunarYear" min={1900} max={2100} defaultValue={p?.lunarYear ?? ""} /></Field>
         <Field label={t.tuvi.lunarMonth}><Input type="number" name="lunarMonth" min={1} max={12} defaultValue={p?.lunarMonth ?? ""} /></Field>
         <Field label={t.tuvi.lunarDay}><Input type="number" name="lunarDay" min={1} max={30} defaultValue={p?.lunarDay ?? ""} /></Field>
       </div>
       <Checkbox name="lunarLeap" defaultChecked={p?.lunarLeap} label={t.tuvi.lunarLeap} />
+    </>
+  );
+  const time = (
+    <>
       <Checkbox name="timeKnown" defaultChecked={p ? p.timeKnown : true} label={t.tuvi.timeKnown} />
       <Field label={t.tuvi.time}><Input type="time" name="birthTime" defaultValue={p?.birthTime?.slice(0, 5) ?? ""} /></Field>
+    </>
+  );
+  const zone = (
+    <>
       <Field label={t.tuvi.timeZone}>
         <Select name="timeZone" defaultValue={preferredZone(p?.timeZone ?? "Asia/Ho_Chi_Minh")}>
           {timeZoneOptions(preferredZone(p?.timeZone ?? "Asia/Ho_Chi_Minh")).map((z) => <option key={z} value={z}>{z}</option>)}
         </Select>
       </Field>
       <Field label={t.tuvi.place}><Input name="placeLabel" defaultValue={p?.placeLabel ?? ""} maxLength={120} /></Field>
+    </>
+  );
+  return (
+    <form action={saveBirthAction} className="space-y-3">
+      <input type="hidden" name="back" value={back} />
+      {simple ? (
+        <>
+          {date}
+          {time}
+          {rare(
+            <>
+              {calendar}
+              {lunar}
+              {zone}
+            </>,
+          )}
+        </>
+      ) : (
+        <>
+          {calendar}
+          {date}
+          {lunar}
+          {time}
+          {zone}
+        </>
+      )}
       <Field label={t.tuvi.sex} hint={t.tuvi.sexHelp}>
         <Select name="sex" defaultValue={p?.sex ?? "unspecified"}>
           {(["male", "female", "unspecified"] as const).map((s) => <option key={s} value={s}>{t.tuvi.sexes[s]}</option>)}
@@ -55,6 +102,6 @@ export function BirthForm({ t, p, needs, back }: { t: Dict; p: TuviView["profile
           </Select>
         </Field>
       )}
-      <Button type="submit" className="w-full">{t.tuvi.compute}</Button>
+      <Button type="submit" className="w-full">{simple ? t.welcome.tuviMake : t.tuvi.compute}</Button>
     </form>  );
 }
