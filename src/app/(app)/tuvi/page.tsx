@@ -146,7 +146,7 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
       )}
       {c && (
         <Card title={t.tuvi.chart}>
-          <TuviChart chart={c} details={details} center={view!.center} currentAge={v.currentAge} localNames={view!.localNames} labels={view!.labels} />
+          <TuviChart chart={c} details={details} center={view!.center} currentAge={v.currentAge} cells={view!.cells} labels={view!.labels} />
           {v.currentAge !== null && <p className="mt-2 text-xs text-stone-500">{t.tuvi.currentAge(v.currentAge)}</p>}
           {c.warnings.length > 0 && (
             <ul className="mt-3 space-y-1">

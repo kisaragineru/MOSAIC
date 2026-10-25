@@ -117,7 +117,7 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
           )}
           {on.has("tuvi_detail") && tv?.chart && view && (
             <PhoneCard title={t.compare.partnerChart(p.displayName)}>
-              <TuviChart chart={tv.chart} details={view.details} center={view.center} currentAge={tv.currentAge} localNames={view.localNames} labels={view.labels} />
+              <TuviChart chart={tv.chart} details={view.details} center={view.center} currentAge={tv.currentAge} cells={view.cells} labels={view.labels} />
             </PhoneCard>
           )}
           {(on.has("preferences") || on.has("values")) && (

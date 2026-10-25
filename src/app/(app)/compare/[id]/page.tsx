@@ -423,7 +423,7 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                     <TuviThemes sections={together.themes} labels={themeLabels(t)} />
                   </Card>
                   <Card title={t.compare.partnerChart(v.otherName)}>
-                    <TuviChart chart={together.theirs} details={together.view.details} center={together.view.center} currentAge={together.theirAge} localNames={together.view.localNames} labels={together.view.labels} />
+                    <TuviChart chart={together.theirs} details={together.view.details} center={together.view.center} currentAge={together.theirAge} cells={together.view.cells} labels={together.view.labels} />
                   </Card>
                 </>
               )}

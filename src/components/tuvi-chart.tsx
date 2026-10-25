@@ -1,9 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
-import { BRANCHES, STEMS } from "@/lib/tuvi/canchi";
+import { useEffect, useRef, useState } from "react";
+import { BRANCHES } from "@/lib/tuvi/canchi";
 import type { Chart } from "@/lib/tuvi/engine";
 import type { PalaceDetail } from "@/lib/tuvi/interpret";
-import { PALACE_INFO, STAR_INFO, type HoaId } from "@/lib/tuvi/stars";
+import type { HoaId } from "@/lib/tuvi/stars";
 
 // Traditional layout: Tỵ Ngọ Mùi Thân across the top, Dần Sửu Tý Hợi across the bottom.
 // [column, row] of each earthly branch on the 4×4 board.
@@ -42,75 +42,87 @@ const FLOAT_CENTER: Record<number, [number, number]> = Object.fromEntries(
 // then share a small corner. The card whose text-bearing left side is in that corner goes on top.
 const FLOAT_Z: Record<number, string> = { 6: "z-20", 1: "z-20", 9: "z-20", 10: "z-20" };
 const FLOAT_DELAY = ["[animation-delay:0ms]", "[animation-delay:160ms]", "[animation-delay:320ms]", "[animation-delay:480ms]"];
-// Where the enlarged view grows from: the centre of the tapped palace on the 4×4 board.
-const ORIGIN: Record<number, string> = {
-  5: "origin-[12.5%_12.5%]", 6: "origin-[37.5%_12.5%]", 7: "origin-[62.5%_12.5%]", 8: "origin-[87.5%_12.5%]",
-  4: "origin-[12.5%_37.5%]", 9: "origin-[87.5%_37.5%]",
-  3: "origin-[12.5%_62.5%]", 10: "origin-[87.5%_62.5%]",
-  2: "origin-[12.5%_87.5%]", 1: "origin-[37.5%_87.5%]", 0: "origin-[62.5%_87.5%]", 11: "origin-[87.5%_87.5%]",
-};
-const MENH_BADGE = "rounded-full bg-teal-100 px-1.5 text-[9px] font-bold text-teal-800";
-const THAN_BADGE = "rounded-full bg-violet-100 px-1.5 text-[9px] font-bold text-violet-800";
-const GROUP_TEXT = { lucky: "text-teal-700", malefic: "text-red-700", other: "text-stone-600", main: "text-rose-800" } as const;
 
 export interface ChartLabels {
   help: string;
-  palaceRole: string;
-  mainStars: string;
-  auxStars: string;
-  decade: string;
-  simple: string;
-  detailed: string;
   menh: string;
   than: string;
-  menhName: string;
-  thanName: string;
   now: string;
+  ageNow: string;
   related: string;
+  noMain: string;
+  borrow: string;
+  main: string;
   lucky: string;
   malefic: string;
-  noMain: string;
+  none: string;
+  age: string;
+  relatedTitle: string;
   /** Contains "{x}" for the selected palace's name. */
   focusTitle: string;
   self: string;
   trine: string;
   opposite: string;
   close: string;
-  back: string;
   tapForDetails: string;
+  hoa: Record<HoaId, string>;
 }
 
 export interface ChartCenter {
   pillar: string;
   lines: string[];
-  hoa: { kind: HoaId; star: string }[];
+  hoa: { kind: HoaId; plain: string; star: string }[];
+}
+
+/** One palace in everyday words (prepared on the server in the reader's language). */
+export interface ChartCell {
+  /** Short, for the cell. */
+  plain: string;
+  /** Fuller, for the panel. */
+  long: string;
+  trad: string;
+  tradShort: string;
+  stars: { word: string; name: string; hoa: HoaId | null }[];
+  lucky: string[];
+  malefic: string[];
+  hoaTips: string[];
 }
 
 type Detail = PalaceDetail & { borrowedText: string | null; ageText: string | null };
 
+const MARK = "w-fit rounded-md px-1.5 py-px text-[10px] font-bold";
+
+/**
+ * The chart, kept simple: each area of life in everyday words with its lead stars as kinds of
+ * person, and only "self" and "this decade" marked. Tapping a palace lifts it and the palaces
+ * read with it out of the board, and opens everything about it in a readable panel below.
+ */
 export function TuviChart({
   chart,
   details,
+  cells,
   center,
-  localNames,
   labels,
   currentAge,
 }: {
   chart: Chart;
   details: Detail[];
+  cells: ChartCell[];
   center: ChartCenter;
-  /** Palace name in the reader's language, by branch (null when not needed, e.g. Vietnamese). */
-  localNames: (string | null)[];
   labels: ChartLabels;
   currentAge: number | null;
 }) {
   const [selected, setSelected] = useState<number | null>(null);
-  const [detailed, setDetailed] = useState(false);
-  // Floating view first; tapping the centre card opens the full details of that palace.
-  const [detail, setDetail] = useState(false);
+  // The panel below shows a palace: the tapped one, else the self palace.
+  const [shown, setShown] = useState<number | null>(chart.menh);
+  const panel = useRef<HTMLElement>(null);
   const pick = (b: number | null) => {
     setSelected(b);
-    setDetail(false);
+    if (b !== null) setShown(b);
+  };
+  const openPanel = () => {
+    setSelected(null);
+    panel.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
   useEffect(() => {
     if (selected === null) return;
@@ -122,122 +134,57 @@ export function TuviChart({
   const related = new Set(sel?.related ?? []);
   const floatTrine = sel && sel.related.length === 3 ? [sel.branch, sel.related[0]!, sel.related[1]!] : null;
   const floatOpp = sel && sel.related.length === 3 ? sel.related[2]! : null;
+  const isNow = (b: number) => {
+    const p = chart.palaces[b]!;
+    return currentAge !== null && !!p.daiHan && currentAge >= p.daiHan.from && currentAge <= p.daiHan.to;
+  };
+  const d = shown === null ? null : details.find((x) => x.branch === shown) ?? null;
+  const cell = shown === null ? null : cells[shown]!;
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="min-w-0 flex-1 text-xs text-stone-500">{labels.help}</p>
-        <div role="group" className="flex rounded-full bg-stone-200/70 p-0.5 text-xs">
-          {[false, true].map((d) => (
-            <button
-              key={String(d)}
-              type="button"
-              aria-pressed={detailed === d}
-              onClick={() => setDetailed(d)}
-              className={`rounded-full px-3 py-1 transition-all ${detailed === d ? "bg-white font-semibold text-teal-800 shadow-sm" : "text-stone-600"}`}
-            >
-              {d ? labels.detailed : labels.simple}
-            </button>
-          ))}
-        </div>
-      </div>
+      <p className="text-xs leading-5 text-stone-600">{labels.help}</p>
 
       <div className="relative">
-        <div
-          className="grid grid-cols-4 grid-rows-4 gap-px overflow-hidden rounded-3xl border border-stone-200 bg-stone-200/80 shadow-[0_8px_30px_-16px_rgba(91,70,160,0.35)]"
-          data-testid="tuvi-chart"
-        >
+        <div className="grid grid-cols-4 grid-rows-4 gap-px overflow-hidden rounded-3xl border border-stone-200 bg-stone-200/80 shadow-[0_8px_30px_-16px_rgba(91,70,160,0.35)]" data-testid="tuvi-chart">
           {chart.palaces.map((p) => {
             const [c, r] = POS[p.branch]!;
             const isMenh = chart.menh === p.branch;
-            const now = currentAge !== null && !!p.daiHan && currentAge >= p.daiHan.from && currentAge <= p.daiHan.to;
-            const isSel = selected === p.branch;
+            const now = isNow(p.branch);
+            const isSel = selected === p.branch || (selected === null && shown === p.branch);
             const isRel = related.has(p.branch);
-            const lucky = p.auxStars.filter((s) => STAR_INFO[s.id].group === "lucky").length;
-            const malefic = p.auxStars.filter((s) => STAR_INFO[s.id].group === "malefic").length;
-            const name = p.palace ? PALACE_INFO[p.palace].vi : "—";
+            const x = cells[p.branch]!;
             return (
               <button
                 type="button"
                 key={p.branch}
-                onClick={() => pick(isSel ? null : p.branch)}
-                aria-pressed={isSel}
-                aria-label={`${name}${localNames[p.branch] ? ` ${localNames[p.branch]}` : ""} ${BRANCHES[p.branch]}`}
-                className={`${COL[c]} ${ROW[r]} relative flex min-h-32 flex-col p-1.5 text-left leading-tight transition-colors duration-150 motion-reduce:transition-none ${
-                  isSel
-                    ? "z-10 bg-teal-50 ring-2 ring-inset ring-teal-400"
-                    : isRel
-                      ? "bg-violet-50"
-                      : "bg-white hover:bg-stone-50"
-                }`}
+                onClick={() => pick(selected === p.branch ? null : p.branch)}
+                aria-pressed={selected === p.branch}
+                aria-label={`${x.plain} ${x.trad}`}
+                className={`${COL[c]} ${ROW[r]} relative flex min-h-28 min-w-0 flex-col gap-0.5 overflow-hidden p-1.5 text-left leading-tight transition-colors duration-150 motion-reduce:transition-none ${
+                  isMenh ? "bg-teal-50/70 shadow-[inset_0_0_0_2px_rgb(20_184_166)]" : now ? "bg-amber-50 shadow-[inset_0_0_0_2px_rgb(245_158_11)]" : isRel ? "bg-violet-50" : "bg-white hover:bg-stone-50"
+                } ${isSel && !isMenh && !now ? "bg-teal-50" : ""}`}
               >
-                {now && <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-amber-300" />}
-                <span className="flex items-start justify-between gap-0.5">
-                  <span className="min-w-0">
-                    <span className="block text-[11px] font-bold text-stone-900">{name}</span>
-                    {localNames[p.branch] && <span className="block text-[9px] text-stone-500">{localNames[p.branch]}</span>}
-                  </span>
-                  <span className="shrink-0 text-right text-[9px] text-stone-400">
-                    {p.stem !== null && <span className="block">{STEMS[p.stem]}</span>}
-                    <span className="block">{BRANCHES[p.branch]}</span>
-                  </span>
-                </span>
-                {(isMenh || p.isThan) && (
-                  <span className="mt-0.5 flex gap-0.5">
-                    {isMenh && <span className={MENH_BADGE}>{labels.menh}</span>}
-                    {p.isThan && <span className={THAN_BADGE}>{labels.than}</span>}
-                  </span>
-                )}
-                <span className="mt-1 block space-y-0.5">
-                  {p.mainStars.length === 0 && <span className="block text-[10px] italic text-stone-400">{labels.noMain}</span>}
-                  {p.mainStars.map((s) => (
-                    <span key={s.id} className="flex flex-wrap items-center gap-0.5">
-                      <span className="whitespace-nowrap text-[12px] font-bold text-rose-800">{STAR_INFO[s.id].vi}</span>
-                      {s.hoa && <span className={`rounded px-0.5 text-[9px] font-semibold ${HOA_CHIP[s.hoa]}`}>{HOA_SHORT[s.hoa]}</span>}
-                    </span>
-                  ))}
-                </span>
-                {detailed ? (
-                  <span className="mt-1 block text-[10px]">
-                    {p.auxStars.map((s, i) => (
-                      <span key={s.id} className={GROUP_TEXT[STAR_INFO[s.id].group]}>
-                        {i > 0 && <span className="text-stone-300">, </span>}
-                        {STAR_INFO[s.id].vi}
-                        {s.hoa && <span className={`ml-0.5 rounded px-0.5 text-[9px] font-semibold ${HOA_CHIP[s.hoa]}`}>{HOA_SHORT[s.hoa]}</span>}
-                      </span>
-                    ))}
-                    <span className="mt-0.5 block text-[9px] text-stone-400">{[p.trangSinh, p.bacSi, p.thaiTue].filter(Boolean).join(" · ")}</span>
-                  </span>
+                <span className="block truncate text-[13.5px] font-extrabold text-stone-900">{x.plain}</span>
+                <span className="block truncate text-[10px] text-stone-500">{x.tradShort}</span>
+                {isMenh && <span className={`${MARK} bg-teal-100 text-teal-800`}>{labels.menh}</span>}
+                {now && <span className={`${MARK} bg-amber-200 text-amber-900`}>{labels.now}</span>}
+                {p.isThan && !isMenh && <span className={`${MARK} bg-violet-100 text-violet-800`}>{labels.than}</span>}
+                {x.stars.length === 0 ? (
+                  <span className="text-[11px] text-stone-400">{labels.noMain}</span>
                 ) : (
-                  <span className="mt-1 flex flex-wrap items-center gap-x-1 text-[9px]" aria-hidden>
-                    {p.auxStars.filter((s) => s.hoa).map((s) => (
-                      <span key={s.id} className={`rounded px-0.5 font-semibold ${HOA_CHIP[s.hoa!]}`}>{HOA_SHORT[s.hoa!]}</span>
-                    ))}
-                    {lucky > 0 && <span className="tracking-tighter text-teal-600">{"●".repeat(Math.min(lucky, 6))}</span>}
-                    {malefic > 0 && <span className="tracking-tighter text-red-600">{"●".repeat(Math.min(malefic, 6))}</span>}
-                  </span>
+                  x.stars.map((st) => <span key={st.name} className="block truncate text-[12.5px] font-bold text-stone-800">{st.word}</span>)
                 )}
-                <span className="mt-auto flex flex-wrap items-center gap-1 pt-1">
-                  {p.daiHan && <span className={`text-[10px] font-bold ${now ? "text-amber-700" : "text-stone-400"}`}>{p.daiHan.from}–{p.daiHan.to}</span>}
-                  {now && <span className="rounded-full bg-amber-100 px-1.5 text-[9px] font-bold text-amber-800">{labels.now}</span>}
-                  {chart.tuan.includes(p.branch) && <span className="rounded bg-stone-200 px-0.5 text-[9px] font-semibold text-stone-700">Tuần</span>}
-                  {chart.triet.includes(p.branch) && <span className="rounded bg-stone-200 px-0.5 text-[9px] font-semibold text-stone-700">Triệt</span>}
-                </span>
               </button>
             );
           })}
           <div className="col-span-2 col-start-2 row-span-2 row-start-2 flex flex-col items-center justify-center gap-1 bg-linear-to-br from-teal-50 via-white to-violet-100 p-2 text-center text-teal-950">
             <span className="mosaic-mark h-6 w-6 rounded-md opacity-90" aria-hidden />
-            <p className="text-base font-bold tracking-wide">{center.pillar}</p>
-            {center.lines.map((line) => <p key={line} className="text-[10px] leading-snug text-teal-900/75">{line}</p>)}
-            <div className="mt-1 flex flex-wrap justify-center gap-1">
-              {center.hoa.map((h) => (
-                <span key={h.kind} className={`rounded px-1 text-[9px] font-semibold ${HOA_CHIP[h.kind]}`}>{HOA_SHORT[h.kind]} · {h.star}</span>
-              ))}
-            </div>
+            <p className="text-[15px] font-bold leading-snug">{center.pillar}</p>
+            {center.lines.map((line) => <p key={line} className="text-[11.5px] leading-snug text-slate-700">{line}</p>)}
           </div>
         </div>
-        {sel && !detail && (
+        {sel && (
           // Floating view: the tapped palace and its tam phương tứ chính lift out of the board in place.
           <div key={sel.branch} role="dialog" aria-label={labels.focusTitle.replace("{x}", sel.label)} className="absolute inset-0 z-30">
             <button
@@ -274,14 +221,14 @@ export function TuviChart({
             )}
             {[sel.branch, ...sel.related].map((b, i) => {
               const d = details.find((x) => x.branch === b);
-              const pal = chart.palaces[b]!;
+              const cell = cells[b]!;
               if (!d) return null;
               const self = i === 0;
               return (
                 <button
                   key={b}
                   type="button"
-                  onClick={() => (self ? setDetail(true) : pick(b))}
+                  onClick={() => (self ? openPanel() : pick(b))}
                   className={`${ANCHOR[b]} ${FLOAT_DELAY[i]} ${FLOAT_Z[b] ?? "z-10"} absolute flex h-[32%] w-[35%] animate-[floatIn_.8s_cubic-bezier(.2,.8,.2,1)_both] flex-col overflow-hidden rounded-3xl border p-2.5 text-left transition-transform hover:-translate-y-0.5 motion-reduce:animate-none ${
                     self
                       ? "border-teal-200 bg-linear-to-br from-teal-50 via-white to-teal-100 shadow-[0_18px_40px_-16px_rgba(15,118,110,0.55)]"
@@ -292,19 +239,14 @@ export function TuviChart({
                     <span className={`shrink-0 whitespace-nowrap rounded-full px-1.5 py-0.5 text-[10px] font-bold ${self ? "bg-teal-100 text-teal-800" : "bg-violet-100 text-violet-800"}`}>
                       {self ? labels.self : i < 3 ? labels.trine : labels.opposite}
                     </span>
-                    {d.ageText && <span className="min-w-0 truncate text-[10px] font-semibold text-amber-800">{d.ageText}</span>}
+                    
                   </span>
-                  <span className="mt-1 block text-[14px] font-bold leading-tight text-stone-900">
-                    {pal.palace ? PALACE_INFO[pal.palace].vi : BRANCHES[b]}
-                    {localNames[b] && <span className="ml-1 inline-block whitespace-nowrap text-[10px] font-normal text-stone-500">{localNames[b]}</span>}
-                  </span>
+                  <span className="mt-1 block text-[14px] font-bold leading-tight text-stone-900">{cell.plain}</span>
+                  <span className="block truncate text-[10px] text-stone-500">{cell.trad}</span>
                   <span className="mt-1 block space-y-0.5">
-                    {pal.mainStars.length === 0 && <span className="block text-[11px] italic text-stone-400">{labels.noMain}</span>}
-                    {pal.mainStars.map((st) => (
-                      <span key={st.id} className="flex flex-wrap items-center gap-0.5">
-                        <span className="text-[14px] font-bold leading-tight text-rose-800">{STAR_INFO[st.id].vi}</span>
-                        {st.hoa && <span className={`rounded-full px-1 text-[9px] font-semibold ${HOA_CHIP[st.hoa]}`}>{HOA_SHORT[st.hoa]}</span>}
-                      </span>
+                    {cell.stars.length === 0 && <span className="block text-[11px] text-stone-400">{labels.noMain}</span>}
+                    {cell.stars.map((st) => (
+                      <span key={st.name} className="block text-[13px] font-bold leading-tight text-stone-800">{st.word}</span>
                     ))}
                   </span>
                   {d.role && <span className="mt-1 line-clamp-2 block text-[10.5px] leading-snug text-stone-600">{d.role}</span>}
@@ -322,74 +264,67 @@ export function TuviChart({
             </button>
           </div>
         )}
-        {sel && detail && (
-          <div
-            key={`detail-${sel.branch}`}
-            role="dialog"
-            aria-label={labels.focusTitle.replace("{x}", sel.label)}
-            className={`${ORIGIN[sel.branch]} absolute inset-0 z-30 flex animate-[zoomFrom_.5s_cubic-bezier(.2,.8,.2,1)] flex-col gap-2 rounded-3xl bg-white/70 p-2 backdrop-blur-md motion-reduce:animate-none`}
-          >
-            <div className="flex shrink-0 items-center gap-2 px-1">
-              <button
-                type="button"
-                onClick={() => setDetail(false)}
-                aria-label={labels.back}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-base leading-none text-stone-600 shadow-sm ring-1 ring-stone-200 hover:text-stone-900"
-              >
-                ←
-              </button>
-              <p className="min-w-0 flex-1 truncate text-xs font-semibold text-stone-600">{labels.focusTitle.replace("{x}", sel.label)}</p>
-              <button
-                type="button"
-                onClick={() => pick(null)}
-                aria-label={labels.close}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-lg leading-none text-stone-600 shadow-sm ring-1 ring-stone-200 hover:text-stone-900"
-              >
-                ×
-              </button>
-            </div>
-            <div className="min-h-0 flex-1 overflow-y-auto rounded-3xl border border-teal-200 bg-linear-to-br from-teal-50 via-white to-violet-50 p-3 text-sm shadow-[0_8px_24px_-14px_rgba(15,118,110,0.5)]">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-bold text-teal-800">{labels.self}</span>
-                <p className="text-base font-bold text-stone-900">{sel.label}</p>
-                {sel.ageText && <span className="text-[11px] font-semibold text-amber-800">{sel.ageText}</span>}
-              </div>
-              {sel.role && <p className="mt-1.5 text-stone-700">{sel.role}</p>}
-              {sel.borrowedText && <p className="mt-1.5 text-xs text-stone-600">{sel.borrowedText}</p>}
-              {sel.mains.length > 0 && (
-                <ul className="mt-2 space-y-1.5">
-                  {sel.mains.map((m) => (
-                    <li key={m.name}>
-                      <span className="text-lg font-bold leading-tight text-rose-800">{m.name}</span>
-                      {m.hoa && <span className="ml-1.5 rounded-full bg-violet-100 px-1.5 text-[11px] text-violet-800">{m.hoa}</span>}
-                      <span className="block text-[13px] text-stone-700">{m.keywords}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {sel.aux.length > 0 && <p className="mt-2 text-xs text-stone-600"><span className="block text-stone-500">{labels.auxStars}</span>{sel.aux.join(", ")}</p>}
-              {sel.notes.length > 0 && (
-                <ul className="mt-2 list-disc space-y-0.5 pl-4 text-xs text-stone-700">
-                  {sel.notes.map((n, i) => <li key={i}>{n}</li>)}
-                </ul>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
-      <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-stone-600">
-        <li className="flex items-center gap-1"><span className={MENH_BADGE}>{labels.menh}</span>{labels.menhName}</li>
-        <li className="flex items-center gap-1"><span className={THAN_BADGE}>{labels.than}</span>{labels.thanName}</li>
-        <li className="flex items-center gap-1"><span className="h-1.5 w-4 rounded bg-amber-300" />{labels.now}</li>
-        <li className="flex items-center gap-1"><span className="h-3 w-4 rounded border border-violet-500 bg-violet-50" />{labels.related}</li>
-        <li className="flex items-center gap-1"><span className="text-teal-600">●</span>{labels.lucky}</li>
-        <li className="flex items-center gap-1"><span className="text-red-600">●</span>{labels.malefic}</li>
-        {(Object.keys(HOA_SHORT) as HoaId[]).map((h) => (
-          <li key={h} className="flex items-center"><span className={`rounded px-1 text-[9px] font-semibold ${HOA_CHIP[h]}`}>Hóa {HOA_SHORT[h]}</span></li>
-        ))}
-      </ul>
-
+      {d && cell && (
+        <section ref={panel} aria-live="polite" data-testid="palace-panel" className={`scroll-mt-20 rounded-3xl bg-white p-4 shadow-sm ring-2 ${chart.menh === d.branch ? "ring-teal-400" : isNow(d.branch) ? "ring-amber-400" : "ring-stone-200"}`}>
+          <h3 className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <span className="text-lg font-extrabold text-stone-900">{cell.long}</span>
+            <span className="text-xs text-stone-500">{cell.trad}</span>
+            {chart.menh === d.branch && <span className={`${MARK} bg-teal-100 text-teal-800`}>{labels.menh}</span>}
+            {isNow(d.branch) && <span className={`${MARK} bg-amber-200 text-amber-900`}>{labels.now}</span>}
+          </h3>
+          {d.role && <p className="mt-1 text-sm leading-6 text-stone-700">{d.role}</p>}
+          <dl className="mt-3 space-y-2 text-[14px] leading-6">
+            <div className="flex gap-3">
+              <dt className="w-24 shrink-0 pt-0.5 text-xs font-semibold text-stone-500">{labels.main}</dt>
+              <dd className="min-w-0 flex-1">
+                {cell.stars.length === 0 && <span className="text-stone-600">{labels.borrow}</span>}
+                {d.mains.map((m, i) => (
+                  <span key={m.name} className="block">
+                    <b className="text-stone-900">{cell.stars[i]?.word ?? m.name}</b>
+                    <span className="text-stone-500">（{cell.stars[i]?.name ?? m.name}）</span>
+                    {cell.stars[i]?.hoa && <span className={`ml-1 rounded-md px-1.5 text-[11px] font-semibold ${HOA_CHIP[cell.stars[i]!.hoa!]}`}>{labels.hoa[cell.stars[i]!.hoa!]}</span>}
+                    {m.keywords && <span className="block text-[13px] leading-5 text-stone-600">{m.keywords}</span>}
+                  </span>
+                ))}
+              </dd>
+            </div>
+            <div className="flex gap-3">
+              <dt className="w-24 shrink-0 pt-0.5 text-xs font-semibold text-stone-500">{labels.lucky}</dt>
+              <dd className="min-w-0 flex-1 text-stone-800">{cell.lucky.length ? cell.lucky.join("・") : labels.none}</dd>
+            </div>
+            <div className="flex gap-3">
+              <dt className="w-24 shrink-0 pt-0.5 text-xs font-semibold text-stone-500">{labels.malefic}</dt>
+              <dd className="min-w-0 flex-1 text-stone-800">{cell.malefic.length ? cell.malefic.join("・") : labels.none}</dd>
+            </div>
+            {d.ageText && (
+              <div className="flex gap-3">
+                <dt className="w-24 shrink-0 pt-0.5 text-xs font-semibold text-stone-500">{labels.age}</dt>
+                <dd className="min-w-0 flex-1 text-stone-800">{d.ageText}{isNow(d.branch) && <span className="ml-1 font-semibold text-amber-800">（{labels.ageNow}）</span>}</dd>
+              </div>
+            )}
+          </dl>
+          {d.notes.length > 0 && (
+            <ul className="mt-3 space-y-1 rounded-2xl bg-stone-50 px-3 py-2 text-[13.5px] leading-6 text-stone-700">
+              {d.notes.map((n, i) => <li key={i}>・{n}</li>)}
+            </ul>
+          )}
+          {cell.hoaTips.map((tip) => <p key={tip} className="mt-2 rounded-2xl bg-stone-900 px-3 py-2 text-[13px] leading-6 text-white">💡 {tip}</p>)}
+          {d.related.length > 0 && (
+            <div className="mt-3">
+              <p className="mb-1.5 text-xs font-semibold text-stone-500">{labels.relatedTitle}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {d.related.map((b) => (
+                  <button key={b} type="button" onClick={() => setShown(b)} className="rounded-full bg-violet-50 px-3 py-1 text-sm font-semibold text-violet-900 ring-1 ring-violet-200 hover:bg-violet-100">
+                    {cells[b]!.plain}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }

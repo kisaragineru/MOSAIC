@@ -110,17 +110,20 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   await expect(pa.locator('input[name="revealOn"]')).toHaveValue(/^\d{4}-\d{2}-\d{2}$/);
   await pa.goto("/tuvi");
   // Tapping a palace shows what it stands for.
-  await pa.getByTestId("tuvi-chart").getByRole("button", { name: /^Quan Lộc/ }).click();
-  await expect(pa.getByText("work, career and your role in society")).toBeVisible();
+  await pa.getByTestId("tuvi-chart").getByRole("button", { name: /Quan Lộc/ }).click();
+  await expect(pa.getByText("work, career and your role in society").first()).toBeVisible();
   // The tapped palace and its three related palaces are shown enlarged.
   await expect(pa.getByRole("dialog", { name: "Quan Lộc and the palaces read with it" })).toBeVisible();
   await expect(pa.getByRole("button", { name: /^Trine/ })).toHaveCount(2);
   await expect(pa.getByRole("button", { name: /^Opposite/ })).toHaveCount(1);
-  // The related palaces are drawn on the board, and the detailed view lists every star.
+  // The related palaces are drawn on the board; the board stays plain (no minor stars), and
+  // everything about the palace is in the panel below, in everyday words first.
   await expect(pa.locator("svg polygon")).toHaveCount(1);
   await expect(pa.getByTestId("tuvi-chart").getByText("Lộc Tồn")).toHaveCount(0);
-  await pa.getByRole("button", { name: "Detailed" }).click();
-  await expect(pa.getByTestId("tuvi-chart").getByText(/Lộc Tồn/)).toBeVisible();
+  const panel = pa.getByTestId("palace-panel");
+  await expect(panel.getByRole("heading")).toContainText("Work");
+  await expect(panel.getByText("Helpful stars")).toBeVisible();
+  await expect(panel.getByText("Read together with")).toBeVisible();
   // The enlarged view sits over the chart and closes with Escape or its close button.
   await expect(pa.getByRole("dialog", { name: "Quan Lộc and the palaces read with it" })).toBeVisible();
   await pa.getByRole("button", { name: /^Opposite/ }).click();
