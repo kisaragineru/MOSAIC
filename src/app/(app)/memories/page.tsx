@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Flash } from "@/components/flash";
 import { QuickComposer } from "@/components/quick-composer";
+import { mediaPickerText } from "@/components/memory-form";
+import { mediaFor } from "@/server/services/media";
 import { myGiftBoxes } from "@/server/services/gift-boxes";
 import { Timeline } from "@/components/timeline";
 import { Button, Card, Empty, Input, LinkButton, Notice, Page, Select } from "@/components/ui";
@@ -56,6 +58,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
   const days = buildTimeline(entries, tz);
   const counts = countsByEntry(await commentInbox(uid));
   const previews = await commentPreviews(uid, entries.filter((e) => counts.has(e.id)).map((e) => e.id));
+  const media = await mediaFor(uid, entries.filter((e) => !e.sealed).map((e) => e.id));
   const pageHref = (n: number) => {
     const q = new URLSearchParams(Object.entries(filters).filter(([, v]) => v !== ""));
     if (view !== "all") q.set("view", view);
@@ -128,7 +131,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
       {days.length === 0 ? (
         <Empty>{view === "friends" ? tl.friendsEmpty : t.memories.empty}</Empty>
       ) : (
-        <Timeline t={t} locale={locale} tz={tz} days={days} comments={counts} previews={previews} avatars={await avatarUrls(uid, entries.map((e) => e.ownerId))} />
+        <Timeline t={t} locale={locale} tz={tz} days={days} comments={counts} previews={previews} media={media} avatars={await avatarUrls(uid, entries.map((e) => e.ownerId))} />
       )}
       {(page > 0 || hasOlder) && (
         <nav className="flex justify-between text-sm" aria-label="pagination">
@@ -159,6 +162,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
           more: t.memories.composer.more,
           giftHelp: t.memories.composer.giftHelp,
           errors: t.errors,
+          media: mediaPickerText(t),
         }}
         giftBoxes={(await myGiftBoxes(uid)).filter((b) => b.status === "open" && b.my_role !== "child").map((b) => ({ id: b.id, label: t.memories.composer.toGift(b.child_name) }))}
       />

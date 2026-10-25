@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState, useSyncExternalStore } fro
 import { quickMemoryAction, type QuickState } from "@/app/actions/memories";
 import { KIND_ICON } from "@/lib/timeline";
 import { CIRCLE_ICON } from "./circle-icon";
+import { MediaPicker, type MediaPickerText } from "./media-picker";
 
 export interface ComposerText {
   write: string;
@@ -24,6 +25,7 @@ export interface ComposerText {
   more: string;
   giftHelp: string;
   errors: Record<string, string>;
+  media: MediaPickerText;
 }
 
 /** Gift boxes I write in: the composer links to each one's growth record. */
@@ -32,7 +34,7 @@ export interface ComposerGiftBox {
   label: string;
 }
 
-const KINDS = ["thought", "feeling", "memory", "decision", "goal", "dream", "regret", "achievement", "value"];
+const KINDS = ["note", "thought", "feeling", "memory", "decision", "goal", "dream", "regret", "achievement", "value"];
 const chip =
   "cursor-pointer select-none rounded-full border border-stone-200 bg-white px-3 py-1 text-sm text-stone-700 transition has-[:checked]:border-teal-600 has-[:checked]:bg-teal-600 has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-400";
 const fab =
@@ -53,6 +55,7 @@ export function QuickComposer({ tx, canShare, giftBoxes = [] }: { tx: ComposerTe
   const [handled, setHandled] = useState<number | null>(null);
   // The button says whether this goes to others' timelines too.
   const [shared, setShared] = useState(false);
+  const [photos, setPhotos] = useState(0);
   const area = useRef<HTMLTextAreaElement>(null);
 
   // Saved: close and start the next one empty (the list refreshes from the server).
@@ -106,15 +109,15 @@ export function QuickComposer({ tx, canShare, giftBoxes = [] }: { tx: ComposerTe
           <textarea
             ref={area}
             name="body"
-            required
             maxLength={20000}
-            rows={6}
+            rows={5}
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={tx.placeholder}
             aria-label={tx.body}
             className="w-full resize-none rounded-2xl border border-stone-200 bg-stone-50/60 px-3.5 py-3 text-base leading-relaxed text-stone-900 placeholder:text-stone-500 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20"
           />
+          <MediaPicker tx={tx.media} resetKey={handled} onCount={setPhotos} />
           <fieldset>
             <legend className="sr-only">{tx.kind}</legend>
             <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
@@ -139,7 +142,7 @@ export function QuickComposer({ tx, canShare, giftBoxes = [] }: { tx: ComposerTe
           {state && !state.ok && <p role="alert" className="text-sm text-rose-700">{tx.errors[state.error] ?? tx.errors.generic}</p>}
           <div className="flex items-center justify-between gap-3">
             <Link href="/memories/new" className="shrink-0 rounded-full px-2 py-2 text-sm text-stone-500 hover:bg-stone-100 hover:text-stone-800">{tx.more}</Link>
-            <button type="submit" disabled={pending || !text.trim()} className="min-h-12 flex-1 whitespace-nowrap rounded-full bg-teal-700 px-6 text-base font-bold text-white shadow-md shadow-teal-900/15 transition hover:bg-teal-800 active:scale-[0.98] disabled:opacity-40 disabled:shadow-none sm:flex-none sm:px-10">
+            <button type="submit" disabled={pending || (!text.trim() && photos === 0)} className="min-h-12 flex-1 whitespace-nowrap rounded-full bg-teal-700 px-6 text-base font-bold text-white shadow-md shadow-teal-900/15 transition hover:bg-teal-800 active:scale-[0.98] disabled:opacity-40 disabled:shadow-none sm:flex-none sm:px-10">
               {pending ? tx.saving : shared ? tx.saveShared : tx.save}
             </button>
           </div>

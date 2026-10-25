@@ -15,6 +15,8 @@ import { CIRCLE_ICON } from "@/components/circle-icon";
 import { todayIn } from "@/lib/validation/common";
 import { CommentThread } from "@/components/comment-thread";
 import { commentInbox, readThread } from "@/server/services/comments";
+import { MediaGallery } from "@/components/media-grid";
+import { mediaFor } from "@/server/services/media";
 
 export default async function MemoryPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
@@ -30,6 +32,7 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
     throw e;
   }
   const editing = sp.edit === "1" && !m.sealed;
+  const media = m.sealed ? [] : ((await mediaFor(uid, [m.id])).get(m.id) ?? []);
   const people = await listPeople(uid);
   const canShare = (await shareTargets(uid)).length > 0;
   const ta = t.memories.audience;
@@ -78,7 +81,7 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
               action={editMemoryAction}
               people={people}
               back={`/memories/${m.id}?edit=1`}
-              d={{ ...m, personIds: m.people.map((p) => p.id), body: m.body, reason: m.reason }}
+              d={{ ...m, personIds: m.people.map((p) => p.id), body: m.body, reason: m.reason, media }}
               canShare={canShare}
               submitLabel={t.common.save}
             />
@@ -86,7 +89,8 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
         </Card>
       ) : (
         <Card>
-          <p className="whitespace-pre-line text-stone-900">{m.body}</p>
+          {m.body && <p className="whitespace-pre-line text-stone-900">{m.body}</p>}
+          {media.length > 0 && <div className={m.body ? "mt-3" : ""}><MediaGallery media={media} label={t.memories.media.label} /></div>}
           {m.reason && <p className="mt-3 whitespace-pre-line text-sm text-stone-600">→ {m.reason}</p>}
           <div className="mt-4 flex flex-wrap gap-2">
             <LinkButton href={`/memories/${m.id}?edit=1`}>{t.common.edit}</LinkButton>

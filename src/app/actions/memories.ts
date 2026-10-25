@@ -8,7 +8,7 @@ import { setMemoryAudience } from "@/server/services/memory-share";
 import { attempt, safeNext, str, withParam } from "./util";
 
 function fromForm(f: FormData) {
-  const kind = str(f, "kind") || "thought";
+  const kind = str(f, "kind") || "note";
   return {
     kind,
     title: str(f, "title"),
@@ -20,6 +20,8 @@ function fromForm(f: FormData) {
     revealOn: kind === "letter_to_future" ? str(f, "revealOn") : "",
     tags: splitTags(str(f, "tags")),
     personIds: f.getAll("personIds").filter((x): x is string => typeof x === "string" && x !== ""),
+    // Photos and videos come as ordered ids, only from forms that offer them.
+    ...(f.has("mediaField") && kind !== "letter_to_future" ? { media: f.getAll("media").filter((x): x is string => typeof x === "string" && x !== "") } : {}),
   };
 }
 

@@ -96,6 +96,7 @@ export function relativeDay(day: string, tz: string, now = new Date()): "today" 
 }
 
 export const KIND_ICON: Record<string, string> = {
+  note: "✏️",
   thought: "💭",
   feeling: "🌤",
   memory: "📷",

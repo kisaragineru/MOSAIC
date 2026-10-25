@@ -4,7 +4,8 @@ import type { Locale } from "@/lib/i18n/locales";
 import { KIND_ICON, relativeDay, type TimelineDay, type TimelineItem } from "@/lib/timeline";
 import type { CommentPreview } from "@/server/services/comments";
 import { Avatar } from "./avatar";
-import { ExpandableText } from "./expandable-text";
+import { MediaGrid } from "./media-grid";
+import type { MediaItem } from "@/server/services/media";
 import { Pill } from "./ui";
 
 const dayLabel = (day: string, locale: Locale) =>
@@ -13,8 +14,9 @@ const dayLabel = (day: string, locale: Locale) =>
 /** Days of records on a vertical line: mine link to the record, others' are shown in full. */
 type Counts = Map<string, { count: number; unread: number }>;
 type Previews = Map<string, CommentPreview[]>;
+type Media = Map<string, MediaItem[]>;
 
-export function Timeline({ t, locale, tz, days, compact = false, comments = new Map(), previews = new Map(), avatars = new Map() }: { t: Dict; locale: Locale; tz: string; days: TimelineDay[]; compact?: boolean; comments?: Counts; previews?: Previews; avatars?: Map<string, string> }) {
+export function Timeline({ t, locale, tz, days, compact = false, comments = new Map(), previews = new Map(), media = new Map(), avatars = new Map() }: { t: Dict; locale: Locale; tz: string; days: TimelineDay[]; compact?: boolean; comments?: Counts; previews?: Previews; media?: Media; avatars?: Map<string, string> }) {
   const tl = t.memories.timeline;
   return (
     <ol className="space-y-5" aria-label={t.memories.title}>
@@ -32,7 +34,11 @@ export function Timeline({ t, locale, tz, days, compact = false, comments = new 
                   <span aria-hidden className={`absolute -left-[1.85rem] top-3 flex h-5 w-5 items-center justify-center rounded-full text-[11px] ring-4 ring-white ${it.entry.mine ? "bg-teal-100" : "bg-rose-100"}`}>
                     {KIND_ICON[it.entry.kind] ?? "•"}
                   </span>
-                  {it.entry.mine ? <Mine t={t} locale={locale} it={it} compact={compact} c={comments.get(it.entry.id)} p={previews.get(it.entry.id)} /> : <Theirs t={t} it={it} c={comments.get(it.entry.id)} p={previews.get(it.entry.id)} src={avatars.get(it.entry.ownerId ?? "")} />}
+                  {it.entry.mine ? (
+                    <Mine t={t} locale={locale} it={it} compact={compact} c={comments.get(it.entry.id)} p={previews.get(it.entry.id)} media={media.get(it.entry.id)} />
+                  ) : (
+                    <Theirs t={t} it={it} compact={compact} c={comments.get(it.entry.id)} p={previews.get(it.entry.id)} media={media.get(it.entry.id)} src={avatars.get(it.entry.ownerId ?? "")} />
+                  )}
                 </li>
               ))}
             </ol>
@@ -76,7 +82,7 @@ function Comments({ t, items, total }: { t: Dict; items: CommentPreview[]; total
   );
 }
 
-function Mine({ t, locale, it, compact, c, p }: { t: Dict; locale: Locale; it: TimelineItem; compact: boolean; c?: { count: number; unread: number }; p?: CommentPreview[] }) {
+function Mine({ t, locale, it, compact, c, p, media }: { t: Dict; locale: Locale; it: TimelineItem; compact: boolean; c?: { count: number; unread: number }; p?: CommentPreview[]; media?: MediaItem[] }) {
   const m = it.entry;
   const tl = t.memories.timeline;
   if (it.letter) {
@@ -108,7 +114,8 @@ function Mine({ t, locale, it, compact, c, p }: { t: Dict; locale: Locale; it: T
       ) : (
         <>
           {m.title && <p className="font-medium text-stone-900">{m.title}</p>}
-          <p className={`whitespace-pre-line text-sm text-stone-700 ${compact ? "line-clamp-2" : "line-clamp-3"}`}>{m.body}</p>
+          {m.body && <p className={`whitespace-pre-line text-sm text-stone-700 ${compact ? "line-clamp-2" : "line-clamp-3"}`}>{m.body}</p>}
+          {media && <MediaGrid media={media} label={t.memories.media.label} />}
           {p && p.length > 0 && <Comments t={t} items={p} total={c?.count ?? p.length} />}
         </>
       )}
@@ -116,27 +123,25 @@ function Mine({ t, locale, it, compact, c, p }: { t: Dict; locale: Locale; it: T
   );
 }
 
-function Theirs({ t, it, c, p, src }: { t: Dict; it: TimelineItem; c?: { count: number; unread: number }; p?: CommentPreview[]; src?: string }) {
+/** Someone else's shared record: the whole card opens it (text, photos and our comments). */
+function Theirs({ t, it, compact, c, p, media, src }: { t: Dict; it: TimelineItem; compact: boolean; c?: { count: number; unread: number }; p?: CommentPreview[]; media?: MediaItem[]; src?: string }) {
   const m = it.entry;
   const tl = t.memories.timeline;
   const name = m.ownerName ?? "?";
   return (
-    <article className="rounded-2xl border border-rose-100 bg-rose-50/50 p-3">
+    <Link href={`/memories/shared/${m.id}`} className="block rounded-2xl border border-rose-100 bg-rose-50/50 p-3 transition hover:border-rose-300" data-testid="their-record">
       <div className="mb-1 flex flex-wrap items-center gap-1.5">
         <Avatar name={name} src={src} className="h-6 w-6 text-[10px]" />
         <span className="text-xs font-semibold text-rose-900">{tl.theirs(name)}</span>
         <Stamp t={t} it={it} />
         <Pill tone="rose">{t.memories.kinds[m.kind as keyof Dict["memories"]["kinds"]]}</Pill>
+        {c && <CommentCount t={t} c={c} />}
       </div>
       {m.title && <p className="font-medium text-stone-900">{m.title}</p>}
-      <ExpandableText text={m.body ?? ""} more={tl.more} less={tl.less} />
+      {m.body && <p className={`whitespace-pre-line text-sm text-stone-800 ${compact ? "line-clamp-2" : "line-clamp-4"}`}>{m.body}</p>}
+      {media && <MediaGrid media={media} label={t.memories.media.label} />}
       {p && p.length > 0 && <Comments t={t} items={p} total={c?.count ?? p.length} />}
-      <div className="mt-2 flex justify-end">
-        <Link href={`/memories/shared/${m.id}#comments`} className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-semibold text-rose-900 ring-1 ring-rose-200 transition hover:bg-rose-50 active:scale-95">
-          {t.comments.open}
-          {c && c.unread > 0 && <span className="rounded-full bg-rose-600 px-1.5 text-[10px] text-white">{t.comments.newBadge}</span>}
-        </Link>
-      </div>
-    </article>
+      <p className="mt-2 text-right text-xs font-semibold text-rose-800">{t.comments.openRecord} →</p>
+    </Link>
   );
 }

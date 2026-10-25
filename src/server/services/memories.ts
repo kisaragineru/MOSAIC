@@ -4,17 +4,21 @@ import { escapeLike, isoDate, optionalDate, optionalText, tagList, todayIn, uuid
 import { MEMORY_CIRCLES, MEMORY_KINDS, memoryCircles, memoryEntries, memoryEntryVersions, memoryPeople, memoryTags, people, profiles } from "../db/schema";
 import { withUser, type Tx } from "../db/tx";
 import { invalid, notFound } from "../errors";
+import { attachMedia, MAX_MEDIA } from "./media";
 
 export const memoryInput = z.object({
-  kind: z.enum(MEMORY_KINDS).default("thought"),
+  kind: z.enum(MEMORY_KINDS).default("note"),
   title: optionalText(200),
-  body: z.string().trim().min(1).max(20_000),
+  // May be empty when the record is photos or videos.
+  body: z.string().trim().max(20_000).default(""),
   reason: optionalText(5_000),
   mood: z.preprocess((v) => (v === "" || v === null ? undefined : v), z.coerce.number().int().min(1).max(5).optional()),
   occurredOn: optionalDate,
   revealOn: optionalDate,
   tags: tagList.default([]),
   personIds: z.array(uuid).max(20).default([]),
+  /** Photos and videos, in order; left out = unchanged (on edit). */
+  media: z.array(uuid).max(MAX_MEDIA).optional(),
 });
 export type MemoryInput = z.input<typeof memoryInput>;
 
@@ -35,7 +39,9 @@ async function replaceLinks(tx: Tx, userId: string, entryId: string, tags: strin
     await tx.insert(memoryPeople).values([...new Set(personIds)].map((personId) => ({ entryId, userId, personId })));
 }
 
-function validateKindFields(data: z.output<typeof memoryInput>) {
+function validateKindFields(data: z.output<typeof memoryInput>, hadMedia = false) {
+  if (!data.body && !(data.media ? data.media.length : hadMedia)) throw invalid("empty_record");
+  if (data.kind === "letter_to_future" && data.media?.length) throw invalid("invalid_media");
   if (data.kind === "letter_to_future" && !data.revealOn) throw invalid("reveal_date_required");
   if (data.kind !== "letter_to_future" && data.revealOn) throw invalid("reveal_date_only_for_letters");
 }
@@ -59,6 +65,7 @@ export async function createMemory(userId: string, input: unknown) {
       mood: data.mood ?? null,
     });
     await replaceLinks(tx, userId, entry!.id, data.tags, data.personIds);
+    if (data.media?.length) await attachMedia(tx, entry!.id, data.media);
     return entry!.id;
   });
 }
@@ -70,7 +77,6 @@ export async function createMemory(userId: string, input: unknown) {
 export async function editMemory(userId: string, entryId: string, input: unknown) {
   const id = uuid.parse(entryId);
   const data = memoryInput.parse(input);
-  validateKindFields(data);
   return withUser(userId, async (tx) => {
     const [entry] = await tx
       .select()
@@ -78,6 +84,9 @@ export async function editMemory(userId: string, entryId: string, input: unknown
       .where(and(eq(memoryEntries.id, id), eq(memoryEntries.userId, userId)))
       .for("update");
     if (!entry) throw notFound();
+    // Text may be emptied only when the record keeps photos or videos.
+    const hadMedia = data.media === undefined && !data.body ? ((await tx.execute<{ n: number }>(sql`select count(*)::int as n from memory_media_for(${`{${id}}`}::uuid[])`)).rows[0]?.n ?? 0) > 0 : false;
+    validateKindFields(data, hadMedia);
     if (entry.kind !== data.kind && (entry.kind === "letter_to_future" || data.kind === "letter_to_future")) {
       throw invalid("cannot_change_letter_kind");
     }
@@ -117,6 +126,7 @@ export async function editMemory(userId: string, entryId: string, input: unknown
       })
       .where(eq(memoryEntries.id, id));
     await replaceLinks(tx, userId, id, data.tags, data.personIds);
+    if (data.media !== undefined) await attachMedia(tx, id, data.media);
     return { version, contentChanged };
   });
 }

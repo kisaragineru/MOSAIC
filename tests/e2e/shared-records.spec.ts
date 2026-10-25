@@ -298,3 +298,79 @@ test("a connection's page offers things to do: message, gift, ask, and conversat
   await hana.waitForURL(/\/memories\/shared\//);
   await expect(hana.getByText("桜を見に行った。")).toBeVisible();
 });
+
+test("photos on a record: uploaded as chosen, a tidy block on the timeline, whole on the record, and shared with it", async ({ browser }) => {
+  const hana = await user(browser, "ハナ");
+  const sora = await user(browser, "ソラ");
+  await connect(hana, sora);
+  await hana.goto("/memories/new");
+  // "ひとこと" is the first kind and already chosen.
+  await expect(hana.getByRole("radio", { name: /ひとこと/ })).toBeChecked();
+  await hana.getByLabel("あったこと・考えていること").fill("海に行った。");
+  const picker = hana.getByTestId("media-picker");
+  await picker.locator('input[type="file"]').setInputFiles(["tests/e2e/fixtures-photo.jpg", "tests/e2e/fixtures-photo.jpg", "tests/e2e/fixtures-photo.jpg"]);
+  await expect(picker.locator('input[name="media"]')).toHaveCount(3);
+  await hana.getByRole("radio", { name: /つながっている全員/ }).check({ force: true });
+  await hana.getByRole("button", { name: "記録する" }).click();
+  await hana.waitForURL(/\/memories\/[0-9a-f-]+\?ok=saved/);
+  const gallery = hana.getByTestId("media-gallery");
+  await expect(gallery.getByRole("img")).toHaveCount(3);
+  const src = await gallery.getByRole("img").first().getAttribute("src");
+  const res = await hana.request.get(src!);
+  expect(res.status()).toBe(200);
+  expect(res.headers()["content-type"]).toBe("image/jpeg");
+
+  // On the timeline: one block of three (one large, two stacked), and the card opens the record.
+  await hana.goto("/memories?view=mine");
+  await expect(hana.locator('[data-testid="media-grid"][data-count="3"]')).toBeVisible();
+  await expect(hana.getByRole("img", { name: "写真 1/3" })).toBeVisible();
+
+  // Sora sees the same, taps the card, and gets the record with its photos and the comments.
+  await sora.goto("/memories?view=friends");
+  const card = sora.getByTestId("their-record").filter({ hasText: "海に行った。" });
+  await expect(card.locator('[data-testid="media-grid"][data-count="3"]')).toBeVisible();
+  await card.click();
+  await sora.waitForURL(/\/memories\/shared\//);
+  await expect(sora.getByTestId("media-gallery").getByRole("img")).toHaveCount(3);
+  await expect(sora.getByLabel("コメントを書く")).toBeVisible();
+  // Someone not connected can't fetch the photo.
+  const stranger = await user(browser, "レン");
+  expect((await stranger.request.get(src!)).status()).toBe(404);
+
+  // A photo-only quick note from the floating composer.
+  await hana.goto("/memories");
+  await hana.getByRole("button", { name: /書く/ }).click();
+  const sheet = hana.getByRole("dialog");
+  await sheet.getByTestId("media-picker").locator('input[type="file"]').setInputFiles("tests/e2e/fixtures-photo.jpg");
+  await expect(sheet.locator('input[name="media"]')).toHaveCount(1);
+  await sheet.getByRole("button", { name: /記録する/ }).click();
+  await expect(hana.getByRole("dialog")).toHaveCount(0);
+  await expect(hana.locator('[data-testid="media-grid"][data-count="1"]').first()).toBeVisible();
+});
+
+test("videos are served in parts by range, only to those who may see them", async ({ browser }) => {
+  const hana = await user(browser, "ハナ");
+  const origin = new URL(hana.url()).origin;
+  const size = 4 * 1024 * 1024 + 500;
+  const video = Buffer.alloc(size, 7);
+  video.set([0, 0, 0, 0x18, ...Buffer.from("ftypmp42")]);
+  const thumb = (await import("node:fs")).readFileSync("tests/e2e/fixtures-photo.jpg");
+  const start = await hana.request.post("/api/memories/media", {
+    headers: { origin },
+    multipart: { kind: "video", width: "640", height: "360", durationMs: "3000", size: String(size), thumb: { name: "t.jpg", mimeType: "image/jpeg", buffer: thumb }, part: { name: "p", mimeType: "application/octet-stream", buffer: video.subarray(0, 4 * 1024 * 1024) } },
+  });
+  expect(start.status()).toBe(200);
+  const { id, complete } = await start.json();
+  expect(complete).toBe(false);
+  const put = await hana.request.put(`/api/memories/media/${id}/part/1`, { headers: { origin }, data: video.subarray(4 * 1024 * 1024) });
+  expect(await put.json()).toEqual({ complete: true });
+  const head = await hana.request.get(`/api/memories/media/${id}`, { headers: { range: "bytes=0-99" } });
+  expect(head.status()).toBe(206);
+  expect(head.headers()["content-range"]).toBe(`bytes 0-99/${size}`);
+  const tail = await hana.request.get(`/api/memories/media/${id}`, { headers: { range: `bytes=${4 * 1024 * 1024}-` } });
+  expect(tail.headers()["content-range"]).toBe(`bytes ${4 * 1024 * 1024}-${size - 1}/${size}`);
+  expect((await tail.body()).length).toBe(500);
+  // Another site can't upload in the user's name.
+  const csrf = await hana.request.put(`/api/memories/media/${id}/part/1`, { headers: { origin: "https://evil.example" }, data: Buffer.alloc(10) });
+  expect(csrf.status()).toBe(403);
+});

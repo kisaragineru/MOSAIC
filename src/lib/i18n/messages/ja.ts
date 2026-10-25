@@ -70,6 +70,11 @@ export const ja: Dict = {
       "記録は初期設定で非公開です。あなたが共有リンクを作り、相手とあなたの両方が同意しない限り、誰とも共有されません。",
   },
   errors: {
+    empty_record: "文章を書くか、写真・動画を1つ以上つけてください。",
+    invalid_media: "この写真・動画は使えません（JPEG・PNG・WebP、MP4・MOV・WebM）。",
+    media_too_large: "ファイルが大きすぎます（写真は4MB、動画は30MBまで）。",
+    video_too_large: "動画は30MBまでです。短く切ってから選んでください。",
+    too_many_media: "写真・動画は1件の記録に5つまでです。",
     session_expired: "ログインの有効期限が切れたため送れませんでした。再読み込みしてから「再送」してください。",
     not_connected: "この人とはつながっていないため、メッセージを送れません。",
     cannot_send: "このやりとりには送信できません。",
@@ -151,10 +156,23 @@ export const ja: Dict = {
     turning: (n: number) => `（${n}年）`,
   },
   memories: {
+    media: {
+      add: "写真・動画を追加",
+      help: "5つまで。写真は自動で軽くします。動画は30MBまで。公開範囲は記録と同じです。",
+      remove: "取り除く",
+      moveEarlier: "前へ",
+      uploading: "アップロード中…（終わるまで保存できません）",
+      waitUpload: "写真・動画のアップロードが終わるまでお待ちください。",
+      failed: "失敗しました",
+      retry: "再試行",
+      video: "動画",
+      label: (i: number, n: number, video: boolean) => `${video ? "動画" : "写真"} ${i}/${n}`,
+    },
     title: "記録",
     new: "新しい記録",
     write: "書く",
     kinds: {
+      note: "ひとこと",
       thought: "考え",
       feeling: "気持ち",
       memory: "思い出",
@@ -978,6 +996,7 @@ export const ja: Dict = {
     resumeSub: "最初のタイルまで、あと少しです。",
   },
   comments: {
+    openRecord: "開いて読む・💬 コメント",
     you: "あなた",
     more: (n: number) => `ほか${n}件のコメント →`,
     title: "コメント",

@@ -12,7 +12,7 @@ describe("memories & timeline", () => {
     const u = await makeUser();
     const id = await createMemory(u.userId, { body: "Rainy day, felt calm." });
     const m = await getMemory(u.userId, id);
-    expect(m).toMatchObject({ kind: "thought", body: "Rainy day, felt calm.", version: 1, tags: [], sealed: false });
+    expect(m).toMatchObject({ kind: "note", body: "Rainy day, felt calm.", version: 1, tags: [], sealed: false });
     expect(m.versions).toHaveLength(1);
   });
 

@@ -3,6 +3,14 @@ import { MEMORY_CIRCLES, MEMORY_KINDS } from "@/server/db/schema";
 import { KIND_ICON } from "@/lib/timeline";
 import { CIRCLE_ICON } from "./circle-icon";
 import { Button, Field, Input, Textarea } from "./ui";
+import { MediaPicker, type MediaPickerText } from "./media-picker";
+import type { MediaItem } from "@/server/services/media";
+
+/** The picker's words, from the dictionary (a client component can't take functions). */
+export function mediaPickerText(t: Dict): MediaPickerText {
+  const m = t.memories.media;
+  return { add: m.add, help: m.help, remove: m.remove, moveEarlier: m.moveEarlier, uploading: m.uploading, waitUpload: m.waitUpload, failed: m.failed, retry: m.retry, video: m.video, errors: t.errors };
+}
 
 export interface MemoryDefaults {
   id?: string;
@@ -16,6 +24,7 @@ export interface MemoryDefaults {
   personIds?: string[];
   visibility?: "private" | "connections" | "circles";
   circles?: string[];
+  media?: MediaItem[];
 }
 
 const chip =
@@ -58,8 +67,14 @@ export function MemoryForm({
         </Field>
       )}
       <Field label={t.memories.fields.body}>
-        <Textarea name="body" required defaultValue={d.body ?? ""} maxLength={20000} rows={7} placeholder={t.memories.bodyPlaceholder} />
+        <Textarea name="body" required={isLetter} defaultValue={d.body ?? ""} maxLength={20000} rows={7} placeholder={t.memories.bodyPlaceholder} />
       </Field>
+      {/* Photos and videos: not for letters to the future. */}
+      {!isLetter && (
+        <div className={notLetter}>
+          <MediaPicker tx={mediaPickerText(t)} initial={d.media ?? []} />
+        </div>
+      )}
       {d.reason && (
         <Field label={`${t.memories.fields.reason} (${t.common.optional})`}>
           <Textarea name="reason" defaultValue={d.reason} rows={2} maxLength={5000} />

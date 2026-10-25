@@ -70,6 +70,11 @@ export const vi: Dict = {
       "Mọi ghi chép mặc định là riêng tư. Không có gì được chia sẻ trừ khi bạn tự tạo liên kết chia sẻ và cả hai người cùng đồng ý.",
   },
   errors: {
+    empty_record: "Hãy viết vài dòng hoặc thêm ít nhất một ảnh/video.",
+    invalid_media: "Không dùng được ảnh/video này (JPEG, PNG, WebP, MP4, MOV, WebM).",
+    media_too_large: "Tệp quá lớn (ảnh tối đa 4 MB, video tối đa 30 MB).",
+    video_too_large: "Video tối đa 30 MB. Hãy cắt ngắn trước.",
+    too_many_media: "Mỗi ghi chép có tối đa 5 ảnh/video.",
     session_expired: "Phiên đăng nhập đã hết hạn nên chưa gửi được. Hãy tải lại rồi bấm Gửi lại.",
     not_connected: "Bạn chưa kết nối với người này nên không thể nhắn tin.",
     cannot_send: "Không thể gửi tin trong cuộc trò chuyện này.",
@@ -151,10 +156,23 @@ export const vi: Dict = {
     turning: (n: number) => `(${n} năm)`,
   },
   memories: {
+    media: {
+      add: "Thêm ảnh/video",
+      help: "Tối đa 5. Ảnh được tự động làm nhẹ; video tối đa 30 MB. Cùng phạm vi chia sẻ với ghi chép.",
+      remove: "Bỏ",
+      moveEarlier: "Lên trước",
+      uploading: "Đang tải lên… (xong mới lưu được)",
+      waitUpload: "Vui lòng chờ ảnh/video tải lên xong.",
+      failed: "Thất bại",
+      retry: "Thử lại",
+      video: "Video",
+      label: (i: number, n: number, video: boolean) => `${video ? "Video" : "Ảnh"} ${i}/${n}`,
+    },
     title: "Ghi chép",
     new: "Ghi chép mới",
     write: "Viết",
     kinds: {
+      note: "Đôi dòng",
       thought: "Suy nghĩ",
       feeling: "Cảm xúc",
       memory: "Kỷ niệm",
@@ -978,6 +996,7 @@ export const vi: Dict = {
     resumeSub: "Chỉ còn vài câu nữa là ô đầu tiên hiện ra.",
   },
   comments: {
+    openRecord: "Mở · 💬 bình luận",
     you: "Bạn",
     more: (n: number) => `Thêm ${n} bình luận →`,
     title: "Bình luận",

@@ -216,6 +216,7 @@ export const tuviInterpretations = pgTable(
 // ---------------------------------------------------------------------------
 
 export const MEMORY_KINDS = [
+  "note",
   "thought",
   "feeling",
   "memory",
@@ -248,7 +249,7 @@ export const memoryEntries = pgTable(
     index("memory_entries_user_occurred_idx").on(t.userId, t.occurredOn),
     check(
       "memory_kind_ck",
-      sql`${t.kind} in ('thought','feeling','memory','decision','goal','dream','regret','achievement','value','letter_to_future')`,
+      sql`${t.kind} in ('note','thought','feeling','memory','decision','goal','dream','regret','achievement','value','letter_to_future')`,
     ),
     /** private: only you. connections: everyone you're connected with. circles: the relationships in memory_circles. */
     check("memory_visibility_ck", sql`${t.visibility} in ('private','connections','circles')`),
@@ -1206,4 +1207,53 @@ export const linkPreviews = pgTable(
     fetchedAt: ts("fetched_at").notNull().defaultNow(),
   },
   (t) => [check("link_previews_status_ck", sql`${t.status} in ('ok','empty','failed')`), check("link_previews_mime_ck", sql`${t.imageMime} is null or ${t.imageMime} in ('image/jpeg','image/png','image/webp','image/gif')`)],
+);
+
+// ---------------------------------------------------------------------------
+// Photos and videos on records (up to 5 per record). Stored here for now, in chunks so a
+// video can be uploaded and played in parts; read and written only through the
+// memory_media_* functions, which apply the record's own sharing rules.
+// ---------------------------------------------------------------------------
+
+export const MEDIA_CHUNK_BYTES = 4 * 1024 * 1024;
+
+export const memoryMedia = pgTable(
+  "memory_media",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: userRef(),
+    /** Null until the record it belongs to is saved. */
+    entryId: uuid("entry_id").references(() => memoryEntries.id, { onDelete: "cascade" }),
+    position: smallint("position").notNull().default(0),
+    kind: text("kind").notNull(),
+    mime: text("mime").notNull(),
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    durationMs: integer("duration_ms"),
+    size: integer("size").notNull(),
+    chunks: smallint("chunks").notNull(),
+    /** A small JPEG for lists (a video's first frame). */
+    thumb: bytea("thumb").notNull(),
+    complete: boolean("complete").notNull().default(false),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("memory_media_entry_idx").on(t.entryId, t.position),
+    index("memory_media_user_idx").on(t.userId, t.createdAt),
+    check("memory_media_kind_ck", sql`${t.kind} in ('image','video')`),
+    check("memory_media_mime_ck", sql`${t.mime} in ('image/jpeg','image/png','image/webp','video/mp4','video/quicktime','video/webm')`),
+    check("memory_media_dims_ck", sql`${t.width} between 1 and 10000 and ${t.height} between 1 and 10000`),
+  ],
+);
+
+export const memoryMediaChunks = pgTable(
+  "memory_media_chunks",
+  {
+    mediaId: uuid("media_id")
+      .notNull()
+      .references(() => memoryMedia.id, { onDelete: "cascade" }),
+    idx: smallint("idx").notNull(),
+    bytes: bytea("bytes").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.mediaId, t.idx] })],
 );

@@ -10,6 +10,8 @@ export function proxy(request: NextRequest) {
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' 'nonce-${nonce}'`,
     "img-src 'self' blob: data:",
+    // Recorded videos play from here; a chosen video is read locally (blob:) for its first frame.
+    "media-src 'self' blob:",
     "font-src 'self'",
     "connect-src 'self'",
     "object-src 'none'",

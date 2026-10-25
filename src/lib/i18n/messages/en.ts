@@ -68,6 +68,11 @@ export const en = {
       "Your records are private by default. Nothing is shared with anyone unless you explicitly create a share link and both people consent.",
   },
   errors: {
+    empty_record: "Write something, or add at least one photo or video.",
+    invalid_media: "This photo or video can't be used (JPEG, PNG, WebP, MP4, MOV or WebM).",
+    media_too_large: "The file is too large (photos up to 4 MB, videos up to 30 MB).",
+    video_too_large: "Videos can be up to 30 MB. Trim it first.",
+    too_many_media: "A record can have up to 5 photos or videos.",
     session_expired: "Your sign-in expired, so this wasn't sent. Reload, then tap Retry.",
     not_connected: "You're not connected with this person, so you can't message them.",
     cannot_send: "You can't send messages in this conversation.",
@@ -149,10 +154,23 @@ export const en = {
     turning: (n: number) => `(${n} years)`,
   },
   memories: {
+    media: {
+      add: "Add photos or videos",
+      help: "Up to 5. Photos are made lighter automatically; videos up to 30 MB. Seen by the same people as the record.",
+      remove: "Remove",
+      moveEarlier: "Move earlier",
+      uploading: "Uploading… (you can save once it's done)",
+      waitUpload: "Please wait until the photos and videos have uploaded.",
+      failed: "Failed",
+      retry: "Retry",
+      video: "Video",
+      label: (i: number, n: number, video: boolean) => `${video ? "Video" : "Photo"} ${i} of ${n}`,
+    },
     title: "Journal",
     new: "New entry",
     write: "Write",
     kinds: {
+      note: "Quick note",
       thought: "Thought",
       feeling: "Feeling",
       memory: "Memory",
@@ -976,6 +994,7 @@ export const en = {
     resumeSub: "Your first tile is only a few answers away.",
   },
   comments: {
+    openRecord: "Open · 💬 comment",
     you: "You",
     more: (n: number) => `${n} more →`,
     title: "Comments",

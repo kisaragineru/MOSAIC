@@ -20,6 +20,7 @@ export const LIMITS = {
   comment: { windowSeconds: 60 * 60, max: 60 },
   dm: { windowSeconds: 60 * 60, max: 600 },
   linkPreview: { windowSeconds: 60 * 60, max: 120 },
+  memoryMedia: { windowSeconds: 60 * 60, max: 100 },
 } satisfies Record<string, Limit>;
 
 const bucket = (scope: keyof typeof LIMITS, identifier: string) => `${scope}:${sha256(`${process.env.RATE_LIMIT_SALT ?? "mosaic"}:${identifier}`)}`;

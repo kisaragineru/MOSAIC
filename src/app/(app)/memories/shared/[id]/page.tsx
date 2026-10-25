@@ -11,6 +11,8 @@ import { requireUser } from "@/server/auth/session";
 import { getAccount } from "@/server/services/account";
 import { readThread, sharedEntry } from "@/server/services/comments";
 import { uuid } from "@/lib/validation/common";
+import { MediaGallery } from "@/components/media-grid";
+import { mediaFor } from "@/server/services/media";
 
 /** Someone else's shared record, and my one-to-one conversation with them about it. */
 export default async function SharedRecordPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
@@ -23,6 +25,7 @@ export default async function SharedRecordPage({ params, searchParams }: { param
   if (!e) notFound();
   const tz = (await getAccount(uid)).profile.timeZone;
   const comments = await readThread(uid, id, null).catch(() => []);
+  const media = (await mediaFor(uid, [e.id])).get(e.id) ?? [];
   return (
     <Page title={t.comments.recordOf(e.ownerName)} back="/memories?view=friends">
       <Flash t={t} sp={sp} />
@@ -36,7 +39,8 @@ export default async function SharedRecordPage({ params, searchParams }: { param
           </time>
         </div>
         {e.title && <p className="font-semibold text-stone-900">{e.title}</p>}
-        <p className="whitespace-pre-line leading-relaxed text-stone-800">{e.body}</p>
+        {e.body && <p className="whitespace-pre-line leading-relaxed text-stone-800">{e.body}</p>}
+        {media.length > 0 && <div className={e.body ? "mt-3" : ""}><MediaGallery media={media} label={t.memories.media.label} /></div>}
       </article>
       <Link href={`/messages/new?record=${e.id}`} className="inline-flex min-h-10 items-center rounded-full bg-white px-4 text-sm font-semibold text-teal-800 ring-1 ring-stone-200 transition hover:ring-teal-300">
         {t.messages.shareRecord}
