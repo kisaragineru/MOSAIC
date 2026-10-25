@@ -9,6 +9,8 @@ import { uuid } from "@/lib/validation/common";
 import { requireUser } from "@/server/auth/session";
 import { dmContacts, dmConversation } from "@/server/services/dm";
 import { avatarUrls } from "@/server/services/avatars";
+import { companionsReplyInGroupAction } from "@/app/actions/dev";
+import { listCompanions } from "@/server/services/dev-companion";
 
 /** A conversation's details: who's in it, the group's name, mute, leave, delete for me. */
 export default async function ConversationInfoPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
@@ -25,6 +27,8 @@ export default async function ConversationInfoPage({ params, searchParams }: { p
   const addable = group && !conv.me.left ? (await dmContacts(uid)).filter((c) => !active.some((m) => m.id === c.id)) : [];
   const pics = await avatarUrls(uid, [...active.map((m) => m.id), ...addable.map((c) => c.id)]);
   const hidden = <input type="hidden" name="conversationId" value={conv.id} />;
+  // Development only (empty otherwise): test companions in this group can be made to reply.
+  const testers = group && !conv.me.left ? (await listCompanions(uid)).filter((c) => active.some((m) => m.id === c.id)) : [];
   return (
     <Page title={tm.info} back={`/messages/${conv.id}`}>
       <Flash t={t} sp={sp} />
@@ -36,6 +40,13 @@ export default async function ConversationInfoPage({ params, searchParams }: { p
             <Button type="submit">{tm.save}</Button>
           </form>
         </Card>
+      )}
+      {testers.length > 0 && (
+        <form action={companionsReplyInGroupAction} className="rounded-3xl border border-dashed border-violet-300 bg-violet-50/60 p-4">
+          {hidden}
+          <p className="mb-2 text-xs text-violet-900">{t.settings.dev.groupReplyHelp}（{testers.map((c) => c.name).join("、")}）</p>
+          <Button type="submit" variant="secondary">{t.settings.dev.groupReply}</Button>
+        </form>
       )}
       <Card title={tm.members(active.length)}>
         <ul className="space-y-2">

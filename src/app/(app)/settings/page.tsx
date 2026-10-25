@@ -12,7 +12,7 @@ import { requireUser } from "@/server/auth/session";
 import { aiConfigured } from "@/server/ai/claude";
 import { getAccount, getNotificationPrefs } from "@/server/services/account";
 import { companionAsks, companionConnected, companionPending, devToolsEnabled, listCompanions } from "@/server/services/dev-companion";
-import { companionAnswersAction, companionAsksOwnerAction, companionCommentsAction, companionMessagesAction, companionWritesAction, createCompanionAction, deleteCompanionAction, enrichCompanionAction, reconnectCompanionAction } from "@/app/actions/dev";
+import { companionAnswersAction, companionAsksOwnerAction, companionCommentsAction, companionGroupMessagesAction, companionMessagesAction, companionWritesAction, createCompanionAction, deleteCompanionAction, enrichCompanionAction, reconnectCompanionAction } from "@/app/actions/dev";
 
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
@@ -119,6 +119,12 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                     <form action={companionMessagesAction}>
                       <input type="hidden" name="id" value={c.id} />
                       <Button type="submit" variant="secondary" className="min-h-8 px-3 py-1 text-xs">✉️ {td.dm}</Button>
+                    </form>
+                  )}
+                  {c.connected && (
+                    <form action={companionGroupMessagesAction}>
+                      <input type="hidden" name="id" value={c.id} />
+                      <Button type="submit" variant="secondary" className="min-h-8 px-3 py-1 text-xs">👥 {td.groupDm}</Button>
                     </form>
                   )}
                   {c.connected && (

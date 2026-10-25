@@ -731,6 +731,9 @@ export const en = {
     dev: {
       askOwner: "Make them ask you \"how do you see me?\"",
       dm: "Reply to your messages",
+      groupDm: "Reply in groups",
+      groupReply: "🧪 Let test companions reply",
+      groupReplyHelp: "Development: the test companions in this group reply in turn.",
       comment: "Reply to comments and comment on your record",
       answerAsks: (n: number) => `Answer "how do you see me?" (${n})`,
       ended: "(connection ended)",

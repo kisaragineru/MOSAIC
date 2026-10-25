@@ -266,3 +266,28 @@ test("a web link shows the page's card (OGP), its image served from MOSAIC; MOSA
   expect(og.status()).toBe(200);
   expect(og.headers()["content-type"]).toBe("image/png");
 });
+
+test("test companions can reply in a group (development)", async ({ browser }) => {
+  const hana = await user(browser, "ハナ");
+  for (let i = 0; i < 2; i++) {
+    await hana.goto("/settings");
+    await hana.getByRole("button", { name: /テスト相手をつくる/ }).click();
+    await hana.waitForURL(/settings\?ok=saved/);
+  }
+  await hana.goto("/messages/new");
+  await hana.getByLabel("ミナ（テスト）").check();
+  await hana.getByLabel("ソウ（テスト）").check();
+  await hana.getByLabel("グループ名（任意）").fill("テストの会");
+  await hana.getByRole("button", { name: "はじめる" }).click();
+  await hana.waitForURL(/\/messages\/[0-9a-f-]+$/);
+  await sendText(hana, "みんな元気？");
+
+  await hana.getByRole("link", { name: "詳細" }).click();
+  await expect(hana.getByText(/このグループにいるテスト相手が、順に返信します。（ミナ（テスト）、ソウ（テスト））/)).toBeVisible();
+  await hana.getByRole("button", { name: "🧪 テスト相手に返信させる" }).click();
+  await hana.waitForURL(/\/messages\/[0-9a-f-]+$/);
+  await expect(hana.getByText("いいね、賛成！")).toBeVisible();
+  await expect(hana.getByText("了解です〜")).toBeVisible();
+  // Each reply shows who wrote it.
+  await expect(hana.getByText("ソウ（テスト）", { exact: true }).first()).toBeVisible();
+});

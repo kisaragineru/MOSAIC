@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/server/auth/session";
-import { companionAnswersAsks, companionAsksOwner, companionComments, companionMessages, companionWrites, createCompanion, deleteCompanion, enrichCompanion, reconnectCompanion } from "@/server/services/dev-companion";
+import { companionAnswersAsks, companionAsksOwner, companionComments, companionGroupMessages, companionMessages, companionsReplyInGroup, companionWrites, createCompanion, deleteCompanion, enrichCompanion, reconnectCompanion } from "@/server/services/dev-companion";
 import { attempt, str } from "./util";
 
 // Development only: every service call refuses unless DEV_TOOLS=on.
@@ -58,4 +58,17 @@ export async function companionCommentsAction(form: FormData) {
 export async function companionMessagesAction(form: FormData) {
   const uid = await requireUser();
   done(await attempt("dev.companion_dm", () => companionMessages(uid, str(form, "id"))));
+}
+
+export async function companionGroupMessagesAction(form: FormData) {
+  const uid = await requireUser();
+  done(await attempt("dev.companion_group", () => companionGroupMessages(uid, str(form, "id"))));
+}
+
+/** From a group's info page: the test companions in it reply, then back to the conversation. */
+export async function companionsReplyInGroupAction(form: FormData) {
+  const uid = await requireUser();
+  const id = str(form, "conversationId");
+  const r = await attempt("dev.group_reply", () => companionsReplyInGroup(uid, id));
+  redirect(r.ok ? `/messages/${encodeURIComponent(id)}` : `/messages/${encodeURIComponent(id)}/info?e=${r.error}`);
 }

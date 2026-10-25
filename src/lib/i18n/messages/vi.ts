@@ -733,6 +733,9 @@ export const vi: Dict = {
     dev: {
       askOwner: "Cho họ hỏi bạn \"bạn thấy tôi thế nào?\"",
       dm: "Trả lời tin nhắn của bạn",
+      groupDm: "Trả lời trong nhóm",
+      groupReply: "🧪 Cho người thử trả lời",
+      groupReplyHelp: "Dành cho phát triển: những người thử trong nhóm này lần lượt trả lời.",
       comment: "Trả lời bình luận và bình luận ghi chép của bạn",
       answerAsks: (n: number) => `Trả lời "bạn thấy tôi thế nào?" (${n})`,
       ended: "(đã hủy kết nối)",

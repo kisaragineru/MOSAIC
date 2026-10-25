@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { companionAnswersAsks, companionAsks, companionAsksOwner, companionComments, companionConnected, companionPending, companionWrites, createCompanion, deleteCompanion, enrichCompanion, listCompanions, reconnectCompanion } from "@/server/services/dev-companion";
+import { companionGroupMessages, companionsReplyInGroup, companionAnswersAsks, companionAsks, companionAsksOwner, companionComments, companionConnected, companionPending, companionWrites, createCompanion, deleteCompanion, enrichCompanion, listCompanions, reconnectCompanion } from "@/server/services/dev-companion";
 import { getAccount } from "@/server/services/account";
 import { answerQuestion } from "@/server/services/discovery";
 import { askPeer, myPeerRequests, peerResults } from "@/server/services/peers";
@@ -8,6 +8,7 @@ import { connectionFeed, setMemoryAudience, shareTargets } from "@/server/servic
 import { addComment, commentInbox } from "@/server/services/comments";
 import { createMemory } from "@/server/services/memories";
 import { getComparison, giveConsent, listComparisons, revokeComparison } from "@/server/services/sharing";
+import { createGroup, dmMessages, openDirect, sendMessage } from "@/server/services/dm";
 import { makeUser } from "../helpers/factory";
 
 afterEach(() => {
@@ -102,5 +103,30 @@ describe("development test companion", () => {
     await deleteCompanion(u.userId, id);
     expect(await listCompanions(u.userId)).toEqual([]);
     expect(await connectionFeed(u.userId)).toEqual([]);
+  });
+
+  it("replies in a group you made with test companions, in turn, and only there", async () => {
+    process.env.DEV_TOOLS = "on";
+    const u = await makeUser("Owner");
+    const a = await createCompanion(u.userId, "friend");
+    const b = await createCompanion(u.userId, "family");
+    const group = await createGroup(u.userId, "週末の計画", [a, b]);
+    const mine = await sendMessage(u.userId, group, { kind: "text", body: "土曜どう？" });
+    expect(await companionsReplyInGroup(u.userId, group)).toBe(2);
+    let msgs = (await dmMessages(u.userId, group, { limit: 40 })).filter((m) => m.kind === "text");
+    expect(msgs.map((m) => m.senderId)).toEqual([u.userId, a, b]);
+    expect(msgs[1]!.reply?.id).toBe(mine);
+    expect(msgs[0]!.reactions.map((r) => r.userId)).toEqual([a]);
+    // Each one keeps going with their own lines.
+    await companionsReplyInGroup(u.userId, group);
+    msgs = (await dmMessages(u.userId, group, { limit: 40 })).filter((m) => m.kind === "text");
+    expect(new Set(msgs.filter((m) => m.senderId === a).map((m) => m.body)).size).toBe(2);
+    // From settings: one companion replies in every group it shares with you.
+    expect(await companionGroupMessages(u.userId, b)).toBe(1);
+    // Not a group, or nobody of yours in it: nothing happens.
+    const direct = await openDirect(u.userId, a);
+    await expect(companionsReplyInGroup(u.userId, direct)).rejects.toMatchObject({ code: "not_found" });
+    delete process.env.DEV_TOOLS;
+    await expect(companionsReplyInGroup(u.userId, group)).rejects.toMatchObject({ code: "forbidden" });
   });
 });

@@ -19,7 +19,7 @@ import { setManualShare } from "./manual-share";
 import { createMemory } from "./memories";
 import { connectionFeed, setMemoryAudience } from "./memory-share";
 import { addComment, commentInbox } from "./comments";
-import { dmMessages, markRead, openDirect, reactToMessage, sendMessage } from "./dm";
+import { dmConversation, dmInbox, dmMessages, markRead, openDirect, reactToMessage, sendMessage } from "./dm";
 import { addPreference, updatePerson } from "./people";
 import { ANSWERS, BIO, BIRTH, FAVOURITES, INTRO, LEAN, MORE, MOTHER_COMMENT, MOTHER_GUESS, MOTHER_SEES_OTHERWISE, RECORDS } from "./dev-persona";
 import { answerPeer, askPeer, myPeerRequests } from "./peers";
@@ -292,4 +292,50 @@ export async function companionMessages(ownerId: string, companionId: string) {
   if (last && !last.reactions.some((r) => r.userId === cid)) await reactToMessage(cid, last.id, "❤️");
   await markRead(cid, conv);
   await sendMessage(cid, conv, { kind: "text", body: DM_LINES[msgs.filter((m) => m.senderId === cid).length % DM_LINES.length], replyTo: last?.id ?? null });
+}
+
+const GROUP_LINES = [
+  ["いいね、賛成！", "その日なら空いてるよ。", "写真あとで送るね📷", "楽しみにしてる！"],
+  ["了解です〜", "私はどっちでも大丈夫。", "場所はどこにする？", "ありがとう、助かる！"],
+  ["おっ、いいね👍", "ちょっと遅れるかも、ごめん。", "じゃあ駅前で集合ね。", "また今度みんなで行こう。"],
+];
+
+/**
+ * Your test companions in a group take part: each one there reads it, the first puts a ❤️ on
+ * your last message, and each replies in turn (replying to you if you wrote last). Returns how
+ * many replied; companions who left the group or aren't in it stay out.
+ */
+export async function companionsReplyInGroup(ownerId: string, conversationId: string): Promise<number> {
+  guard();
+  const conv = await dmConversation(ownerId, conversationId);
+  if (conv.kind !== "group") throw notFound();
+  const mine = await listCompanions(ownerId);
+  const here = mine.map((c, i) => ({ ...c, i })).filter((c) => conv.members.some((m) => m.id === c.id && !m.left));
+  let n = 0;
+  for (const c of here) {
+    const msgs = await dmMessages(c.id, conv.id, { limit: 40 });
+    const last = msgs.filter((m) => m.kind !== "system" && !m.deleted).at(-1);
+    const yours = last?.senderId === ownerId ? last : null;
+    if (n === 0 && yours && !yours.reactions.some((r) => r.userId === c.id)) await reactToMessage(c.id, yours.id, "❤️");
+    await markRead(c.id, conv.id);
+    const lines = GROUP_LINES[c.i % GROUP_LINES.length]!;
+    await sendMessage(c.id, conv.id, { kind: "text", body: lines[msgs.filter((m) => m.senderId === c.id).length % lines.length]!, replyTo: n === 0 ? (yours?.id ?? null) : null });
+    n++;
+  }
+  return n;
+}
+
+/** This companion replies in every group it shares with you. */
+export async function companionGroupMessages(ownerId: string, companionId: string): Promise<number> {
+  const cid = await own(ownerId, companionId);
+  const at = (await listCompanions(ownerId)).findIndex((c) => c.id === cid);
+  const lines = GROUP_LINES[Math.max(0, at) % GROUP_LINES.length]!;
+  const groups = (await dmInbox(cid)).filter((g) => g.kind === "group" && !g.leftGroup && g.canSend && g.others.some((o) => o.id === ownerId));
+  for (const g of groups) {
+    const msgs = await dmMessages(cid, g.id, { limit: 40 });
+    const last = msgs.filter((m) => m.kind !== "system" && !m.deleted).at(-1);
+    await markRead(cid, g.id);
+    await sendMessage(cid, g.id, { kind: "text", body: lines[msgs.filter((m) => m.senderId === cid).length % lines.length]!, replyTo: last?.senderId === ownerId ? last.id : null });
+  }
+  return groups.length;
 }

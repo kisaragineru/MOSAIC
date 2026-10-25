@@ -733,6 +733,9 @@ export const ja: Dict = {
     dev: {
       askOwner: "あなたに「どう見える？」を聞かせる",
       dm: "メッセージに返信する",
+      groupDm: "グループで返信する",
+      groupReply: "🧪 テスト相手に返信させる",
+      groupReplyHelp: "開発用：このグループにいるテスト相手が、順に返信します。",
       comment: "コメントに返信・あなたの記録にコメント",
       answerAsks: (n: number) => `「周りから見たあなた」に答えさせる（${n}件）`,
       ended: "（つながり解除済み）",
