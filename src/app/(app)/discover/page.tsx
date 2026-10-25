@@ -10,6 +10,7 @@ import { answerLabel } from "@/lib/discovery/format";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { allProgress, getDaily, getHistory } from "@/server/services/discovery";
+import { AnswerAllLink } from "@/components/answer-all-link";
 import { AnswerPrivacyLink } from "@/components/answer-privacy-link";
 
 export default async function DiscoverPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
@@ -41,14 +42,7 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Pro
       <DayWatcher day={daily.day} timeZone={daily.timeZone} />
       <SegmentedTabs current="/discover" items={[{ href: "/discover", label: t.nav.todayQuestions }, { href: "/discover/chapters", label: t.discover.chaptersTab }, { href: "/discover/history", label: t.nav.history }]} />
       <p className="text-sm text-stone-600">{t.discover.intro}</p>
-      {/* The way in to answering many at once: a filled call to action, unlike the question cards below. */}
-      <Link href="/discover/all" className="flex items-center justify-between gap-3 rounded-3xl bg-linear-to-br from-teal-600 to-violet-600 px-5 py-4 text-white shadow-md shadow-teal-900/15 transition hover:shadow-lg active:scale-[0.99]">
-        <span className="min-w-0">
-          <span className="block font-bold">⚡ {t.discover.allLink}</span>
-          <span className="block text-xs text-white/85">{t.discover.allLinkSub(all.left)}</span>
-        </span>
-        {all.left > 0 && <span className="shrink-0 rounded-full bg-white px-3.5 py-1.5 text-sm font-bold text-teal-800">{t.discover.allStart} →</span>}
-      </Link>
+      <AnswerAllLink t={t} left={all.left} />
       <Flash t={t} sp={sp} />
       {!changed && <FeedbackPrompt sp={sp} back="/discover" t={t} />}
       {!changed && <LikesFollowUp sp={sp} back="/discover" t={t} locale={locale} />}

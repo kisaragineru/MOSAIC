@@ -4,6 +4,7 @@ import { CHAPTER_INFO } from "@/content/axes";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { allProgress, chapterProgress } from "@/server/services/discovery";
+import { AnswerAllLink } from "@/components/answer-all-link";
 import { AnswerPrivacyLink } from "@/components/answer-privacy-link";
 
 export default async function ChaptersPage() {
@@ -23,13 +24,7 @@ export default async function ChaptersPage() {
         ]}
       />
       <p className="text-sm text-stone-600">{d.chaptersIntro}</p>
-      <Link href="/discover/all" className="flex items-center justify-between gap-3 rounded-3xl bg-linear-to-br from-teal-50 to-violet-50 px-5 py-4 shadow-sm ring-1 ring-teal-100 transition hover:shadow-md">
-        <span>
-          <span className="block font-semibold text-teal-900">⚡ {t.discover.allLink}</span>
-          <span className="block text-xs text-stone-600">{t.discover.allLinkSub(all.left)}</span>
-        </span>
-        <span aria-hidden className="text-teal-700">→</span>
-      </Link>
+      <AnswerAllLink t={t} left={all.left} />
       <ul className="grid gap-3 sm:grid-cols-2">
         {chapters.map((c) => {
           const info = CHAPTER_INFO[c.chapter];
