@@ -135,7 +135,7 @@ export function tileViews(p: Portrait, t: Dict, locale: Locale): TileView[] {
       return {
         id: "tuvi", hue: "extra", level: tile.level, direction: null, label: "Tử Vi", title: "Tử Vi",
         body: tile.done ? m.tuviDone : m.tuviTodo, meta: "", rejected: false,
-        icons: ["🔮"], badge: tile.done ? m.tuviReady : null, progress: null,
+        icons: ["Sparkles"], badge: tile.done ? m.tuviReady : null, progress: null,
         href: "/tuvi", hrefLabel: tile.done ? m.tuviOpen : m.tuviStart, evidenceHref: null,
       };
     }
@@ -144,7 +144,7 @@ export function tileViews(p: Portrait, t: Dict, locale: Locale): TileView[] {
       id: tile.kind, hue: "extra", level: tile.level, direction: null,
       label: tile.kind === "likes" ? m.likesShort : m.storyShort, title: chapter,
       body: m.chapterBody(tile.done, tile.total), meta: "", rejected: false,
-      icons: [tile.kind === "likes" ? "❤️" : "📖"],
+      icons: [tile.kind === "likes" ? "Star" : "BookOpen"],
       badge: tile.done ? chapterBadge(m, tile.done, tile.total) : null,
       progress: tile.done && tile.done < tile.total ? [tile.done, tile.total] : null,
       href: `/discover/chapter/${tile.kind}`, hrefLabel: m.answerChapter(chapter), evidenceHref: null,

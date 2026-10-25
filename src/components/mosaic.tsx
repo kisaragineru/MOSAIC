@@ -1,6 +1,11 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import {
+  Bird, BookOpen, Calculator, CalendarCheck, Coffee, Compass, Droplet, Globe, HandHeart, HandHelping, Handshake, Heart, House, Landmark, Lightbulb,
+  Map as MapIcon, Megaphone, MessageCircle, Moon, Mountain, Palette, PartyPopper, PiggyBank, Rocket, Scale, Search, Shell, Shield, Sparkles, Star, Target,
+  TreePine, Turtle, User, Users, Waves, Zap, type LucideIcon,
+} from "lucide-react";
 
 export type Hue = "self" | "mind" | "people" | "life" | "extra";
 export type Level = "empty" | "gathering" | "emerging" | "consistent" | "mixed";
@@ -18,7 +23,7 @@ export interface TileView {
   body: string;
   meta: string;
   rejected: boolean;
-  /** The picture: the side it leans to, or both sides while the question is still open. */
+  /** Pictogram names: the side it leans to, or both sides while the question is still open. */
   icons: string[];
   /** A short word on the tile: answers left, or how clearly it shows. */
   badge: string | null;
@@ -74,16 +79,15 @@ function Tile({ t, i, selected }: { t: TileView; i: number; selected?: boolean }
           t.level === "empty" ? "border border-dashed border-stone-300" : "shadow-sm ring-1 ring-black/5"
         } ${selected ? "ring-2 ring-stone-800 ring-offset-2" : ""} ${t.rejected ? "opacity-45" : ""}`}
       >
-        <span aria-hidden className={`flex items-center justify-center leading-none ${quiet ? "gap-0.5 opacity-55 grayscale-[.4]" : ""} ${t.level === "empty" ? "opacity-35 grayscale" : ""}`}>
+        <span aria-hidden className={`flex items-center justify-center ${INK[t.level]}`}>
           {t.icons.length > 1 ? (
             <>
-              <span className="text-[1.15rem]">{t.icons[0]}</span>
-              <span className={`text-[10px] font-bold ${t.level === "mixed" ? "text-stone-700" : "text-stone-400"}`}>{t.level === "mixed" ? "⇄" : "?"}</span>
-              <span className="text-[1.15rem]">{t.icons[1]}</span>
+              <Glyph name={t.icons[0]!} className="h-5 w-5" />
+              <span className="px-0.5 text-[10px] font-bold">{t.level === "mixed" ? "⇄" : "?"}</span>
+              <Glyph name={t.icons[1]!} className="h-5 w-5" />
             </>
           ) : (
-            // A pale disc keeps the picture readable on the deepest colours.
-            <span className={`flex items-center justify-center rounded-full ${quiet ? "text-[1.7rem]" : "h-12 w-12 bg-white/55 text-[1.75rem] shadow-inner ring-1 ring-white/60"}`}>{t.icons[0]}</span>
+            <Glyph name={t.icons[0]!} className={t.level === "consistent" ? "h-9 w-9" : quiet ? "h-7 w-7" : "h-8 w-8"} />
           )}
         </span>
         {t.progress && quiet && (
@@ -98,6 +102,27 @@ function Tile({ t, i, selected }: { t: TileView; i: number; selected?: boolean }
       <span className={`line-clamp-2 w-full text-center text-[11px] font-semibold leading-tight ${t.level === "empty" ? "text-stone-400" : "text-stone-800"}`}>{t.label}</span>
     </span>
   );
+}
+
+// One colour per state, never more: pale while open, white on the filled tiles.
+const INK: Record<Level, string> = {
+  empty: "text-stone-300",
+  gathering: "text-stone-400",
+  mixed: "text-stone-600",
+  emerging: "text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.12)]",
+  consistent: "text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]",
+};
+
+/** The pictograms a tile can use, by the name the server gives it. */
+const GLYPHS: Record<string, LucideIcon> = {
+  BookOpen, Bird, Calculator, CalendarCheck, Coffee, Compass, Droplet, Globe, HandHeart, HandHelping, Handshake, Heart, House, Landmark, Lightbulb,
+  Map: MapIcon, Megaphone, MessageCircle, Moon, Mountain, Palette, PartyPopper, PiggyBank, Rocket, Scale, Search, Shell, Shield, Sparkles, Star, Target,
+  TreePine, Turtle, User, Users, Waves, Zap,
+};
+
+function Glyph({ name, className }: { name: string; className: string }) {
+  const Icon = GLYPHS[name] ?? Sparkles;
+  return <Icon className={className} strokeWidth={2.2} />;
 }
 
 /** Progress as at most five dots: one per answer when few are needed, else a share of five. */

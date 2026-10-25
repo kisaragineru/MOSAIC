@@ -58,25 +58,25 @@ export const AXIS_LABEL: Record<TendencyKey, { name: I18nText; pos: I18nText; ne
   tradition: { name: { en: "Tradition", vi: "Truyền thống", ja: "伝統" }, pos: { en: "Tradition", vi: "Giữ gìn", ja: "伝統を大切に" }, neg: { en: "Own way", vi: "Cách riêng", ja: "自分流" } },
 };
 
-/** A picture for each side of an axis, so a tile shows which way it leans at a glance. */
+/** A pictogram for each side of an axis (names from the icon set), so a tile shows which way it leans. */
 export const AXIS_ICON: Record<TendencyKey, { pos: string; neg: string }> = {
-  social_energy: { pos: "👥", neg: "🌙" },
-  planning: { pos: "🗓️", neg: "🌊" },
-  novelty: { pos: "🧭", neg: "🏠" },
-  calm: { pos: "🌳", neg: "💧" },
-  pace: { pos: "⚡", neg: "🐢" },
-  decision_style: { pos: "🧮", neg: "💡" },
-  risk: { pos: "🚀", neg: "🛡️" },
-  independence: { pos: "🧍", neg: "🤝" },
-  detail: { pos: "🔍", neg: "🗺️" },
-  expressiveness: { pos: "🎈", neg: "🐚" },
-  conflict: { pos: "🎯", neg: "🕊️" },
-  closeness: { pos: "💞", neg: "🌐" },
-  care_style: { pos: "💬", neg: "🫶" },
-  giving: { pos: "🙌", neg: "⚖️" },
-  saving: { pos: "🐷", neg: "🎉" },
-  ambition: { pos: "🏔️", neg: "☕" },
-  tradition: { pos: "🏮", neg: "🎨" },
+  social_energy: { pos: "Users", neg: "Moon" },
+  planning: { pos: "CalendarCheck", neg: "Waves" },
+  novelty: { pos: "Compass", neg: "House" },
+  calm: { pos: "TreePine", neg: "Droplet" },
+  pace: { pos: "Zap", neg: "Turtle" },
+  decision_style: { pos: "Calculator", neg: "Lightbulb" },
+  risk: { pos: "Rocket", neg: "Shield" },
+  independence: { pos: "User", neg: "Handshake" },
+  detail: { pos: "Search", neg: "Map" },
+  expressiveness: { pos: "Megaphone", neg: "Shell" },
+  conflict: { pos: "Target", neg: "Bird" },
+  closeness: { pos: "Heart", neg: "Globe" },
+  care_style: { pos: "MessageCircle", neg: "HandHeart" },
+  giving: { pos: "HandHelping", neg: "Scale" },
+  saving: { pos: "PiggyBank", neg: "PartyPopper" },
+  ambition: { pos: "Mountain", neg: "Coffee" },
+  tradition: { pos: "Landmark", neg: "Palette" },
 };
 
 export const CHAPTER_INFO: Record<Chapter, { title: I18nText; intro: I18nText; icon: string }> = {
