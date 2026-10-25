@@ -12,6 +12,8 @@ import { draftIntro, introGrowth, INTRO_UPDATE_AFTER } from "@/server/services/i
 import { saveIntroAction } from "@/app/actions/intro";
 import { ConfirmButton } from "@/components/confirm-button";
 import { headers } from "next/headers";
+import { BirthForm } from "@/components/birth-form";
+import { getBirthForm } from "@/server/services/tuvi";
 
 const pill =
   "cursor-pointer rounded-full border border-stone-200 bg-white px-3 py-1 text-stone-700 has-[:checked]:border-teal-600 has-[:checked]:bg-teal-600 has-[:checked]:text-white";
@@ -28,6 +30,14 @@ export default async function MePage({ searchParams }: { searchParams: Promise<R
   const draft = sp.draft ? await draftIntro(uid, { length: sp.len, tone: sp.tone, ai: sp.ai === "1" && sameOrigin }, locale) : null;
   const growth = await introGrowth(uid, acc.profile.introPieces);
   const avatar = await myAvatarUrl(uid);
+  const birth = await getBirthForm(uid);
+  const bp = birth.profile;
+  const birthText = bp
+    ? [
+        bp.calendarInput === "lunar" && bp.lunarYear ? t.me.birthLunar(bp.lunarYear, bp.lunarMonth ?? 0, bp.lunarDay ?? 0, !!bp.lunarLeap) : bp.solarDate ? new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${bp.solarDate}T00:00:00Z`)) : "",
+        bp.timeKnown && bp.birthTime ? bp.birthTime.slice(0, 5) : t.me.birthTimeUnknown,
+      ].filter(Boolean).join(" · ")
+    : null;
   return (
     <Page title={t.me.title}>
       <Flash t={t} sp={sp} />
@@ -112,6 +122,28 @@ export default async function MePage({ searchParams }: { searchParams: Promise<R
           )}
           <p className="text-xs text-stone-500">🔗 {t.me.bioShared}</p>
         </div>
+      </section>
+
+      <section id="birth" aria-labelledby="birth-title" className="scroll-mt-20 space-y-3 rounded-3xl bg-white/85 p-5 shadow-sm ring-1 ring-white/80">
+        <div>
+          <h2 id="birth-title" className="text-base font-semibold text-stone-900">🔮 {t.me.birthTitle}</h2>
+          <p className="mt-1 text-xs leading-5 text-stone-500">🔒 {t.tuvi.birthPrivate}</p>
+        </div>
+        {bp && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-violet-50/70 px-4 py-3">
+            <p className="text-sm font-medium text-stone-800">{birthText}</p>
+            {birth.hasChart && <Link href="/tuvi" className="text-sm font-semibold text-teal-700">{t.me.birthOpen} →</Link>}
+          </div>
+        )}
+        {birth.needs.length > 0 && <p className="text-sm text-amber-800">{t.me.birthNeeds}</p>}
+        <details open={!bp || birth.needs.length > 0} className="group">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-full border border-stone-200 px-3 py-1 text-sm text-stone-700 hover:border-teal-300">
+            {bp ? `✎ ${t.common.edit}` : t.me.birthAdd}
+          </summary>
+          <div className="mt-3">
+            <BirthForm t={t} p={bp} needs={birth.needs} back="/me" />
+          </div>
+        </details>
       </section>
 
       <Link href="/me/preview" className="flex items-center justify-between rounded-3xl bg-linear-to-br from-sky-50 to-violet-50 px-5 py-4 shadow-sm transition hover:shadow-md">

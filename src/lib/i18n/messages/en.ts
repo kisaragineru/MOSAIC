@@ -1235,6 +1235,12 @@ export const en = {
     askThis: (n: string) => `Ask ${n} how they see you`,
   },
   me: {
+    birthTitle: "Birth details (for Tử Vi)",
+    birthAdd: "Enter your birth details",
+    birthOpen: "See your Tử Vi",
+    birthTimeUnknown: "time unknown",
+    birthNeeds: "One more choice is needed to draw your chart — please answer below.",
+    birthLunar: (y: number, m: number, d: number, leap: boolean) => `Lunar ${y}, month ${leap ? "leap " : ""}${m}, day ${d}`,
     previewSub: "How you appear to people you connect with",
     title: "My profile",
     selfPreferences: "My likes & dislikes",

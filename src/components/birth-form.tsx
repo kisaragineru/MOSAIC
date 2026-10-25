@@ -1,0 +1,60 @@
+import { saveBirthAction } from "@/app/actions/tuvi";
+import { Button, Checkbox, Field, Input, Notice, Select } from "@/components/ui";
+import type { Dict } from "@/lib/i18n/messages/en";
+import { preferredZone, timeZoneOptions } from "@/lib/timezones";
+import type { TuviView } from "@/server/services/tuvi";
+
+/** The birth details a Tử Vi chart is computed from (on the Tử Vi page and in the profile). */
+export function BirthForm({ t, p, needs, back }: { t: Dict; p: TuviView["profile"]; needs: TuviView["needs"]; back: string }) {
+  const needsLate = needs.includes("late_rat_hour") || !!p?.lateRatHour;
+  const needsLeap = needs.includes("leap_month_rule") || !!p?.leapMonthRule;
+  return (
+    <form action={saveBirthAction} className="space-y-3">
+      <input type="hidden" name="back" value={back} />
+      <fieldset className="flex gap-4 text-sm">
+        <legend className="mb-1 text-sm font-medium text-stone-700">{t.tuvi.calendar}</legend>
+        <label className="flex items-center gap-1"><input type="radio" name="calendarInput" value="solar" defaultChecked={(p?.calendarInput ?? "solar") === "solar"} className="accent-teal-700" /> {t.tuvi.solar}</label>
+        <label className="flex items-center gap-1"><input type="radio" name="calendarInput" value="lunar" defaultChecked={p?.calendarInput === "lunar"} className="accent-teal-700" /> {t.tuvi.lunar}</label>
+      </fieldset>
+      <Field label={`${t.tuvi.solarDate} (${t.tuvi.solar})`}>
+        <Input type="date" name="solarDate" defaultValue={p?.solarDate ?? ""} min="1900-01-01" max="2100-12-31" />
+      </Field>
+      <div className="grid grid-cols-3 gap-2">
+        <Field label={t.tuvi.lunarYear}><Input type="number" name="lunarYear" min={1900} max={2100} defaultValue={p?.lunarYear ?? ""} /></Field>
+        <Field label={t.tuvi.lunarMonth}><Input type="number" name="lunarMonth" min={1} max={12} defaultValue={p?.lunarMonth ?? ""} /></Field>
+        <Field label={t.tuvi.lunarDay}><Input type="number" name="lunarDay" min={1} max={30} defaultValue={p?.lunarDay ?? ""} /></Field>
+      </div>
+      <Checkbox name="lunarLeap" defaultChecked={p?.lunarLeap} label={t.tuvi.lunarLeap} />
+      <Checkbox name="timeKnown" defaultChecked={p ? p.timeKnown : true} label={t.tuvi.timeKnown} />
+      <Field label={t.tuvi.time}><Input type="time" name="birthTime" defaultValue={p?.birthTime?.slice(0, 5) ?? ""} /></Field>
+      <Field label={t.tuvi.timeZone}>
+        <Select name="timeZone" defaultValue={preferredZone(p?.timeZone ?? "Asia/Ho_Chi_Minh")}>
+          {timeZoneOptions(preferredZone(p?.timeZone ?? "Asia/Ho_Chi_Minh")).map((z) => <option key={z} value={z}>{z}</option>)}
+        </Select>
+      </Field>
+      <Field label={t.tuvi.place}><Input name="placeLabel" defaultValue={p?.placeLabel ?? ""} maxLength={120} /></Field>
+      <Field label={t.tuvi.sex} hint={t.tuvi.sexHelp}>
+        <Select name="sex" defaultValue={p?.sex ?? "unspecified"}>
+          {(["male", "female", "unspecified"] as const).map((s) => <option key={s} value={s}>{t.tuvi.sexes[s]}</option>)}
+        </Select>
+      </Field>
+      {needs.length > 0 && <Notice kind="warning"><b>{t.tuvi.needsTitle}</b></Notice>}
+      {needsLate && (
+        <Field label={t.tuvi.lateRatQ}>
+          <Select name="lateRatHour" defaultValue={p?.lateRatHour ?? ""} required={needs.includes("late_rat_hour")}>
+            <option value="">—</option>
+            {(["next_day", "same_day"] as const).map((x) => <option key={x} value={x}>{t.tuvi.lateRat[x]}</option>)}
+          </Select>
+        </Field>
+      )}
+      {needsLeap && (
+        <Field label={t.tuvi.leapQ}>
+          <Select name="leapMonthRule" defaultValue={p?.leapMonthRule ?? ""} required={needs.includes("leap_month_rule")}>
+            <option value="">—</option>
+            {(["same_month", "next_month", "split_15"] as const).map((x) => <option key={x} value={x}>{t.tuvi.leapRules[x]}</option>)}
+          </Select>
+        </Field>
+      )}
+      <Button type="submit" className="w-full">{t.tuvi.compute}</Button>
+    </form>  );
+}

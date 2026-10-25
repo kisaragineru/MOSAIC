@@ -1237,6 +1237,12 @@ export const vi: Dict = {
     askThis: (n: string) => `Hỏi ${n} xem họ thấy bạn thế nào`,
   },
   me: {
+    birthTitle: "Ngày giờ sinh (cho Tử Vi)",
+    birthAdd: "Nhập ngày giờ sinh",
+    birthOpen: "Xem Tử Vi",
+    birthTimeUnknown: "không rõ giờ",
+    birthNeeds: "Cần chọn thêm một mục để lập lá số — hãy trả lời ở dưới.",
+    birthLunar: (y: number, m: number, d: number, leap: boolean) => `Âm lịch ngày ${d} tháng ${leap ? "nhuận " : ""}${m} năm ${y}`,
     previewSub: "Bạn hiện ra thế nào với người đã kết nối",
     title: "Hồ sơ của tôi",
     selfPreferences: "Điều tôi thích & không thích",

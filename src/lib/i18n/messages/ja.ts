@@ -1237,6 +1237,12 @@ export const ja: Dict = {
     askThis: (n: string) => `${n}さんに、あなたがどう見えるか聞く`,
   },
   me: {
+    birthTitle: "生年月日（Tử Vi用）",
+    birthAdd: "生年月日を入力する",
+    birthOpen: "Tử Viを見る",
+    birthTimeUnknown: "時刻不明",
+    birthNeeds: "命盤を出すには、もう1つ選んでいただく必要があります。下のフォームで答えてください。",
+    birthLunar: (y: number, m: number, d: number, leap: boolean) => `旧暦 ${y}年${leap ? "閏" : ""}${m}月${d}日`,
     previewSub: "QRでつながった人に、あなたがどう表示されるか",
     title: "プロフィール",
     selfPreferences: "自分の好き・苦手",

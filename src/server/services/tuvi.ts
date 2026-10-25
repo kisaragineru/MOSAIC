@@ -200,6 +200,18 @@ export async function getTuvi(userId: string, locale: Locale, now = new Date()):
   });
 }
 
+/** Just what the birth form needs (the profile page): no interpretation. */
+export async function getBirthForm(userId: string): Promise<{ profile: TuviView["profile"]; needs: NeedsDecision[]; hasChart: boolean }> {
+  return withUser(userId, async (tx) => {
+    const [profile] = await tx.select().from(birthProfiles).where(eq(birthProfiles.userId, userId));
+    if (!profile) return { profile: null, needs: [], hasChart: false };
+    const [row] = await tx.select({ id: tuviCharts.id }).from(tuviCharts).where(and(eq(tuviCharts.userId, userId), eq(tuviCharts.isCurrent, true)));
+    if (row) return { profile, needs: [], hasChart: true };
+    const outcome = computeChart(toEngineInput(profile));
+    return { profile, needs: !outcome.ok && "needs" in outcome ? outcome.needs : [], hasChart: false };
+  });
+}
+
 /** For an unknown birth time: the 12 possible Mệnh placements, computed on the fly, never stored. */
 export async function exploreHours(userId: string) {
   return withUser(userId, async (tx) => {

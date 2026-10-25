@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/server/auth/session";
 import { deleteBirthProfile, saveBirthProfile } from "@/server/services/tuvi";
-import { attempt, bool, str } from "./util";
+import { attempt, bool, safeNext, str, withParam } from "./util";
 
 export async function saveBirthAction(form: FormData) {
   const uid = await requireUser();
@@ -24,10 +24,15 @@ export async function saveBirthAction(form: FormData) {
       leapMonthRule: str(form, "leapMonthRule"),
     }),
   );
-  if (!r.ok) redirect(`/tuvi?e=${r.error}`);
+  // From the Tử Vi page or the profile; back there, at the form.
+  const back = safeNext(str(form, "back"), "/tuvi");
+  const at = back === "/me" ? "#birth" : "";
+  if (!r.ok) redirect(`${withParam(back, "e", r.error ?? "generic")}${at}`);
   revalidatePath("/tuvi");
-  if (r.value.status === "invalid") redirect(`/tuvi?e=${r.value.error}`);
-  redirect(r.value.status === "needs_decision" ? "/tuvi" : "/tuvi?ok=saved");
+  revalidatePath("/me");
+  revalidatePath("/home");
+  if (r.value.status === "invalid") redirect(`${withParam(back, "e", r.value.error)}${at}`);
+  redirect(r.value.status === "needs_decision" ? `${back}${at}` : `${withParam(back, "ok", "saved")}${at}`);
 }
 
 export async function deleteBirthAction() {
