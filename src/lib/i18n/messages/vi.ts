@@ -1000,6 +1000,8 @@ export const vi: Dict = {
     leftGroup: "Bạn đã rời nhóm này.",
     sending: "Đang gửi…",
     failed: "Không gửi được",
+    retry: "Gửi lại",
+    discard: "Xóa",
     system: {
       created: (by: string) => `${by} đã tạo nhóm`,
       added: (by: string, names: string) => `${by} đã thêm ${names}`,

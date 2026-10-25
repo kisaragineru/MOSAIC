@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { withAnon } from "../db/tx";
+import { withAnon, type Tx } from "../db/tx";
 import { rateLimited } from "../errors";
 import { sha256 } from "./crypto";
 
@@ -21,15 +21,17 @@ export const LIMITS = {
   dm: { windowSeconds: 60 * 60, max: 600 },
 } satisfies Record<string, Limit>;
 
+const bucket = (scope: keyof typeof LIMITS, identifier: string) => `${scope}:${sha256(`${process.env.RATE_LIMIT_SALT ?? "mosaic"}:${identifier}`)}`;
+
 /** Throws AppError('rate_limited') when the bucket is exhausted. Keys are stored hashed. */
 export async function enforceRateLimit(scope: keyof typeof LIMITS, identifier: string): Promise<void> {
-  const limit = LIMITS[scope];
-  const key = `${scope}:${sha256(`${process.env.RATE_LIMIT_SALT ?? "mosaic"}:${identifier}`)}`;
-  const allowed = await withAnon(async (tx) => {
-    const r = await tx.execute<{ ok: boolean }>(
-      sql`select rate_limit_hit(${key}, ${limit.windowSeconds}, ${limit.max}) as ok`,
-    );
-    return r.rows[0]?.ok === true;
-  });
+  const allowed = await withAnon((tx) => hitInTx(tx, scope, identifier));
   if (!allowed) throw rateLimited();
+}
+
+/** The same check inside a transaction the caller already has (one round trip fewer). */
+export async function hitInTx(tx: Tx, scope: keyof typeof LIMITS, identifier: string): Promise<boolean> {
+  const limit = LIMITS[scope];
+  const r = await tx.execute<{ ok: boolean }>(sql`select rate_limit_hit(${bucket(scope, identifier)}, ${limit.windowSeconds}, ${limit.max}) as ok`);
+  return r.rows[0]?.ok === true;
 }

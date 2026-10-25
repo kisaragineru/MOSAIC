@@ -1,14 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { dmChanges, dmConversation, markRead } from "@/server/services/dm";
+import { dmSync } from "@/server/services/dm";
 import { dmRoute, noStore } from "../../guard";
 
-/** What changed since `since` (new, edited, unsent, reacted), plus who's typing and read state. `read=1` marks it read. */
+/**
+ * What changed since `since` (new, edited, unsent, reacted), plus who's typing and read state, in
+ * one database call. `read=1` marks it read; `typing=1` says I'm typing.
+ */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return dmRoute(req, async (uid) => {
-    const since = req.nextUrl.searchParams.get("since");
-    if (req.nextUrl.searchParams.get("read") === "1") await markRead(uid, id);
-    const [messages, conversation] = [since ? await dmChanges(uid, id, since) : [], await dmConversation(uid, id)];
-    return NextResponse.json({ messages, conversation }, { headers: noStore });
-  });
+  const q = req.nextUrl.searchParams;
+  return dmRoute(req, async (uid) => NextResponse.json(await dmSync(uid, id, { since: q.get("since"), read: q.get("read") === "1", typing: q.get("typing") === "1" }), { headers: noStore }));
 }

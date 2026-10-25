@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { dmEdit, dmReact, dmSend, dmTyping, dmUnsend, dmUpload } from "@/app/actions/dm";
+import { dmEdit, dmReact, dmUnsend } from "@/app/actions/dm";
 import type { DmMessage } from "@/server/services/dm";
 import { DmAvatar } from "./dm-avatar";
 
@@ -40,6 +40,8 @@ export interface ChatText {
   leftGroup: string;
   sending: string;
   failed: string;
+  retry: string;
+  discard: string;
   group: string;
   sysCreated: string;
   sysAdded: string;
@@ -65,8 +67,11 @@ export interface ConvView {
 
 type Msg = DmMessage & { pending?: boolean; failed?: string; localPhotos?: string[] };
 type Photo = { blob: Blob; w: number; h: number; url: string };
+/** A message waiting to go out (or that failed and can be sent again). */
+type Job = { id: string; body: string; replyTo: string | null; photos: Photo[]; uploads?: Promise<({ ok: true; value: string } | { ok: false; code: string; transient: boolean })[]>; transient: boolean };
 
-const POLL_MS = 2500;
+const POLL_FAST_MS = 1500;
+const POLL_SLOW_MS = 4000;
 const RUN_GAP_MS = 5 * 60_000;
 const fill = (s: string, v: Record<string, string | number>) => Object.entries(v).reduce((a, [k, x]) => a.replaceAll(`{${k}}`, String(x)), s);
 
@@ -151,6 +156,13 @@ export function ChatView({
     const id = window.setInterval(tick, 30_000);
     return () => window.clearInterval(id);
   }, []);
+  const outbox = useRef(new Map<string, Job>());
+  const queue = useRef<string[]>([]);
+  const pumping = useRef(false);
+  const inFlight = useRef(false);
+  const again = useRef(false);
+  const typingFlag = useRef(false);
+  const lastActivity = useRef(0);
   const cursor = useRef(initial.reduce((a, m) => (m.updatedAt > a ? m.updatedAt : a), new Date(0).toISOString()));
 
   const names = useMemo(() => new Map(conv.members.map((m) => [m.id, m.id === me ? tx.you : m.name])), [conv.members, me, tx.you]);
@@ -164,29 +176,60 @@ export function ChatView({
     if (!incoming.length) return;
     setMsgs((cur) => {
       const byId = new Map(cur.map((m) => [m.id, m]));
-      for (const m of incoming) byId.set(m.id, m);
+      for (const m of incoming) {
+        if (m.senderId !== me && !byId.has(m.id)) lastActivity.current = Date.now();
+        byId.set(m.id, m);
+      }
       return [...byId.values()].sort((a, b) => (a.createdAt === b.createdAt ? a.id.localeCompare(b.id) : a.createdAt < b.createdAt ? -1 : 1));
     });
     const newest = incoming.reduce((a, m) => (m.updatedAt > a ? m.updatedAt : a), cursor.current);
     // Overlap a little: a change committed just after a read can carry an earlier timestamp.
     cursor.current = new Date(Math.max(new Date(newest).getTime() - 5000, new Date(cursor.current).getTime())).toISOString();
-  }, []);
+  }, [me]);
 
+  /** One request at a time; asking again while one is out queues exactly one more. */
   const sync = useCallback(async () => {
-    const visible = document.visibilityState === "visible";
-    const r = await fetch(`/api/dm/${conv.id}/sync?since=${encodeURIComponent(cursor.current)}&read=${visible ? 1 : 0}`, { cache: "no-store" }).catch(() => null);
-    if (!r?.ok) return;
-    const j = (await r.json()) as { messages: DmMessage[]; conversation: { canSend: boolean; title: string | null; me: { left: boolean }; members: { id: string; name: string; left: boolean; lastReadAt: string | null; typing: boolean }[] } };
-    merge(j.messages);
-    setConv((c) => ({ ...c, canSend: j.conversation.canSend, title: j.conversation.title, left: j.conversation.me.left, members: j.conversation.members.map((m) => ({ id: m.id, name: m.name, left: m.left, lastReadAt: m.lastReadAt, typing: m.typing })) }));
+    if (inFlight.current) {
+      again.current = true;
+      return;
+    }
+    inFlight.current = true;
+    const typingNow = typingFlag.current;
+    typingFlag.current = false;
+    try {
+      const visible = document.visibilityState === "visible";
+      const r = await fetch(`/api/dm/${conv.id}/sync?since=${encodeURIComponent(cursor.current)}&read=${visible ? 1 : 0}&typing=${typingNow ? 1 : 0}`, { cache: "no-store" }).catch(() => null);
+      if (r?.ok) {
+        const j = (await r.json()) as { messages: DmMessage[]; conversation: { canSend: boolean; title: string | null; me: { left: boolean }; members: { id: string; name: string; left: boolean; lastReadAt: string | null; typing: boolean }[] } };
+        merge(j.messages);
+        if (j.conversation.members.some((m) => m.typing)) lastActivity.current = Date.now();
+        setConv((c) => ({ ...c, canSend: j.conversation.canSend, title: j.conversation.title, left: j.conversation.me.left, members: j.conversation.members }));
+      }
+    } finally {
+      inFlight.current = false;
+      if (again.current) {
+        again.current = false;
+        void sync();
+      }
+    }
   }, [conv.id, merge]);
 
+  // Poll: quickly while the conversation is lively, slower when it's quiet, not at all when hidden.
   useEffect(() => {
-    const id = window.setInterval(() => document.visibilityState === "visible" && void sync(), POLL_MS);
+    let stop = false;
+    let timer = 0;
+    const loop = async () => {
+      if (stop) return;
+      if (document.visibilityState === "visible") await sync();
+      const lively = Date.now() - lastActivity.current < 30_000;
+      timer = window.setTimeout(loop, lively ? POLL_FAST_MS : POLL_SLOW_MS);
+    };
+    timer = window.setTimeout(loop, POLL_FAST_MS);
     const onVis = () => document.visibilityState === "visible" && void sync();
     document.addEventListener("visibilitychange", onVis);
     return () => {
-      window.clearInterval(id);
+      stop = true;
+      window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVis);
     };
   }, [sync]);
@@ -220,7 +263,7 @@ export function ChatView({
   }, [msgs, typing.length]);
 
   const loadOlder = async () => {
-    const oldest = msgs.find((m) => !m.pending);
+    const oldest = msgs.find((m) => !m.pending && !m.failed);
     if (!oldest) return;
     const r = await fetch(`/api/dm/${conv.id}/older?before=${encodeURIComponent(oldest.createdAt)}`, { cache: "no-store" }).catch(() => null);
     if (!r?.ok) return;
@@ -231,11 +274,14 @@ export function ChatView({
   };
 
   // ── Writing ───────────────────────────────────────────────────────────
+  // "Typing" rides along with the next update request instead of a request of its own.
   const onType = (v: string) => {
     setDraft(v);
-    if (!editing && v && Date.now() - lastTyping.current > 4000) {
+    if (!editing && v && Date.now() - lastTyping.current > 3000) {
       lastTyping.current = Date.now();
-      void dmTyping(conv.id);
+      lastActivity.current = Date.now();
+      typingFlag.current = true;
+      void sync();
     }
   };
 
@@ -253,6 +299,105 @@ export function ChatView({
     if (fileInput.current) fileInput.current.value = "";
   };
 
+  /** A request's outcome: done, refused for good (with the reason), or worth trying again. */
+  type Outcome<T> = { ok: true; value: T } | { ok: false; code: string; transient: boolean };
+  const post = async <T,>(url: string, init: RequestInit, pick: (j: Record<string, unknown>) => T): Promise<Outcome<T>> => {
+    try {
+      const r = await fetch(url, { method: "POST", cache: "no-store", ...init });
+      const j = (await r.json().catch(() => ({}))) as Record<string, unknown>;
+      if (r.ok) return { ok: true, value: pick(j) };
+      return { ok: false, code: typeof j.error === "string" ? j.error : "generic", transient: r.status >= 500 || r.status === 429 };
+    } catch {
+      return { ok: false, code: "generic", transient: true };
+    }
+  };
+  const upload = (p: Photo) => {
+    const fd = new FormData();
+    fd.set("photo", new File([p.blob], "photo.jpg", { type: "image/jpeg" }));
+    fd.set("width", String(p.w));
+    fd.set("height", String(p.h));
+    return post(`/api/dm/${conv.id}/photo`, { body: fd }, (j) => j.id as string);
+  };
+  /** Start (or restart) a job's photo uploads, all at once, as soon as it is queued. */
+  const startUploads = (job: Job) => {
+    job.uploads = job.photos.length ? Promise.all(job.photos.map(upload)) : Promise.resolve([]);
+  };
+
+  const deliver = async (job: Job): Promise<Outcome<string>> => {
+    const ups = await job.uploads!;
+    const bad = ups.find((u) => !u.ok);
+    if (bad && !bad.ok) {
+      startUploads(job); // fresh uploads for a retry
+      return bad;
+    }
+    const attachmentIds = ups.map((u) => (u.ok ? u.value : ""));
+    return post(
+      `/api/dm/${conv.id}/send`,
+      { headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: job.id, kind: job.photos.length ? "image" : "text", body: job.body || undefined, replyTo: job.replyTo, attachmentIds }) },
+      (j) => j.id as string,
+    );
+  };
+
+  /** Send what's queued, in order. A failure is retried once by itself, then shown on the message. */
+  const pump = async () => {
+    if (pumping.current) return;
+    pumping.current = true;
+    try {
+      while (queue.current.length) {
+        const job = outbox.current.get(queue.current[0]!)!;
+        let r = await deliver(job);
+        if (!r.ok && r.transient) {
+          await new Promise((res) => window.setTimeout(res, 1500));
+          r = await deliver(job);
+        }
+        queue.current.shift();
+        if (r.ok) {
+          outbox.current.delete(job.id);
+          setMsgs((cur) => cur.map((m) => (m.id === job.id ? { ...m, pending: false } : m)));
+          lastActivity.current = Date.now();
+          void sync();
+        } else {
+          job.transient = r.transient;
+          setMsgs((cur) => cur.map((m) => (m.id === job.id ? { ...m, pending: false, failed: r.transient ? tx.failed : (tx.errors[r.code] ?? tx.failed) } : m)));
+        }
+      }
+    } finally {
+      pumping.current = false;
+    }
+  };
+
+  const enqueue = (job: Job) => {
+    outbox.current.set(job.id, job);
+    queue.current.push(job.id);
+    void pump();
+  };
+  const retry = (id: string) => {
+    const job = outbox.current.get(id);
+    if (!job) return;
+    setMsgs((cur) => cur.map((m) => (m.id === id ? { ...m, failed: undefined, pending: true } : m)));
+    enqueue(job);
+  };
+  const discard = (id: string) => {
+    outbox.current.delete(id);
+    setMsgs((cur) => cur.filter((m) => m.id !== id));
+  };
+
+  // Back online: try the ones that failed for lack of a connection. Leaving with unsent messages asks first.
+  useEffect(() => {
+    const onOnline = () => {
+      for (const [id, job] of outbox.current) if (job.transient && !queue.current.includes(id)) retry(id);
+    };
+    const onLeave = (e: BeforeUnloadEvent) => {
+      if (queue.current.length) e.preventDefault();
+    };
+    window.addEventListener("online", onOnline);
+    window.addEventListener("beforeunload", onLeave);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("beforeunload", onLeave);
+    };
+  });
+
   const send = async (override?: string) => {
     const body = (override ?? draft).trim();
     setError(null);
@@ -268,39 +413,24 @@ export function ChatView({
       return;
     }
     if (!body && photos.length === 0) return;
-    const sending = photos;
+    // Shown at once as sent; it goes out in the background (the browser names it, so a retry can't duplicate it).
+    const job: Job = { id: crypto.randomUUID(), body, replyTo: replyTo?.id ?? null, photos, transient: false };
+    startUploads(job);
     const reply = replyTo;
-    const tmpId = `tmp-${crypto.randomUUID()}`;
-    const now = new Date().toISOString();
+    const at = new Date().toISOString();
     stickToBottom.current = true;
     setMsgs((cur) => [
       ...cur,
       {
-        id: tmpId, senderId: me, senderName: null, kind: sending.length ? "image" : "text", body: body || null, meta: null, createdAt: now, updatedAt: now,
-        edited: false, deleted: false, record: null, attachments: [], reactions: [], pending: true, localPhotos: sending.map((p) => p.url),
+        id: job.id, senderId: me, senderName: null, kind: photos.length ? "image" : "text", body: body || null, meta: null, createdAt: at, updatedAt: at,
+        edited: false, deleted: false, record: null, attachments: [], reactions: [], pending: true, localPhotos: photos.map((p) => p.url),
         reply: reply ? { id: reply.id, senderName: names.get(reply.senderId ?? "") ?? null, kind: reply.kind, body: reply.body, deleted: reply.deleted } : null,
       },
     ]);
     if (!override) setDraft("");
     setPhotos([]);
     setReplyTo(null);
-    const fail = (code: string) => setMsgs((cur) => cur.map((m) => (m.id === tmpId ? { ...m, pending: false, failed: tx.errors[code] ?? tx.failed } : m)));
-    const ids: string[] = [];
-    for (const p of sending) {
-      const fd = new FormData();
-      fd.set("conversationId", conv.id);
-      fd.set("photo", new File([p.blob], "photo.jpg", { type: "image/jpeg" }));
-      fd.set("width", String(p.w));
-      fd.set("height", String(p.h));
-      const r = await dmUpload(fd);
-      if (!r.ok) return fail(r.error);
-      ids.push(r.value);
-    }
-    const r = await dmSend(conv.id, { kind: sending.length ? "image" : "text", body: body || undefined, replyTo: reply?.id ?? null, attachmentIds: ids });
-    if (!r.ok) return fail(r.error);
-    // The real message arrives with the next sync; drop the stand-in once it does.
-    setMsgs((cur) => cur.filter((m) => m.id !== tmpId || cur.some((x) => x.id === r.value)).map((m) => (m.id === tmpId ? { ...m, id: r.value, pending: false } : m)));
-    await sync();
+    enqueue(job);
   };
 
   const onKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -435,7 +565,7 @@ export function ChatView({
             onPointerUp={pressEnd}
             onPointerLeave={pressEnd}
             onPointerMove={pressEnd}
-            className={`group relative select-text outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${m.pending ? "opacity-60" : ""} rounded-3xl`}
+            className={`group relative select-text outline-none focus-visible:ring-2 focus-visible:ring-teal-400 rounded-3xl`}
           >
             {m.deleted ? (
               <p className="rounded-3xl border border-dashed border-stone-300 px-3.5 py-2 text-sm italic text-stone-500">{mine ? tx.unsentMine : tx.unsent}</p>
@@ -518,10 +648,18 @@ export function ChatView({
               ))}
             </div>
           )}
-          {(last || m.pending || m.failed) && (
-            <span className={`mt-0.5 px-2 text-[10px] ${m.failed ? "text-rose-700" : "text-stone-400"}`}>
-              {m.failed ? `⚠ ${m.failed}` : m.pending ? tx.sending : `${clock(m.createdAt)}${m.edited && !m.deleted ? ` · ${tx.edited}` : ""}`}
+          {m.failed ? (
+            <span role="alert" className="mt-1 flex flex-wrap items-center justify-end gap-2 px-1 text-[11px] font-semibold text-rose-700">
+              ⚠ {m.failed}
+              <button type="button" onClick={() => retry(m.id)} className="rounded-full bg-rose-600 px-2.5 py-1 text-white active:scale-95">
+                {tx.retry}
+              </button>
+              <button type="button" onClick={() => discard(m.id)} className="rounded-full bg-white px-2.5 py-1 text-rose-700 ring-1 ring-rose-200 active:scale-95">
+                {tx.discard}
+              </button>
             </span>
+          ) : (
+            last && <span className="mt-0.5 px-2 text-[10px] text-stone-400">{`${clock(m.createdAt)}${m.edited && !m.deleted ? ` · ${tx.edited}` : ""}`}</span>
           )}
           {myLast && m.id === myLast.id && seenLabel && <span className="px-2 text-[10px] font-semibold text-stone-500">{seenLabel}</span>}
         </div>

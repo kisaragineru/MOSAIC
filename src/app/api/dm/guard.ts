@@ -10,6 +10,12 @@ import { logError } from "@/server/log";
 export async function dmRoute(req: NextRequest, fn: (uid: string) => Promise<NextResponse>) {
   const site = req.headers.get("sec-fetch-site");
   if (site && site !== "same-origin") return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  // Writes also need this site's Origin (CSRF), as server actions do.
+  if (req.method !== "GET") {
+    const origin = req.headers.get("origin");
+    const expected = new URL(process.env.APP_ORIGIN ?? req.nextUrl.origin).origin;
+    if (origin !== expected && !((origin === null || origin === "null") && site === "same-origin")) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
   const uid = await currentUserId();
   if (!uid) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   try {

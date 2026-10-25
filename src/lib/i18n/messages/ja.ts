@@ -1000,6 +1000,8 @@ export const ja: Dict = {
     leftGroup: "このグループから退出しました。",
     sending: "送信中…",
     failed: "送信できませんでした",
+    retry: "再送",
+    discard: "削除",
     system: {
       created: (by: string) => `${by}がグループを作成しました`,
       added: (by: string, names: string) => `${by}が${names}を追加しました`,

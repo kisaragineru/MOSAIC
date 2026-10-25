@@ -149,3 +149,53 @@ test("group messages: create, notices, who wrote, read counts, leave", async ({ 
   await ren.waitForURL("/messages");
   await expect(hana.getByText("レンが退出しました")).toBeVisible({ timeout: 15_000 });
 });
+
+test("sending feels instant: shown at once while the server is slow; a failure says so and can be resent", async ({ browser }) => {
+  const hana = await user(browser, "ハナ");
+  const sora = await user(browser, "ソラ");
+  await connect(hana, sora);
+  await hana.goto("/messages/new");
+  await hana.getByLabel("ソラ").check();
+  await hana.getByRole("button", { name: "はじめる" }).click();
+  await hana.waitForURL(/\/messages\/[0-9a-f-]+$/);
+  const thread = new URL(hana.url()).pathname;
+
+  // A slow server: the message is on screen right away, with no "sending" state.
+  await hana.route("**/api/dm/*/send", async (r) => {
+    await new Promise((res) => setTimeout(res, 2500));
+    await r.continue();
+  });
+  await hana.getByLabel("メッセージを入力…").fill("すぐ表示される");
+  await hana.getByRole("button", { name: "送信", exact: true }).click();
+  await expect(hana.getByText("すぐ表示される")).toBeVisible({ timeout: 500 });
+  await expect(hana.getByText("送信中…")).toHaveCount(0);
+  await hana.getByLabel("メッセージを入力…").fill("続けて送れる");
+  await hana.getByRole("button", { name: "送信", exact: true }).click();
+  await expect(hana.getByText("続けて送れる")).toBeVisible({ timeout: 500 });
+  await sora.goto(thread);
+  await expect(sora.getByText("続けて送れる")).toBeVisible({ timeout: 15_000 });
+  // In order, once each.
+  const bodies = await sora.locator("li p").allInnerTexts();
+  expect(bodies.filter((b) => b === "すぐ表示される")).toHaveLength(1);
+  expect(bodies.indexOf("すぐ表示される")).toBeLessThan(bodies.indexOf("続けて送れる"));
+  await hana.unroute("**/api/dm/*/send");
+
+  // The server is down: after one automatic retry it says it failed, and "resend" delivers it once.
+  await hana.route("**/api/dm/*/send", (r) => r.fulfill({ status: 503, body: "{}" }));
+  await hana.getByLabel("メッセージを入力…").fill("あとで届く");
+  await hana.getByRole("button", { name: "送信", exact: true }).click();
+  await expect(hana.getByText("送信できませんでした")).toBeVisible({ timeout: 10_000 });
+  await hana.unroute("**/api/dm/*/send");
+  await hana.getByRole("button", { name: "再送" }).click();
+  await expect(hana.getByText("送信できませんでした")).toHaveCount(0);
+  await expect(sora.getByText("あとで届く")).toBeVisible({ timeout: 15_000 });
+
+  // A failed one can also be deleted from the screen.
+  await hana.route("**/api/dm/*/send", (r) => r.fulfill({ status: 400, body: JSON.stringify({ error: "invalid_message" }) }));
+  await hana.getByLabel("メッセージを入力…").fill("消す予定");
+  await hana.getByRole("button", { name: "送信", exact: true }).click();
+  await expect(hana.getByText("メッセージを確認してください（4000文字まで）。")).toBeVisible({ timeout: 5_000 });
+  await hana.getByRole("button", { name: "削除" }).click();
+  await expect(hana.getByText("消す予定")).toHaveCount(0);
+});
+

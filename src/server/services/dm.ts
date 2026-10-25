@@ -7,9 +7,9 @@ import { sql } from "drizzle-orm";
 import { cache } from "react";
 import { z } from "zod";
 import { uuid } from "@/lib/validation/common";
-import { enforceRateLimit } from "../auth/rate-limit";
+import { enforceRateLimit, hitInTx } from "../auth/rate-limit";
 import { withUser, type Tx } from "../db/tx";
-import { invalid, mapDbError } from "../errors";
+import { invalid, mapDbError, rateLimited } from "../errors";
 import { audit } from "./audit";
 
 export const DM_REACTIONS = ["❤️", "😂", "😮", "😢", "😡", "👍"] as const;
@@ -312,4 +312,59 @@ export async function dmContacts(userId: string): Promise<DmPerson[]> {
       order by p.display_name`),
   );
   return [...new Map(r.rows.map((x) => [x.id, x])).values()];
+}
+
+
+// ── The fast paths used by an open conversation ───────────────────────────
+
+const fastSchema = sendSchema.extend({ id: uuid });
+
+/**
+ * Send with an id chosen by the browser, in one transaction (rate limit + send). Sending the same
+ * id again returns the message already sent, so retries after a lost answer never duplicate it.
+ */
+export async function sendMessageFast(userId: string, conversationId: string, input: unknown): Promise<string> {
+  const id = uuid.parse(conversationId);
+  const d = fastSchema.safeParse(input);
+  if (!d.success) throw invalid("invalid_message");
+  const att = d.data.attachmentIds ?? [];
+  return run(userId, async (tx) => {
+    if (!(await hitInTx(tx, "dm", userId))) throw rateLimited();
+    const r = await tx.execute<{ id: string }>(
+      sql`select dm_send_id(${d.data.id}, ${id}, ${d.data.kind}, ${d.data.body ?? null}, ${d.data.replyTo ?? null}, ${d.data.recordId ?? null}, ${`{${att.join(",")}}`}::uuid[]) as id`,
+    );
+    return r.rows[0]!.id;
+  });
+}
+
+/** Store a photo in one transaction (rate limit + upload). */
+export async function uploadPhotoFast(userId: string, conversationId: string, bytes: Uint8Array, width: unknown, height: unknown): Promise<string> {
+  const id = uuid.parse(conversationId);
+  if (bytes.length === 0 || bytes.length > DM_MAX_PHOTO_BYTES) throw invalid("image_too_large");
+  const mime = sniffImage(bytes);
+  if (!mime) throw invalid("invalid_image");
+  const w = z.coerce.number().int().min(1).max(8000).parse(width);
+  const h = z.coerce.number().int().min(1).max(8000).parse(height);
+  return run(userId, async (tx) => {
+    if (!(await hitInTx(tx, "dm", userId))) throw rateLimited();
+    return (await tx.execute<{ id: string }>(sql`select dm_upload(${id}, ${mime}, ${Buffer.from(bytes)}, ${w}, ${h}) as id`)).rows[0]!.id;
+  });
+}
+
+/** Everything an open conversation needs every few seconds, in one call. */
+export async function dmSync(userId: string, conversationId: string, opts: { since: string | null; read: boolean; typing: boolean }) {
+  const id = uuid.parse(conversationId);
+  const since = opts.since ? z.string().datetime({ offset: true }).parse(opts.since) : null;
+  const r = await run(userId, (tx) => tx.execute<{ s: { messages: Record<string, unknown>[]; conversation: Record<string, unknown> } }>(sql`select dm_sync(${id}, ${since}::timestamptz, ${opts.read}, ${opts.typing}) as s`));
+  const s = r.rows[0]!.s;
+  const c = s.conversation as { title: string | null; can_send: boolean; me: { left: boolean }; members: { id: string; name: string; left: boolean; last_read_at: string | null; typing: boolean }[] };
+  return {
+    messages: s.messages.map(toMessage).sort(byTime),
+    conversation: {
+      title: c.title,
+      canSend: c.can_send,
+      me: { left: c.me.left },
+      members: c.members.map((m) => ({ id: m.id, name: m.name, left: m.left, lastReadAt: m.last_read_at, typing: m.typing })),
+    },
+  };
 }

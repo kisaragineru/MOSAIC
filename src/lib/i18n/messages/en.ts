@@ -998,6 +998,8 @@ export const en = {
     leftGroup: "You left this group.",
     sending: "Sending…",
     failed: "Couldn't send",
+    retry: "Retry",
+    discard: "Delete",
     system: {
       created: (by: string) => `${by} created the group`,
       added: (by: string, names: string) => `${by} added ${names}`,

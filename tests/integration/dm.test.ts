@@ -4,6 +4,7 @@ import { withUser } from "@/server/db/tx";
 import {
   addMembers,
   createGroup,
+  dmSync,
   dmAttachment,
   dmChanges,
   dmConversation,
@@ -18,11 +19,13 @@ import {
   reactToMessage,
   renameGroup,
   sendMessage,
+  sendMessageFast,
   setMuted,
   setTyping,
   sniffImage,
   unsendMessage,
   uploadPhoto,
+  uploadPhotoFast,
 } from "@/server/services/dm";
 import { createMemory } from "@/server/services/memories";
 import { setMemoryAudience } from "@/server/services/memory-share";
@@ -174,5 +177,29 @@ describe("direct messages", () => {
     // Sora can't send a record she can't read.
     const ownPrivate = await createMemory(ren.userId, { body: "Renの秘密" });
     await expect(sendMessage(sora.userId, c, { kind: "record", recordId: ownPrivate })).rejects.toMatchObject({ code: "not_found" });
+  });
+
+  it("fast paths: a browser-named message is sent once however often it's retried; one call keeps a conversation current", async () => {
+    const hana = await makeUser("Hana");
+    const sora = await makeUser("Sora");
+    await connect(hana.userId, sora.userId);
+    const c = await openDirect(hana.userId, sora.userId);
+    const id = crypto.randomUUID();
+    expect(await sendMessageFast(hana.userId, c, { id, kind: "text", body: "一度だけ" })).toBe(id);
+    expect(await sendMessageFast(hana.userId, c, { id, kind: "text", body: "一度だけ" })).toBe(id);
+    expect((await dmMessages(sora.userId, c)).filter((m) => m.body === "一度だけ")).toHaveLength(1);
+    // Someone else can't claim that id.
+    await expect(sendMessageFast(sora.userId, c, { id, kind: "text", body: "横取り" })).rejects.toMatchObject({ code: "not_found" });
+
+    const s1 = await dmSync(sora.userId, c, { since: new Date(0).toISOString(), read: true, typing: true });
+    expect(s1.messages.map((m) => m.body)).toEqual(["一度だけ"]);
+    const view = await dmSync(hana.userId, c, { since: null, read: false, typing: false });
+    expect(view.messages).toEqual([]);
+    expect(view.conversation.members.find((m) => m.name === "Sora")).toMatchObject({ typing: true });
+    expect(view.conversation.members.find((m) => m.name === "Sora")!.lastReadAt).not.toBeNull();
+    expect(await dmUnreadTotal(sora.userId)).toBe(0);
+    const photo = await uploadPhotoFast(hana.userId, c, PNG, 1, 1);
+    await sendMessageFast(hana.userId, c, { id: crypto.randomUUID(), kind: "image", attachmentIds: [photo] });
+    expect((await dmMessages(sora.userId, c)).at(-1)!.attachments).toHaveLength(1);
   });
 });
