@@ -67,14 +67,15 @@ test("QR connection: preview of what others see, who is waiting, results first",
   await a.locator('input[name="agree"]').check();
   await a.getByRole("button", { name: "同意する" }).click();
 
-  // Once both agree the results come first; the consent form folds away.
+  // Once both agree the results come first; what is shared stays in plain view below.
   await expect(a.getByTestId("pref-items").getByText("お茶", { exact: true })).toHaveCount(2);
   const compareUrl = a.url();
   await b.goto(compareUrl.replace(/^https?:\/\/[^/]+/, "").split("?")[0]!);
   await expect(b.getByRole("heading", { name: "ハナさんを知る" })).toBeVisible();
   await expect(b.getByText("お茶と散歩が好きです。")).toBeVisible();
-  await expect(a.getByText("同意した内容を見る・変える")).toBeVisible();
-  await expect(a.getByRole("button", { name: "同意内容を更新" })).toBeHidden();
+  await expect(a.getByRole("heading", { name: "🔐 共有する内容" })).toBeVisible();
+  await expect(a.getByTestId("shared-now").getByText("好み", { exact: true })).toBeVisible();
+  await expect(a.getByRole("button", { name: "同意内容を更新" })).toBeVisible();
   await a.goto("/home");
   await expect(a.getByText(/ソラさんがあなたのQRからつながりました/)).toHaveCount(0);
 
@@ -84,6 +85,10 @@ test("QR connection: preview of what others see, who is waiting, results first",
   await a.getByRole("button", { name: /大切な人に追加/ }).click();
   await expect(a.getByRole("heading", { level: 1, name: "ソラ" })).toBeVisible();
   await expect(a.getByRole("link", { name: /ソラさんのページ/ })).toBeVisible();
+  // Above: what Sora shows. Below: Hana's own notebook about Sora, said to be hers alone.
+  await expect(a.getByText("🤝 つながり：ソラさんが見せてくれていること")).toBeVisible();
+  await expect(a.getByTestId("notebook").getByRole("heading", { name: "あなたのノート：ソラさんのこと" })).toBeVisible();
+  await expect(a.getByTestId("notebook").getByText("🔒 あなただけに見えます（ソラさんには見えません）")).toBeVisible();
   await a.getByRole("link", { name: /ソラさんのページ/ }).click();
   await expect(a.getByTestId("connection-actions").getByRole("button", { name: /印象を聞く/ })).toBeVisible();
   await a.goto("/people");

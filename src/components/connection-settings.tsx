@@ -16,6 +16,8 @@ const SCOPES = ["tuvi", "tuvi_detail", "preferences", "values"] as const;
  */
 export function ConnectionSettings({ t, locale, v, myShare, back }: { t: Dict; locale: Locale; v: ComparisonView; myShare: string | null; back: string }) {
   if (v.status === "revoked") return null;
+  // Shared means agreed by both.
+  const shared = (v.myConsent?.scopes ?? []).filter((x) => v.otherScopes?.includes(x));
   const scopeNames = (s: string[]) => s.map((x) => t.compare.scopeNames[x as (typeof SCOPES)[number]] ?? x).join(", ");
   return (
     <div className="space-y-3">
@@ -51,13 +53,19 @@ export function ConnectionSettings({ t, locale, v, myShare, back }: { t: Dict; l
         {(
           <>
           {v.result && (
-            <details className="rounded-3xl border border-stone-200/80 bg-white/70 p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-stone-700">{t.compare.changeConsent}</summary>
-              <div className="mt-3">
+            // Always open: what is shared is a privacy setting, so it shouldn't hide behind a toggle.
+            <Card title={`🔐 ${t.compare.consentNow}`}>
           <div>
-            <p className="mb-3 text-sm text-stone-600">{PURPOSE_TEXT[locale]}</p>
+            <div className="mb-3 rounded-2xl bg-teal-50/70 p-3" data-testid="shared-now">
+              <p className="mb-1.5 text-xs font-semibold text-teal-900">{t.compare.sharedNow}</p>
+              <p className="flex flex-wrap gap-1">
+                {shared.length ? shared.map((x) => <Pill key={x} tone="teal">{scopeNames([x])}</Pill>) : <span className="text-sm text-stone-600">{t.compare.sharedNone}</span>}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-stone-600">{t.compare.sharedRule}</p>
+            </div>
             {v.myConsent && <p className="mb-2 text-sm"><Pill tone="teal">✓</Pill> {t.compare.yourConsent(scopeNames(v.myConsent.scopes))}</p>}
             <p className="mb-3 text-sm">{v.otherConsented ? `✓ ${t.compare.otherConsented}` : `⏳ ${t.compare.waiting}`}</p>
+            <p className="mb-3 text-xs leading-5 text-stone-500">{PURPOSE_TEXT[locale]}</p>
             <form action={consentAction} className="space-y-2">
               <input type="hidden" name="sessionId" value={v.id} />
               <input type="hidden" name="back" value={back} />
@@ -78,8 +86,7 @@ export function ConnectionSettings({ t, locale, v, myShare, back }: { t: Dict; l
               <Button type="submit">{v.myConsent ? t.compare.update : t.compare.give}</Button>
             </form>
           </div>
-              </div>
-            </details>
+            </Card>
           )}
           <form action={endComparisonAction}>
             <input type="hidden" name="sessionId" value={v.id} />
