@@ -5,6 +5,7 @@ import { MEMORY_CIRCLES, MEMORY_KINDS, memoryCircles, memoryEntries, memoryEntry
 import { withUser, type Tx } from "../db/tx";
 import { invalid, notFound } from "../errors";
 import { attachMedia, MAX_MEDIA } from "./media";
+import { FEELINGS, inferLabels, LABELS, type Feeling, type Label } from "@/lib/labels";
 
 export const memoryInput = z.object({
   kind: z.enum(MEMORY_KINDS).default("note"),
@@ -51,9 +52,12 @@ export async function createMemory(userId: string, input: unknown) {
   validateKindFields(data);
   return withUser(userId, async (tx) => {
     await assertPeopleOwned(tx, userId, data.personIds);
+    // A post's labels are read from its words; its kind (kept for older readers) is the first.
+    const letter = data.kind === "letter_to_future";
+    const labels = letter ? [] : withAsked(data.kind, inferLabels(`${data.title ?? ""}\n${data.body}`, { hasMedia: !!data.media?.length }));
     const [entry] = await tx
       .insert(memoryEntries)
-      .values({ userId, kind: data.kind, occurredOn: data.occurredOn ?? null, revealOn: data.revealOn ?? null })
+      .values({ userId, kind: letter ? data.kind : (labels[0] ?? "note"), labels, occurredOn: data.occurredOn ?? null, revealOn: data.revealOn ?? null })
       .returning();
     await tx.insert(memoryEntryVersions).values({
       entryId: entry!.id,
@@ -87,7 +91,7 @@ export async function editMemory(userId: string, entryId: string, input: unknown
     // Text may be emptied only when the record keeps photos or videos.
     const hadMedia = data.media === undefined && !data.body ? ((await tx.execute<{ n: number }>(sql`select count(*)::int as n from memory_media_for(${`{${id}}`}::uuid[])`)).rows[0]?.n ?? 0) > 0 : false;
     validateKindFields(data, hadMedia);
-    if (entry.kind !== data.kind && (entry.kind === "letter_to_future" || data.kind === "letter_to_future")) {
+    if ((entry.kind === "letter_to_future") !== (data.kind === "letter_to_future")) {
       throw invalid("cannot_change_letter_kind");
     }
     await assertPeopleOwned(tx, userId, data.personIds);
@@ -115,10 +119,14 @@ export async function editMemory(userId: string, entryId: string, input: unknown
         mood: data.mood ?? current?.mood ?? null,
       });
     }
+    // Labels the owner set stay; read ones are read again from the new words.
+    const letter = entry.kind === "letter_to_future";
+    const labels = letter ? [] : entry.labelsBy === "user" ? (entry.labels as Label[]) : withAsked(data.kind, inferLabels(`${data.title ?? ""}\n${data.body}`, { hasMedia: data.media ? data.media.length > 0 : hadMedia || (await hasMedia(tx, id)) }));
     await tx
       .update(memoryEntries)
       .set({
-        kind: data.kind,
+        kind: letter ? entry.kind : (labels[0] ?? "note"),
+        labels,
         occurredOn: data.occurredOn ?? null,
         revealOn: data.revealOn ?? null,
         currentVersion: version,
@@ -168,6 +176,9 @@ export interface MemorySummary {
   visibility: "private" | "connections" | "circles";
   /** For "circles": the relationships it is shown to. */
   circles: (typeof MEMORY_CIRCLES)[number][];
+  labels: Label[];
+  labelsBy: "auto" | "user";
+  feeling: Feeling | null;
 }
 
 export const memoryFilters = z.object({
@@ -192,7 +203,7 @@ export async function listMemories(userId: string, filters: unknown = {}): Promi
   return withUser(userId, async (tx) => {
     const today = await userToday(tx, userId);
     const conds: SQL[] = [eq(memoryEntries.userId, userId)];
-    if (f.kind) conds.push(eq(memoryEntries.kind, f.kind));
+    if (f.kind) conds.push(f.kind === "letter_to_future" || f.kind === "note" ? eq(memoryEntries.kind, f.kind) : sql`${f.kind} = any(${memoryEntries.labels})`);
     const onTimeline = timelineDate(today);
     if (f.from) conds.push(gte(onTimeline, f.from));
     if (f.to) conds.push(lte(onTimeline, f.to));
@@ -263,6 +274,9 @@ async function hydrate(
       people: personRows.filter((p) => p.entryId === e.id).map(({ id, nickname }) => ({ id, nickname })),
       visibility: e.visibility as MemorySummary["visibility"],
       circles: MEMORY_CIRCLES.filter((c) => circleRows.some((r) => r.entryId === e.id && r.circle === c)),
+      labels: sealed ? [] : (e.labels as Label[]),
+      labelsBy: e.labelsBy as "auto" | "user",
+      feeling: sealed ? null : (e.feeling as Feeling | null),
     };
   });
 }
@@ -318,5 +332,38 @@ export async function countMemoriesInRanges(userId: string, ranges: { from: stri
     );
     const row = res.rows[0] ?? {};
     return valid.map((_, i) => Number(row[`c${i}`] ?? 0));
+  });
+}
+
+/** A label asked for by the caller (an import, a test persona) comes first. */
+function withAsked(kind: string, read: Label[]): Label[] {
+  return (LABELS as readonly string[]).includes(kind) ? [...new Set([kind as Label, ...read])] : read;
+}
+
+async function hasMedia(tx: Tx, id: string) {
+  return ((await tx.execute<{ n: number }>(sql`select count(*)::int as n from memory_media_for(${`{${id}}`}::uuid[])`)).rows[0]?.n ?? 0) > 0;
+}
+
+/** The owner confirms or corrects what a post is about; from then on it is theirs. */
+export async function setMemoryLabels(userId: string, entryId: string, input: unknown) {
+  const id = uuid.parse(entryId);
+  const labels = [...new Set(z.array(z.enum(LABELS)).max(LABELS.length).parse(input))];
+  await withUser(userId, async (tx) => {
+    const r = await tx
+      .update(memoryEntries)
+      .set({ labels, labelsBy: "user", kind: labels[0] ?? "note" })
+      .where(and(eq(memoryEntries.id, id), eq(memoryEntries.userId, userId), sql`${memoryEntries.kind} <> 'letter_to_future'`))
+      .returning({ id: memoryEntries.id });
+    if (!r.length) throw notFound();
+  });
+}
+
+/** How they felt (the optional question after posting); null clears it. */
+export async function setMemoryFeeling(userId: string, entryId: string, feeling: unknown) {
+  const id = uuid.parse(entryId);
+  const f = z.enum(FEELINGS).nullable().parse(feeling === "" ? null : feeling) as Feeling | null;
+  await withUser(userId, async (tx) => {
+    const r = await tx.update(memoryEntries).set({ feeling: f }).where(and(eq(memoryEntries.id, id), eq(memoryEntries.userId, userId))).returning({ id: memoryEntries.id });
+    if (!r.length) throw notFound();
   });
 }

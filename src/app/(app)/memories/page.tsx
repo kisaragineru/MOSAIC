@@ -9,7 +9,7 @@ import { Button, Card, Empty, Input, LinkButton, Notice, Page, Select } from "@/
 import { buildTimeline, type TimelineEntry } from "@/lib/timeline";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
-import { MEMORY_KINDS } from "@/server/db/schema";
+import { LABELS } from "@/lib/labels";
 import { getAccount } from "@/server/services/account";
 import { listMemories, listTags, type MemorySummary } from "@/server/services/memories";
 import { shareTargets, connectionFeed, feedForPage, feedToEntry, mineToEntry } from "@/server/services/memory-share";
@@ -104,9 +104,9 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
           <details open={!!(filters.kind || filters.tag || filters.personId || filters.from || filters.to)}>
             <summary className="cursor-pointer text-sm text-stone-600">{t.common.filter}</summary>
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <Select name="kind" defaultValue={filters.kind} aria-label={t.memories.fields.kind}>
-                <option value="">{t.common.all}</option>
-                {MEMORY_KINDS.map((k) => <option key={k} value={k}>{t.memories.kinds[k]}</option>)}
+              <Select name="kind" defaultValue={filters.kind} aria-label={t.memories.labels.title}>
+                <option value="">{t.memories.labels.title}: {t.common.all}</option>
+                {[...LABELS, "letter_to_future" as const].map((k) => <option key={k} value={k}>{t.memories.kinds[k]}</option>)}
               </Select>
               <Select name="tag" defaultValue={filters.tag} aria-label="tag">
                 <option value="">#</option>

@@ -142,3 +142,31 @@ describe("memories & timeline", () => {
     await expect(getMemory(u.userId, "not-a-uuid")).rejects.toThrow();
   });
 });
+
+describe("labels and feelings", () => {
+  it("reads labels from the words, keeps the owner's correction, and asks feelings only of the owner", async () => {
+    const { setMemoryFeeling, setMemoryLabels } = await import("@/server/services/memories");
+    const u = await makeUser();
+    const other = await makeUser();
+    const id = await createMemory(u.userId, { body: "資格試験に合格できた！嬉しい。" });
+    let m = await getMemory(u.userId, id);
+    expect(m).toMatchObject({ kind: "achievement", labels: ["achievement", "feeling"], labelsBy: "auto", feeling: null });
+    // Re-read on edit while automatic.
+    await editMemory(u.userId, id, { body: "来年は留学すると決めた。" });
+    expect((await getMemory(u.userId, id)).labels).toEqual(["decision"]);
+    // Once the owner sets them, edits keep theirs.
+    await setMemoryLabels(u.userId, id, ["goal", "decision"]);
+    await editMemory(u.userId, id, { body: "お昼はカレー。" });
+    m = await getMemory(u.userId, id);
+    expect(m).toMatchObject({ labels: ["goal", "decision"], labelsBy: "user", kind: "goal" });
+    await expect(setMemoryLabels(u.userId, id, ["nonsense"])).rejects.toBeTruthy();
+    await setMemoryFeeling(u.userId, id, "grateful");
+    expect((await getMemory(u.userId, id)).feeling).toBe("grateful");
+    await expect(setMemoryFeeling(other.userId, id, "sad")).rejects.toMatchObject({ code: "not_found" });
+    await expect(setMemoryLabels(other.userId, id, ["goal"])).rejects.toMatchObject({ code: "not_found" });
+    // A plain note has none, and isn't filtered as anything.
+    const plain = await createMemory(u.userId, { body: "お昼はカレー。" });
+    expect(await getMemory(u.userId, plain)).toMatchObject({ kind: "note", labels: [] });
+    expect((await listMemories(u.userId, { kind: "goal" })).map((x) => x.id)).toEqual([id]);
+  });
+});

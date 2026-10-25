@@ -1,7 +1,5 @@
 import Link from "next/link";
 import type { Dict } from "@/lib/i18n/messages/en";
-import { MEMORY_KINDS } from "@/server/db/schema";
-import { KIND_ICON } from "@/lib/timeline";
 import type { MediaItem } from "@/server/services/media";
 import type { AudienceText } from "./audience-field";
 import { MediaPicker, type MediaPickerText } from "./media-picker";
@@ -33,8 +31,6 @@ export function audienceText(t: Dict): AudienceText {
   };
 }
 
-/** Post kinds (categories): everything but the letter, which is its own way of writing. */
-export const POST_KINDS = MEMORY_KINDS.filter((k) => k !== "letter_to_future");
 
 export interface MemoryDefaults {
   id?: string;
@@ -53,24 +49,6 @@ export interface MemoryDefaults {
 
 const chip =
   "cursor-pointer select-none rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm text-stone-700 transition has-[:checked]:border-teal-600 has-[:checked]:bg-teal-600 has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-400";
-
-/** The categories, the same chips as in the composer. */
-export function KindChips({ t, kind }: { t: Dict; kind: string }) {
-  return (
-    <fieldset>
-      <legend className="mb-1.5 text-sm font-semibold text-stone-700">{t.memories.post.category}</legend>
-      <div className="flex flex-wrap gap-1.5">
-        {POST_KINDS.map((k) => (
-          <label key={k} className={chip}>
-            <input type="radio" name="kind" value={k} defaultChecked={k === kind} className="sr-only" />
-            <span aria-hidden className="mr-1">{KIND_ICON[k]}</span>
-            {t.memories.kinds[k]}
-          </label>
-        ))}
-      </div>
-    </fieldset>
-  );
-}
 
 /** Below a new post: the two ways of writing that work differently (a letter, a gift box). */
 export function OtherWays({ t, giftBoxes }: { t: Dict; giftBoxes: { id: string; label: string }[] }) {
@@ -130,7 +108,6 @@ export function MemoryForm({
 }) {
   const p = t.memories.post;
   const isLetter = d.kind === "letter_to_future";
-  const kind = d.kind && (POST_KINDS as readonly string[]).includes(d.kind) ? d.kind : "note";
   return (
     <form action={action} className="memory-form space-y-5">
       {d.id && <input type="hidden" name="id" value={d.id} />}
@@ -161,7 +138,6 @@ export function MemoryForm({
       ) : (
         <>
           <MediaPicker tx={mediaPickerText(t)} initial={d.media ?? []} />
-          <KindChips t={t} kind={kind} />
           <details className="rounded-xl border border-stone-200 p-3" open={!!(d.occurredOn || d.tags?.length || d.personIds?.length)}>
             <summary className="cursor-pointer text-sm text-stone-600">{p.more}</summary>
             <div className="mt-3 space-y-3">
@@ -203,8 +179,6 @@ export function composerText(t: Dict): ComposerText {
     title: p.title,
     prompt: p.prompt,
     body: t.memories.fields.body,
-    category: p.category,
-    kinds: t.memories.kinds,
     submit: p.submit,
     posting: p.posting,
     close: t.memories.composer.close,
@@ -218,5 +192,6 @@ export function composerText(t: Dict): ComposerText {
     errors: t.errors,
     media: mediaPickerText(t),
     audience: audienceText(t),
+    feeling: { question: t.memories.feeling.question, skip: t.memories.feeling.skip, thanks: t.memories.feeling.thanks, names: t.memories.feeling.names },
   };
 }

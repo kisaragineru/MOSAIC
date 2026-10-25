@@ -132,7 +132,7 @@ export async function monthReport(userId: string, m: Month, locale: Locale, now 
     days: new Set(records.map(dayOf)).size,
     previousPieces: prevAnswers.length + prevRecords.length,
     lookBacks: lookBacks.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).map((r) => ({ id: r.id, createdAt: r.createdAt, sections: lookBackSections(r.body ?? "") })),
-    highlights: records.filter((r) => !isLookBack(r)).filter((r) => ["achievement", "decision", "memory", "feeling", "value", "goal", "dream", "regret"].includes(r.kind) || r.title).slice(0, 8),
+    highlights: records.filter((r) => !isLookBack(r)).filter((r) => r.labels.some((l) => l !== "thought") || r.feeling || r.title).slice(0, 8),
     answered: answeredIn(answers, locale),
     deepened,
   };

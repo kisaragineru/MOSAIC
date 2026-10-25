@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Dict } from "@/lib/i18n/messages/en";
 import type { Locale } from "@/lib/i18n/locales";
+import { FEELING_EMOJI, type Feeling } from "@/lib/labels";
 import { KIND_ICON, relativeDay, type TimelineDay, type TimelineItem } from "@/lib/timeline";
 import type { CommentPreview } from "@/server/services/comments";
 import { Avatar } from "./avatar";
@@ -101,7 +102,12 @@ function Mine({ t, locale, it, compact, c, p, media, me }: { t: Dict; locale: Lo
       <div className="mb-1 flex flex-wrap items-center gap-1.5">
         {me && <Avatar name={me.name} src={me.src} className="h-6 w-6 text-[10px]" />}
         <Stamp t={t} it={it} />
-        <Pill tone={m.kind === "letter_to_future" ? "violet" : "teal"}>{t.memories.kinds[m.kind as keyof Dict["memories"]["kinds"]]}</Pill>
+        {m.feeling && <span aria-label={t.memories.feeling.names[m.feeling as keyof Dict["memories"]["feeling"]["names"]]} className="text-base leading-none">{FEELING_EMOJI[m.feeling as Feeling]}</span>}
+        {m.kind === "letter_to_future" ? (
+          <Pill tone="violet">{t.memories.kinds.letter_to_future}</Pill>
+        ) : (
+          (m.labels ?? []).slice(0, 2).map((l) => <Pill key={l} tone="teal">{t.memories.kinds[l as keyof Dict["memories"]["kinds"]]}</Pill>)
+        )}
         {m.audience !== "private" && (
           <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-800">{m.audience === "connections" ? `🔗 ${tl.sharedAll}` : `👪 ${tl.sharedCircles(m.circles.map((c) => t.people.relationships[c as keyof Dict["people"]["relationships"]]).join(locale === "ja" ? "・" : ", "))}`}</span>
         )}
@@ -135,7 +141,7 @@ function Theirs({ t, it, compact, c, p, media, src }: { t: Dict; it: TimelineIte
         <Avatar name={name} src={src} className="h-6 w-6 text-[10px]" />
         <span className="text-xs font-semibold text-rose-900">{tl.theirs(name)}</span>
         <Stamp t={t} it={it} />
-        <Pill tone="rose">{t.memories.kinds[m.kind as keyof Dict["memories"]["kinds"]]}</Pill>
+        {m.kind !== "note" && <Pill tone="rose">{t.memories.kinds[m.kind as keyof Dict["memories"]["kinds"]]}</Pill>}
         {c && <CommentCount t={t} c={c} />}
       </div>
       {m.title && <p className="font-medium text-stone-900">{m.title}</p>}

@@ -33,7 +33,7 @@ export default async function SharedRecordPage({ params, searchParams }: { param
         <div className="mb-2 flex flex-wrap items-center gap-1.5">
           <Avatar name={e.ownerName} src={(await avatarUrls(uid, [e.ownerId])).get(e.ownerId)} className="h-8 w-8 text-xs" />
           <span className="text-sm font-semibold text-rose-900">{e.ownerName}</span>
-          <Pill tone="rose">{KIND_ICON[e.kind]} {t.memories.kinds[e.kind]}</Pill>
+          {e.kind !== "note" && <Pill tone="rose">{KIND_ICON[e.kind]} {t.memories.kinds[e.kind]}</Pill>}
           <time dateTime={e.createdAt.toISOString()} className="text-xs text-stone-500">
             {e.occurredOn ?? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: tz }).format(e.createdAt)}
           </time>

@@ -156,7 +156,26 @@ export const vi: Dict = {
     turning: (n: number) => `(${n} năm)`,
   },
   memories: {
+    labels: {
+      title: "Phân loại",
+      auto: "Tự động từ lời bạn viết",
+      mine: "Bạn đã xác nhận",
+      none: "Không phân loại",
+      correct: "Đúng rồi",
+      change: "Sửa",
+      save: "Dùng phân loại này",
+      help: "Cẩm nang và phần suy ngẫm dùng phân loại này. Hãy sửa nếu chưa đúng.",
+    },
+    feeling: {
+      question: "Bạn cảm thấy thế nào?",
+      title: "Cảm xúc",
+      skip: "Bỏ qua",
+      thanks: "Cảm ơn — cảm xúc đã được lưu cùng.",
+      clear: "Xóa",
+      names: { happy: "Vui", calm: "Bình yên", grateful: "Biết ơn", sad: "Buồn", frustrated: "Bực bội", anxious: "Lo lắng" },
+    },
     post: {
+      titleOf: "Bài viết",
       title: "Bài mới",
       submit: "Đăng",
       posting: "Đang đăng…",

@@ -30,9 +30,9 @@ function fullInput(): ManualInput {
   ];
   d.prefs = [{ label: "コーヒー", sentiment: "love" }, { label: "人混み", sentiment: "dislike" }];
   d.memories = [
-    { kind: "achievement", title: "資格に合格", body: "半年かけて勉強した。", date: "2026-03-01", sealedUntil: null },
-    { kind: "goal", title: "英語で発表する", body: null, date: "2026-05-01", sealedUntil: null },
-    { kind: "letter_to_future", title: null, body: null, date: "2026-05-02", sealedUntil: "2027-05-02" },
+    { kind: "achievement", labels: ["achievement"], title: "資格に合格", body: "半年かけて勉強した。", date: "2026-03-01", sealedUntil: null },
+    { kind: "goal", labels: ["goal"], title: "英語で発表する", body: null, date: "2026-05-01", sealedUntil: null },
+    { kind: "letter_to_future", labels: [], title: null, body: null, date: "2026-05-02", sealedUntil: "2027-05-02" },
   ];
   d.tuvi = { summary: "命宮（子）: 紫微", keywords: ["気品", "統率"], paragraphs: ["命宮に紫微があり、伝統的には落ち着いた気品と結びつけられます。"], now: "▶ 現在 · 数え年 26〜35歳：大限は財帛宮" };
   return d;

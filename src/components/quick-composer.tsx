@@ -2,10 +2,10 @@
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { quickMemoryAction, type QuickState } from "@/app/actions/memories";
-import { KIND_ICON } from "@/lib/timeline";
 import type { AudienceText } from "./audience-field";
 import { MediaPicker, type MediaPickerText } from "./media-picker";
 import { PostFooter } from "./post-footer";
+import { FeelingAsk, type FeelingText } from "./feeling-ask";
 
 export interface ComposerText {
   /** The floating button. */
@@ -13,8 +13,6 @@ export interface ComposerText {
   title: string;
   prompt: string;
   body: string;
-  category: string;
-  kinds: Record<string, string>;
   submit: string;
   posting: string;
   close: string;
@@ -28,6 +26,7 @@ export interface ComposerText {
   errors: Record<string, string>;
   media: MediaPickerText;
   audience: AudienceText;
+  feeling: FeelingText;
 }
 
 /** Gift boxes I write in: the composer links to each one's growth record. */
@@ -36,7 +35,6 @@ export interface ComposerGiftBox {
   label: string;
 }
 
-const KINDS = ["note", "thought", "feeling", "memory", "decision", "goal", "dream", "regret", "achievement", "value"];
 const chip =
   "cursor-pointer select-none rounded-full border border-stone-200 bg-white px-3 py-1 text-sm text-stone-700 transition has-[:checked]:border-teal-600 has-[:checked]:bg-teal-600 has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-400";
 const fab =
@@ -59,6 +57,8 @@ export function QuickComposer({ tx, canShare, giftBoxes = [], trigger = "fab" }:
   const [state, action, pending] = useActionState<QuickState, FormData>(quickMemoryAction, null);
   const [handled, setHandled] = useState<number | null>(null);
   const [photos, setPhotos] = useState(0);
+  // The post just made, for the one question after it.
+  const [ask, setAsk] = useState<string | null>(null);
   const area = useRef<HTMLTextAreaElement>(null);
 
   // Posted: close and start the next one empty (the list refreshes from the server).
@@ -66,6 +66,7 @@ export function QuickComposer({ tx, canShare, giftBoxes = [], trigger = "fab" }:
     setHandled(state.at);
     setOpen(false);
     setText("");
+    setAsk(state.id || null);
   }
 
   useEffect(() => {
@@ -101,6 +102,7 @@ export function QuickComposer({ tx, canShare, giftBoxes = [], trigger = "fab" }:
   if (!hydrated) return <Link href="/memories/new" className={cls}>{button}</Link>;
   return (
     <>
+      {ask && !open && <FeelingAsk key={ask} tx={tx.feeling} id={ask} onDone={() => setAsk(null)} />}
       {!(open && trigger === "fab") && (
         <button type="button" className={cls} onClick={() => setOpen(true)} aria-haspopup="dialog" data-testid={`compose-${trigger}`}>
           {button}
@@ -127,18 +129,6 @@ export function QuickComposer({ tx, canShare, giftBoxes = [], trigger = "fab" }:
                 className="w-full resize-none rounded-2xl border border-stone-200 bg-stone-50/60 px-3.5 py-3 text-base leading-relaxed text-stone-900 placeholder:text-stone-500 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20"
               />
               <MediaPicker tx={tx.media} resetKey={handled} onCount={setPhotos} />
-              <fieldset>
-                <legend className="mb-1.5 text-sm font-semibold text-stone-700">{tx.category}</legend>
-                <div className="flex flex-wrap gap-1.5">
-                  {KINDS.map((k, i) => (
-                    <label key={k} className={chip}>
-                      <input type="radio" name="kind" value={k} defaultChecked={i === 0} className="sr-only" />
-                      <span aria-hidden className="mr-1">{KIND_ICON[k]}</span>
-                      {tx.kinds[k]}
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
               {state && !state.ok && <p role="alert" className="text-sm text-rose-700">{tx.errors[state.error] ?? tx.errors.generic}</p>}
               <PostFooter key={String(handled)} tx={tx.audience} canShare={canShare} submit={tx.submit} pendingLabel={tx.posting} pending={pending} disabled={!text.trim() && photos === 0} />
               <Link href="/memories/new" className="block text-center text-sm text-stone-500 underline-offset-2 hover:text-stone-800 hover:underline">{tx.more} →</Link>

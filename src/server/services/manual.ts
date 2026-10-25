@@ -98,7 +98,7 @@ export interface ManualInput {
   peers: { responders: number; windows: { key: TendencyKey; self: 1 | -1 | 0; lean: 1 | -1 | 0; window: Window }[]; comments: { text: string; name: string | null }[] };
   answers: ManualAnswer[];
   prefs: { label: string; sentiment: string }[];
-  memories: { kind: string; title: string | null; body: string | null; date: string; sealedUntil: string | null }[];
+  memories: { kind: string; labels: string[]; title: string | null; body: string | null; date: string; sealedUntil: string | null }[];
   /** Growth records from gift boxes this user received (parents' and grandparents' words). */
   gifts?: { from: string; date: string | null; title: string | null; body: string }[];
   tuvi: {
@@ -294,7 +294,7 @@ export function composeManual(d: ManualInput, locale: Locale): Manual {
       out.push({ t: "p", text: `— ${L(P.storyAnswers)}` });
       for (const a of ans) out.push(a.isText ? { t: "quote", text: clip(L(a.label)), cite: L(a.prompt) } : { t: "kv", items: [{ k: L(a.prompt), v: L(a.label) }] });
     }
-    const recs = d.memories.filter((m) => kinds.includes(m.kind) && !m.sealedUntil && (m.title || m.body)).slice(0, MAX_RECORDS);
+    const recs = d.memories.filter((m) => m.labels.some((l) => kinds.includes(l)) && !m.sealedUntil && (m.title || m.body)).slice(0, MAX_RECORDS);
     if (recs.length) {
       out.push({ t: "p", text: `— ${L(P.storyRecords)}` });
       for (const m of recs) out.push({ t: "quote", text: clip([m.title, m.body].filter(Boolean).join(" — ")), cite: m.date });
@@ -371,13 +371,13 @@ function story(
     d.answers.filter((a) => STORY_LINES[a.questionId]?.episode === episode).map((a) => L(STORY_LINES[a.questionId]!.line(name, clip(L(a.label), 200))));
   const records = (kinds: string[]) =>
     d.memories
-      .filter((m) => kinds.includes(m.kind) && !m.sealedUntil && m.title)
+      .filter((m) => m.labels.some((l) => kinds.includes(l)) && !m.sealedUntil && m.title)
       .sort((a, b) => a.date.localeCompare(b.date))
       .slice(0, 5)
       .map((m) => {
         const [y, mo] = m.date.split("-");
         const date = locale === "ja" ? `${y}年${Number(mo)}月` : locale === "vi" ? `Tháng ${Number(mo)}/${y}` : `${y}-${mo}`;
-        const line = L(STORY.record(date, clip(m.title!, 80), name, L(RECORD_KIND[m.kind] ?? RECORD_KIND.memory!)));
+        const line = L(STORY.record(date, clip(m.title!, 80), name, L(RECORD_KIND[m.labels.find((l) => kinds.includes(l)) ?? m.kind] ?? RECORD_KIND.memory!)));
         return m.body ? `${line}${locale === "ja" ? "" : " "}${clip(m.body, 160)}` : line;
       });
 
@@ -496,7 +496,7 @@ export async function gatherManual(userId: string, locale: Locale): Promise<Manu
         }),
     ),
     prefs: prefs.map((p) => ({ label: p.label, sentiment: p.current.sentiment })),
-    memories: memories.map((m) => ({ kind: m.kind, title: m.title, body: m.body, date: m.occurredOn ?? day(m.createdAt), sealedUntil: m.sealed ? m.revealOn : null })),
+    memories: memories.map((m) => ({ kind: m.kind, labels: m.labels, title: m.title, body: m.body, date: m.occurredOn ?? day(m.createdAt), sealedUntil: m.sealed ? m.revealOn : null })),
     tuvi: tv.chart
       ? {
           summary: personality?.summary ?? null,

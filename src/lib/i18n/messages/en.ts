@@ -154,7 +154,26 @@ export const en = {
     turning: (n: number) => `(${n} years)`,
   },
   memories: {
+    labels: {
+      title: "About",
+      auto: "Read from your words",
+      mine: "Confirmed by you",
+      none: "Not about anything in particular",
+      correct: "That's right",
+      change: "Change",
+      save: "Use these",
+      help: "Your manual and reflections use these. Fix them if they're wrong.",
+    },
+    feeling: {
+      question: "How did you feel?",
+      title: "Feeling",
+      skip: "Skip",
+      thanks: "Thanks — the feeling is kept with it.",
+      clear: "Clear",
+      names: { happy: "Happy", calm: "Calm", grateful: "Grateful", sad: "Sad", frustrated: "Frustrated", anxious: "Anxious" },
+    },
     post: {
+      titleOf: "Post",
       title: "New post",
       submit: "Post",
       posting: "Posting…",

@@ -63,10 +63,12 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   await expect(sheet).toBeHidden();
   await expect(pa.getByText("Walked by the West Lake at dawn.")).toBeVisible();
   await pa.goto("/memories/new");
-  await pa.getByRole("radio", { name: "Value" }).check({ force: true });
+  // No category to pick: it is read from the words, and can be confirmed on the post.
+  await expect(pa.getByRole("radio", { name: "Value" })).toHaveCount(0);
   await pa.getByLabel("What happened / what's on your mind").fill("Career comes first.");
   await pa.getByRole("button", { name: "Post" }).click();
-  await expect(pa).toHaveURL(/\/memories\/[0-9a-f-]+\?ok=saved/);
+  await expect(pa).toHaveURL(/\/memories\/[0-9a-f-]+\?ok=saved&ask=feeling/);
+  await expect(pa.getByTestId("post-about").getByText("How did you feel?")).toBeVisible();
   await pa.getByRole("link", { name: "Edit" }).click();
   await pa.getByLabel("What happened / what's on your mind").fill("Family comes first.");
   await pa.getByRole("button", { name: "Save changes" }).click();

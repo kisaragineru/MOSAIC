@@ -156,7 +156,26 @@ export const ja: Dict = {
     turning: (n: number) => `（${n}年）`,
   },
   memories: {
+    labels: {
+      title: "分類",
+      auto: "書いた言葉から自動で分類",
+      mine: "あなたが確認済み",
+      none: "分類なし",
+      correct: "合ってる",
+      change: "変更",
+      save: "この分類にする",
+      help: "取扱説明書や振り返りで、この分類が使われます。違っていたら直してください。",
+    },
+    feeling: {
+      question: "どんな気持ちだった？",
+      title: "気持ち",
+      skip: "スキップ",
+      thanks: "ありがとう。気持ちも一緒に残しました。",
+      clear: "取り消す",
+      names: { happy: "嬉しい", calm: "穏やか", grateful: "ありがたい", sad: "悲しい", frustrated: "もやもや", anxious: "不安" },
+    },
     post: {
+      titleOf: "投稿",
       title: "新しい投稿",
       submit: "投稿する",
       posting: "投稿中…",

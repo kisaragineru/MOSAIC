@@ -16,6 +16,7 @@ import { todayIn } from "@/lib/validation/common";
 import { CommentThread } from "@/components/comment-thread";
 import { commentInbox, readThread } from "@/server/services/comments";
 import { MediaGallery } from "@/components/media-grid";
+import { PostAbout } from "@/components/post-about";
 import { mediaFor } from "@/server/services/media";
 
 export default async function MemoryPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
@@ -40,10 +41,10 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
   const threads = m.sealed ? [] : (await commentInbox(uid)).filter((x) => x.entryId === m.id && x.iOwn);
   const convos = await Promise.all(threads.map(async (th) => ({ th, comments: await readThread(uid, m.id, th.partnerId) })));
   return (
-    <Page title={m.title ?? t.memories.kinds[m.kind]} back="/memories">
+    <Page title={m.title ?? (m.kind === "letter_to_future" ? t.memories.kinds[m.kind] : t.memories.post.titleOf)} back="/memories">
       <Flash t={t} sp={sp} />
       <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500">
-        <Pill tone="teal">{t.memories.kinds[m.kind]}</Pill>
+        {m.kind === "letter_to_future" && <Pill tone="violet">{t.memories.kinds[m.kind]}</Pill>}
         {m.occurredOn && <span>{m.occurredOn}</span>}
         <span>{t.common.created} {new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: tz }).format(m.createdAt)}</span>
         <span>{t.common.version} {m.version}</span>
@@ -98,6 +99,7 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
           </div>
         </Card>
       )}
+      {!m.sealed && !editing && m.kind !== "letter_to_future" && <PostAbout t={t} id={m.id} labels={m.labels} by={m.labelsBy} feeling={m.feeling} ask={sp.ask === "feeling"} />}
       {(convos.length > 0 || (!m.sealed && m.visibility !== "private")) && (
         <section id="comments" className="scroll-mt-24">
           <Card title={`💬 ${t.comments.title}`}>

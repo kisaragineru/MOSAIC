@@ -240,6 +240,12 @@ export const memoryEntries = pgTable(
     revealOn: date("reveal_on", { mode: "string" }),
     visibility: text("visibility").notNull().default("private"),
     currentVersion: integer("current_version").notNull().default(1),
+    /** What it is about (several allowed): read from the words, or set by the owner. */
+    labels: text("labels").array().notNull().default(sql`'{}'::text[]`),
+    /** auto: read from the words (re-read on edit); user: confirmed or chosen by the owner. */
+    labelsBy: text("labels_by").notNull().default("auto"),
+    /** How they felt, if they answered the one question after posting. */
+    feeling: text("feeling"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -253,6 +259,9 @@ export const memoryEntries = pgTable(
     ),
     /** private: only you. connections: everyone you're connected with. circles: the relationships in memory_circles. */
     check("memory_visibility_ck", sql`${t.visibility} in ('private','connections','circles')`),
+    check("memory_labels_by_ck", sql`${t.labelsBy} in ('auto','user')`),
+    check("memory_labels_ck", sql`${t.labels} <@ array['achievement','decision','goal','dream','regret','feeling','value','memory','thought']::text[]`),
+    check("memory_feeling_ck", sql`${t.feeling} is null or ${t.feeling} in ('happy','calm','grateful','sad','frustrated','anxious')`),
   ],
 );
 

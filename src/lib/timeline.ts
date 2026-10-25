@@ -26,6 +26,9 @@ export interface TimelineEntry {
   version: number;
   tags: string[];
   people: { id: string; nickname: string }[];
+  /** Mine: what it's about, and how I felt. */
+  labels?: string[];
+  feeling?: string | null;
 }
 
 export interface TimelineItem {

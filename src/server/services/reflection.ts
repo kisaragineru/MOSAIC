@@ -102,7 +102,7 @@ class EvidenceBag {
 
 async function currentMemories(tx: Tx, userId: string, opts: { kinds?: string[]; ids?: string[] } = {}) {
   const conds = [eq(memoryEntries.userId, userId), sql`(${memoryEntries.revealOn} is null or ${memoryEntries.revealOn} <= current_date)`];
-  if (opts.kinds) conds.push(inArray(memoryEntries.kind, opts.kinds));
+  if (opts.kinds) conds.push(sql`${memoryEntries.labels} && ${`{${opts.kinds.join(",")}}`}::text[]`);
   if (opts.ids) conds.push(inArray(memoryEntries.id, opts.ids.length ? opts.ids : ["00000000-0000-0000-0000-000000000000"]));
   return tx
     .select({ e: memoryEntries, v: memoryEntryVersions })
@@ -145,7 +145,7 @@ async function gather(tx: Tx, userId: string, kind: ReflectionKind, locale: Loca
     const rewritten = await tx
       .select({ e: memoryEntries })
       .from(memoryEntries)
-      .where(and(eq(memoryEntries.userId, userId), gt(memoryEntries.currentVersion, 1), sql`(${memoryEntries.revealOn} is null or ${memoryEntries.revealOn} <= current_date)`, ...(kind === "past_beliefs" ? [inArray(memoryEntries.kind, ["value", "decision", "goal", "dream"])] : [])));
+      .where(and(eq(memoryEntries.userId, userId), gt(memoryEntries.currentVersion, 1), sql`(${memoryEntries.revealOn} is null or ${memoryEntries.revealOn} <= current_date)`, ...(kind === "past_beliefs" ? [sql`${memoryEntries.labels} && '{value,decision,goal,dream}'::text[]`] : [])));
     for (const { e } of rewritten) {
       const vs = await tx.select().from(memoryEntryVersions).where(eq(memoryEntryVersions.entryId, e.id)).orderBy(asc(memoryEntryVersions.version));
       const first = vs[0]!;
@@ -175,7 +175,7 @@ async function gather(tx: Tx, userId: string, kind: ReflectionKind, locale: Loca
     }
     for (const { e, v } of await currentMemories(tx, userId, { kinds: ["value", "decision"] })) {
       const ref = bag.add({ recordType: "memory", recordId: e.id, date: e.occurredOn ?? day(e.createdAt), excerpt: `${v.title ? `${v.title}: ` : ""}${v.body}${v.reason ? ` — ${v.reason}` : ""}` });
-      findings.push({ refs: [ref], text: { en: `You wrote (${kindLabel(e.kind).en}): “${clip(v.title ?? v.body)}”`, vi: `Bạn đã viết (${kindLabel(e.kind).vi}): “${clip(v.title ?? v.body)}”`, ja: `あなたの記録（${kindLabel(e.kind).ja}）：「${clip(v.title ?? v.body)}」` } });
+      findings.push({ refs: [ref], text: { en: `You wrote (${kindLabel(e.labels[0] ?? e.kind).en}): “${clip(v.title ?? v.body)}”`, vi: `Bạn đã viết (${kindLabel(e.labels[0] ?? e.kind).vi}): “${clip(v.title ?? v.body)}”`, ja: `あなたの記録（${kindLabel(e.labels[0] ?? e.kind).ja}）：「${clip(v.title ?? v.body)}」` } });
     }
   }
 
@@ -193,7 +193,7 @@ async function gather(tx: Tx, userId: string, kind: ReflectionKind, locale: Loca
       findings.push({ refs, text: { en: `The tag “${t.tag}” appears in ${refs.length} entries.`, vi: `Thẻ “${t.tag}” xuất hiện trong ${refs.length} ghi chép.`, ja: `タグ「${t.tag}」が${refs.length}件の記録に出てきます。` } });
     }
     const hard = await currentMemories(tx, userId, { kinds: ["feeling", "regret", "thought"] });
-    const regrets = hard.filter(({ e }) => e.kind === "regret");
+    const regrets = hard.filter(({ e }) => e.labels.includes("regret"));
     if (regrets.length >= 2) {
       const refs = regrets.map(({ e, v }) => bag.add({ recordType: "memory", recordId: e.id, date: e.occurredOn ?? day(e.createdAt), excerpt: v.body }));
       findings.push({ refs, text: { en: `You recorded ${regrets.length} regrets.`, vi: `Bạn đã ghi lại ${regrets.length} điều hối tiếc.`, ja: `後悔を${regrets.length}件記録しています。` } });

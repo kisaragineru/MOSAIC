@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { splitTags } from "@/lib/validation/common";
 import { requireUser } from "@/server/auth/session";
-import { createMemory, deleteMemory, editMemory } from "@/server/services/memories";
+import { createMemory, deleteMemory, editMemory, setMemoryFeeling, setMemoryLabels } from "@/server/services/memories";
 import { setMemoryAudience } from "@/server/services/memory-share";
 import { attempt, safeNext, str, withParam } from "./util";
 
@@ -52,7 +52,7 @@ export async function createMemoryAction(form: FormData) {
   }
   revalidatePath("/memories");
   revalidatePath("/home");
-  redirect(str(form, "stay") ? withParam(back, "ok", "saved") : `/memories/${r.value}?ok=saved`);
+  redirect(str(form, "stay") ? withParam(back, "ok", "saved") : `/memories/${r.value}?ok=saved${data.kind === "letter_to_future" ? "" : "&ask=feeling"}`);
 }
 
 export async function editMemoryAction(form: FormData) {
@@ -77,7 +77,7 @@ export async function deleteMemoryAction(form: FormData) {
   redirect("/memories?ok=deleted");
 }
 
-export type QuickState = { ok: true; at: number } | { ok: false; error: string } | null;
+export type QuickState = { ok: true; at: number; id: string } | { ok: false; error: string } | null;
 
 /** The in-place composer on the journal: saves and stays, reporting back instead of redirecting. */
 export async function quickMemoryAction(_prev: QuickState, form: FormData): Promise<QuickState> {
@@ -87,12 +87,44 @@ export async function quickMemoryAction(_prev: QuickState, form: FormData): Prom
   const audience = audienceFromForm(form);
   // Checked before saving, so a retry doesn't post twice.
   if (audience.visibility === "circles" && audience.circles.length === 0) return { ok: false, error: "choose_audience" };
+  let created = "";
   const r = await attempt("memory.quick", async () => {
     const id = await createMemory(uid, data);
+    created = id;
     if (audience.visibility !== "private") await setMemoryAudience(uid, id, audience);
   });
   if (!r.ok) return { ok: false, error: r.error };
   revalidatePath("/memories");
   revalidatePath("/home");
-  return { ok: true, at: Date.now() };
+  return { ok: true, at: Date.now(), id: created };
+}
+
+/** The owner confirms ("labels" as they are) or corrects what a post is about. */
+export async function setLabelsAction(form: FormData) {
+  const uid = await requireUser();
+  const id = str(form, "id");
+  const r = await attempt("memory.labels", () => setMemoryLabels(uid, id, form.getAll("labels").filter((x): x is string => typeof x === "string")));
+  revalidatePath("/memories");
+  redirect(`/memories/${encodeURIComponent(id)}?${r.ok ? "ok=saved" : `e=${r.error}`}`);
+}
+
+/** How they felt (a button on the record page). */
+export async function setFeelingAction(form: FormData) {
+  const uid = await requireUser();
+  const id = str(form, "id");
+  const r = await attempt("memory.feeling", () => setMemoryFeeling(uid, id, str(form, "feeling")));
+  revalidatePath("/memories");
+  revalidatePath("/home");
+  redirect(`/memories/${encodeURIComponent(id)}${r.ok ? "" : `?e=${r.error}`}`);
+}
+
+/** The question right after posting from the sheet: answered in place. */
+export async function quickFeelingAction(id: string, feeling: string): Promise<boolean> {
+  const uid = await requireUser();
+  const r = await attempt("memory.feeling", () => setMemoryFeeling(uid, id, feeling));
+  if (r.ok) {
+    revalidatePath("/memories");
+    revalidatePath("/home");
+  }
+  return r.ok;
 }

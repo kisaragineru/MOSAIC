@@ -95,13 +95,28 @@ test("write in place from the floating button, or close it with ✕", async ({ b
   const sheet = page.getByRole("dialog", { name: "新しい投稿" });
   await expect(sheet).toBeVisible();
   await expect(sheet.getByLabel("あったこと・考えていること")).toBeFocused();
-  await sheet.getByLabel("あったこと・考えていること").fill("駅まで歩いて、金木犀の匂いがした。");
-  await sheet.locator("label", { hasText: "気持ち" }).click();
-  await expect(sheet.getByRole("radio", { name: /気持ち/ })).toBeChecked();
+  await sheet.getByLabel("あったこと・考えていること").fill("駅まで歩いて、金木犀の匂いがして嬉しかった。");
+  // No category to choose.
+  await expect(sheet.getByRole("group", { name: "カテゴリ" })).toHaveCount(0);
   await sheet.getByRole("button", { name: "投稿する" }).click();
   await expect(sheet).toBeHidden();
   await expect(page).toHaveURL(/\/memories$/);
-  await expect(page.getByRole("link", { name: /金木犀の匂いがした/ })).toContainText("気持ち");
+  // Read from the words: a feeling.
+  const card = page.getByRole("link", { name: /金木犀の匂いがして/ });
+  await expect(card).toContainText("気持ち");
+  // One optional question after posting, answered with a tap.
+  const ask = page.getByTestId("feeling-ask");
+  await expect(ask.getByText("どんな気持ちだった？")).toBeVisible();
+  await ask.getByRole("button", { name: /嬉しい/ }).click();
+  await expect(ask.getByText("ありがとう。気持ちも一緒に残しました。")).toBeVisible();
+  await expect(card.getByLabel("嬉しい")).toBeVisible();
+  // On the post: confirm the label with one tap.
+  await card.click();
+  const about = page.getByTestId("post-about");
+  await expect(about.getByText("（書いた言葉から自動で分類）")).toBeVisible();
+  await about.getByRole("button", { name: "✓ 合ってる" }).click();
+  await expect(page.getByTestId("post-about").getByText("✓ あなたが確認済み")).toBeVisible();
+  await page.goto("/memories");
 
   // ✕ asks before throwing away what was written.
   await page.getByTestId("compose-fab").click();
@@ -310,8 +325,6 @@ test("photos on a record: uploaded as chosen, a tidy block on the timeline, whol
   const sora = await user(browser, "ソラ");
   await connect(hana, sora);
   await hana.goto("/memories/new");
-  // "ひとこと" is the first kind and already chosen.
-  await expect(hana.getByRole("radio", { name: /ひとこと/ })).toBeChecked();
   await hana.getByLabel("あったこと・考えていること").fill("海に行った。");
   const picker = hana.getByTestId("media-picker");
   await picker.locator('input[type="file"]').setInputFiles(["tests/e2e/fixtures-photo.jpg", "tests/e2e/fixtures-photo.jpg", "tests/e2e/fixtures-photo.jpg"]);
@@ -350,7 +363,7 @@ test("photos on a record: uploaded as chosen, a tidy block on the timeline, whol
   await sheet.getByTestId("media-picker").locator('input[type="file"]').setInputFiles("tests/e2e/fixtures-photo.jpg");
   await expect(sheet.locator('input[name="media"]')).toHaveCount(1);
   await sheet.getByRole("button", { name: "投稿する" }).click();
-  await expect(hana.getByRole("dialog")).toHaveCount(0);
+  await expect(hana.getByRole("dialog", { name: "新しい投稿" })).toHaveCount(0);
   await expect(hana.locator('[data-testid="media-grid"][data-count="1"]').first()).toBeVisible();
 });
 
