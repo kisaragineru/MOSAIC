@@ -267,6 +267,15 @@ export const ja: Dict = {
     older: "以前の記録",
     from: "開始日",
     to: "終了日",
+    letters: {
+      shelf: (n: number) => `まだ届いていない、未来への手紙 ${n}通`,
+      next: (days: number, date: string) => `次は あと${days}日（${date}）`,
+      item: (written: string, reveal: string) => `${written}に書いた手紙 → ${reveal}に届きます`,
+      note: "中身は、届く日まで封印されています。",
+      arrivedToday: (written: string) => `✉ ${written}のあなたから、手紙が届きました`,
+      arrivedRecent: (written: string, on: string) => `✉ ${written}のあなたから、手紙が届いています（${on}）`,
+      open: "開いて読む",
+    },
     timeline: {
       today: "今日",
       yesterday: "昨日",

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { withUser } from "@/server/db/tx";
 import { people } from "@/server/db/schema";
-import { createMemory, deleteMemory, editMemory, getMemory, listMemories, listTags } from "@/server/services/memories";
+import { createMemory, deleteMemory, editMemory, getMemory, listMemories, listTags, arrivedLetters, sealedLetters } from "@/server/services/memories";
 import { sql } from "drizzle-orm";
 import { buildTimeline } from "@/lib/timeline";
 import { mineToEntry } from "@/server/services/memory-share";
@@ -96,8 +96,11 @@ describe("memories & timeline", () => {
     const u = await makeUser();
     const before = await createMemory(u.userId, { body: "older note", occurredOn: "2026-01-10" });
     const letter = await createMemory(u.userId, { kind: "letter_to_future", body: "Hello from March", revealOn: "2099-01-01" });
-    const sealedAt = (await listMemories(u.userId)).find((m) => m.id === letter)!;
-    expect(sealedAt).toMatchObject({ sealed: true, body: null });
+    // Still sealed: not in the flow of days, but waiting on its own shelf (and listed when letters are asked for).
+    expect((await listMemories(u.userId)).map((m) => m.id)).toEqual([before]);
+    expect((await listMemories(u.userId, { kind: "letter_to_future" })).find((m) => m.id === letter)).toMatchObject({ sealed: true, body: null });
+    expect(await sealedLetters(u.userId)).toEqual([{ id: letter, writtenOn: expect.any(String), revealOn: "2099-01-01" }]);
+    expect(await arrivedLetters(u.userId)).toEqual([]);
     // Written on 1 March, opened on 15 June (both in the past now).
     await withUser(u.userId, (tx) => tx.execute(sql`update memory_entries set created_at = '2026-03-01T03:00:00Z', reveal_on = '2026-06-15' where id = ${letter}`));
     const all = await listMemories(u.userId);
@@ -110,6 +113,10 @@ describe("memories & timeline", () => {
     expect(day!.day).toBe("2026-06-15");
     expect(day!.items[0]!.letter).toEqual({ writtenOn: "2026-03-01", days: 106 });
     expect(day!.items[0]!.writtenOn).toBeNull();
+    expect(await sealedLetters(u.userId)).toEqual([]);
+    // Opening today: Home says it has arrived.
+    await withUser(u.userId, (tx) => tx.execute(sql`update memory_entries set reveal_on = (now() at time zone (select time_zone from profiles where user_id = ${u.userId}))::date where id = ${letter}`));
+    expect(await arrivedLetters(u.userId)).toMatchObject([{ id: letter, writtenOn: "2026-03-01", today: true }]);
   });
 
   it("deletes permanently, including all versions", async () => {

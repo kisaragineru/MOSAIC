@@ -152,8 +152,12 @@ export async function deleteMemory(userId: string, entryId: string) {
 }
 
 async function userToday(tx: Tx, userId: string) {
+  return todayIn(await userZone(tx, userId));
+}
+
+async function userZone(tx: Tx, userId: string) {
   const [p] = await tx.select({ tz: profiles.timeZone }).from(profiles).where(eq(profiles.userId, userId));
-  return todayIn(p?.tz ?? "UTC");
+  return p?.tz ?? "UTC";
 }
 
 export interface MemorySummary {
@@ -204,6 +208,9 @@ export async function listMemories(userId: string, filters: unknown = {}): Promi
     const today = await userToday(tx, userId);
     const conds: SQL[] = [eq(memoryEntries.userId, userId)];
     if (f.kind) conds.push(f.kind === "letter_to_future" || f.kind === "note" ? eq(memoryEntries.kind, f.kind) : sql`${f.kind} = any(${memoryEntries.labels})`);
+    // A letter still sealed is not part of the flow of days (it waits on its own shelf), unless
+    // letters are what is being looked at.
+    if (f.kind !== "letter_to_future") conds.push(sql`not (${memoryEntries.kind} = 'letter_to_future' and ${memoryEntries.revealOn} > ${today}::date)`);
     const onTimeline = timelineDate(today);
     if (f.from) conds.push(gte(onTimeline, f.from));
     if (f.to) conds.push(lte(onTimeline, f.to));
@@ -237,6 +244,40 @@ export async function listMemories(userId: string, filters: unknown = {}): Promi
       .limit(f.limit)
       .offset(f.offset);
     return hydrate(tx, rows, today);
+  });
+}
+
+/** Letters to the future still sealed, soonest first: only when each was written and when it opens. */
+export async function sealedLetters(userId: string): Promise<{ id: string; writtenOn: string; revealOn: string }[]> {
+  return withUser(userId, async (tx) => {
+    const tz = await userZone(tx, userId);
+    const today = todayIn(tz);
+    const rows = await tx
+      .select({ id: memoryEntries.id, createdAt: memoryEntries.createdAt, revealOn: memoryEntries.revealOn })
+      .from(memoryEntries)
+      .where(and(eq(memoryEntries.userId, userId), eq(memoryEntries.kind, "letter_to_future"), sql`${memoryEntries.revealOn} > ${today}::date`))
+      .orderBy(memoryEntries.revealOn);
+    return rows.map((r) => ({ id: r.id, writtenOn: todayIn(tz, r.createdAt), revealOn: r.revealOn! }));
+  });
+}
+
+/** Letters that opened today or in the last few days (for Home). */
+export async function arrivedLetters(userId: string, withinDays = 3): Promise<{ id: string; writtenOn: string; revealOn: string; today: boolean }[]> {
+  return withUser(userId, async (tx) => {
+    const tz = await userZone(tx, userId);
+    const today = todayIn(tz);
+    const rows = await tx
+      .select({ id: memoryEntries.id, createdAt: memoryEntries.createdAt, revealOn: memoryEntries.revealOn })
+      .from(memoryEntries)
+      .where(
+        and(
+          eq(memoryEntries.userId, userId),
+          eq(memoryEntries.kind, "letter_to_future"),
+          sql`${memoryEntries.revealOn} <= ${today}::date and ${memoryEntries.revealOn} >= ${today}::date - ${withinDays}::int`,
+        ),
+      )
+      .orderBy(desc(memoryEntries.revealOn));
+    return rows.map((r) => ({ id: r.id, writtenOn: todayIn(tz, r.createdAt), revealOn: r.revealOn!, today: r.revealOn === today }));
   });
 }
 

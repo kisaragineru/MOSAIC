@@ -29,6 +29,7 @@ import { KnowledgeCard } from "@/components/knowledge-card";
 import { StarterChecklist } from "@/components/starter-checklist";
 import { pairDate, pairEventText } from "@/components/pair-history";
 import { recentAnniversaries } from "@/server/services/pair-history";
+import { arrivedLetters } from "@/server/services/memories";
 import { dmOpenForConnectionAction } from "@/app/actions/dm";
 import { knowledge } from "@/server/services/knowledge";
 import { lookBackDue, monthKey } from "@/server/services/monthly";
@@ -75,6 +76,15 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         resume={!account.profile.onboardedAt}
         done={{ chart: !!chart, answers: know.parts.answers >= 3, bio: know.parts.bio, record: know.parts.records > 0, connect: comparisons.some((c) => c.status === "active") }}
       />
+      {/* A letter to the future that has just arrived (today, or in the last few days). */}
+      {(await arrivedLetters(uid)).map((x) => (
+        <Link key={x.id} href={`/memories/${x.id}`} className="block rounded-3xl bg-linear-to-br from-violet-100 via-white to-amber-50 p-5 shadow-sm ring-1 ring-violet-200" data-testid="letter-arrived">
+          <span className="block font-bold text-violet-950">
+            {x.today ? t.memories.letters.arrivedToday(pairDate(x.writtenOn, locale)) : t.memories.letters.arrivedRecent(pairDate(x.writtenOn, locale), pairDate(x.revealOn, locale))}
+          </span>
+          <span className="mt-2 inline-block rounded-full bg-violet-700 px-4 py-1.5 text-sm font-semibold text-white">{t.memories.letters.open} →</span>
+        </Link>
+      ))}
       {/* Anniversaries with the people you're connected to (today, or in the last few days). */}
       {(await recentAnniversaries(uid, account.profile.timeZone)).map((a) => (
         <section key={a.sessionId} className="rounded-3xl bg-linear-to-br from-amber-50 via-rose-50 to-violet-50 p-5 shadow-sm ring-1 ring-amber-100" data-testid="anniversary">

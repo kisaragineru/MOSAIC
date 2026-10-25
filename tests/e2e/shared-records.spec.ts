@@ -59,7 +59,17 @@ test("records on a timeline, and a record shared with a connection", async ({ br
   await expect(hana.getByRole("heading", { level: 1, name: "未来の自分への手紙" })).toBeVisible();
   await expect(hana.getByLabel("手紙を開く日")).toBeVisible();
   await expect(hana.getByRole("radio", { name: /つながっている全員/ })).toHaveCount(0);
-  await expect(hana.getByRole("button", { name: "手紙に封をする" })).toBeVisible();
+  await hana.locator('textarea[name="body"]').fill("5年後の私へ。元気にしてる？");
+  await hana.getByLabel("手紙を開く日").fill("2031-01-01");
+  await hana.getByRole("button", { name: "手紙に封をする" }).click();
+  await hana.waitForURL(/\/memories\/[0-9a-f-]+\?ok=saved/);
+  // Still sealed: off the flow of days, waiting on its own shelf with only its dates.
+  await hana.goto("/memories");
+  const shelf = hana.getByTestId("letter-shelf");
+  await expect(shelf).toContainText("まだ届いていない、未来への手紙 1通");
+  await expect(shelf).toContainText(/次は あと\d+日/);
+  await expect(hana.getByText(/まで封印中/)).toHaveCount(0);
+  await expect(hana.getByText("5年後の私へ。元気にしてる？")).toHaveCount(0);
   await hana.goto(record);
   await expect(hana.getByText("🔗 つながっている人に公開中")).toBeVisible();
 

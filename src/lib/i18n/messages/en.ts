@@ -265,6 +265,15 @@ export const en = {
     older: "Older",
     from: "From",
     to: "To",
+    letters: {
+      shelf: (n: number) => `${n} letter${n === 1 ? "" : "s"} to the future, not here yet`,
+      next: (days: number, date: string) => `Next in ${days} day${days === 1 ? "" : "s"} (${date})`,
+      item: (written: string, reveal: string) => `Written ${written} → arrives ${reveal}`,
+      note: "What they say stays sealed until the day they arrive.",
+      arrivedToday: (written: string) => `✉ A letter from you on ${written} has arrived`,
+      arrivedRecent: (written: string, on: string) => `✉ A letter from you on ${written} is here (${on})`,
+      open: "Open and read",
+    },
     timeline: {
       today: "Today",
       yesterday: "Yesterday",

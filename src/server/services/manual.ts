@@ -441,7 +441,8 @@ export async function gatherManual(userId: string, locale: Locale): Promise<Manu
   const peer = await johari(userId);
   const history = await getHistory(userId);
   const prefs = await listPreferences(userId, null);
-  const memories = await listMemories(userId, { limit: 200 });
+  // Letters still sealed are off the timeline list; "the me to come" still names when they open.
+  const memories = [...(await listMemories(userId, { limit: 200 })), ...(await listMemories(userId, { kind: "letter_to_future", limit: 50 })).filter((m) => m.sealed)];
   const tv = await getTuvi(userId, locale);
   const received = await receivedGifts(userId);
 
