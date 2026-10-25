@@ -1,13 +1,16 @@
 /**
  * Gift suggestions — deterministic, evidence-based.
  *
- * Every candidate cites the records it came from. Candidates are never derived from
- * gender, age or nationality (MOSAIC does not even store those for people). AI may only
- * rephrase the explanation of these candidates (see ai/gift-text.ts); it cannot add any.
+ * Every candidate cites the records it came from. Recorded wishes, likes, past gifts and the
+ * person's own shared answers come first; after them, a few general ideas chosen from the
+ * relationship, an age group and (only if the user set it) gender, labelled as common
+ * tendencies and cited as such (content/gift-general.ts). Nationality is never used. AI may
+ * only rephrase the explanation of these candidates (see ai/gift-text.ts); it cannot add any.
  */
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { I18nText } from "@/content/questions";
+import { ageBandOf, ageGroupOfBand, GENERAL_IDEAS, RELATION_NOTE, type AgeBand, type AgeGroup, type Gender, type GiftTag, type Rel } from "@/content/gift-general";
 import { GIFT_HINTS } from "@/content/gift-hints";
 import { LOCALIZED_BANK } from "@/content/questions-i18n";
 import type { Answer } from "@/lib/discovery/answers";
@@ -18,7 +21,7 @@ import { notFound } from "../errors";
 import { loadPreferences, nextOccurrence, type PreferenceView } from "./people";
 
 export interface Evidence {
-  type: "preference" | "gift" | "entry" | "date" | "answer";
+  type: "preference" | "gift" | "entry" | "date" | "answer" | "basis";
   id: string;
   label: string;
   /** Localised label, when there is one (their answers). */
@@ -32,7 +35,7 @@ export interface Evidence {
 export interface GiftCandidate {
   /** Localised idea text (the user's own labels are kept verbatim inside it). */
   idea: I18nText;
-  kind: "wished_item" | "from_their_answers" | "related_to_like" | "experience_together" | "similar_to_loved_gift";
+  kind: "wished_item" | "from_their_answers" | "related_to_like" | "experience_together" | "similar_to_loved_gift" | "general";
   strength: "strong" | "moderate" | "weak";
   reason: I18nText;
   evidence: Evidence[];
@@ -50,6 +53,13 @@ export interface GiftSuggestions {
   nextOccasion: { label: string; date: string; daysUntil: number } | null;
   budget: { amount: number; currency: string | null; checked: false; note: I18nText } | null;
   questionsToAsk: I18nText[];
+  /** What the general ideas were chosen from. */
+  basis: { relationship: string; ageBand: AgeBand | null; age: number | null; ageFromBirthday: boolean; gender: Gender | null };
+  /** Basics not set yet (asking for them gives better general ideas). */
+  missingBasics: ("age" | "gender")[];
+  /** Little is recorded: most ideas are general ones. */
+  thin: boolean;
+  relationNote: I18nText | null;
 }
 
 const fold = (s: string) =>
@@ -120,6 +130,7 @@ const QOPTS = new Map(LOCALIZED_BANK.map((q) => [q.id, q]));
 function fromTheirAnswers(rows: { question_id: string; answer: Answer }[], name: string) {
   const ideas: GiftCandidate[] = [];
   const avoid: { label: string; source: string; text: I18nText }[] = [];
+  const tags = new Set<GiftTag>();
   for (const r of rows) {
     const hints = GIFT_HINTS[r.question_id];
     const q = QOPTS.get(r.question_id);
@@ -145,6 +156,7 @@ function fromTheirAnswers(rows: { question_id: string; answer: Answer }[], name:
       const h = hints[v]!;
       if (h.idea) ideas.push({ idea: h.idea, kind: "from_their_answers", strength: h.strength, reason: reason([v]), evidence: [evidence([v])], caveats: [] });
       if (h.avoid) avoid.push({ label: h.avoid.en, source: "their_answer", text: h.avoid });
+      if (h.tag) tags.add(h.tag);
     }
     const any = hints["*"];
     if (any?.idea && rest.length) {
@@ -152,7 +164,68 @@ function fromTheirAnswers(rows: { question_id: string; answer: Answer }[], name:
       ideas.push({ idea: { en: fill("en"), vi: fill("vi"), ja: fill("ja") }, kind: "from_their_answers", strength: any.strength, reason: reason(rest), evidence: [evidence(rest)], caveats: [] });
     }
   }
-  return { ideas, avoid };
+  return { ideas, avoid, tags };
+}
+
+/** Categories of their recorded dislikes that rule out a whole kind of general idea. */
+const DISLIKE_TAG: Record<string, GiftTag> = { scent: "scent", food: "food" };
+
+const REL_LABEL: Record<string, I18nText> = {
+  partner: { en: "partner", vi: "người yêu", ja: "パートナー" },
+  family: { en: "family", vi: "gia đình", ja: "家族" },
+  friend: { en: "friend", vi: "bạn bè", ja: "友達" },
+  colleague: { en: "colleague", vi: "đồng nghiệp", ja: "職場の人" },
+  other: { en: "someone you know", vi: "người quen", ja: "知り合い" },
+};
+export const AGE_LABEL: Record<AgeBand, I18nText> = {
+  baby: { en: "0–2", vi: "0–2 tuổi", ja: "0〜2歳" },
+  child: { en: "3–12", vi: "3–12 tuổi", ja: "3〜12歳" },
+  teens: { en: "teens", vi: "tuổi teen", ja: "10代" },
+  "20s": { en: "20s", vi: "20–29 tuổi", ja: "20代" },
+  "30s": { en: "30s", vi: "30–39 tuổi", ja: "30代" },
+  "40s": { en: "40s", vi: "40–49 tuổi", ja: "40代" },
+  "50s": { en: "50s", vi: "50–59 tuổi", ja: "50代" },
+  "60s": { en: "60s", vi: "60–69 tuổi", ja: "60代" },
+  "70plus": { en: "70+", vi: "từ 70 tuổi", ja: "70代以上" },
+};
+export const GENDER_LABEL: Record<Gender, I18nText> = {
+  female: { en: "woman", vi: "nữ", ja: "女性" },
+  male: { en: "man", vi: "nam", ja: "男性" },
+  other: { en: "other", vi: "khác", ja: "その他" },
+};
+
+/** "partner · 30s · woman" in each language: what the general ideas were chosen from. */
+function basisText(rel: string, band: AgeBand | null, gender: Gender | null): I18nText {
+  const parts = [REL_LABEL[rel] ?? REL_LABEL.other!, ...(band ? [AGE_LABEL[band]] : []), ...(gender && gender !== "other" ? [GENDER_LABEL[gender]] : [])];
+  const join = (l: keyof I18nText) => parts.map((p) => p[l]).join(l === "ja" ? "・" : " · ");
+  return { en: `General tendency for: ${join("en")}`, vi: `Xu hướng chung cho: ${join("vi")}`, ja: `一般的な傾向（${join("ja")}）` };
+}
+
+const ADULTS: AgeGroup[] = ["young", "middle", "senior"];
+
+/** General ideas for this relationship, age group and gender, best matches first. */
+export function generalIdeas(rel: string, band: AgeBand | null, gender: Gender | null, ruledOut: Set<GiftTag>): GiftCandidate[] {
+  const r: Rel = rel === "other" ? "friend" : (rel as Rel);
+  const group = band ? ageGroupOfBand(band) : null;
+  const evidence: Evidence = { type: "basis", id: "basis", label: basisText(rel, band, gender).en, text: basisText(rel, band, gender) };
+  return GENERAL_IDEAS.map((g, i) => ({ g, i }))
+    .filter(({ g }) =>
+      (g.rels === "*" || g.rels.includes(r)) &&
+      // Without an age, only ideas that suit any age or any adult (never a baby's gift for an adult).
+      (g.ages === "*" || (group !== null ? g.ages.includes(group) : ADULTS.every((a) => (g.ages as AgeGroup[]).includes(a)))) &&
+      (!g.gender || g.gender === gender) &&
+      !g.tags?.some((tg) => ruledOut.has(tg)),
+    )
+    // Narrower matches first: written for this relationship / age group alone beats "also suits".
+    .map(({ g, i }) => ({ g, i, score: (g.rels === "*" ? 0 : 2 + 1 / g.rels.length) + (g.ages === "*" ? 0 : 2 + 1 / g.ages.length) + (g.gender ? 1 : 0) }))
+    .sort((a, b) => b.score - a.score || a.i - b.i)
+    .map(({ g }) => ({ idea: g.idea, kind: "general" as const, strength: "weak" as const, reason: g.why, evidence: [evidence], caveats: [] }));
+}
+
+/** Whole years between a birth date and today (both YYYY-MM-DD / numbers). */
+function ageOn(y: number, m: number, d: number, today: string): number {
+  const [ty, tm, td] = today.split("-").map(Number) as [number, number, number];
+  return ty - y - (tm < m || (tm === m && td < d) ? 1 : 0);
 }
 
 export async function suggestGifts(userId: string, personId: string, opts: unknown = {}, now = new Date()): Promise<GiftSuggestions> {
@@ -257,10 +330,21 @@ export async function suggestGifts(userId: string, personId: string, opts: unkno
     }
 
     const order = { strong: 0, moderate: 1, weak: 2 } as const;
-    const kindOrder = { wished_item: 0, from_their_answers: 1, experience_together: 2, similar_to_loved_gift: 3, related_to_like: 4 } as const;
+    const kindOrder = { wished_item: 0, from_their_answers: 1, experience_together: 2, similar_to_loved_gift: 3, related_to_like: 4, general: 5 } as const;
     candidates.sort((a, b) => order[a.strength] - order[b.strength] || kindOrder[a.kind] - kindOrder[b.kind]);
 
     const today = todayIn(tzRow?.tz ?? "UTC", now);
+
+    // 5. General ideas after everything recorded: more when little is recorded, a couple otherwise.
+    const birthday = dates.find((d) => d.kind === "birthday" && d.year !== null);
+    const age = birthday ? ageOn(birthday.year!, birthday.month, birthday.day, today) : null;
+    const band: AgeBand | null = age !== null && age >= 0 && age < 130 ? ageBandOf(age) : ((person.ageBand as AgeBand | null) ?? null);
+    const gender = (person.gender as Gender | null) ?? null;
+    const ruledOut = new Set([...theirs.tags, ...disliked.flatMap((p) => (DISLIKE_TAG[p.categoryId] ? [DISLIKE_TAG[p.categoryId]!] : []))]);
+    const known = new Set(candidates.map((c) => c.idea.ja));
+    const general = generalIdeas(person.relationship, band, gender, ruledOut).filter((c) => !known.has(c.idea.ja) && !conflictsWithDislike(c.idea.en) && !given.has(fold(c.idea.en)));
+    candidates.push(...general.slice(0, Math.max(2, 6 - candidates.length)));
+    const thin = candidates.every((c) => c.kind === "general");
     const next = dates
       .map((d) => ({ label: d.label, ...nextOccurrence(d.month, d.day, today) }))
       .sort((a, b) => a.daysUntil - b.daysUntil)[0];
@@ -316,6 +400,10 @@ export async function suggestGifts(userId: string, personId: string, opts: unkno
             }
           : null,
       questionsToAsk,
+      basis: { relationship: person.relationship, ageBand: band, age, ageFromBirthday: age !== null, gender },
+      missingBasics: [...(band ? [] : (["age"] as const)), ...(gender ? [] : (["gender"] as const))],
+      thin,
+      relationNote: person.relationship in RELATION_NOTE ? RELATION_NOTE[person.relationship as Rel] : null,
     };
   });
 }

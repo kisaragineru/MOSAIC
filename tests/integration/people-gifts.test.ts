@@ -15,7 +15,9 @@ import {
   listPeople,
   listPreferences,
   nextOccurrence,
+  setGiftBasics,
   upcomingDates,
+  updatePerson,
 } from "@/server/services/people";
 import { makeUser } from "../helpers/factory";
 
@@ -131,12 +133,48 @@ describe("gift suggestions", () => {
     expect(s.questionsToAsk).toHaveLength(0);
   });
 
-  it("asks questions instead of guessing when there is no information", async () => {
+  it("with nothing recorded, still offers general ideas — labelled as such — and asks for more", async () => {
     const u = await makeUser();
     const pid = await createPerson(u.userId, { nickname: "New friend" });
     const s = await suggestGifts(u.userId, pid);
-    expect(s.candidates).toEqual([]);
+    expect(s.thin).toBe(true);
+    expect(s.candidates.length).toBeGreaterThanOrEqual(3);
+    for (const c of s.candidates) expect(c).toMatchObject({ kind: "general", strength: "weak", evidence: [{ type: "basis" }] });
+    // Without an age, nothing age-specific (no baby or child gifts for someone who may be an adult).
+    expect(s.candidates.map((c) => c.idea.ja).join()).not.toMatch(/スタイ|知育|絵本/);
+    expect(s.missingBasics).toEqual(["age", "gender"]);
     expect(s.questionsToAsk.length).toBe(3);
+  });
+
+  it("chooses general ideas by relationship, age and gender; a birthday with a year gives the age", async () => {
+    const u = await makeUser();
+    const mum = await createPerson(u.userId, { nickname: "Mum", relationship: "family", ageBand: "60s", gender: "female" });
+    let s = await suggestGifts(u.userId, mum);
+    const ja = s.candidates.map((c) => c.idea.ja);
+    expect(ja).toContain("家族や孫の写真入りフォトフレーム・アルバム");
+    expect(ja).toContain("やわらかいストールやスカーフ");
+    expect(ja).not.toContain("晩酌用のお酒とおつまみ"); // for men only
+    expect(s.basis).toMatchObject({ relationship: "family", ageBand: "60s", gender: "female", ageFromBirthday: false });
+    expect(s.missingBasics).toEqual([]);
+    expect(s.candidates[0]!.evidence[0]!.text!.ja).toBe("一般的な傾向（家族・60代・女性）");
+
+    // Recorded things come first; general ideas then only fill in. A recorded dislike of a scent rules out scented ideas.
+    const friend = await createPerson(u.userId, { nickname: "Ken", relationship: "friend", gender: "female" });
+    await addImportantDate(u.userId, { personId: friend, label: "Birthday", kind: "birthday", month: 1, day: 10, year: 1996 });
+    await addPreference(u.userId, { personId: friend, categoryId: "scent", label: "Strong perfume", sentiment: "dislike", source: "person_stated" });
+    await addPreference(u.userId, { personId: friend, categoryId: "item", label: "Tent", sentiment: "wants", source: "person_stated" });
+    s = await suggestGifts(u.userId, friend, {}, new Date("2026-10-23T02:00:00Z"));
+    expect(s.basis).toMatchObject({ age: 30, ageBand: "30s", ageFromBirthday: true });
+    expect(s.candidates[0]!.idea.en).toBe("Tent");
+    expect(s.thin).toBe(false);
+    expect(s.candidates.map((c) => c.idea.ja)).not.toContain("ちょっといいハンドクリームやバスグッズ");
+
+    // Clearing them again ("" = not set); leaving them out keeps them.
+    await updatePerson(u.userId, mum, { nickname: "Mum", relationship: "family" });
+    expect((await suggestGifts(u.userId, mum)).basis.gender).toBe("female");
+    await setGiftBasics(u.userId, mum, { ageBand: "", gender: "" });
+    expect((await suggestGifts(u.userId, mum)).missingBasics).toEqual(["age", "gender"]);
+    await expect(setGiftBasics(u.userId, mum, { gender: "robot" })).rejects.toBeTruthy();
   });
 
   it("reads a currency however it is typed, and ignores what it can't read", () => {
@@ -175,6 +213,8 @@ describe("gift suggestions", () => {
 
     // Answers they keep to themselves stay out.
     await answerQuestion(sora.userId, { questionId: "l.sweets", questionVersion: 1, answer: { choice: "love" }, privacy: "private" });
-    expect((await suggestGifts(me.userId, pid)).candidates.some((c) => c.idea.ja.includes("お菓子"))).toBe(false);
+    expect((await suggestGifts(me.userId, pid)).candidates.some((c) => c.kind !== "general" && c.idea.ja.includes("お菓子"))).toBe(false);
+    // Their "no alcohol" also rules out general drink ideas.
+    expect(s.candidates.some((c) => c.kind === "general" && c.idea.ja.includes("お酒"))).toBe(false);
   });
 });

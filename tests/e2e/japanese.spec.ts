@@ -73,10 +73,16 @@ test("Japanese UI end to end: auto-detected, registration, question, Tử Vi, gi
   await prefForm.locator('select[name="source"]').selectOption("person_stated");
   await prefForm.getByRole("button", { name: "追加" }).click();
   await expect(page.locator("li", { hasText: "フィルムカメラ" }).getByText(/もの・贈り物/)).toBeVisible();
+  // The birthday's year gives the age; gender is optional and kept for next time.
+  await expect(page.getByText(/年齢：\d+歳（誕生日から）/)).toBeVisible();
+  await page.locator('#gifts select[name="gender"]').selectOption("female");
   await page.getByRole("button", { name: "提案する" }).click();
   const ideas = page.getByTestId("gift-ideas");
   await expect(ideas.getByText(/欲しいものリストにあります（本人が言っていた/)).toBeVisible();
   await expect(ideas.getByText("根拠: フィルムカメラ (欲しい)")).toBeVisible();
+  // Then a few general ideas, labelled as such.
+  await expect(ideas.getByText("一般的な傾向", { exact: true }).first()).toBeVisible();
+  await expect(page.locator('#gifts select[name="gender"]')).toHaveValue("female");
 
   // Saved items can be edited in place, not only deleted.
   await page.locator("li", { hasText: "フィルムカメラ" }).getByRole("link", { name: /編集/ }).click();

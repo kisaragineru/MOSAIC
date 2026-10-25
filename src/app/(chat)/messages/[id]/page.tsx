@@ -57,6 +57,8 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
     failed: tm.failed,
     retry: tm.retry,
     discard: tm.discard,
+    sessionExpired: tm.sessionExpired,
+    reload: tm.reload,
     group: tm.group(9999).replace("9999", "{n}"),
     sysCreated: tm.system.created(P),
     sysAdded: tm.system.added(P, "{names}"),

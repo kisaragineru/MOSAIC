@@ -21,12 +21,22 @@ export default defineConfig({
     launchOptions: executablePath ? { executablePath } : {},
     ...devices["Pixel 7"],
   },
-  webServer: {
+  webServer: [
+  {
+    // A stand-in web page with an Open Graph card (link preview tests).
+    command: "node tests/e2e/og-server.mjs",
+    url: "http://127.0.0.1:4599/health",
+    reuseExistingServer: false,
+    env: { OG_PORT: "4599" },
+  },
+  {
     command: `npx next start -p ${PORT}`,
     url: `http://localhost:${PORT}/login`,
     reuseExistingServer: false,
     timeout: 120_000,
     env: {
+      // Link previews may reach only this local test page (never set outside tests).
+      LINK_PREVIEW_TEST_HOSTS: "127.0.0.1:4599",
       DATABASE_URL: E2E_DB,
       APP_ORIGIN: `http://localhost:${PORT}`,
       ANTHROPIC_API_KEY: "",
@@ -38,4 +48,5 @@ export default defineConfig({
       DEV_TOOLS: "on",
     },
   },
+  ],
 });

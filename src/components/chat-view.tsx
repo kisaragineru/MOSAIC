@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { dmEdit, dmReact, dmUnsend } from "@/app/actions/dm";
 import type { DmMessage } from "@/server/services/dm";
 import { DmAvatar } from "./dm-avatar";
+import { firstUrl, LinkCard } from "./link-card";
 
 export interface ChatText {
   back: string;
@@ -42,6 +43,8 @@ export interface ChatText {
   failed: string;
   retry: string;
   discard: string;
+  sessionExpired: string;
+  reload: string;
   group: string;
   sysCreated: string;
   sysAdded: string;
@@ -157,6 +160,13 @@ export function ChatView({
     return () => window.clearInterval(id);
   }, []);
   const outbox = useRef(new Map<string, Job>());
+  // The site's sign-in ran out (any request answers 401): stop polling, offer a reload.
+  const [signedOut, setSignedOut] = useState(false);
+  const signedOutRef = useRef(false);
+  const markSignedOut = useCallback(() => {
+    signedOutRef.current = true;
+    setSignedOut(true);
+  }, []);
   const queue = useRef<string[]>([]);
   const pumping = useRef(false);
   const inFlight = useRef(false);
@@ -178,6 +188,8 @@ export function ChatView({
       const byId = new Map(cur.map((m) => [m.id, m]));
       for (const m of incoming) {
         if (m.senderId !== me && !byId.has(m.id)) lastActivity.current = Date.now();
+        // A message we thought unsent turned out to have arrived: it's done.
+        if (outbox.current.has(m.id) && !queue.current.includes(m.id)) outbox.current.delete(m.id);
         byId.set(m.id, m);
       }
       return [...byId.values()].sort((a, b) => (a.createdAt === b.createdAt ? a.id.localeCompare(b.id) : a.createdAt < b.createdAt ? -1 : 1));
@@ -199,6 +211,7 @@ export function ChatView({
     try {
       const visible = document.visibilityState === "visible";
       const r = await fetch(`/api/dm/${conv.id}/sync?since=${encodeURIComponent(cursor.current)}&read=${visible ? 1 : 0}&typing=${typingNow ? 1 : 0}`, { cache: "no-store" }).catch(() => null);
+      if (r?.status === 401) markSignedOut();
       if (r?.ok) {
         const j = (await r.json()) as { messages: DmMessage[]; conversation: { canSend: boolean; title: string | null; me: { left: boolean }; members: { id: string; name: string; left: boolean; lastReadAt: string | null; typing: boolean }[] } };
         merge(j.messages);
@@ -212,7 +225,7 @@ export function ChatView({
         void sync();
       }
     }
-  }, [conv.id, merge]);
+  }, [conv.id, merge, markSignedOut]);
 
   // Poll: quickly while the conversation is lively, slower when it's quiet, not at all when hidden.
   useEffect(() => {
@@ -220,7 +233,7 @@ export function ChatView({
     let timer = 0;
     const loop = async () => {
       if (stop) return;
-      if (document.visibilityState === "visible") await sync();
+      if (document.visibilityState === "visible" && !signedOutRef.current) await sync();
       const lively = Date.now() - lastActivity.current < 30_000;
       timer = window.setTimeout(loop, lively ? POLL_FAST_MS : POLL_SLOW_MS);
     };
@@ -306,6 +319,10 @@ export function ChatView({
       const r = await fetch(url, { method: "POST", cache: "no-store", ...init });
       const j = (await r.json().catch(() => ({}))) as Record<string, unknown>;
       if (r.ok) return { ok: true, value: pick(j) };
+      if (r.status === 401) {
+        markSignedOut();
+        return { ok: false, code: "session_expired", transient: false };
+      }
       return { ok: false, code: typeof j.error === "string" ? j.error : "generic", transient: r.status >= 500 || r.status === 429 };
     } catch {
       return { ok: false, code: "generic", transient: true };
@@ -353,6 +370,7 @@ export function ChatView({
         queue.current.shift();
         if (r.ok) {
           outbox.current.delete(job.id);
+          persist();
           setMsgs((cur) => cur.map((m) => (m.id === job.id ? { ...m, pending: false } : m)));
           lastActivity.current = Date.now();
           void sync();
@@ -366,9 +384,22 @@ export function ChatView({
     }
   };
 
+  // Unsent texts are kept in this tab, so a reload (e.g. after signing in again) doesn't lose them.
+  const storeKey = `mosaic-dm-unsent:${conv.id}`;
+  const persist = () => {
+    try {
+      const keep = [...outbox.current.values()].filter((j) => !j.photos.length).map((j) => ({ id: j.id, body: j.body, replyTo: j.replyTo }));
+      if (keep.length) sessionStorage.setItem(storeKey, JSON.stringify(keep));
+      else sessionStorage.removeItem(storeKey);
+    } catch {
+      // Storage unavailable (private mode): nothing kept.
+    }
+  };
+
   const enqueue = (job: Job) => {
     outbox.current.set(job.id, job);
     queue.current.push(job.id);
+    persist();
     void pump();
   };
   const retry = (id: string) => {
@@ -379,8 +410,33 @@ export function ChatView({
   };
   const discard = (id: string) => {
     outbox.current.delete(id);
+    persist();
     setMsgs((cur) => cur.filter((m) => m.id !== id));
   };
+
+  // Back from a reload: what wasn't sent shows as failed, ready to resend (if it did arrive, the next update replaces it).
+  useEffect(() => {
+    let saved: { id: string; body: string; replyTo: string | null }[] = [];
+    try {
+      saved = JSON.parse(sessionStorage.getItem(storeKey) ?? "[]");
+    } catch {
+      saved = [];
+    }
+    if (!saved.length) return;
+    // After the first paint, so the server-rendered page and the browser agree.
+    const frame = requestAnimationFrame(() => {
+      const at = new Date().toISOString();
+      for (const j of saved) outbox.current.set(j.id, { ...j, photos: [], transient: true, uploads: Promise.resolve([]) });
+      setMsgs((cur) => [
+        ...cur,
+        ...saved
+          .filter((j) => !cur.some((m) => m.id === j.id))
+          .map((j) => ({ id: j.id, senderId: me, senderName: null, kind: "text" as const, body: j.body, meta: null, createdAt: at, updatedAt: at, edited: false, deleted: false, record: null, attachments: [], reactions: [], reply: null, failed: tx.failed })),
+      ]);
+      void sync();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Back online: try the ones that failed for lack of a connection. Leaving with unsent messages asks first.
   useEffect(() => {
@@ -616,6 +672,7 @@ export function ChatView({
                     <Linkified text={m.body} />
                   </p>
                 )}
+                {m.body && !m.pending && firstUrl(m.body) && <LinkCard url={firstUrl(m.body)!} mine={mine} />}
               </>
             )}
             {actionable(m) && (
@@ -667,7 +724,7 @@ export function ChatView({
     );
   });
 
-  const cantWrite = conv.left ? tx.leftGroup : !conv.canSend ? tx.cannotSend : null;
+  const cantWrite = signedOut ? null : conv.left ? tx.leftGroup : !conv.canSend ? tx.cannotSend : null;
   const subtitle = typing.length ? fill(tx.typing, { name: typing.map((x) => x.name).join(tx.listSeparator) }) : conv.kind === "group" ? fill(tx.group, { n: activeOthers.length + 1 }) : null;
 
   return (
@@ -709,6 +766,14 @@ export function ChatView({
       </div>
 
       <div className="shrink-0 border-t border-stone-200/70 bg-white/90 px-3 pb-[calc(0.6rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur-md">
+        {signedOut && (
+          <div role="alert" className="mb-2 flex items-center gap-3 rounded-2xl bg-rose-50 px-3 py-2.5 text-sm text-rose-900 ring-1 ring-rose-200">
+            <span className="flex-1 leading-5">{tx.sessionExpired}</span>
+            <button type="button" onClick={() => window.location.reload()} className="shrink-0 rounded-full bg-rose-600 px-3 py-1.5 text-xs font-bold text-white active:scale-95">
+              {tx.reload}
+            </button>
+          </div>
+        )}
         {cantWrite ? (
           <p className="rounded-2xl bg-stone-100 px-4 py-3 text-center text-sm text-stone-600">{cantWrite}</p>
         ) : (

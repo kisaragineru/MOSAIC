@@ -6,9 +6,11 @@ import {
   addEventAction,
   addGiftAction,
   deleteRecordAction,
+  giftIdeasAction,
   updatePersonAction,
   updateRecordAction,
 } from "@/app/actions/people";
+import { AGE_BANDS, GENDERS } from "@/content/gift-general";
 import { ExpandableText } from "@/components/expandable-text";
 import { Flash } from "@/components/flash";
 import { PreferenceSection } from "@/components/preferences";
@@ -85,6 +87,10 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
     : null;
   const ideas = giftResult?.v ?? null;
   const currency = normalizeCurrency(sp.currency) ?? (locale === "ja" ? "JPY" : locale === "vi" ? "VND" : "");
+  // A birthday with a year gives the age, so the age group isn't asked for.
+  const born = dates.find((d) => d.kind === "birthday" && d.year !== null);
+  const [ty, tm, td] = today.split("-").map(Number) as [number, number, number];
+  const birthAge = born ? ty - born.year! - (tm < born.month || (tm === born.month && td < born.day) ? 1 : 0) : null;
   return (
     <Page
       title={person.nickname}
@@ -110,6 +116,8 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           {(connection.otherBio || connection.otherIntro) && (
             <span className="mt-3 line-clamp-3 block whitespace-pre-line rounded-2xl bg-white/80 px-3 py-2 text-sm leading-6 text-stone-800">{connection.otherBio || connection.otherIntro}</span>
           )}
+        </Link>
+      )}
       {connection && connection.status === "active" && (
         <form action={dmOpenForConnectionAction}>
           <input type="hidden" name="sessionId" value={connection.id} />
@@ -118,8 +126,6 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
             {t.messages.message}
           </button>
         </form>
-      )}
-        </Link>
       )}
       <Card title={`📝 ${t.people.note}`}>
         {person.note ? <ExpandableText text={person.note} more={t.people.readMore} less={t.people.showLess} /> : <p className="text-sm text-stone-500">{t.people.noteEmpty}</p>}
@@ -139,8 +145,25 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
 
       <Card title={t.gifts.title}>
         <p className="mb-2 text-sm text-stone-600">{t.gifts.intro}</p>
-        <form method="get" className="flex flex-wrap items-end gap-2">
-          <input type="hidden" name="gifts" value="1" />
+        <form action={giftIdeasAction} id="gifts" className="flex scroll-mt-24 flex-wrap items-end gap-2">
+          <input type="hidden" name="personId" value={person.id} />
+          {birthAge !== null ? (
+            <p className="w-full text-sm text-stone-700">🎂 {t.gifts.ageFromBirthday(birthAge)}</p>
+          ) : (
+            <Field label={t.gifts.ageBand}>
+              <Select name="ageBand" defaultValue={person.ageBand ?? ""} className="w-32">
+                <option value="">{t.gifts.notSet}</option>
+                {AGE_BANDS.map((a) => <option key={a} value={a}>{t.gifts.ages[a]}</option>)}
+              </Select>
+            </Field>
+          )}
+          <Field label={t.gifts.gender}>
+            <Select name="gender" defaultValue={person.gender ?? ""} className="w-40">
+              <option value="">{t.gifts.notSet}</option>
+              {GENDERS.map((g) => <option key={g} value={g}>{t.gifts.genders[g]}</option>)}
+            </Select>
+          </Field>
+          <p className="w-full text-xs text-stone-500">🔒 {t.gifts.basicsHelp}</p>
           <Field label={t.gifts.budget}><Input type="number" name="budget" min={0} defaultValue={sp.budget ?? ""} className="w-32" /></Field>
           <Field label={t.people.currency}>
             <Select name="currency" defaultValue={currency} className="w-28">
@@ -155,6 +178,10 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           <div className="mt-3 space-y-3" data-testid="gift-ideas">
             {ideas.nextOccasion && <Notice>{t.gifts.nextOccasion(ideas.nextOccasion.label, ideas.nextOccasion.date, t.home.inDays(ideas.nextOccasion.daysUntil))}</Notice>}
             {ideas.budget && <Notice kind="warning">{ideas.budget.note[locale]}</Notice>}
+            {ideas.thin && <Notice>{t.gifts.thin}</Notice>}
+            {ideas.missingBasics.length > 0 && (
+              <p className="text-sm text-amber-800">💡 {t.gifts.missingBasics(ideas.missingBasics.map((m) => t.gifts.missing[m]).join(locale === "ja" ? "と" : locale === "vi" ? " và " : " and "))}</p>
+            )}
             {ideas.candidates.length === 0 ? (
               <Notice kind="warning">{t.gifts.none}</Notice>
             ) : (
@@ -162,7 +189,11 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
                 {ideas.candidates.map((c, i) => (
                   <li key={i} className="rounded-xl border border-stone-200 p-2">
                     <div className="flex flex-wrap items-center gap-1">
-                      <Pill tone={c.strength === "strong" ? "teal" : c.strength === "moderate" ? "stone" : "amber"}>{t.gifts.strength[c.strength]}</Pill>
+                      {c.kind === "general" ? (
+                        <Pill tone="violet">{t.gifts.general}</Pill>
+                      ) : (
+                        <Pill tone={c.strength === "strong" ? "teal" : c.strength === "moderate" ? "stone" : "amber"}>{t.gifts.strength[c.strength]}</Pill>
+                      )}
                       <span className="font-medium">{c.idea[locale]}</span>
                     </div>
                     {c.kind === "from_their_answers" && <p className="text-xs font-semibold text-rose-800">💬 {t.gifts.fromThem(ideas.personName)}</p>}
@@ -173,6 +204,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
                 ))}
               </ol>
             )}
+            {ideas.relationNote && ideas.candidates.some((c) => c.kind === "general") && <p className="text-sm text-stone-600">💡 {ideas.relationNote[locale]}</p>}
             {ideas.avoid.length > 0 && <p className="text-sm"><b>{t.gifts.avoid}:</b> {ideas.avoid.map((a) => a.text?.[locale] ?? a.label).join(locale === "ja" ? "、" : ", ")}</p>}
             {ideas.alreadyGiven.length > 0 && <p className="text-sm"><b>{t.gifts.alreadyGiven}:</b> {ideas.alreadyGiven.join(", ")}</p>}
             {ideas.questionsToAsk.length > 0 && (

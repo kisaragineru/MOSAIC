@@ -13,6 +13,7 @@ import {
   deletePersonRecord,
   deletePreferenceItem,
   mergePeople,
+  setGiftBasics,
   updatePerson,
   updatePersonRecord,
   updatePreference,
@@ -36,6 +37,18 @@ export async function updatePersonAction(form: FormData) {
   const id = str(form, "personId");
   const r = await attempt("people.update", () => updatePerson(uid, id, { nickname: str(form, "nickname"), relationship: str(form, "relationship"), note: str(form, "note") }));
   await done(safeNext(str(form, "back"), `/people/${id}`), r);
+}
+
+/** The gift ideas form: keeps the age group and gender it was given, then shows the ideas. */
+export async function giftIdeasAction(form: FormData) {
+  const uid = await requireUser();
+  const id = str(form, "personId");
+  const basics = { ...(form.has("ageBand") ? { ageBand: str(form, "ageBand") } : {}), gender: str(form, "gender") };
+  const r = await attempt("people.giftBasics", () => setGiftBasics(uid, id, basics));
+  const q = new URLSearchParams({ gifts: "1", budget: str(form, "budget"), currency: str(form, "currency") });
+  if (!r.ok) q.set("e", r.error ?? "generic");
+  revalidatePath(`/people/${id}`);
+  redirect(`/people/${encodeURIComponent(id)}?${q}#gifts`);
 }
 
 export async function deletePersonAction(form: FormData) {

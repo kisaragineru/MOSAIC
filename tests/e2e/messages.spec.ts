@@ -199,3 +199,70 @@ test("sending feels instant: shown at once while the server is slow; a failure s
   await expect(hana.getByText("消す予定")).toHaveCount(0);
 });
 
+
+test("a URL is sent like any text; an expired sign-in is explained, and unsent messages survive a reload", async ({ browser }) => {
+  const hana = await user(browser, "ハナ");
+  const sora = await user(browser, "ソラ");
+  await connect(hana, sora);
+  await hana.goto("/messages/new");
+  await hana.getByLabel("ソラ").check();
+  await hana.getByRole("button", { name: "はじめる" }).click();
+  await hana.waitForURL(/\/messages\/[0-9a-f-]+$/);
+  const thread = new URL(hana.url()).pathname;
+  await sendText(hana, "https://vt.tiktok.com/ZSgxDomeP/");
+  await sora.goto(thread);
+  await expect(sora.getByRole("link", { name: "https://vt.tiktok.com/ZSgxDomeP/" })).toBeVisible();
+
+  // The hosting's sign-in runs out: every request is refused before reaching the app.
+  await hana.route("**/api/dm/**", (r) => r.fulfill({ status: 401, contentType: "text/html", body: "<html>login</html>" }));
+  await hana.getByLabel("メッセージを入力…").fill("期限切れのあとに");
+  await hana.getByRole("button", { name: "送信", exact: true }).click();
+  await expect(hana.getByText(/ログインの有効期限が切れたため送れませんでした/)).toBeVisible({ timeout: 5_000 });
+  await expect(hana.getByText(/接続が切れました/)).toBeVisible();
+
+  // Signed in again: after a reload the message is still there, ready to resend.
+  await hana.unroute("**/api/dm/**");
+  await hana.reload();
+  await expect(hana.getByText("期限切れのあとに")).toBeVisible();
+  await hana.getByRole("button", { name: "再送" }).click();
+  await expect(sora.getByText("期限切れのあとに")).toBeVisible({ timeout: 15_000 });
+  await hana.reload();
+  await expect(hana.getByRole("button", { name: "再送" })).toHaveCount(0);
+});
+
+test("a web link shows the page's card (OGP), its image served from MOSAIC; MOSAIC's own pages carry OGP", async ({ browser }) => {
+  const hana = await user(browser, "ハナ");
+  const sora = await user(browser, "ソラ");
+  await connect(hana, sora);
+  await hana.goto("/messages/new");
+  await hana.getByLabel("ソラ").check();
+  await hana.getByRole("button", { name: "はじめる" }).click();
+  await hana.waitForURL(/\/messages\/[0-9a-f-]+$/);
+  const thread = new URL(hana.url()).pathname;
+  await sendText(hana, "これ見て http://127.0.0.1:4599/sunset");
+
+  for (const p of [hana, sora]) {
+    if (p === sora) await sora.goto(thread);
+    const card = p.getByRole("link", { name: /夕焼けの丘/ });
+    await expect(card).toBeVisible({ timeout: 15_000 });
+    await expect(card).toHaveAttribute("href", "http://127.0.0.1:4599/sunset");
+    await expect(card).toContainText("Photo Diary");
+    await expect(card).toContainText("週末に見つけた、きれいな空の写真です。");
+    const img = card.locator("img");
+    await expect(img).toHaveAttribute("src", /^\/api\/link-preview\/image\/[0-9a-f]{64}$/);
+    expect((await p.request.get((await img.getAttribute("src"))!)).headers()["content-type"]).toBe("image/png");
+  }
+  // Signed-out visitors can't use the preview service.
+  const anon = await browser.newContext();
+  expect((await anon.request.get("http://localhost:3100/api/link-preview?url=http://127.0.0.1:4599/sunset")).status()).toBe(401);
+  await anon.close();
+
+  // MOSAIC's own share card.
+  const html = await (await sora.request.get("/s")).text();
+  expect(html).toContain('property="og:title" content="MOSAICでつながりましょう"');
+  expect(html).toMatch(/property="og:image" content="http:\/\/localhost:3100\/opengraph-image/);
+  expect(html).toContain('name="twitter:card" content="summary_large_image"');
+  const og = await sora.request.get("/opengraph-image");
+  expect(og.status()).toBe(200);
+  expect(og.headers()["content-type"]).toBe("image/png");
+});

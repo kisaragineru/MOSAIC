@@ -2,6 +2,15 @@ import { getT } from "@/lib/i18n/server";
 import { currentUserId } from "@/server/auth/session";
 import { Landing } from "./landing";
 
+// The card a QR / link invitation shows when it's sent in a chat app (no names: the link itself is private).
+export const metadata = {
+  title: "MOSAICでつながりましょう",
+  description: "招待リンクです。開くと、MOSAICで相手とつながれます。つながっただけでは何も共有されません。",
+  // A page's own openGraph/twitter replace the site's, so the site card image is named again here.
+  openGraph: { type: "website", siteName: "MOSAIC", title: "MOSAICでつながりましょう", description: "招待リンクです。開くと、MOSAICで相手とつながれます。つながっただけでは何も共有されません。", images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "MOSAIC" }] },
+  twitter: { card: "summary_large_image", title: "MOSAICでつながりましょう", description: "招待リンクです。開くと、MOSAICで相手とつながれます。", images: ["/opengraph-image"] },
+};
+
 export default async function ShareLandingPage() {
   const { t } = await getT();
   const signedIn = !!(await currentUserId());

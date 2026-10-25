@@ -4,6 +4,7 @@
  * chosen option's label. Only the likes chapter: what they said they enjoy, never guesses about
  * who they are.
  */
+import type { GiftTag } from "./gift-general";
 import type { I18nText } from "./questions";
 
 export interface GiftHint {
@@ -13,6 +14,8 @@ export interface GiftHint {
   avoid?: I18nText;
   /** How directly the answer speaks about gifts. */
   strength: "strong" | "moderate";
+  /** General ideas carrying this tag are left out because of this answer. */
+  tag?: GiftTag;
 }
 
 const t = (en: string, vi: string, ja: string): I18nText => ({ en, vi, ja });
@@ -26,7 +29,7 @@ export const GIFT_HINTS: Record<string, Record<string, GiftHint>> = {
     letter: { strength: "strong", idea: t("A heartfelt letter (even with a small gift)", "Một lá thư chân thành (kèm món quà nhỏ cũng được)", "心のこもった手紙（小さな贈り物に添えても）") },
   },
   "l.scent": {
-    none: { strength: "moderate", avoid: t("Scented things", "Đồ có mùi hương", "香りのあるもの") },
+    none: { strength: "moderate", tag: "scent", avoid: t("Scented things", "Đồ có mùi hương", "香りのあるもの") },
     "*": { strength: "moderate", idea: t("A hand cream or candle with a {x} scent", "Kem tay hoặc nến thơm hương {x}", "{x}の香りのハンドクリームやキャンドル") },
   },
   "l.coffee_tea": {
@@ -36,11 +39,11 @@ export const GIFT_HINTS: Record<string, Record<string, GiftHint>> = {
   },
   "l.sweets": {
     love: { strength: "moderate", idea: t("Well-loved sweets from a good shop", "Bánh kẹo ngon từ tiệm nổi tiếng", "評判のお店のお菓子") },
-    not: { strength: "moderate", avoid: t("Sweets", "Đồ ngọt", "甘いお菓子") },
+    not: { strength: "moderate", tag: "sweets", avoid: t("Sweets", "Đồ ngọt", "甘いお菓子") },
   },
   "l.alcohol": {
     love: { strength: "moderate", idea: t("A drink they'd enjoy", "Một chai đồ uống họ thích", "好みに合いそうなお酒") },
-    no: { strength: "moderate", avoid: t("Alcohol", "Rượu bia", "お酒") },
+    no: { strength: "moderate", tag: "alcohol", avoid: t("Alcohol", "Rượu bia", "お酒") },
   },
   "l.fashion_colors": {
     "*": { strength: "moderate", idea: t("A small item in {x} (handkerchief, scarf, pouch)", "Món nhỏ màu {x} (khăn tay, khăn quàng, túi nhỏ)", "{x}の小物（ハンカチ・ストール・ポーチなど）") },
@@ -51,7 +54,7 @@ export const GIFT_HINTS: Record<string, Record<string, GiftHint>> = {
   },
   "l.accessories": {
     daily: { strength: "moderate", idea: t("An everyday accessory", "Phụ kiện dùng hằng ngày", "普段使いのアクセサリー") },
-    never: { strength: "moderate", avoid: t("Accessories", "Phụ kiện", "アクセサリー") },
+    never: { strength: "moderate", tag: "accessory", avoid: t("Accessories", "Phụ kiện", "アクセサリー") },
   },
   "l.music_listen": {
     live: { strength: "moderate", idea: t("Tickets to a concert", "Vé xem biểu diễn", "ライブ・コンサートのチケット") },
@@ -71,7 +74,7 @@ export const GIFT_HINTS: Record<string, Record<string, GiftHint>> = {
     retro: { strength: "moderate", idea: t("A retro piece for their room", "Món đồ hoài cổ cho căn phòng", "部屋に合うレトロな雑貨") },
   },
   "l.things": {
-    few: { strength: "moderate", avoid: t("Things that take up space (consumables or experiences suit them better)", "Đồ chiếm chỗ (đồ dùng hết hoặc trải nghiệm hợp hơn)", "かさばる物（消えものや体験のほうが合います）") },
+    few: { strength: "moderate", tag: "bulky", avoid: t("Things that take up space (consumables or experiences suit them better)", "Đồ chiếm chỗ (đồ dùng hết hoặc trải nghiệm hợp hơn)", "かさばる物（消えものや体験のほうが合います）") },
   },
   "l.travel_style": {
     food: { strength: "moderate", idea: t("A meal at a place known for its food", "Một bữa ở quán nổi tiếng", "評判のお店での食事") },
@@ -87,8 +90,8 @@ export const GIFT_HINTS: Record<string, Record<string, GiftHint>> = {
     often: { strength: "moderate", idea: t("A book or a book voucher", "Một cuốn sách hoặc phiếu mua sách", "本や図書カード") },
   },
   "l.food_avoid": {
-    some: { strength: "moderate", avoid: t("Food they can't eat — ask first", "Món họ không ăn được — hỏi trước", "食べられないもの（食べ物は先に確認を）") },
-    many: { strength: "moderate", avoid: t("Food they can't eat — ask first", "Món họ không ăn được — hỏi trước", "食べられないもの（食べ物は先に確認を）") },
-    allergy: { strength: "moderate", avoid: t("Food with allergens — ask first", "Món có chất gây dị ứng — hỏi trước", "アレルギーのある食べ物（必ず先に確認を）") },
+    some: { strength: "moderate", tag: "food", avoid: t("Food they can't eat — ask first", "Món họ không ăn được — hỏi trước", "食べられないもの（食べ物は先に確認を）") },
+    many: { strength: "moderate", tag: "food", avoid: t("Food they can't eat — ask first", "Món họ không ăn được — hỏi trước", "食べられないもの（食べ物は先に確認を）") },
+    allergy: { strength: "moderate", tag: "food", avoid: t("Food with allergens — ask first", "Món có chất gây dị ứng — hỏi trước", "アレルギーのある食べ物（必ず先に確認を）") },
   },
 };

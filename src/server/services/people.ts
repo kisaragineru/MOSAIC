@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
+import { AGE_BANDS, GENDERS } from "@/content/gift-general";
 import { optionalDate, optionalText, todayIn, uuid } from "@/lib/validation/common";
 import {
   giftRecords,
@@ -25,7 +26,18 @@ export const personSchema = z.object({
   nickname: z.string().trim().min(1).max(80),
   relationship: z.enum(RELATIONSHIPS).default("other"),
   note: optionalText(4000),
+  // Left out = unchanged; "" = cleared.
+  ageBand: z.union([z.literal(""), z.enum(AGE_BANDS)]).optional(),
+  gender: z.union([z.literal(""), z.enum(GENDERS)]).optional(),
 });
+
+/** The optional gift-idea basics, as columns to set (only those the form sent). */
+function basics(d: z.infer<typeof personSchema>) {
+  return {
+    ...(d.ageBand !== undefined ? { ageBand: d.ageBand || null } : {}),
+    ...(d.gender !== undefined ? { gender: d.gender || null } : {}),
+  };
+}
 
 async function ownPerson(tx: Tx, userId: string, personId: string) {
   const [p] = await tx
@@ -39,7 +51,7 @@ async function ownPerson(tx: Tx, userId: string, personId: string) {
 export async function createPerson(userId: string, input: unknown) {
   const d = personSchema.parse(input);
   return withUser(userId, async (tx) => {
-    const [p] = await tx.insert(people).values({ userId, nickname: d.nickname, relationship: d.relationship, note: d.note ?? null }).returning();
+    const [p] = await tx.insert(people).values({ userId, nickname: d.nickname, relationship: d.relationship, note: d.note ?? null, ...basics(d) }).returning();
     return p!.id;
   });
 }
@@ -50,8 +62,19 @@ export async function updatePerson(userId: string, personId: string, input: unkn
     await ownPerson(tx, userId, personId);
     await tx
       .update(people)
-      .set({ nickname: d.nickname, relationship: d.relationship, note: d.note ?? null, updatedAt: new Date() })
+      .set({ nickname: d.nickname, relationship: d.relationship, note: d.note ?? null, ...basics(d), updatedAt: new Date() })
       .where(eq(people.id, personId));
+  });
+}
+
+/** Just the age group and gender (from the gift ideas form). */
+export async function setGiftBasics(userId: string, personId: string, input: unknown) {
+  const d = personSchema.pick({ ageBand: true, gender: true }).parse(input);
+  const set = basics(d as z.infer<typeof personSchema>);
+  if (!Object.keys(set).length) return;
+  await withUser(userId, async (tx) => {
+    await ownPerson(tx, userId, personId);
+    await tx.update(people).set({ ...set, updatedAt: new Date() }).where(eq(people.id, personId));
   });
 }
 

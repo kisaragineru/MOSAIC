@@ -549,6 +549,10 @@ export const people = pgTable(
     nickname: text("nickname").notNull(),
     relationship: text("relationship").notNull().default("other"),
     note: text("note"),
+    /** Optional, set by the owner for gift ideas only (a birthday with a year takes precedence). */
+    ageBand: text("age_band"),
+    /** Optional, set by the owner for gift ideas only. */
+    gender: text("gender"),
     /** The QR connection (comparison session) this person is linked to, if any. Only the owner sees the link. */
     connectionSessionId: uuid("connection_session_id").references(() => comparisonSessions.id, { onDelete: "set null" }),
     createdAt: createdAt(),
@@ -559,6 +563,8 @@ export const people = pgTable(
     uniqueIndex("people_connection_uq").on(t.userId, t.connectionSessionId),
     ownerUq("people_owner_uq", t),
     check("people_relationship_ck", sql`${t.relationship} in ('partner','family','friend','colleague','other')`),
+    check("people_age_band_ck", sql`${t.ageBand} is null or ${t.ageBand} in ('baby','child','teens','20s','30s','40s','50s','60s','70plus')`),
+    check("people_gender_ck", sql`${t.gender} is null or ${t.gender} in ('female','male','other')`),
   ],
 );
 
@@ -1179,4 +1185,25 @@ export const userAvatars = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [check("user_avatars_mime_ck", sql`${t.mime} in ('image/jpeg','image/png','image/webp')`), check("user_avatars_size_ck", sql`${t.size} between 1 and 1000000`)],
+);
+
+/**
+ * Link previews (Open Graph) fetched for web links people send, kept for a while so a link is
+ * fetched once, not by every viewer. Public web content only; reached through the functions
+ * of migration 0026.
+ */
+export const linkPreviews = pgTable(
+  "link_previews",
+  {
+    urlHash: text("url_hash").primaryKey(),
+    url: text("url").notNull(),
+    status: text("status").notNull(),
+    title: text("title"),
+    description: text("description"),
+    siteName: text("site_name"),
+    imageMime: text("image_mime"),
+    imageBytes: bytea("image_bytes"),
+    fetchedAt: ts("fetched_at").notNull().defaultNow(),
+  },
+  (t) => [check("link_previews_status_ck", sql`${t.status} in ('ok','empty','failed')`), check("link_previews_mime_ck", sql`${t.imageMime} is null or ${t.imageMime} in ('image/jpeg','image/png','image/webp','image/gif')`)],
 );
