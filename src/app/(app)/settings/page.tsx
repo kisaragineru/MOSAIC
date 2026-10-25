@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { aiOptInAction, changePasswordAction, deleteAccountAction, notificationsAction, updateProfileAction } from "@/app/actions/settings";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
@@ -48,6 +49,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         </form>
       </Card>
       <Card title={t.settings.privacy}>
+        <Link href="/me/privacy" className="mb-3 flex items-center justify-between rounded-2xl bg-teal-50/70 px-4 py-3 text-sm font-semibold text-teal-900 hover:bg-teal-50">
+          <span>🛡 {t.privacyHub.link}</span><span aria-hidden>→</span>
+        </Link>
         <form action={aiOptInAction} className="space-y-2">
           <Checkbox name="aiOptIn" defaultChecked={acc.profile.aiOptIn} label={t.settings.aiOptIn} />
           <p className="text-xs text-stone-500">{t.settings.aiHelp}</p>

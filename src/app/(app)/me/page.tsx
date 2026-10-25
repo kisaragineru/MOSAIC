@@ -146,6 +146,13 @@ export default async function MePage({ searchParams }: { searchParams: Promise<R
         </details>
       </section>
 
+      <Link href="/me/privacy" className="flex items-center justify-between rounded-3xl bg-white/85 px-5 py-4 shadow-sm ring-1 ring-white/80 transition hover:shadow-md">
+        <span>
+          <span className="block font-semibold text-stone-900">🛡 {t.privacyHub.link}</span>
+          <span className="block text-xs text-stone-600">{t.privacyHub.linkSub}</span>
+        </span>
+        <span aria-hidden className="text-teal-700">→</span>
+      </Link>
       <Link href="/me/preview" className="flex items-center justify-between rounded-3xl bg-linear-to-br from-sky-50 to-violet-50 px-5 py-4 shadow-sm transition hover:shadow-md">
         <span>
           <span className="block font-semibold text-stone-900">👁 {t.me.preview}</span>

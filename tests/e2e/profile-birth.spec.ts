@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 
-test("birth details can be entered from the profile, and the Tử Vi chart follows", async ({ browser }) => {
+test("birth details can be entered from the profile, the Tử Vi chart follows, and the privacy overview reflects it", async ({ browser }) => {
   const ctx = await browser.newContext({ locale: "ja-JP", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.7.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
   const page = await ctx.newPage();
   await page.goto("/register");
@@ -33,5 +33,16 @@ test("birth details can be entered from the profile, and the Tử Vi chart follo
   await birth.getByLabel("出生時刻（現地の時計）").fill("14:10");
   await birth.getByRole("button", { name: "保存して計算" }).click();
   await expect(birth.getByText("1990年6月7日 · 14:10")).toBeVisible();
+
+  // Every sharing setting in one place, each linking to where it's changed.
+  await page.getByRole("link", { name: /公開設定のまとめ/ }).click();
+  await page.waitForURL(/\/me\/privacy$/);
+  await expect(page.getByRole("heading", { name: "🔒 いつも、あなただけ" })).toBeVisible();
+  await expect(page.getByText("生年月日・出生時刻・出生地（Tử Viの入力）")).toBeVisible();
+  await expect(page.locator("#tuvi").getByText("命盤ができています。")).toBeVisible();
+  await expect(page.locator("#profile").getByText("ミナ")).toBeVisible();
+  await expect(page.getByText("まだ誰ともつながっていません。")).toBeVisible();
+  await page.locator("#tuvi").getByRole("link", { name: "変更する →" }).click();
+  await page.waitForURL(/\/me#birth$/);
   await ctx.close();
 });

@@ -128,6 +128,15 @@ test("share by relationship, and a test companion from settings (development)", 
   await sora.goto("/memories?view=friends");
   await expect(sora.getByText("家族だけに伝えたいこと。")).toBeVisible();
 
+  // The privacy overview shows the same: Sora is family, and sees that record.
+  await hana.goto("/me/privacy");
+  const row = hana.getByTestId("privacy-connection").filter({ hasText: "ソラ" });
+  await expect(row.getByText("家族", { exact: true })).toBeVisible();
+  await expect(row.getByText("見えている記録：1件")).toBeVisible();
+  await expect(hana.locator("#records").getByText("家族だけ：1件")).toBeVisible();
+  await row.getByRole("link", { name: "変更する →" }).click();
+  await hana.waitForURL(/\/people\/[0-9a-f-]+\/settings$/);
+
   // A test companion: connected right away, with records to read.
   await hana.goto("/settings");
   await hana.getByRole("button", { name: /テスト相手をつくる/ }).click();
