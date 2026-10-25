@@ -3,7 +3,7 @@
  * Read-only summary of what MOSAIC already knows; nothing here is new data.
  */
 import { and, eq } from "drizzle-orm";
-import type { TileView } from "@/components/mosaic";
+import type { Hue, MosaicLabels, TileView } from "@/components/mosaic";
 import { AXES, AXIS_CHAPTER, AXIS_LABEL, CHAPTER_INFO, type Chapter } from "@/content/axes";
 import { TENDENCY_TEXT, type TendencyKey } from "@/content/questions";
 import type { Locale } from "@/lib/i18n/locales";
@@ -137,4 +137,11 @@ export function tileViews(p: Portrait, t: Dict, locale: Locale): TileView[] {
       href: `/discover/chapter/${tile.kind}`, hrefLabel: m.answerChapter(chapter), evidenceHref: null,
     };
   });
+}
+
+/** The words the mosaic needs, with the name of each colour. */
+export function mosaicLabels(t: Dict, locale: Locale): MosaicLabels {
+  const m = t.mosaic;
+  const chapters = (["self", "mind", "people", "life"] as const).map((c) => ({ hue: c as Hue, name: CHAPTER_INFO[c].title[locale] }));
+  return { hint: m.hint, evidence: m.evidence, levels: m.levels, need: m.need, deeper: m.deeper, hues: [...chapters, { hue: "extra", name: m.otherHue }] };
 }

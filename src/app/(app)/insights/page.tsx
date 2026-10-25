@@ -8,7 +8,7 @@ import { requireUser } from "@/server/auth/session";
 import { listPeople } from "@/server/services/people";
 import { reflect, REFLECTION_KINDS, REFLECTION_QUESTIONS, type Reflection } from "@/server/services/reflection";
 import { listTendencies } from "@/server/services/tendencies";
-import { portrait, tileViews } from "@/server/services/mosaic";
+import { mosaicLabels, portrait, tileViews } from "@/server/services/mosaic";
 import { Mosaic } from "@/components/mosaic";
 import { KnowledgeCard } from "@/components/knowledge-card";
 import { knowledge } from "@/server/services/knowledge";
@@ -59,7 +59,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
       <Card title={t.mosaic.title}>
         <p className="mb-1 text-sm font-semibold text-stone-800">{t.mosaic.summary(p.revealed, p.total)}</p>
         <ProgressBar value={p.revealed} max={p.total} label={t.mosaic.title} className="mb-4" />
-        <Mosaic tiles={tileViews(p, t, locale)} labels={{ hint: t.mosaic.hint, evidence: t.mosaic.evidence, levels: t.mosaic.levels }} />
+        <Mosaic tiles={tileViews(p, t, locale)} labels={mosaicLabels(t, locale)} />
       </Card>
       <section aria-labelledby="reading-title" className="space-y-3 rounded-3xl bg-linear-to-br from-teal-50 via-white to-violet-50 p-5 shadow-sm ring-1 ring-white/80">
         <h2 id="reading-title" className="text-base font-semibold text-stone-900">🔎 {READING.title[locale]}</h2>

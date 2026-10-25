@@ -887,6 +887,9 @@ export const vi: Dict = {
     note: "Kết quả so sánh chỉ hai bạn xem được, và bị xóa bất cứ khi nào một trong hai kết thúc.",
   },
   mosaic: {
+    need: "còn {n} câu",
+    deeper: "Màu càng đậm, xu hướng càng rõ. ? là chưa có manh mối; ⇄ là tùy hoàn cảnh.",
+    otherHue: "Khác",
     title: "Bức tranh ghép của bạn",
     summary: (n: number, all: number) => `${n}/${all} ô đã hiện ra`,
     hint: "Chạm vào một ô để xem ô đó nói gì.",

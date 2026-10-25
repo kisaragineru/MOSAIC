@@ -23,7 +23,7 @@ import { upcomingDates } from "@/server/services/people";
 import { listComparisons } from "@/server/services/sharing";
 import { myPeerRequests } from "@/server/services/peers";
 import { getTuvi } from "@/server/services/tuvi";
-import { portrait, tileViews } from "@/server/services/mosaic";
+import { mosaicLabels, portrait, tileViews } from "@/server/services/mosaic";
 import { Mosaic } from "@/components/mosaic";
 import { KnowledgeCard } from "@/components/knowledge-card";
 import { knowledge } from "@/server/services/knowledge";
@@ -212,7 +212,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           <span className="text-xs text-stone-500">{t.mosaic.summary(pic.revealed, pic.total)}</span>
         </span>
         <span className="mt-3 block">
-          <Mosaic compact tiles={tileViews(pic, t, locale)} labels={{ hint: t.mosaic.hint, evidence: t.mosaic.evidence, levels: t.mosaic.levels }} />
+          <Mosaic compact tiles={tileViews(pic, t, locale)} labels={mosaicLabels(t, locale)} />
         </span>
         <span className="mt-3 block text-right text-sm font-semibold text-teal-700">{t.mosaic.open} →</span>
       </Link>

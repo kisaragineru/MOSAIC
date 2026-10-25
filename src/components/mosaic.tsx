@@ -29,6 +29,11 @@ export interface MosaicLabels {
   hint: string;
   evidence: string;
   levels: Record<Level, string>;
+  /** "{n} more" on a tile still gathering answers. */
+  need: string;
+  /** What each colour stands for. */
+  hues: { hue: Hue; name: string }[];
+  deeper: string;
 }
 
 // Literal class strings (Tailwind only generates classes it can see).
@@ -41,38 +46,36 @@ const SHADE: Record<Hue, { strong: string; mid: string; soft: string; faint: str
 };
 const DELAY = ["[animation-delay:0ms]", "[animation-delay:40ms]", "[animation-delay:80ms]", "[animation-delay:120ms]", "[animation-delay:160ms]"];
 
-function halves(t: TileView): [string, string] {
+/** One colour for the whole tile: the clearer the tendency, the deeper the colour. */
+function fill(t: TileView): string {
   const s = SHADE[t.hue];
   switch (t.level) {
     case "empty":
-      return ["bg-white/70", "bg-white/70"];
+      return "bg-white/70";
     case "gathering":
-      return [s.soft, s.faint];
+      return s.faint;
     case "mixed":
-      return [s.mid, s.mid];
+      return s.soft;
     case "emerging":
-      return t.direction === -1 ? [s.faint, s.mid] : t.direction === 1 ? [s.mid, s.faint] : [s.soft, s.soft];
+      return s.mid;
     case "consistent":
-      return t.direction === -1 ? [s.soft, s.strong] : t.direction === 1 ? [s.strong, s.soft] : [s.strong, s.strong];
+      return s.strong;
   }
 }
 
-function Tile({ t, i, selected }: { t: TileView; i: number; selected?: boolean }) {
-  const [upper, lower] = halves(t);
+function Tile({ t, i, selected, need }: { t: TileView; i: number; selected?: boolean; need: (n: number) => string }) {
   return (
-    <span
-      className={`relative flex aspect-square animate-[zoomIn_.45s_ease-out_both] items-end justify-center overflow-hidden rounded-xl motion-reduce:animate-none ${DELAY[i % 5]} ${
-        t.level === "empty" ? "border border-dashed border-stone-300" : "shadow-sm ring-1 ring-white/70"
-      } ${selected ? "ring-2 ring-stone-800 ring-offset-2" : ""} ${t.rejected ? "opacity-45" : ""}`}
-    >
-      <span aria-hidden className={`absolute inset-0 [clip-path:polygon(0_0,100%_0,0_100%)] ${upper}`} />
-      <span aria-hidden className={`absolute inset-0 [clip-path:polygon(100%_0,100%_100%,0_100%)] ${lower}`} />
-      {t.level === "gathering" && t.dots > 0 && (
-        <span aria-hidden className="absolute right-1.5 top-1.5 z-10 flex gap-0.5">
-          {Array.from({ length: 3 }, (_, k) => <span key={k} className={`h-1.5 w-1.5 rounded-full ${k < t.dots ? "bg-stone-500" : "bg-stone-300/60"}`} />)}
-        </span>
-      )}
-      <span className="relative z-10 mb-1 line-clamp-2 max-w-[94%] rounded-md bg-white/85 px-1 text-center text-[10px] font-bold leading-[1.15] text-stone-800">{t.label}</span>
+    <span className="flex flex-col items-center gap-1">
+      <span
+        className={`relative flex aspect-square w-full animate-[zoomIn_.45s_ease-out_both] items-center justify-center overflow-hidden rounded-2xl motion-reduce:animate-none ${DELAY[i % 5]} ${fill(t)} ${
+          t.level === "empty" ? "border border-dashed border-stone-300" : "shadow-sm ring-1 ring-black/5"
+        } ${selected ? "ring-2 ring-stone-800 ring-offset-2" : ""} ${t.rejected ? "opacity-45" : ""}`}
+      >
+        {t.level === "empty" && <span aria-hidden className="text-lg font-bold text-stone-300">?</span>}
+        {t.level === "gathering" && <span className="px-1 text-center text-[10px] font-semibold leading-tight text-stone-600">{need(Math.max(1, 3 - t.dots))}</span>}
+        {t.level === "mixed" && <span aria-hidden className="text-base text-stone-600">⇄</span>}
+      </span>
+      <span className={`line-clamp-2 w-full text-center text-[11px] font-semibold leading-tight ${t.level === "empty" ? "text-stone-400" : "text-stone-800"}`}>{t.label}</span>
     </span>
   );
 }
@@ -80,17 +83,18 @@ function Tile({ t, i, selected }: { t: TileView; i: number; selected?: boolean }
 /** The portrait. Compact (Home): a link to the full view. Full: tap a tile for what it says. */
 export function Mosaic({ tiles, labels, compact = false }: { tiles: TileView[]; labels: MosaicLabels; compact?: boolean }) {
   const [sel, setSel] = useState<string | null>(null);
+  const need = (n: number) => labels.need.replace("{n}", String(n));
   if (compact) {
     return (
-      <div className="grid grid-cols-5 gap-1.5">
-        {tiles.map((t, i) => <Tile key={t.id} t={t} i={i} />)}
+      <div className="grid grid-cols-4 gap-x-2.5 gap-y-3">
+        {tiles.map((t, i) => <Tile key={t.id} t={t} i={i} need={need} />)}
       </div>
     );
   }
   const s = tiles.find((t) => t.id === sel) ?? null;
   return (
     <div className="space-y-3">
-      <ul className="grid grid-cols-5 gap-1.5">
+      <ul className="grid grid-cols-4 gap-x-2.5 gap-y-3">
         {tiles.map((t, i) => (
           <li key={t.id}>
             <button
@@ -100,18 +104,21 @@ export function Mosaic({ tiles, labels, compact = false }: { tiles: TileView[]; 
               onClick={() => setSel(sel === t.id ? null : t.id)}
               className="block w-full rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
             >
-              <Tile t={t} i={i} selected={sel === t.id} />
+              <Tile t={t} i={i} selected={sel === t.id} need={need} />
             </button>
           </li>
         ))}
       </ul>
-      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-stone-500">
-        {(["empty", "gathering", "emerging", "consistent", "mixed"] as const).map((l) => (
-          <span key={l} className="flex items-center gap-1">
-            <span className={`inline-block h-2.5 w-2.5 rounded-sm ${l === "empty" ? "border border-dashed border-stone-300" : l === "gathering" ? "bg-teal-50 ring-1 ring-teal-100" : l === "emerging" ? "bg-teal-300" : l === "consistent" ? "bg-teal-500" : "bg-linear-to-br from-teal-300 to-rose-300"}`} />
-            {labels.levels[l]}
-          </span>
-        ))}
+      <div className="space-y-1 text-[11px] text-stone-600" data-testid="mosaic-legend">
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
+          {labels.hues.map((h) => (
+            <span key={h.hue} className="flex items-center gap-1">
+              <span aria-hidden className={`inline-block h-2.5 w-2.5 rounded-sm ${SHADE[h.hue].strong}`} />
+              {h.name}
+            </span>
+          ))}
+        </div>
+        <p className="text-stone-500">{labels.deeper}</p>
       </div>
       {s ? (
         <div key={s.id} className="animate-[fadeUp_.3s_ease-out] space-y-2 rounded-2xl bg-white/85 p-4 text-sm ring-1 ring-stone-200/70 motion-reduce:animate-none" aria-live="polite">

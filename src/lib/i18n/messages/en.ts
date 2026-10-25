@@ -885,6 +885,9 @@ export const en = {
     note: "Comparison results are visible to the two of you only, and are deleted whenever either of you ends the comparison.",
   },
   mosaic: {
+    need: "{n} more",
+    deeper: "The deeper the colour, the clearer the tendency. ? means no clues yet; ⇄ means it depends on the situation.",
+    otherHue: "Other",
     title: "Your mosaic",
     summary: (n: number, all: number) => `${n} of ${all} tiles have come into view`,
     hint: "Tap a tile to see what it says.",
