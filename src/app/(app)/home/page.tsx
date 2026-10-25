@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { createMemoryAction } from "@/app/actions/memories";
+import { QuickComposer } from "@/components/quick-composer";
+import { composerText } from "@/components/memory-form";
+import { myGiftBoxes } from "@/server/services/gift-boxes";
 import { DayWatcher } from "@/components/day-watcher";
 import { Flash } from "@/components/flash";
 import { TimeZoneNotice } from "@/components/time-zone-notice";
@@ -8,11 +10,11 @@ import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { getAccount, getNotificationPrefs } from "@/server/services/account";
 import { getDaily } from "@/server/services/discovery";
-import { recentTimeline } from "@/server/services/memory-share";
+import { recentTimeline, shareTargets } from "@/server/services/memory-share";
 import { listTendencies } from "@/server/services/tendencies";
 import { AXIS_CHAPTER, PEER_POLES } from "@/content/axes";
 import { MANUAL_CHAPTERS } from "@/content/manual-text";
-import { avatarUrls } from "@/server/services/avatars";
+import { avatarUrls, myAvatarUrl } from "@/server/services/avatars";
 import { commentInbox, commentPreviews, countsByEntry } from "@/server/services/comments";
 import { mediaFor } from "@/server/services/media";
 import { Timeline } from "@/components/timeline";
@@ -63,24 +65,14 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   return (
     <Page title={t.home.hello(account.profile.displayName)}>
       <Flash t={t} sp={sp} />
-      <Card title={t.home.quickNote}>
-        <form action={createMemoryAction} className="space-y-2">
-          <input type="hidden" name="back" value="/home" />
-          <input type="hidden" name="stay" value="1" />
-          <input type="hidden" name="kind" value="thought" />
-          <Textarea name="body" required rows={3} placeholder={t.home.quickNotePlaceholder} aria-label={t.home.quickNote} />
-          <div className="flex justify-between">
-            <Link href="/memories/new" className="text-sm text-teal-700 underline">{t.home.writeMore} →</Link>
-            <Button type="submit">{t.common.save}</Button>
-          </div>
-        </form>
-      </Card>
+      {/* Posting: the same sheet as on records. */}
+      <QuickComposer trigger="inline" tx={composerText(t)} canShare={(await shareTargets(uid)).length > 0} giftBoxes={(await myGiftBoxes(uid)).filter((b) => b.status === "open" && b.my_role !== "child").map((b) => ({ id: b.id, label: t.memories.composer.toGift(b.child_name) }))} />
       <Card title={t.home.recent}>
         {recent.length === 0 ? (
           <p className="text-sm text-stone-500">{t.memories.empty}</p>
         ) : (
           <div className="space-y-3">
-            <Timeline t={t} locale={locale} tz={account.profile.timeZone} days={recent} compact comments={counts} previews={previews} media={await mediaFor(uid, recent.flatMap((d) => d.items.filter((x) => !x.entry.sealed).map((x) => x.entry.id)))} avatars={await avatarUrls(uid, recent.flatMap((d) => d.items.map((x) => x.entry.ownerId)))} />
+            <Timeline me={{ name: (await getAccount(uid)).profile.displayName, src: (await myAvatarUrl(uid)) ?? undefined }} t={t} locale={locale} tz={account.profile.timeZone} days={recent} compact comments={counts} previews={previews} media={await mediaFor(uid, recent.flatMap((d) => d.items.filter((x) => !x.entry.sealed).map((x) => x.entry.id)))} avatars={await avatarUrls(uid, recent.flatMap((d) => d.items.map((x) => x.entry.ownerId)))} />
             <Link href="/memories" className="block text-right text-sm text-teal-700 underline">{t.memories.timeline.seeAll} →</Link>
           </div>
         )}

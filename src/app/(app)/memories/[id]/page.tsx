@@ -83,7 +83,7 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
               back={`/memories/${m.id}?edit=1`}
               d={{ ...m, personIds: m.people.map((p) => p.id), body: m.body, reason: m.reason, media }}
               canShare={canShare}
-              submitLabel={t.common.save}
+              submitLabel={m.kind === "letter_to_future" ? t.common.save : t.memories.post.saveChanges}
             />
           </div>
         </Card>

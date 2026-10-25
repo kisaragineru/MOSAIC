@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Flash } from "@/components/flash";
 import { QuickComposer } from "@/components/quick-composer";
-import { mediaPickerText } from "@/components/memory-form";
+import { composerText } from "@/components/memory-form";
 import { mediaFor } from "@/server/services/media";
 import { myGiftBoxes } from "@/server/services/gift-boxes";
 import { Timeline } from "@/components/timeline";
@@ -14,7 +14,7 @@ import { getAccount } from "@/server/services/account";
 import { listMemories, listTags, type MemorySummary } from "@/server/services/memories";
 import { shareTargets, connectionFeed, feedForPage, feedToEntry, mineToEntry } from "@/server/services/memory-share";
 import { listPeople } from "@/server/services/people";
-import { avatarUrls } from "@/server/services/avatars";
+import { avatarUrls, myAvatarUrl } from "@/server/services/avatars";
 import { commentInbox, commentPreviews, countsByEntry } from "@/server/services/comments";
 
 const PAGE_SIZE = 50;
@@ -131,7 +131,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
       {days.length === 0 ? (
         <Empty>{view === "friends" ? tl.friendsEmpty : t.memories.empty}</Empty>
       ) : (
-        <Timeline t={t} locale={locale} tz={tz} days={days} comments={counts} previews={previews} media={media} avatars={await avatarUrls(uid, entries.map((e) => e.ownerId))} />
+        <Timeline me={{ name: (await getAccount(uid)).profile.displayName, src: (await myAvatarUrl(uid)) ?? undefined }} t={t} locale={locale} tz={tz} days={days} comments={counts} previews={previews} media={media} avatars={await avatarUrls(uid, entries.map((e) => e.ownerId))} />
       )}
       {(page > 0 || hasOlder) && (
         <nav className="flex justify-between text-sm" aria-label="pagination">
@@ -143,27 +143,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
       {/* Writing is the main thing here: a floating button that opens a composer in place. */}
       <QuickComposer
         canShare={canShare}
-        tx={{
-          write: t.memories.write,
-          title: t.memories.composer.title,
-          placeholder: t.memories.bodyPlaceholder,
-          body: t.memories.fields.body,
-          kind: t.memories.fields.kind,
-          kinds: t.memories.kinds,
-          audience: t.memories.audience.label,
-          private: t.memories.audience.private,
-          connections: t.memories.audience.connections,
-          circles: { partner: t.people.relationships.partner, family: t.people.relationships.family, friend: t.people.relationships.friend, colleague: t.people.relationships.colleague },
-          save: t.memories.composer.record,
-          saveShared: t.memories.composer.recordShared,
-          saving: t.memories.composer.saving,
-          close: t.memories.composer.close,
-          discard: t.memories.composer.discard,
-          more: t.memories.composer.more,
-          giftHelp: t.memories.composer.giftHelp,
-          errors: t.errors,
-          media: mediaPickerText(t),
-        }}
+        tx={composerText(t)}
         giftBoxes={(await myGiftBoxes(uid)).filter((b) => b.status === "open" && b.my_role !== "child").map((b) => ({ id: b.id, label: t.memories.composer.toGift(b.child_name) }))}
       />
     </Page>

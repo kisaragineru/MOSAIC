@@ -56,17 +56,20 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
 
   // Quick note from Home, then a memory with an edit (version history)
   await pa.goto("/home");
-  await pa.getByLabel("Jot something down").fill("Walked by the West Lake at dawn.");
-  await pa.getByRole("button", { name: "Save" }).click();
-  await expect(pa.getByText("Saved.")).toBeVisible();
+  await pa.getByTestId("compose-inline").click();
+  const sheet = pa.getByRole("dialog", { name: "New post" });
+  await sheet.getByLabel("What happened / what's on your mind").fill("Walked by the West Lake at dawn.");
+  await sheet.getByRole("button", { name: "Post" }).click();
+  await expect(sheet).toBeHidden();
+  await expect(pa.getByText("Walked by the West Lake at dawn.")).toBeVisible();
   await pa.goto("/memories/new");
   await pa.getByRole("radio", { name: "Value" }).check({ force: true });
   await pa.getByLabel("What happened / what's on your mind").fill("Career comes first.");
-  await pa.getByRole("button", { name: "Add to journal" }).click();
+  await pa.getByRole("button", { name: "Post" }).click();
   await expect(pa).toHaveURL(/\/memories\/[0-9a-f-]+\?ok=saved/);
   await pa.getByRole("link", { name: "Edit" }).click();
   await pa.getByLabel("What happened / what's on your mind").fill("Family comes first.");
-  await pa.getByRole("button", { name: "Save" }).click();
+  await pa.getByRole("button", { name: "Save changes" }).click();
   await expect(pa.getByText("Earlier versions")).toBeVisible();
   await expect(pa.getByText("Career comes first.")).toBeVisible();
   // Accent-insensitive search on the timeline
@@ -101,7 +104,7 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   await expect(letter).toHaveAttribute("href", /kind=letter_to_future&reveal=\d{4}-\d{2}-\d{2}/);
   await letter.click();
   await pa.waitForURL(/\/memories\/new/);
-  await expect(pa.getByRole("radio", { name: "Letter to future me" })).toBeChecked();
+  await expect(pa.getByRole("heading", { level: 1, name: "A letter to your future self" })).toBeVisible();
   await expect(pa.locator('input[name="revealOn"]')).toHaveValue(/^\d{4}-\d{2}-\d{2}$/);
   await pa.goto("/tuvi");
   // Tapping a palace shows what it stands for.

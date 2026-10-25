@@ -45,15 +45,21 @@ test("records on a timeline, and a record shared with a connection", async ({ br
   await expect(hana.getByLabel("タイトル (任意)")).toHaveCount(0);
   await hana.getByLabel("あったこと・考えていること").fill("みんなで海に行って、夕日を見た。");
   await hana.getByRole("radio", { name: /つながっている全員/ }).check({ force: true });
-  await hana.getByRole("button", { name: "記録する" }).click();
+  // Under the button: who will see it.
+  await expect(hana.getByTestId("post-audience")).toHaveText("🔗 つながっている全員のタイムラインに届きます");
+  await hana.getByRole("button", { name: "投稿する" }).click();
   await hana.waitForURL(/\/memories\/[0-9a-f-]+\?ok=saved/);
   const record = new URL(hana.url()).pathname;
-  // Letters can't be shared: picking one swaps the audience for the opening day.
+  // A letter is its own way of writing (below the post form): an opening day, never shared.
   await hana.goto("/memories/new");
-  await expect(hana.getByLabel("手紙を開く日")).toBeHidden();
-  await hana.getByRole("radio", { name: /未来の自分への手紙/ }).check({ force: true });
+  await expect(hana.getByLabel("手紙を開く日")).toHaveCount(0);
+  await expect(hana.getByText("🔒 自分だけが見られます")).toBeVisible();
+  await hana.getByRole("link", { name: /未来の自分への手紙/ }).click();
+  await hana.waitForURL(/kind=letter_to_future/);
+  await expect(hana.getByRole("heading", { level: 1, name: "未来の自分への手紙" })).toBeVisible();
   await expect(hana.getByLabel("手紙を開く日")).toBeVisible();
-  await expect(hana.getByRole("radio", { name: /つながっている全員/ })).toBeHidden();
+  await expect(hana.getByRole("radio", { name: /つながっている全員/ })).toHaveCount(0);
+  await expect(hana.getByRole("button", { name: "手紙に封をする" })).toBeVisible();
   await hana.goto(record);
   await expect(hana.getByText("🔗 つながっている人に公開中")).toBeVisible();
 
@@ -75,7 +81,7 @@ test("records on a timeline, and a record shared with a connection", async ({ br
   // Hana makes it private again: gone for Sora.
   await hana.goto(`${record}?edit=1`);
   await hana.getByRole("radio", { name: /自分だけ/ }).check({ force: true });
-  await hana.getByRole("button", { name: "保存" }).click();
+  await hana.getByRole("button", { name: "変更を保存" }).click();
   await hana.waitForURL(/ok=saved/);
   await expect(hana.getByText("🔒 自分だけ")).toBeVisible();
   await sora.goto("/memories");
@@ -85,20 +91,20 @@ test("records on a timeline, and a record shared with a connection", async ({ br
 test("write in place from the floating button, or close it with ✕", async ({ browser }) => {
   const page = await user(browser, "ミオ");
   await page.goto("/memories");
-  await page.getByRole("button", { name: "書く" }).click();
-  const sheet = page.getByRole("dialog", { name: "いま、書く" });
+  await page.getByTestId("compose-fab").click();
+  const sheet = page.getByRole("dialog", { name: "新しい投稿" });
   await expect(sheet).toBeVisible();
   await expect(sheet.getByLabel("あったこと・考えていること")).toBeFocused();
   await sheet.getByLabel("あったこと・考えていること").fill("駅まで歩いて、金木犀の匂いがした。");
   await sheet.locator("label", { hasText: "気持ち" }).click();
   await expect(sheet.getByRole("radio", { name: /気持ち/ })).toBeChecked();
-  await sheet.getByRole("button", { name: "記録する" }).click();
+  await sheet.getByRole("button", { name: "投稿する" }).click();
   await expect(sheet).toBeHidden();
   await expect(page).toHaveURL(/\/memories$/);
   await expect(page.getByRole("link", { name: /金木犀の匂いがした/ })).toContainText("気持ち");
 
   // ✕ asks before throwing away what was written.
-  await page.getByRole("button", { name: "書く" }).click();
+  await page.getByTestId("compose-fab").click();
   await page.getByRole("dialog").getByLabel("あったこと・考えていること").fill("下書き");
   page.once("dialog", (d) => d.accept());
   await page.getByRole("dialog").getByRole("button", { name: "閉じる" }).last().click();
@@ -122,7 +128,7 @@ test("share by relationship, and a test companion from settings (development)", 
   await hana.getByLabel("あったこと・考えていること").fill("家族だけに伝えたいこと。");
   await hana.getByRole("radio", { name: /関係で選ぶ/ }).check({ force: true });
   await hana.getByRole("checkbox", { name: /家族/ }).check({ force: true });
-  await hana.getByRole("button", { name: "記録する" }).click();
+  await hana.getByRole("button", { name: "投稿する" }).click();
   await hana.waitForURL(/ok=saved/);
   await expect(hana.getByText(/家族に公開中/)).toBeVisible();
   await sora.goto("/memories?view=friends");
@@ -192,7 +198,7 @@ test("one-to-one comments on a shared record", async ({ browser }) => {
   await hana.goto("/memories/new");
   await hana.getByLabel("あったこと・考えていること").fill("はじめてパンを焼いた。");
   await hana.getByRole("radio", { name: /つながっている全員/ }).check({ force: true });
-  await hana.getByRole("button", { name: "記録する" }).click();
+  await hana.getByRole("button", { name: "投稿する" }).click();
   await hana.waitForURL(/\/memories\/[0-9a-f-]+\?ok=saved/);
   const record = new URL(hana.url()).pathname;
   await expect(hana.getByText("共有した相手がコメントすると、ここに届きます。")).toBeVisible();
@@ -269,7 +275,7 @@ test("a connection's page offers things to do: message, gift, ask, and conversat
   await sora.goto("/memories/new");
   await sora.getByLabel("あったこと・考えていること").fill("桜を見に行った。");
   await sora.getByRole("radio", { name: /つながっている全員/ }).check({ force: true });
-  await sora.getByRole("button", { name: "記録する" }).click();
+  await sora.getByRole("button", { name: "投稿する" }).click();
   await sora.waitForURL(/ok=saved/);
 
   // Sora's preview shows the same: the buttons Hana gets, and the shared record.
@@ -311,7 +317,7 @@ test("photos on a record: uploaded as chosen, a tidy block on the timeline, whol
   await picker.locator('input[type="file"]').setInputFiles(["tests/e2e/fixtures-photo.jpg", "tests/e2e/fixtures-photo.jpg", "tests/e2e/fixtures-photo.jpg"]);
   await expect(picker.locator('input[name="media"]')).toHaveCount(3);
   await hana.getByRole("radio", { name: /つながっている全員/ }).check({ force: true });
-  await hana.getByRole("button", { name: "記録する" }).click();
+  await hana.getByRole("button", { name: "投稿する" }).click();
   await hana.waitForURL(/\/memories\/[0-9a-f-]+\?ok=saved/);
   const gallery = hana.getByTestId("media-gallery");
   await expect(gallery.getByRole("img")).toHaveCount(3);
@@ -339,11 +345,11 @@ test("photos on a record: uploaded as chosen, a tidy block on the timeline, whol
 
   // A photo-only quick note from the floating composer.
   await hana.goto("/memories");
-  await hana.getByRole("button", { name: /書く/ }).click();
+  await hana.getByTestId("compose-fab").click();
   const sheet = hana.getByRole("dialog");
   await sheet.getByTestId("media-picker").locator('input[type="file"]').setInputFiles("tests/e2e/fixtures-photo.jpg");
   await expect(sheet.locator('input[name="media"]')).toHaveCount(1);
-  await sheet.getByRole("button", { name: /記録する/ }).click();
+  await sheet.getByRole("button", { name: "投稿する" }).click();
   await expect(hana.getByRole("dialog")).toHaveCount(0);
   await expect(hana.locator('[data-testid="media-grid"][data-count="1"]').first()).toBeVisible();
 });

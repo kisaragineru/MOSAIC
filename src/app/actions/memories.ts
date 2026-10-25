@@ -84,9 +84,11 @@ export async function quickMemoryAction(_prev: QuickState, form: FormData): Prom
   const uid = await requireUser();
   const data = fromForm(form);
   if (data.kind === "letter_to_future") return { ok: false, error: "invalid_input" };
+  const audience = audienceFromForm(form);
+  // Checked before saving, so a retry doesn't post twice.
+  if (audience.visibility === "circles" && audience.circles.length === 0) return { ok: false, error: "choose_audience" };
   const r = await attempt("memory.quick", async () => {
     const id = await createMemory(uid, data);
-    const audience = audienceFromForm(form);
     if (audience.visibility !== "private") await setMemoryAudience(uid, id, audience);
   });
   if (!r.ok) return { ok: false, error: r.error };

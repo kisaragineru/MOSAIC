@@ -16,7 +16,7 @@ type Counts = Map<string, { count: number; unread: number }>;
 type Previews = Map<string, CommentPreview[]>;
 type Media = Map<string, MediaItem[]>;
 
-export function Timeline({ t, locale, tz, days, compact = false, comments = new Map(), previews = new Map(), media = new Map(), avatars = new Map() }: { t: Dict; locale: Locale; tz: string; days: TimelineDay[]; compact?: boolean; comments?: Counts; previews?: Previews; media?: Media; avatars?: Map<string, string> }) {
+export function Timeline({ t, locale, tz, days, compact = false, comments = new Map(), previews = new Map(), media = new Map(), avatars = new Map(), me }: { t: Dict; locale: Locale; tz: string; days: TimelineDay[]; compact?: boolean; comments?: Counts; previews?: Previews; media?: Media; avatars?: Map<string, string>; /** My name and photo, shown on my own posts. */ me?: { name: string; src?: string } }) {
   const tl = t.memories.timeline;
   return (
     <ol className="space-y-5" aria-label={t.memories.title}>
@@ -35,7 +35,7 @@ export function Timeline({ t, locale, tz, days, compact = false, comments = new 
                     {KIND_ICON[it.entry.kind] ?? "•"}
                   </span>
                   {it.entry.mine ? (
-                    <Mine t={t} locale={locale} it={it} compact={compact} c={comments.get(it.entry.id)} p={previews.get(it.entry.id)} media={media.get(it.entry.id)} />
+                    <Mine t={t} locale={locale} it={it} compact={compact} c={comments.get(it.entry.id)} p={previews.get(it.entry.id)} media={media.get(it.entry.id)} me={me} />
                   ) : (
                     <Theirs t={t} it={it} compact={compact} c={comments.get(it.entry.id)} p={previews.get(it.entry.id)} media={media.get(it.entry.id)} src={avatars.get(it.entry.ownerId ?? "")} />
                   )}
@@ -82,14 +82,14 @@ function Comments({ t, items, total }: { t: Dict; items: CommentPreview[]; total
   );
 }
 
-function Mine({ t, locale, it, compact, c, p, media }: { t: Dict; locale: Locale; it: TimelineItem; compact: boolean; c?: { count: number; unread: number }; p?: CommentPreview[]; media?: MediaItem[] }) {
+function Mine({ t, locale, it, compact, c, p, media, me }: { t: Dict; locale: Locale; it: TimelineItem; compact: boolean; c?: { count: number; unread: number }; p?: CommentPreview[]; media?: MediaItem[]; me?: { name: string; src?: string } }) {
   const m = it.entry;
   const tl = t.memories.timeline;
   if (it.letter) {
     const written = new Intl.DateTimeFormat(locale, { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }).format(new Date(`${it.letter.writtenOn}T00:00:00Z`));
     return (
       <Link href={`/memories/${m.id}`} className="block rounded-2xl border border-violet-200 bg-linear-to-br from-violet-50 via-white to-amber-50 p-3.5 shadow-sm transition hover:border-violet-300">
-        <p className="text-sm font-semibold text-violet-900">{tl.letterArrived}</p>
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-violet-900">{me && <Avatar name={me.name} src={me.src} className="h-6 w-6 text-[10px]" />}{tl.letterArrived}</p>
         <p className="mb-2 text-xs text-violet-800/80">{tl.letterFrom(written, it.letter.days)}</p>
         {m.title && <p className="font-medium text-stone-900">{m.title}</p>}
         <p className={`whitespace-pre-line text-sm leading-relaxed text-stone-800 ${compact ? "line-clamp-3" : "line-clamp-6"}`}>{m.body}</p>
@@ -99,6 +99,7 @@ function Mine({ t, locale, it, compact, c, p, media }: { t: Dict; locale: Locale
   return (
     <Link href={`/memories/${m.id}`} className="block rounded-2xl border border-stone-200 bg-white p-3 transition hover:border-teal-300">
       <div className="mb-1 flex flex-wrap items-center gap-1.5">
+        {me && <Avatar name={me.name} src={me.src} className="h-6 w-6 text-[10px]" />}
         <Stamp t={t} it={it} />
         <Pill tone={m.kind === "letter_to_future" ? "violet" : "teal"}>{t.memories.kinds[m.kind as keyof Dict["memories"]["kinds"]]}</Pill>
         {m.audience !== "private" && (

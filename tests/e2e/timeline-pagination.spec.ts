@@ -11,9 +11,9 @@ test("AUD-13: the timeline pages back to the oldest record (no silent cap)", asy
   await page.waitForURL(/welcome/);
   await page.goto("/home");
   for (let i = 0; i < 52; i++) {
-    await page.goto("/home");
-    await page.getByLabel("Jot something down").fill(`note-${String(i).padStart(3, "0")}`);
-    await page.getByRole("button", { name: "Save" }).click();
+    await page.goto("/memories/new");
+    await page.getByLabel("What happened / what's on your mind").fill(`note-${String(i).padStart(3, "0")}`);
+    await page.getByRole("button", { name: "Post" }).click();
     await page.waitForURL(/ok=saved/);
   }
   await page.goto("/memories");
