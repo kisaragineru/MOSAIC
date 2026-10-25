@@ -84,6 +84,15 @@ test("direct messages: send, read, reply, react, edit, unsend, photos", async ({
   await expect(hana.getByText("元気だよ", { exact: true })).toBeVisible({ timeout: 15_000 });
   await expect(hana.getByText("↩ ハナ")).toBeVisible();
 
+  // Translate, under the original (which stays); here no AI is configured, so it says so. Then turn it off.
+  const menu = await actionsFor(hana, "元気だよ");
+  await expect(menu.getByText("翻訳のため、このメッセージだけをAI（Anthropic）に送ります。保存はされません。")).toBeVisible();
+  await menu.getByRole("button", { name: /翻訳/ }).click();
+  await expect(hana.getByTestId("translation")).toContainText("翻訳はいま使えません。");
+  await expect(hana.getByText("元気だよ", { exact: true })).toBeVisible();
+  await (await actionsFor(hana, "元気だよ")).getByRole("button", { name: "🌐 翻訳を解除" }).click();
+  await expect(hana.getByTestId("translation")).toHaveCount(0);
+
   // A reaction, seen on the other side.
   await (await actionsFor(hana, "元気だよ")).getByRole("button", { name: "😂" }).click();
   await expect(sora.getByRole("button", { name: "😂" })).toBeVisible({ timeout: 15_000 });

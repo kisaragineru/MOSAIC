@@ -18,6 +18,8 @@ import {
   unsendMessage,
   uploadPhoto,
 } from "@/server/services/dm";
+import { getLocale } from "@/lib/i18n/server";
+import { translateMessage } from "@/server/services/translate";
 import { attempt, safeNext, str, withParam } from "./util";
 
 // ── Called from the chat screen (return a result, no redirect) ──────────
@@ -40,6 +42,13 @@ export async function dmUnsend(messageId: string) {
 export async function dmReact(messageId: string, emoji: string | null) {
   const uid = await requireUser();
   return attempt("dm.react", () => reactToMessage(uid, messageId, emoji));
+}
+
+/** A translation of one message into the reader's language, shown under the original. */
+export async function dmTranslate(messageId: string) {
+  const uid = await requireUser();
+  const locale = await getLocale();
+  return attempt("dm.translate", () => translateMessage(uid, messageId, locale));
 }
 
 export async function dmTyping(conversationId: string) {

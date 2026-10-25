@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { dmEdit, dmReact, dmUnsend } from "@/app/actions/dm";
+import { dmEdit, dmReact, dmTranslate, dmUnsend } from "@/app/actions/dm";
 import type { DmMessage } from "@/server/services/dm";
 import { DmAvatar } from "./dm-avatar";
 import { firstUrl, LinkCard } from "./link-card";
@@ -28,6 +28,12 @@ export interface ChatText {
   save: string;
   cancel: string;
   copy: string;
+  translate: string;
+  untranslate: string;
+  translating: string;
+  translation: string;
+  translateSame: string;
+  translateNote: string;
   unsend: string;
   unsendConfirm: string;
   reply: string;
@@ -144,6 +150,9 @@ export function ChatView({
   const [replyTo, setReplyTo] = useState<Msg | null>(null);
   const [editing, setEditing] = useState<Msg | null>(null);
   const [menu, setMenu] = useState<Msg | null>(null);
+  // Translations the reader asked for, by message: shown under the original until turned off.
+  // Each remembers the text it translated, so an edited message drops its old translation.
+  const [translations, setTranslations] = useState<Record<string, { of: string; state: "loading" } | { of: string; state: "done"; text: string; same: boolean } | { of: string; state: "error"; error: string }>>({});
   const [viewer, setViewer] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const list = useRef<HTMLDivElement>(null);
@@ -516,6 +525,28 @@ export function ChatView({
     await dmReact(m.id, next);
     void sync();
   };
+  const translationOf = (m: Msg) => {
+    const x = translations[m.id];
+    return x && x.of === m.body ? x : null;
+  };
+  const untranslate = (m: Msg) => {
+    setMenu(null);
+    setTranslations((cur) => {
+      const next = { ...cur };
+      delete next[m.id];
+      return next;
+    });
+  };
+  const translate = async (m: Msg) => {
+    setMenu(null);
+    const of = m.body ?? "";
+    setTranslations((cur) => ({ ...cur, [m.id]: { of, state: "loading" } }));
+    const r = await dmTranslate(m.id).catch(() => ({ ok: false as const, error: "translate_failed" }));
+    setTranslations((cur) => {
+      if (!cur[m.id] || cur[m.id]!.of !== of) return cur; // turned off (or edited) meanwhile
+      return { ...cur, [m.id]: r.ok ? { of, state: "done", text: r.value.text, same: r.value.same } : { of, state: "error", error: r.error } };
+    });
+  };
   const unsend = async (m: Msg) => {
     setMenu(null);
     if (!window.confirm(tx.unsendConfirm)) return;
@@ -682,6 +713,7 @@ export function ChatView({
                     <Linkified text={m.body} />
                   </p>
                 )}
+                {m.body && translationOf(m) && <Translation x={translationOf(m)!} tx={tx} mine={mine} onClose={() => untranslate(m)} />}
                 {m.body && !m.pending && firstUrl(m.body) && <LinkCard url={firstUrl(m.body)!} mine={mine} />}
               </>
             )}
@@ -903,6 +935,18 @@ export function ChatView({
                   ⧉ {tx.copy}
                 </button>
               )}
+              {menu.body && !menu.pending && (
+                translationOf(menu) ? (
+                  <button type="button" onClick={() => untranslate(menu)} className="rounded-2xl px-4 py-3 text-left font-medium text-stone-800 hover:bg-stone-50">
+                    🌐 {tx.untranslate}
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => void translate(menu)} className="rounded-2xl px-4 py-3 text-left hover:bg-stone-50">
+                    <span className="block font-medium text-stone-800">🌐 {tx.translate}</span>
+                    <span className="mt-0.5 block text-[11px] leading-4 text-stone-500">{tx.translateNote}</span>
+                  </button>
+                )
+              )}
               {canEdit(menu) && <button type="button" onClick={() => startEdit(menu)} className="rounded-2xl px-4 py-3 text-left font-medium text-stone-800 hover:bg-stone-50">✎ {tx.edit}</button>}
               {menu.senderId === me && <button type="button" onClick={() => void unsend(menu)} className="rounded-2xl px-4 py-3 text-left font-medium text-rose-700 hover:bg-rose-50">⟲ {tx.unsend}</button>}
             </div>
@@ -919,6 +963,33 @@ export function ChatView({
           <img src={viewer} alt="" onClick={() => setViewer(null)} className="max-h-full max-w-full object-contain" />
         </div>
       )}
+    </div>
+  );
+}
+
+type TranslationState = { state: "loading" } | { state: "done"; text: string; same: boolean } | { state: "error"; error: string };
+
+/** A translation under the original message (the original always stays), with a way to turn it off. */
+function Translation({ x, tx, mine, onClose }: { x: TranslationState; tx: ChatText; mine: boolean; onClose: () => void }) {
+  return (
+    <div className={`mt-1 max-w-full rounded-2xl border border-dashed px-3 py-2 text-sm ${mine ? "border-teal-200 bg-teal-50/70" : "border-stone-300 bg-white/80"}`} data-testid="translation" aria-live="polite">
+      <p className="mb-0.5 flex items-center justify-between gap-3 text-[11px] font-semibold text-stone-500">
+        <span>🌐 {tx.translation}</span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+          className="rounded-full px-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
+          aria-label={tx.untranslate}
+        >
+          ✕
+        </button>
+      </p>
+      {x.state === "loading" && <p className="animate-pulse text-stone-500">{tx.translating}</p>}
+      {x.state === "error" && <p className="text-rose-700">{tx.errors[x.error] ?? tx.errors.generic}</p>}
+      {x.state === "done" && (x.same ? <p className="text-stone-500">{tx.translateSame}</p> : <p className="emoji-color whitespace-pre-wrap break-words text-stone-800">{x.text}</p>)}
     </div>
   );
 }

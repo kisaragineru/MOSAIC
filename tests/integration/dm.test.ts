@@ -15,6 +15,7 @@ import {
   hideConversation,
   leaveGroup,
   markRead,
+  messageText,
   openDirect,
   reactToMessage,
   renameGroup,
@@ -31,6 +32,7 @@ import { createMemory } from "@/server/services/memories";
 import { setMemoryAudience } from "@/server/services/memory-share";
 import { createShare, giveConsent, openComparison, revokeComparison } from "@/server/services/sharing";
 import { Pool } from "pg";
+import { translateMessage } from "@/server/services/translate";
 import { makeUser } from "../helpers/factory";
 import { TEST_MIGRATION_DATABASE_URL } from "../helpers/test-env";
 
@@ -46,6 +48,25 @@ async function connect(a: string, b: string) {
 const PNG = Uint8Array.from(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64"));
 
 describe("direct messages", () => {
+  it("translation reads only a message the reader can see, and says so when it isn't available", async () => {
+    const hana = await makeUser("Hana");
+    const sora = await makeUser("Sora");
+    const x = await makeUser("X");
+    await connect(hana.userId, sora.userId);
+    const c = await openDirect(hana.userId, sora.userId);
+    const m = await sendMessage(hana.userId, c, { kind: "text", body: "Xin chào, bạn khỏe không?" });
+    expect(await messageText(sora.userId, m)).toBe("Xin chào, bạn khỏe không?");
+    await expect(messageText(x.userId, m)).rejects.toMatchObject({ code: "not_found" });
+    // Without an AI key the button explains that translation is unavailable; nothing is sent.
+    const key = process.env.ANTHROPIC_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+    try {
+      await expect(translateMessage(sora.userId, m, "ja")).rejects.toMatchObject({ code: "translate_unavailable" });
+    } finally {
+      if (key !== undefined) process.env.ANTHROPIC_API_KEY = key;
+    }
+  });
+
   it("only between connected people; one conversation per pair; read receipts and unread counts", async () => {
     const hana = await makeUser("Hana");
     const sora = await makeUser("Sora");

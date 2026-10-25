@@ -172,6 +172,13 @@ export async function dmChanges(userId: string, conversationId: string, since: s
   return r.rows.map((x) => toMessage(x.dm_messages)).sort(byTime);
 }
 
+/** One message's text, for a member who can see it (for translating it on request). */
+export async function messageText(userId: string, messageId: string): Promise<string | null> {
+  const id = uuid.parse(messageId);
+  const r = await run(userId, (tx) => tx.execute<{ body: string | null }>(sql`select dm_message_text(${id}) as body`));
+  return r.rows[0]?.body ?? null;
+}
+
 export async function dmAttachment(userId: string, attachmentId: string): Promise<{ mime: string; bytes: Buffer } | null> {
   const id = uuid.safeParse(attachmentId);
   if (!id.success) return null;
