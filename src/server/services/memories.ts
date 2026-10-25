@@ -208,9 +208,6 @@ export async function listMemories(userId: string, filters: unknown = {}): Promi
     const today = await userToday(tx, userId);
     const conds: SQL[] = [eq(memoryEntries.userId, userId)];
     if (f.kind) conds.push(f.kind === "letter_to_future" || f.kind === "note" ? eq(memoryEntries.kind, f.kind) : sql`${f.kind} = any(${memoryEntries.labels})`);
-    // A letter still sealed is not part of the flow of days (it waits on its own shelf), unless
-    // letters are what is being looked at.
-    if (f.kind !== "letter_to_future") conds.push(sql`not (${memoryEntries.kind} = 'letter_to_future' and ${memoryEntries.revealOn} > ${today}::date)`);
     const onTimeline = timelineDate(today);
     if (f.from) conds.push(gte(onTimeline, f.from));
     if (f.to) conds.push(lte(onTimeline, f.to));

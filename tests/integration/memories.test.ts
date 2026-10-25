@@ -96,9 +96,8 @@ describe("memories & timeline", () => {
     const u = await makeUser();
     const before = await createMemory(u.userId, { body: "older note", occurredOn: "2026-01-10" });
     const letter = await createMemory(u.userId, { kind: "letter_to_future", body: "Hello from March", revealOn: "2099-01-01" });
-    // Still sealed: not in the flow of days, but waiting on its own shelf (and listed when letters are asked for).
-    expect((await listMemories(u.userId)).map((m) => m.id)).toEqual([before]);
-    expect((await listMemories(u.userId, { kind: "letter_to_future" })).find((m) => m.id === letter)).toMatchObject({ sealed: true, body: null });
+    // Still sealed: on the timeline as a sealed envelope, and on its own shelf too.
+    expect((await listMemories(u.userId)).find((m) => m.id === letter)).toMatchObject({ sealed: true, body: null });
     expect(await sealedLetters(u.userId)).toEqual([{ id: letter, writtenOn: expect.any(String), revealOn: "2099-01-01" }]);
     expect(await arrivedLetters(u.userId)).toEqual([]);
     // Written on 1 March, opened on 15 June (both in the past now).
