@@ -18,6 +18,7 @@ import { Button, Card, Field, Input, Notice, Page, Pill, Select, Textarea } from
 import { getT } from "@/lib/i18n/server";
 import { todayIn } from "@/lib/validation/common";
 import { getAccount } from "@/server/services/account";
+import { pairSummary } from "@/server/services/pair-history";
 import { requireUser } from "@/server/auth/session";
 import { dmOpenForConnectionAction } from "@/app/actions/dm";
 import { Avatar } from "@/components/avatar";
@@ -75,6 +76,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
   const categories = await listCategories();
   const connection = await connectionForPerson(uid, person.connectionSessionId);
   const today = todayIn((await getAccount(uid)).profile.timeZone);
+  const together = connection?.status === "active" ? await pairSummary(uid, connection.id, (await getAccount(uid)).profile.timeZone) : null;
   const fmt = (y: number, m: number, d: number, withYear = true) =>
     new Intl.DateTimeFormat(locale, { ...(withYear ? { year: "numeric" } : {}), month: "long", day: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(y, m - 1, d)));
   const back = `/people/${person.id}`;
@@ -113,6 +115,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
             <span className="min-w-0 flex-1">
               <span className="block font-semibold text-stone-900">{t.people.theirPage(connection.otherName)}</span>
               <span className="block text-xs text-stone-600">{t.people.theirPageSub}</span>
+              {together && <span className="mt-1 block text-xs font-semibold text-teal-800" data-testid="pair-line">🌱 {t.pair.personLine(together.days, together.messages)}</span>}
             </span>
             <span aria-hidden className="shrink-0 text-lg text-teal-700">→</span>
           </span>

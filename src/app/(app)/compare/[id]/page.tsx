@@ -27,6 +27,9 @@ import { TuviPair } from "@/components/tuvi-pair";
 import { TuviThemes } from "@/components/tuvi-themes";
 import { themeLabels } from "@/lib/tuvi/theme-labels";
 import { pairReadings } from "@/lib/compare/tuvi-pair";
+import { PairHistoryCard } from "@/components/pair-history";
+import { pairHistory } from "@/server/services/pair-history";
+import { getAccount } from "@/server/services/account";
 import { chartView } from "@/lib/tuvi/chart-view";
 import { nominalAge } from "@/lib/tuvi/engine";
 import { interpret } from "@/lib/tuvi/interpret";
@@ -118,6 +121,8 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
   const count = (k: string) => items.filter((i) => i.kind === k).length;
   const cc = t.compare;
   const active = v.status === "active";
+  // Our story: the same for both people.
+  const story = active ? await pairHistory(uid, v, (await getAccount(uid)).profile.timeZone) : null;
   const other = (await listComparisons(uid)).find((c) => c.id === v.id)?.otherId ?? null;
   const pics = await avatarUrls(uid, [uid, other]);
   // Conversation starters: from what the two of you share, each one action away.
@@ -177,6 +182,8 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
           </div>
         )}
       </section>
+
+      {story && <PairHistoryCard h={story} t={t} locale={locale} />}
 
       {v.status === "revoked" && <Notice kind="warning">{cc.ended}</Notice>}
 

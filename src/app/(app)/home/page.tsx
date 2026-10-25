@@ -27,6 +27,9 @@ import { mosaicLabels, portrait, tileViews } from "@/server/services/mosaic";
 import { Mosaic } from "@/components/mosaic";
 import { KnowledgeCard } from "@/components/knowledge-card";
 import { StarterChecklist } from "@/components/starter-checklist";
+import { pairDate, pairEventText } from "@/components/pair-history";
+import { recentAnniversaries } from "@/server/services/pair-history";
+import { dmOpenForConnectionAction } from "@/app/actions/dm";
 import { knowledge } from "@/server/services/knowledge";
 import { lookBackDue, monthKey } from "@/server/services/monthly";
 import { lifeStages } from "@/lib/tuvi/interpret";
@@ -72,6 +75,23 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         resume={!account.profile.onboardedAt}
         done={{ chart: !!chart, answers: know.parts.answers >= 3, bio: know.parts.bio, record: know.parts.records > 0, connect: comparisons.some((c) => c.status === "active") }}
       />
+      {/* Anniversaries with the people you're connected to (today, or in the last few days). */}
+      {(await recentAnniversaries(uid, account.profile.timeZone)).map((a) => (
+        <section key={a.sessionId} className="rounded-3xl bg-linear-to-br from-amber-50 via-rose-50 to-violet-50 p-5 shadow-sm ring-1 ring-amber-100" data-testid="anniversary">
+          <p className="font-bold text-stone-900">
+            {a.today ? t.pair.anniversaryToday(a.name, pairEventText(a.event, t)) : t.pair.anniversaryRecent(a.name, pairEventText(a.event, t), pairDate(a.event.on, locale))}
+          </p>
+          <p className="mt-1 text-sm text-stone-600">{t.pair.anniversarySub}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <form action={dmOpenForConnectionAction}>
+              <input type="hidden" name="sessionId" value={a.sessionId} />
+              <input type="hidden" name="back" value="/home" />
+              <Button type="submit">💬 {t.pair.anniversarySend}</Button>
+            </form>
+            <Link href={`/compare/${a.sessionId}`} className="text-sm font-semibold text-teal-700 underline underline-offset-4">🌱 {t.pair.anniversaryOpen} →</Link>
+          </div>
+        </section>
+      ))}
       {/* Posting: the same sheet as on records. */}
       <QuickComposer trigger="inline" tx={composerText(t)} canShare={(await shareTargets(uid)).length > 0} giftBoxes={(await myGiftBoxes(uid)).filter((b) => b.status === "open" && b.my_role !== "child").map((b) => ({ id: b.id, label: t.memories.composer.toGift(b.child_name) }))} />
       <Card title={t.home.recent}>

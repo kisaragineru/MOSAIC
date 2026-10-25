@@ -69,6 +69,12 @@ test("QR connection: preview of what others see, who is waiting, results first",
 
   // Once both agree the results come first; what is shared stays in plain view below.
   await expect(a.getByTestId("pref-items").getByText("お茶", { exact: true })).toHaveCount(2);
+  // Our story: the same for both — connected today, nothing sent yet, what both share.
+  const story = a.getByTestId("pair-history");
+  await expect(story).toContainText("ふたりの歩み");
+  await expect(story).toContainText("今日");
+  await expect(story).toContainText("QRでつながった");
+  await expect(story).toContainText("公開し合いはじめた");
   const compareUrl = a.url();
   await b.goto(compareUrl.replace(/^https?:\/\/[^/]+/, "").split("?")[0]!);
   await expect(b.getByRole("heading", { name: "ハナさんを知る" })).toBeVisible();
