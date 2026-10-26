@@ -35,6 +35,10 @@ export async function generateStructured<S extends z.ZodType>(opts: {
   user: string;
   schema: S;
   maxTokens?: number;
+  /** A tighter limit for calls that must finish inside one hosted request (no retry then). */
+  timeoutMs?: number;
+  /** How much the model reasons before answering ("low" is faster). */
+  effort?: "low" | "medium" | "high";
 }): Promise<{ ok: true; data: z.infer<S> } | { ok: false; reason: AiFailure }> {
   const c = getClient();
   if (!c) return { ok: false, reason: "not_configured" };
@@ -44,10 +48,10 @@ export async function generateStructured<S extends z.ZodType>(opts: {
       max_tokens: opts.maxTokens ?? 4000,
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
-      output_config: { effort: "medium", format: betaZodOutputFormat(opts.schema) },
+      output_config: { effort: opts.effort ?? "medium", format: betaZodOutputFormat(opts.schema) },
       system: opts.system,
       messages: [{ role: "user", content: opts.user }],
-    });
+    }, opts.timeoutMs ? { timeout: opts.timeoutMs, maxRetries: 0 } : undefined);
     // Check the stop reason BEFORE reading content: a refusal carries no usable output.
     if (response.stop_reason === "refusal") return { ok: false, reason: "refused" };
     const text = response.content.find((b) => b.type === "text")?.text ?? "";

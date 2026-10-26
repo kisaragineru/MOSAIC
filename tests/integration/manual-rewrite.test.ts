@@ -4,10 +4,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const ai = vi.hoisted(() => ({ configured: true, calls: [] as { system: string; user: string }[] }));
 vi.mock("@/server/ai/claude", () => ({
   aiConfigured: () => ai.configured,
-  generateStructured: async (o: { system: string; user: string }) => {
+  generateStructured: async (o: { system: string; user: string; timeoutMs?: number }) => {
+    if (!o.timeoutMs || o.timeoutMs > 26_000) throw new Error("each call must fit a hosted request");
     ai.calls.push(o);
-    const ids = (JSON.parse(o.user) as { sections: { id: string }[] }).sections.map((s) => s.id);
-    return { ok: true, data: { sections: ids.map((id) => ({ id, paragraphs: [`REWRITTEN ${id}`] })) } };
+    const { chapter } = JSON.parse(o.user) as { chapter: { id: string } };
+    return { ok: true, data: { paragraphs: [`REWRITTEN ${chapter.id}`] } };
   },
 }));
 
@@ -43,12 +44,13 @@ describe("manual rewritten by AI", () => {
     await setAiOptIn(u.userId, true);
 
     expect(await rewriteManual(u.userId, "en")).toEqual({ ok: true });
-    const sent = JSON.parse(ai.calls[0]!.user) as { name: string; sections: { id: string; text: string }[] };
-    expect(sent.name).toBe("Hana");
-    expect(sent.sections.map((s) => s.id)).toContain("summary");
-    expect(sent.sections.find((s) => s.id === "future")!.text).toContain("Learn to swim");
-    // Only the prose sections go; the axis chapters keep their own portraits.
-    expect(sent.sections.some((s) => ["self", "mind", "people", "life", "intro"].includes(s.id))).toBe(false);
+    // One request per chapter (each fits inside a hosted request's time limit).
+    const sent = ai.calls.map((c) => JSON.parse(c.user) as { name: string; chapter: { id: string; text: string } });
+    expect(sent.every((x) => x.name === "Hana")).toBe(true);
+    expect(sent.map((x) => x.chapter.id)).toContain("summary");
+    expect(sent.find((x) => x.chapter.id === "future")!.chapter.text).toContain("Learn to swim");
+    // Only the prose chapters go; the axis chapters keep their own portraits.
+    expect(sent.some((x) => ["self", "mind", "people", "life", "intro"].includes(x.chapter.id))).toBe(false);
     expect(ai.calls[0]!.system).toMatch(/ONLY the facts/);
 
     const r = await getManualRewrite(u.userId, "en");

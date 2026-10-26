@@ -1479,7 +1479,7 @@ export const vi: Dict = {
       lead: "Từ phần MOSAIC đã viết, AI (Claude) đọc ra cả ý nghĩa của những câu trả lời ngắn và viết lại từng chương thành một bài đọc. Bản viết lại chỉ hiển thị cho bạn và không dùng trong cẩm nang bạn chia sẻ.",
       privacy: "Khi viết lại, nội dung cẩm nang này được gửi đến nhà cung cấp AI (Anthropic).",
       button: "Viết lại bằng AI",
-      pending: "Đang viết lại… (khoảng 30 giây)",
+      progress: (done: number, all: number) => `Đang viết lại… ${done} / ${all} chương`,
       redo: "Viết lại lần nữa",
       clear: "Quay về bản của MOSAIC",
       showing: (date: string) => `Đang hiển thị bản AI viết lại (${date})`,

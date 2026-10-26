@@ -10,8 +10,8 @@ import { buildManual, type ManualBlock } from "@/server/services/manual";
 import { getManualRewrite, REWRITABLE } from "@/server/services/manual-rewrite";
 import { aiConfigured } from "@/server/ai/claude";
 import { getAccount } from "@/server/services/account";
-import { clearManualRewriteAction, rewriteManualAction } from "@/app/actions/manual";
-import { PendingButton } from "@/components/pending-button";
+import { clearManualRewriteAction } from "@/app/actions/manual";
+import { ManualRewriter } from "@/components/manual-rewriter";
 
 // Literal class strings (Tailwind only generates classes it can see).
 const HUE: Record<Chapter, { chip: string; ring: string }> = {
@@ -216,11 +216,11 @@ export default async function ManualPage({ searchParams }: { searchParams: Promi
           <p className="mt-2 text-xs leading-5 text-stone-500">{ai.reason.not_configured}</p>
         ) : (
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <form action={rewriteManualAction}>
-              <PendingButton pending={ai.pending} className="rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-800">
-                {rewrite ? ai.redo : ai.button}
-              </PendingButton>
-            </form>
+            <ManualRewriter
+              sections={m.sections.filter((x) => (REWRITABLE as readonly string[]).includes(x.id) && !x.locked).map((x) => x.id)}
+              label={rewrite ? ai.redo : ai.button}
+              labels={{ progress: ai.progress, reasons: ai.reason, fallback: ai.reason.unavailable! }}
+            />
             {rewrite && (
               <form action={clearManualRewriteAction}>
                 <button type="submit" className="text-xs text-stone-500 underline underline-offset-4 hover:text-stone-800">{ai.clear}</button>
