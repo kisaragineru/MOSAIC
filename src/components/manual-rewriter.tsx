@@ -8,7 +8,7 @@ import { refreshManualAction, rewriteManualSectionAction } from "@/app/actions/m
  * limit), showing how far along it is; the page reloads when every chapter is done. A failure stops
  * there and says why; chapters already rewritten are kept.
  */
-export function ManualRewriter({ sections, label, labels }: { sections: string[]; label: string; labels: { progress: (done: number, all: number) => string; reasons: Record<string, string>; fallback: string } }) {
+export function ManualRewriter({ sections, label, labels }: { sections: string[]; label: string; labels: { /** "… {done} / {all} …" (a string: functions can't cross to the browser). */ progress: string; reasons: Record<string, string>; fallback: string } }) {
   const router = useRouter();
   const [done, setDone] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +34,7 @@ export function ManualRewriter({ sections, label, labels }: { sections: string[]
   return (
     <div className="space-y-2">
       <button type="button" onClick={run} disabled={busy || sections.length === 0} aria-busy={busy} className="rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-800 disabled:cursor-wait disabled:opacity-70">
-        {busy ? labels.progress(done, sections.length) : label}
+        {busy ? labels.progress.replace("{done}", String(done)).replace("{all}", String(sections.length)) : label}
       </button>
       {busy && (
         <div className="h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-violet-100" role="progressbar" aria-valuenow={done} aria-valuemin={0} aria-valuemax={sections.length}>

@@ -1479,7 +1479,7 @@ export const ja: Dict = {
       lead: "MOSAICの文章をもとに、AI（Claude）が短い答えの意味まで読みとって、各章を読み物として書き直します。書き直した文章はあなたにだけ表示され、共有した説明書には使われません。",
       privacy: "書き直すときは、この説明書の内容がAIの提供元（Anthropic）に送られます。",
       button: "AIで書き直す",
-      progress: (done: number, all: number) => `書き直しています… ${done} / ${all}章`,
+      progress: "書き直しています… {done} / {all}章",
       redo: "もう一度書き直す",
       clear: "MOSAICの文章に戻す",
       showing: (date: string) => `AIが書き直した文章を表示中（${date}）`,

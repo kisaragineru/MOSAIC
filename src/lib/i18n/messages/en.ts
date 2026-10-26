@@ -1477,7 +1477,7 @@ export const en = {
       lead: "Starting from MOSAIC's text, AI (Claude) reads what even your short answers suggest and rewrites each chapter as something to read. The rewrite is shown only to you and is never used in a manual you share.",
       privacy: "Rewriting sends this manual's content to the AI provider (Anthropic).",
       button: "Rewrite with AI",
-      progress: (done: number, all: number) => `Rewriting… ${done} / ${all} chapters`,
+      progress: "Rewriting… {done} / {all} chapters",
       redo: "Rewrite again",
       clear: "Back to MOSAIC's text",
       showing: (date: string) => `Showing the AI rewrite (${date})`,
