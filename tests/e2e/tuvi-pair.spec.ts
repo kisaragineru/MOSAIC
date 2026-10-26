@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Browser } from "@playwright/test";
+import { setBirthTime } from "./birth-time";
 
 async function user(browser: Browser, name: string, birth: { date: string; time: string; sex: "male" | "female" }) {
   const ctx = await browser.newContext({ locale: "ja-JP", viewport: { width: 412, height: 860 }, extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.9.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
@@ -15,7 +16,7 @@ async function user(browser: Browser, name: string, birth: { date: string; time:
   await expect(page.getByRole("heading", { name: `こんにちは、${name}さん` })).toBeVisible();
   await page.goto("/tuvi");
   await page.getByLabel("生年月日 (新暦（グレゴリオ暦）)").fill(birth.date);
-  await page.getByLabel("出生時刻（現地の時計）").fill(birth.time);
+  await setBirthTime(page, birth.time);
   await page.getByLabel("伝統的な計算で使う性別").selectOption(birth.sex);
   await page.getByRole("button", { name: "保存して計算" }).click();
   await expect(page.getByTestId("tuvi-chart")).toBeVisible();

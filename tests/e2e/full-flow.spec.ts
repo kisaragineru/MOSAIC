@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { setBirthTime } from "./birth-time";
 
 const PASSWORD = "e2e correct horse battery";
 
@@ -82,7 +83,7 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   // Tử Vi
   await pa.goto("/tuvi");
   await pa.getByLabel("Date of birth (Solar (Gregorian))").fill("1990-06-07");
-  await pa.getByLabel("Birth time (local clock)").fill("06:30");
+  await setBirthTime(pa, "06:30");
   await pa.getByLabel("Sex used by the traditional method").selectOption("male");
   await pa.getByRole("button", { name: "Save & calculate" }).click();
   await expect(pa.getByTestId("tuvi-chart")).toBeVisible();

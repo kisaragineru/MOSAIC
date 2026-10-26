@@ -564,6 +564,8 @@ export const ja: Dict = {
     lunarLeap: "閏月（tháng nhuận）",
     timeKnown: "出生時刻がわかる",
     time: "出生時刻（現地の時計）",
+    timeHour: "時",
+    timeMinute: "分",
     timeZone: "出生地のタイムゾーン",
     place: "出生地（任意・メモ用）",
     sex: "伝統的な計算で使う性別",

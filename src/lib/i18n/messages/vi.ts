@@ -564,6 +564,8 @@ export const vi: Dict = {
     lunarLeap: "Tháng nhuận",
     timeKnown: "Tôi biết giờ sinh",
     time: "Giờ sinh (giờ địa phương)",
+    timeHour: "Giờ",
+    timeMinute: "Phút",
     timeZone: "Múi giờ nơi sinh",
     place: "Nơi sinh (không bắt buộc, để bạn tham khảo)",
     sex: "Giới tính theo phép tính truyền thống",

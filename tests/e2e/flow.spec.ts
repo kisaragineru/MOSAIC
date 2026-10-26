@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Browser } from "@playwright/test";
+import { setBirthTime } from "./birth-time";
 
 async function newUser(browser: Browser) {
   const ctx = await browser.newContext({ locale: "ja-JP", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.8.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
@@ -83,7 +84,7 @@ test("Tử Vi: plain words first, and a guide for beginners", async ({ browser }
   const { ctx, page } = await newUser(browser);
   await page.goto("/tuvi");
   await page.getByLabel(/^生年月日/).fill("1990-06-07");
-  await page.getByLabel("出生時刻（現地の時計）").fill("06:30");
+  await setBirthTime(page, "06:30");
   await page.getByRole("button", { name: "保存して計算" }).click();
   await expect(page.getByText("ひとことで言うと：")).toBeVisible();
   await expect(page.getByText("💡 かんたんに言うと").first()).toBeVisible();

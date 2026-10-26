@@ -1,6 +1,7 @@
 import { execSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
+import { setBirthTime } from "./birth-time";
 
 const E2E_OWNER_DB = process.env.E2E_MIGRATION_DATABASE_URL ?? "postgres://mosaic_owner:owner_dev_pw@localhost:5432/mosaic_e2e";
 
@@ -28,7 +29,7 @@ test("a new account is guided: the chart (not skippable) and its tour, three que
   await expect(page.getByText(/つながった人との相性や、お互いの取扱説明書も/)).toBeVisible();
   await expect(page.getByText(/生年月日と時刻は、あなたにしか見えません/)).toBeVisible();
   await page.getByLabel("生年月日 (新暦（グレゴリオ暦）)").fill("1990-06-07");
-  await page.getByLabel("出生時刻（現地の時計）").fill("06:30");
+  await setBirthTime(page, "06:30");
   await page.getByLabel("伝統的な計算で使う性別").selectOption("male");
   await page.getByRole("button", { name: "命盤をつくる" }).click();
 

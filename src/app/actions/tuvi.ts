@@ -7,6 +7,10 @@ import { attempt, bool, safeNext, str, withParam } from "./util";
 
 export async function saveBirthAction(form: FormData) {
   const uid = await requireUser();
+  // The time comes as hour and minute pickers (an hour alone means on the hour; no hour, no time).
+  const hour = str(form, "birthHour");
+  const minute = str(form, "birthMinute");
+  const time = form.has("birthHour") ? (hour ? `${hour}:${minute || "00"}` : "") : str(form, "birthTime");
   const r = await attempt("tuvi.save", () =>
     saveBirthProfile(uid, {
       calendarInput: str(form, "calendarInput"),
@@ -16,8 +20,8 @@ export async function saveBirthAction(form: FormData) {
       lunarDay: str(form, "lunarDay"),
       lunarLeap: bool(form, "lunarLeap"),
       // The guide's form has no checkbox: a time given means it is known.
-      timeKnown: str(form, "timeFromInput") === "1" ? !!str(form, "birthTime") : bool(form, "timeKnown"),
-      birthTime: str(form, "timeFromInput") === "1" || bool(form, "timeKnown") ? str(form, "birthTime") : "",
+      timeKnown: str(form, "timeFromInput") === "1" ? !!time : bool(form, "timeKnown"),
+      birthTime: str(form, "timeFromInput") === "1" || bool(form, "timeKnown") ? time : "",
       timeZone: str(form, "timeZone"),
       placeLabel: str(form, "placeLabel"),
       sex: str(form, "sex") || "unspecified",

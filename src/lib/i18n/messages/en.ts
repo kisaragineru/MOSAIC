@@ -562,6 +562,8 @@ export const en = {
     lunarLeap: "Leap month (tháng nhuận)",
     timeKnown: "I know my birth time",
     time: "Birth time (local clock)",
+    timeHour: "Hour",
+    timeMinute: "Minute",
     timeZone: "Time zone of birthplace",
     place: "Birthplace (optional, for your reference)",
     sex: "Sex used by the traditional method",

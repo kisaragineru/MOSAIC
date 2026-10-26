@@ -44,12 +44,12 @@ export function BirthForm({ t, p, needs, back, simple = false }: { t: Dict; p: T
   const time = simple ? (
     <>
       <input type="hidden" name="timeFromInput" value="1" />
-      <Field label={t.tuvi.time} hint={t.welcome.timeHint}><Input type="time" name="birthTime" defaultValue={p?.birthTime?.slice(0, 5) ?? ""} /></Field>
+      <TimeSelect t={t} value={p?.birthTime} hint={t.welcome.timeHint} />
     </>
   ) : (
     <>
       <Checkbox name="timeKnown" defaultChecked={p ? p.timeKnown : true} label={t.tuvi.timeKnown} />
-      <Field label={t.tuvi.time}><Input type="time" name="birthTime" defaultValue={p?.birthTime?.slice(0, 5) ?? ""} /></Field>
+      <TimeSelect t={t} value={p?.birthTime} />
     </>
   );
   const zone = (
@@ -110,4 +110,32 @@ export function BirthForm({ t, p, needs, back, simple = false }: { t: Dict; p: T
       )}
       <Button type="submit" className="w-full">{simple ? t.welcome.tuviMake : t.tuvi.compute}</Button>
     </form>  );
+}
+
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
+
+/**
+ * The birth time as two plain pickers (hour, minute) rather than the phone's clock dialog, which
+ * the app cannot size or translate. Left at "--", the time is unknown.
+ */
+function TimeSelect({ t, value, hint }: { t: Dict; value: string | null | undefined; hint?: string }) {
+  const [h, m] = value ? value.slice(0, 5).split(":") : ["", ""];
+  return (
+    <fieldset className="space-y-1" role="group" aria-label={t.tuvi.time}>
+      <legend className="mb-1 text-sm font-medium text-stone-700">{t.tuvi.time}</legend>
+      <div className="flex items-center gap-2">
+        <Select name="birthHour" aria-label={t.tuvi.timeHour} defaultValue={h ?? ""} className="w-24">
+          <option value="">--</option>
+          {HOURS.map((x) => <option key={x} value={x}>{x}</option>)}
+        </Select>
+        <span aria-hidden className="text-lg font-semibold text-stone-500">:</span>
+        <Select name="birthMinute" aria-label={t.tuvi.timeMinute} defaultValue={m ?? ""} className="w-24">
+          <option value="">--</option>
+          {MINUTES.map((x) => <option key={x} value={x}>{x}</option>)}
+        </Select>
+      </div>
+      {hint && <span className="block text-xs text-stone-500">{hint}</span>}
+    </fieldset>
+  );
 }

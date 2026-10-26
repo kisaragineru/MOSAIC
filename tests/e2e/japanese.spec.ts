@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
+import { setBirthTime } from "./birth-time";
 
 test("Japanese UI end to end: auto-detected, registration, question, Tử Vi, gifts", async ({ browser }) => {
   const ctx = await browser.newContext({ locale: "ja-JP", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9,en;q=0.8" } });
@@ -28,7 +29,7 @@ test("Japanese UI end to end: auto-detected, registration, question, Tử Vi, gi
 
   await page.goto("/tuvi");
   await page.getByLabel("生年月日 (新暦（グレゴリオ暦）)").fill("1990-06-07");
-  await page.getByLabel("出生時刻（現地の時計）").fill("06:30");
+  await setBirthTime(page, "06:30");
   await page.getByLabel("伝統的な計算で使う性別").selectOption("male");
   await page.getByRole("button", { name: "保存して計算" }).click();
   await expect(page.getByTestId("tuvi-chart")).toBeVisible();
