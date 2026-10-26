@@ -61,6 +61,7 @@ test("a new account is guided: the chart (not skippable) and its tour, three que
   // A clear end, then what the guide made: the chart's word, the first tile, the manual.
   const done = page.getByTestId("guide-finished");
   await expect(done.getByRole("heading", { name: "はじめてガイド、完了です！" })).toBeVisible();
+  await expect(page.getByTestId("guide-achievements").locator('li[data-done="true"]')).toHaveCount(3);
   await expect(done).toContainText("あなたの本質は「");
   await expect(done).toContainText("モザイクの最初のタイル");
   await expect(done).toContainText(/文字・\d+章が書けました/);

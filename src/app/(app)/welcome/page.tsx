@@ -154,7 +154,7 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
         </section>
       )}
 
-      {step === 6 && <Finished uid={uid} t={t} locale={locale} tile={st.tile} />}
+      {step === 6 && <Finished uid={uid} t={t} locale={locale} tile={st.tile} answered={st.left.length === 0} />}
     </main>
   );
 }
@@ -213,18 +213,34 @@ async function ChartResult({ t, locale, tv }: { t: Awaited<ReturnType<typeof get
   );
 }
 
-// Little squares of colour around the finish (where, how big, which colour, at what angle).
+// Confetti that falls across the finish (where, how big, which colour, when and how fast).
 const CONFETTI = [
-  "left-[6%] top-[12%] h-3 w-2 rotate-12 bg-amber-300",
-  "left-[18%] top-[30%] h-2 w-2 -rotate-6 bg-rose-300",
-  "left-[10%] top-[62%] h-2.5 w-1.5 rotate-45 bg-sky-200",
-  "left-[28%] top-[8%] h-1.5 w-3 -rotate-12 bg-white/80",
-  "right-[8%] top-[10%] h-3 w-2 -rotate-12 bg-rose-300",
-  "right-[20%] top-[26%] h-2 w-2 rotate-12 bg-amber-200",
-  "right-[12%] top-[58%] h-2.5 w-1.5 -rotate-45 bg-teal-200",
-  "right-[30%] top-[6%] h-1.5 w-3 rotate-6 bg-white/80",
-  "left-[40%] top-[88%] h-2 w-2 rotate-45 bg-amber-300",
-  "right-[38%] top-[90%] h-2 w-1.5 -rotate-12 bg-rose-200",
+  "left-[2%] h-3 w-2 bg-amber-300 [animation-delay:0s] [animation-duration:2.4s]",
+  "left-[6%] h-2 w-2 bg-white [animation-delay:0.75s] [animation-duration:3.2s]",
+  "left-[10%] h-2.5 w-1.5 bg-amber-200 [animation-delay:0.3s] [animation-duration:3s]",
+  "left-[14%] h-1.5 w-3 bg-rose-300 [animation-delay:1.05s] [animation-duration:2.8s]",
+  "left-[17%] h-2 w-1 bg-teal-200 [animation-delay:0.6s] [animation-duration:2.6s]",
+  "left-[21%] h-3 w-2 bg-rose-200 [animation-delay:0.15s] [animation-duration:2.4s]",
+  "left-[25%] h-2 w-2 bg-sky-200 [animation-delay:0.9s] [animation-duration:3.2s]",
+  "left-[29%] h-2.5 w-1.5 bg-violet-200 [animation-delay:0.45s] [animation-duration:3s]",
+  "left-[33%] h-1.5 w-3 bg-amber-300 [animation-delay:0s] [animation-duration:2.8s]",
+  "left-[37%] h-2 w-1 bg-white [animation-delay:0.75s] [animation-duration:2.6s]",
+  "left-[40%] h-3 w-2 bg-amber-200 [animation-delay:0.3s] [animation-duration:2.4s]",
+  "left-[44%] h-2 w-2 bg-rose-300 [animation-delay:1.05s] [animation-duration:3.2s]",
+  "left-[48%] h-2.5 w-1.5 bg-teal-200 [animation-delay:0.6s] [animation-duration:3s]",
+  "left-[52%] h-1.5 w-3 bg-rose-200 [animation-delay:0.15s] [animation-duration:2.8s]",
+  "left-[56%] h-2 w-1 bg-sky-200 [animation-delay:0.9s] [animation-duration:2.6s]",
+  "left-[60%] h-3 w-2 bg-violet-200 [animation-delay:0.45s] [animation-duration:2.4s]",
+  "left-[63%] h-2 w-2 bg-amber-300 [animation-delay:0s] [animation-duration:3.2s]",
+  "left-[67%] h-2.5 w-1.5 bg-white [animation-delay:0.75s] [animation-duration:3s]",
+  "left-[71%] h-1.5 w-3 bg-amber-200 [animation-delay:0.3s] [animation-duration:2.8s]",
+  "left-[75%] h-2 w-1 bg-rose-300 [animation-delay:1.05s] [animation-duration:2.6s]",
+  "left-[79%] h-3 w-2 bg-teal-200 [animation-delay:0.6s] [animation-duration:2.4s]",
+  "left-[83%] h-2 w-2 bg-rose-200 [animation-delay:0.15s] [animation-duration:3.2s]",
+  "left-[86%] h-2.5 w-1.5 bg-sky-200 [animation-delay:0.9s] [animation-duration:3s]",
+  "left-[90%] h-1.5 w-3 bg-violet-200 [animation-delay:0.45s] [animation-duration:2.8s]",
+  "left-[94%] h-2 w-1 bg-amber-300 [animation-delay:0s] [animation-duration:2.6s]",
+  "left-[98%] h-3 w-2 bg-white [animation-delay:0.75s] [animation-duration:2.4s]",
 ];
 
 /**
@@ -232,7 +248,7 @@ const CONFETTI = [
  * the first tile, the manual — to read now. Connecting is offered, lightly, for later. Reaching
  * this page finishes the guide.
  */
-async function Finished({ uid, t, locale, tile }: { uid: string; t: Awaited<ReturnType<typeof getT>>["t"]; locale: Awaited<ReturnType<typeof getT>>["locale"]; tile: Awaited<ReturnType<typeof onboardingState>>["tile"] }) {
+async function Finished({ uid, t, locale, tile, answered }: { uid: string; t: Awaited<ReturnType<typeof getT>>["t"]; locale: Awaited<ReturnType<typeof getT>>["locale"]; tile: Awaited<ReturnType<typeof onboardingState>>["tile"]; answered: boolean }) {
   const w = t.welcome;
   await finishOnboarding(uid);
   const tv = await getTuvi(uid, locale);
@@ -245,24 +261,43 @@ async function Finished({ uid, t, locale, tile }: { uid: string; t: Awaited<Retu
       <div className="relative -mx-4 -mt-6 overflow-hidden bg-linear-to-br from-teal-600 via-indigo-600 to-violet-600 px-6 pb-10 pt-12 text-center text-white shadow-lg">
         <div aria-hidden className="pointer-events-none absolute inset-0">
           {CONFETTI.map((c, i) => (
-            <span key={i} className={`absolute rounded-sm motion-safe:animate-[zoomIn_.8s_ease-out_both] ${c}`} />
+            <span key={i} className={`absolute -top-4 rounded-sm opacity-0 motion-safe:animate-[confettiFall_3s_ease-in_both] motion-safe:[animation-iteration-count:2] ${c}`} />
           ))}
         </div>
-        <div className="relative mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-white/15 ring-4 ring-white/40 motion-safe:animate-[zoomIn_.6s_ease-out_both]">
-          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-4xl font-black text-teal-700 shadow-lg">✓</span>
+        {/* A medal that pops in, rings that ripple out, and a tick drawn on it. */}
+        <div className="relative mx-auto h-28 w-28">
+          <span aria-hidden className="absolute inset-0 rounded-full ring-4 ring-white/50 opacity-0 motion-safe:animate-[ripple_1.8s_ease-out_.5s_infinite]" />
+          <span aria-hidden className="absolute inset-0 rounded-full ring-2 ring-white/40 opacity-0 motion-safe:animate-[ripple_1.8s_ease-out_1.4s_infinite]" />
+          <div className="shine relative flex h-28 w-28 items-center justify-center rounded-full bg-white/15 ring-4 ring-white/40 motion-safe:animate-[popIn_.7s_cubic-bezier(.2,.8,.2,1)_both]">
+            <span className="flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-xl">
+              <svg viewBox="0 0 24 24" className="h-11 w-11 text-teal-600" fill="none" stroke="currentColor" strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M5 12.5l4.5 4.5L19 7.5" pathLength={1} className="[stroke-dasharray:1] motion-safe:animate-[drawCheck_.5s_ease-out_.55s_both]" />
+              </svg>
+            </span>
+          </div>
         </div>
-        <p className="relative mt-5 inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-bold tracking-[0.2em]">COMPLETE</p>
-        <h1 className="relative mt-3 text-[1.7rem] font-black leading-tight">{w.doneTitle}</h1>
-        <p className="relative mx-auto mt-3 max-w-sm text-sm leading-7 text-white/90">{w.doneLead}</p>
+        <p className="relative mt-6 inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-bold tracking-[0.3em] motion-safe:animate-[riseIn_.5s_ease-out_.7s_both]">COMPLETE</p>
+        <h1 className="relative mt-3 break-keep text-[1.75rem] font-black leading-snug drop-shadow-sm motion-safe:animate-[riseIn_.6s_ease-out_.85s_both]">{w.doneTitle}</h1>
+        <p className="relative mx-auto mt-3 max-w-sm break-keep text-sm leading-7 text-white/90 motion-safe:animate-[riseIn_.6s_ease-out_1s_both]">{w.doneLead}</p>
         <ul className="relative mx-auto mt-6 grid max-w-sm grid-cols-3 gap-2 text-left" data-testid="guide-achievements">
           {[
-            { done: !!tv.chart, label: w.achDone[0]! },
-            { done: !!tile, label: w.achDone[1]! },
-            { done: manual.sections.some((x) => x.id === "intro"), label: w.achDone[2]! },
+            { done: !!tv.chart, label: w.achDone[0]!, delay: "[animation-delay:1.15s]" },
+            { done: answered, label: w.achDone[1]!, delay: "[animation-delay:1.3s]" },
+            { done: manual.sections.some((x) => x.id === "intro"), label: w.achDone[2]!, delay: "[animation-delay:1.45s]" },
           ].map((x) => (
-            <li key={x.label} className={`rounded-2xl px-2.5 py-2 text-[11px] font-semibold leading-tight ${x.done ? "bg-white text-teal-800" : "bg-white/15 text-white/80"}`}>
-              <span aria-hidden className={`mb-1 flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-black ${x.done ? "bg-teal-600 text-white" : "bg-white/30"}`}>{x.done ? "✓" : ""}</span>
-              {x.label}
+            <li
+              key={x.label}
+              data-done={x.done}
+              className={`rounded-2xl px-2.5 py-2.5 text-[11px] font-semibold leading-tight motion-safe:animate-[popIn_.55s_ease-out_both] ${x.delay} ${
+                x.done ? "bg-white text-teal-900 shadow-md" : "border border-dashed border-white/60 text-white"
+              }`}
+            >
+              {x.done ? (
+                <span aria-hidden className="mb-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-teal-600 text-[11px] font-black text-white">✓</span>
+              ) : (
+                <span className="mb-1.5 inline-block rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-bold">{w.achLater}</span>
+              )}
+              <span className="block">{x.label}</span>
             </li>
           ))}
         </ul>
