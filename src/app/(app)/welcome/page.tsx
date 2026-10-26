@@ -7,6 +7,7 @@ import { QuestionForm } from "@/components/question-form";
 import { BirthForm } from "@/components/birth-form";
 import { ChartTour } from "@/components/chart-tour";
 import { Flash } from "@/components/flash";
+import { ConfirmButton } from "@/components/confirm-button";
 import { TuviChart } from "@/components/tuvi-chart";
 import { Button, Card, Textarea } from "@/components/ui";
 import { AXIS_LABEL } from "@/content/axes";
@@ -40,10 +41,11 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
   const st = await onboardingState(uid);
   const tv = step === 2 || step === 3 ? await getTuvi(uid, locale) : null;
 
+  // The guide can be ended at any step; what is left stays on Home's checklist.
   const skip = (
     <form action={finishOnboardingAction}>
       <input type="hidden" name="next" value="/home" />
-      <button type="submit" className="text-sm text-stone-500 underline underline-offset-4 hover:text-stone-800">{w.later}</button>
+      <ConfirmButton bare message={w.endConfirm} className="text-sm text-stone-500 underline underline-offset-4 hover:text-stone-800">{w.endGuide}</ConfirmButton>
     </form>
   );
 
@@ -55,8 +57,7 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
             <li key={i} className={`h-1.5 w-8 rounded-full ${i < step ? "bg-teal-600" : "bg-stone-200"}`} />
           ))}
         </ol>
-        {/* No way out before the chart is made: it is what everything after builds on. */}
-        {step >= 3 && step < STEPS && skip}
+        {step < STEPS && skip}
       </div>
 
       {step === 1 && (

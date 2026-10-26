@@ -17,8 +17,8 @@ test("a new account is guided: the chart (not skippable) and its tour, three que
   // What MOSAIC is for: know yourself, share it, know them, grow closer.
   for (const x of ["自分を知る", "伝える", "相手を知る", "仲良くなる"]) await expect(page.getByText(x, { exact: true })).toBeVisible();
   await expect(page.getByText(/見せるのは、選んだものだけ/)).toBeVisible();
-  // Before the chart there is no way to put the guide off.
-  await expect(page.getByRole("button", { name: "あとで" })).toHaveCount(0);
+  // The guide can be ended at any step.
+  await expect(page.getByRole("button", { name: "ガイドを終了" })).toBeVisible();
   await page.getByRole("link", { name: /はじめる/ }).click();
 
   // The chart: what it gives, why it matters for the people you love, and that it stays yours.
@@ -27,7 +27,6 @@ test("a new account is guided: the chart (not skippable) and its tour, three que
   await expect(page.getByTestId("tuvi-preview")).toContainText("あなたの本質");
   await expect(page.getByText(/つながった人との相性や、お互いの取扱説明書も/)).toBeVisible();
   await expect(page.getByText(/生年月日と時刻は、あなたにしか見えません/)).toBeVisible();
-  await expect(page.getByRole("button", { name: "あとで" })).toHaveCount(0);
   await page.getByLabel("生年月日 (新暦（グレゴリオ暦）)").fill("1990-06-07");
   await page.getByLabel("出生時刻（現地の時計）").fill("06:30");
   await page.getByLabel("伝統的な計算で使う性別").selectOption("male");
@@ -94,7 +93,7 @@ test("a new account is guided: the chart (not skippable) and its tour, three que
   await ctx.close();
 });
 
-test("after the chart the guide can be put off, and is offered again from home", async ({ browser }) => {
+test("while the guide isn't finished every page says so, with the way back; it can be ended any time", async ({ browser }) => {
   const ctx = await browser.newContext({ locale: "en-US", extraHTTPHeaders: { "x-e2e-client-ip": `10.2.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
   const page = await ctx.newPage();
   await page.goto("/register");
@@ -103,24 +102,26 @@ test("after the chart the guide can be put off, and is offered again from home",
   await page.getByLabel(/^Password/).fill("e2e correct horse battery");
   await page.getByRole("button", { name: "Create account" }).click();
   await page.waitForURL(/\/welcome$/);
-  // Leaving before the chart: home asks for it first, and the guide picks up there.
-  await page.goto("/home");
-  await expect(page.getByTestId("starter-checklist").getByRole("link", { name: /Make your chart/ })).toBeVisible();
-  await page.getByRole("link", { name: /Continue the welcome guide/ }).click();
-  await page.waitForURL(/\/welcome$/);
-  await page.getByRole("link", { name: /Start/ }).click();
-  await page.waitForURL(/step=2/);
-  await expect(page.getByRole("button", { name: "Later" })).toHaveCount(0);
+  // Elsewhere, a bar says the guide is under way and leads back to where it left off (the chart).
+  await page.goto("/discover");
+  const bar = page.getByTestId("guide-bar");
+  await expect(bar).toContainText("Welcome guide (2/6)");
+  await bar.getByRole("link", { name: /Back to the guide/ }).click();
+  await page.waitForURL(/\/welcome\?step=2$/);
+  await expect(page.getByTestId("guide-bar")).toHaveCount(0);
   // Only the birth date is needed: no time, no sex.
   await page.getByLabel("Date of birth (Solar (Gregorian))").fill("1990-06-07");
   await page.getByLabel("I know my birth time").uncheck();
   await page.getByRole("button", { name: "Make my chart" }).click();
   await page.waitForURL(/step=3/);
   await expect(page.getByTestId("chart-result")).toContainText("Your chart is ready");
-  await page.getByRole("button", { name: "Later" }).click();
-  await page.waitForURL(/\/home$/);
-  await expect(page.getByText("Continue the welcome guide")).toHaveCount(0);
-  await expect(page.getByTestId("starter-checklist").getByText("Make your chart")).toBeVisible();
+  await page.goto("/home");
+  await expect(page.getByTestId("guide-bar")).toContainText("Welcome guide (4/6)");
+  // Ending it (after a confirmation) keeps you where you are; Home's checklist keeps what is left.
+  page.once("dialog", (d) => void d.accept());
+  await page.getByTestId("guide-bar").getByRole("button", { name: "End guide" }).click();
+  await expect(page.getByTestId("guide-bar")).toHaveCount(0);
+  await expect(page.getByTestId("starter-checklist").getByRole("link", { name: /Answer 3 questions/ })).toBeVisible();
   await ctx.close();
 });
 

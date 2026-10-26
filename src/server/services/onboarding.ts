@@ -45,3 +45,11 @@ export async function finishOnboarding(userId: string) {
     await audit(tx, userId, "onboarding.finished");
   });
 }
+
+/** The guide step to come back to: the chart, the three questions, the bio, then the end. */
+export function resumeStep(st: OnboardingState): number {
+  if (!st.hasChart) return 2;
+  if (st.left.length > 0) return 4;
+  if (!st.bio) return 5;
+  return 6;
+}

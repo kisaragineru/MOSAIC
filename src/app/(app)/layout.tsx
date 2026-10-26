@@ -8,6 +8,8 @@ import { dmUnreadTotal } from "@/server/services/dm";
 import { myAvatarUrl } from "@/server/services/avatars";
 import { Avatar } from "@/components/avatar";
 import { TrialBar } from "@/components/trial-bar";
+import { GuideBar } from "@/components/guide-bar";
+import { onboardingState, resumeStep } from "@/server/services/onboarding";
 import { trialReturnUser } from "@/server/services/dev-trial";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -19,9 +21,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const initial = Array.from(acc.profile.displayName.trim())[0]?.toUpperCase() ?? "?";
   // Development: trying sign-up with a test account, with the way back to your own.
   const trialOwner = await trialReturnUser();
+  const guideStep = acc.profile.onboardedAt ? null : resumeStep(await onboardingState(uid));
   return (
     <>
       {trialOwner && trialOwner !== uid && <TrialBar t={t} />}
+      {/* The welcome guide, not finished yet: always said, with the way back and a way to end it. */}
+      {guideStep !== null && (
+        <GuideBar step={guideStep} labels={{ bar: t.welcome.guideBar(guideStep, 6), back: t.welcome.backToGuide, end: t.welcome.endGuide, confirm: t.welcome.endConfirm }} />
+      )}
       <header className="sticky top-0 z-10 print:hidden border-b border-white/60 bg-[#faf8f5]/75 backdrop-blur-md">
         <div className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-2">
           <Link href="/home" className="flex items-center gap-2">
