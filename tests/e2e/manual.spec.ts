@@ -47,6 +47,19 @@ test("the manual is a long read that grows with answers", async ({ browser }) =>
   // AI rewriting is offered only once AI is allowed in settings.
   await expect(page.getByTestId("manual-ai")).toContainText("AIによる振り返りを許可する");
   await expect(page.getByTestId("manual-ai").getByRole("button", { name: "AIで書き直す" })).toHaveCount(0);
+  // Allowed: the manual is rewritten chapter by chapter (the stand-in AI answers), for the owner only,
+  // and can go back to MOSAIC's own text.
+  await page.goto("/settings#ai");
+  await page.locator("form#ai").getByLabel("AIによる振り返りを許可する").check();
+  await page.locator("form#ai").getByRole("button", { name: "保存" }).click();
+  await page.goto("/me/manual#ai");
+  await page.getByTestId("manual-ai").getByRole("button", { name: "AIで書き直す" }).click();
+  await expect(page.locator("#sec-summary")).toContainText("[AI] ひとことで言うとを書き直した文章です。", { timeout: 20_000 });
+  await expect(page.locator("#sec-summary")).toContainText("AIが書き直しました");
+  await expect(page.getByTestId("manual-ai")).toContainText("AIが書き直した文章を表示中");
+  await page.getByTestId("manual-ai").getByRole("button", { name: "MOSAICの文章に戻す" }).click();
+  await expect(page.locator("#sec-summary")).toContainText("先に計画を立てる人です。");
+  await expect(page.locator("#sec-summary")).not.toContainText("[AI]");
 
   // The contents jump to each section; the tips speak in the reader's voice.
   const toc = page.getByRole("navigation", { name: "目次" });

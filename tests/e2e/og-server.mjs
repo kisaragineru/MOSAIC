@@ -60,9 +60,30 @@ async function oauth(req, res, url) {
   return json(200, { id: who.sub, name: who.name, ...(who.email ? { email: who.email } : {}) });
 }
 
+/**
+ * A stand-in for the Anthropic Messages API, so AI-on screens are exercised in tests without a real
+ * key or network. It answers by what the system prompt asks for, with clearly fake text.
+ */
+function anthropic(req, res) {
+  let raw = "";
+  req.on("data", (c) => (raw += c));
+  req.on("end", () => {
+    const body = JSON.parse(raw || "{}");
+    const system = String(body.system ?? "");
+    const user = String(body.messages?.[0]?.content ?? "");
+    let out = {};
+    if (system.includes("user manual")) out = { paragraphs: [`[AI] ${JSON.parse(user).chapter?.title ?? ""}を書き直した文章です。`] };
+    else if (system.includes("translate one chat message")) out = { same: false, translation: `[AI訳] ${user.replace(/<\/?message>/g, "").trim()}` };
+    else if (system.includes("self-introduction")) out = { text: "[AI] 自己紹介の下書きです。" };
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ id: "msg_e2e", type: "message", role: "assistant", model: body.model, content: [{ type: "text", text: JSON.stringify(out) }], stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 } }));
+  });
+}
+
 http
   .createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://127.0.0.1");
+    if (url.pathname === "/v1/messages" && req.method === "POST") return void anthropic(req, res);
     if (url.pathname.startsWith("/google/") || url.pathname.startsWith("/facebook/")) return void oauth(req, res, url);
     if (req.url?.startsWith("/card.png")) {
       res.writeHead(200, { "Content-Type": "image/png" });

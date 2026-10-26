@@ -39,7 +39,9 @@ export default defineConfig({
       LINK_PREVIEW_TEST_HOSTS: "127.0.0.1:4599",
       DATABASE_URL: E2E_DB,
       APP_ORIGIN: `http://localhost:${PORT}`,
-      ANTHROPIC_API_KEY: "",
+      // AI goes to the stand-in above (never set outside tests): AI-on screens are always exercised.
+      ANTHROPIC_API_KEY: "e2e-stand-in",
+      ANTHROPIC_BASE_URL: "http://127.0.0.1:4599",
       RATE_LIMIT_SALT: "e2e",
       // Specs that register several people send their own client IP, so the per-IP registration
       // limit applies per simulated device rather than to the whole suite.
