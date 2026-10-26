@@ -462,6 +462,7 @@ export const en = {
       guideLink: "New to Tử Vi? How to read it",
       guideSub: "The chart, the twelve palaces and the stars, explained simply",
       typeEyebrow: "Your essence",
+      typePair: "Two main stars share your Mệnh. Neither outranks the other: you are read as someone with both sides.",
       typeBorrowed: "Your Mệnh has no main star of its own, so it is read through the stars of the opposite palace.",
       personaLead: "In a word",
       reflectTitle: "To look back",

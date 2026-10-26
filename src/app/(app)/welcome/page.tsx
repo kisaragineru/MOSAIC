@@ -186,12 +186,15 @@ async function ChartResult({ t, locale, tv }: { t: Awaited<ReturnType<typeof get
     <section className="space-y-4">
       <div className="rounded-3xl bg-linear-to-br from-teal-100 via-sky-50 to-violet-200 p-5 text-teal-950 shadow-[0_10px_30px_-14px_rgba(91,70,160,0.35)] motion-safe:animate-[zoomIn_.5s_ease-out]" data-testid="chart-result">
         <p className="text-xs font-semibold text-teal-700">✨ {w.resultEyebrow}</p>
+        {persona && <p className="mt-2 text-xl font-black leading-snug text-stone-900 [word-break:auto-phrase]">{w.resultPersona(persona)}</p>}
+        {essence.types.length > 1 && <p className="mt-1 text-xs leading-5 text-stone-600">{t.tuvi.ui.typePair}</p>}
         <div className="mt-3">
-          <TypePortraits types={essence.types} note={essence.borrowed ? t.tuvi.ui.typeBorrowed : null}>
-            {persona && <p className="text-xl font-bold leading-snug">{w.resultPersona(persona)}</p>}
+          <TypePortraits types={essence.types}>
+            {essence.borrowed && <p className="text-xs leading-5 text-stone-600">ℹ️ {t.tuvi.ui.typeBorrowed}</p>}
           </TypePortraits>
         </div>
-        {plain.map((x) => <p key={x} className="mt-2 text-sm leading-7 text-teal-950/90">{x}</p>)}
+        {/* One type already has its words beside the picture; two get theirs here. */}
+        {essence.types.length !== 1 && plain.map((x) => <p key={x} className="mt-2 text-sm leading-7 text-teal-950/90">{x}</p>)}
         <p className="mt-3 text-xs leading-5 text-rose-900">{w.resultShare}</p>
       </div>
       {c.menh !== null ? (

@@ -86,7 +86,7 @@ test("Tử Vi: plain words first, and a guide for beginners", async ({ browser }
   await page.getByLabel(/^生年月日/).fill("1990-06-07");
   await setBirthTime(page, "06:30");
   await page.getByRole("button", { name: "保存して計算" }).click();
-  await expect(page.getByText("ひとことで言うと：")).toBeVisible();
+  await expect(page.getByTestId("essence")).toContainText("タイプ");
   await expect(page.getByText("💡 かんたんに言うと").first()).toBeVisible();
   await expect(page.getByText("ここは「どんな人か」を見るところです。", { exact: false })).toBeVisible();
   await page.getByRole("button", { name: /この読みに出てくる言葉/ }).click();

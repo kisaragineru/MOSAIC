@@ -464,6 +464,7 @@ export const vi: Dict = {
       guideLink: "Mới làm quen Tử Vi? Cách đọc lá số",
       guideSub: "Giải thích dễ hiểu về lá số, mười hai cung và các sao",
       typeEyebrow: "Bản chất của bạn",
+      typePair: "Cung Mệnh có hai chính tinh đồng cung. Không sao nào trội hơn: bạn được đọc là người mang cả hai mặt.",
       typeBorrowed: "Cung Mệnh vô chính diệu nên được đọc qua các chính tinh của cung đối diện.",
       personaLead: "Nói ngắn gọn",
       reflectTitle: "Gợi ý để nhìn lại",

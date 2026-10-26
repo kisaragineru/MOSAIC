@@ -464,6 +464,7 @@ export const ja: Dict = {
       guideLink: "はじめての方へ：Tử Vi の読み方",
       guideSub: "命盤の見方、12の宮、星の意味をやさしく説明します",
       typeEyebrow: "あなたの本質",
+      typePair: "命宮に2つの主星が並んでいます。どちらが上ということはなく、2つの顔をあわせ持つ人と読みます。",
       typeBorrowed: "命宮に主役の星（主星）がないため、真向かいの宮の星を借りて読んでいます。",
       personaLead: "ひとことで言うと",
       reflectTitle: "振り返りのヒント",

@@ -99,7 +99,7 @@ export default async function TuviGuidePage() {
           {MAIN_STARS.map((s) => (
             <li key={s} className="flex gap-3 rounded-2xl bg-white/85 p-3 ring-1 ring-stone-200/60">
               <span className="w-20 shrink-0 self-start overflow-hidden rounded-xl ring-1 ring-stone-200/60">
-                <TypeImage t={{ id: s, name: STAR_INFO[s].vi, persona: L(STAR_PLAIN[s].persona) }} small />
+                <TypeImage t={{ id: s, persona: L(STAR_PLAIN[s].persona) }} small />
               </span>
               <span className="min-w-0">
                 <span className="block font-semibold text-stone-900">{STAR_INFO[s].vi}</span>

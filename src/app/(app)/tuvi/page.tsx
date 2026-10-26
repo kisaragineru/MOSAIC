@@ -67,26 +67,34 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
       <Flash t={t} sp={sp} />
       {v.error && <Flash t={t} sp={{ e: v.error }} />}
       {c && (
-        <section className="overflow-hidden rounded-3xl bg-linear-to-br from-teal-100 via-sky-50 to-violet-200 p-5 text-teal-950 shadow-[0_10px_30px_-14px_rgba(91,70,160,0.35)]">
-          <p className="text-xs uppercase tracking-[0.2em] text-teal-700">{ui.heroEyebrow}</p>
-          <p className="mt-1 text-sm text-teal-900/80">{c.yearPillar.name} · {t.tuvi.napAm} {c.napAm.name}</p>
+        <section className="overflow-hidden rounded-3xl bg-linear-to-br from-teal-100 via-sky-50 to-violet-200 p-5 text-teal-950 shadow-[0_10px_30px_-14px_rgba(91,70,160,0.35)]" data-testid="tuvi-hero">
+          {/* Heading first, the year's names as small print under it. */}
+          <h2 className="text-lg font-bold text-teal-950">{ui.heroEyebrow}</h2>
+          <p className="text-xs text-teal-900/70">{c.yearPillar.name} · {t.tuvi.napAm} {c.napAm.name}</p>
           {menh ? (
-            <>
-              <p className="mt-3 text-xs font-semibold text-teal-700">✨ {ui.typeEyebrow}</p>
-              {/* The type(s) as pictures first: easier to take in than star names. */}
-              <div className="mt-2">
-                <TypePortraits types={essence.types} note={essence.borrowed ? ui.typeBorrowed : null}>
-                  <div>
-                    <p className="text-xs text-teal-700">{ui.menhStars}</p>
-                    <p className="text-xl font-semibold tracking-tight">{menh.mains.map((m) => m.name).join(" · ") || "—"}</p>
-                  </div>
+            <div className="mt-4 rounded-3xl bg-white/60 p-4 ring-1 ring-white/80">
+              <p className="text-xs font-bold tracking-wide text-violet-700">✨ {ui.typeEyebrow}</p>
+              {/* The largest words on the page: who the chart says you are. */}
+              <p className="mt-1 text-xl font-black leading-snug text-stone-900 [word-break:auto-phrase]" data-testid="essence">
+                {essence.types.length
+                  ? essence.types.map((x, i) => (
+                      <span key={x.id} className="block">
+                        {i > 0 && <span aria-label="×" className="block text-sm font-bold leading-5 text-violet-500">×</span>}
+                        {x.persona}
+                      </span>
+                    ))
+                  : persona}
+              </p>
+              {essence.types.length > 1 && <p className="mt-1 text-xs leading-5 text-stone-600">{ui.typePair}</p>}
+              <div className="mt-3">
+                <TypePortraits types={essence.types}>
                   <div className="flex flex-wrap gap-1.5">
-                    {menh.mains.map((m) => <span key={m.name} className="rounded-full bg-white/70 px-2.5 py-0.5 text-xs text-violet-900">{m.keywords}</span>)}
+                    {menh.mains.map((m) => <span key={m.name} className="rounded-full bg-violet-50 px-2.5 py-0.5 text-xs text-violet-900 ring-1 ring-violet-100">{m.keywords}</span>)}
                   </div>
-                  {persona && <p className="text-sm text-teal-950"><span className="text-xs text-teal-700">{ui.personaLead}{t.common.colon}</span><b>{t.common.quoteOpen}{persona}{t.common.quoteClose}</b></p>}
+                  {essence.borrowed && <p className="text-xs leading-5 text-stone-600">ℹ️ {ui.typeBorrowed}</p>}
                 </TypePortraits>
               </div>
-            </>
+            </div>
           ) : (
             <p className="mt-3 text-sm text-teal-900/80">{v.sections[0]?.paragraphs[0]?.text}</p>
           )}
