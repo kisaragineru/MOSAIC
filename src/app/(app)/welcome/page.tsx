@@ -11,15 +11,12 @@ import { Flash } from "@/components/flash";
 import { ConfirmButton } from "@/components/confirm-button";
 import { TuviChart } from "@/components/tuvi-chart";
 import { Button, Card, Textarea } from "@/components/ui";
-import { AXIS_LABEL } from "@/content/axes";
-import { MANUAL } from "@/content/manual-axes";
-import { TENDENCY_TEXT } from "@/content/questions";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { getAccount } from "@/server/services/account";
 import { getQuestion } from "@/server/services/discovery";
 import { knowledge } from "@/server/services/knowledge";
-import { finishOnboarding, onboardingState, SEED_AXIS } from "@/server/services/onboarding";
+import { finishOnboarding, onboardingState, seedPieces, type SeedPiece } from "@/server/services/onboarding";
 import { buildManual } from "@/server/services/manual";
 import { getTuvi } from "@/server/services/tuvi";
 import { chartView } from "@/lib/tuvi/chart-view";
@@ -30,7 +27,7 @@ const STEPS = 6;
  * The first-run guide, following what MOSAIC is for — know yourself, share it, know the people
  * who matter, grow closer: what MOSAIC is; your Tử Vi chart (asked for, not skippable: it is
  * the most a new account can learn at once); the chart's result and a hands-on tour; three
- * questions to a first tile; a few words for the people who matter; then connecting with one.
+ * questions from three chapters; a few words for the people who matter; then connecting with one.
  */
 export default async function WelcomePage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
@@ -120,22 +117,12 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
       {step === 4 && (st.left.length > 0 ? (
         <SeedQuestion id={st.left[0]!} answered={3 - st.left.length} t={t} locale={locale} />
       ) : (
-        <section className="space-y-5 text-center motion-safe:animate-[zoomIn_.5s_ease-out]">
-          <h1 className="text-2xl font-bold text-stone-900">✨ {w.revealTitle}</h1>
-          <p className="text-stone-600">{w.revealLead}</p>
-          <div className="relative mx-auto flex aspect-square w-40 items-end justify-center overflow-hidden rounded-3xl shadow-lg ring-4 ring-white" aria-hidden>
-            <span className={`absolute inset-0 [clip-path:polygon(0_0,100%_0,0_100%)] ${st.tile?.direction === -1 ? "bg-teal-100" : "bg-teal-500"}`} />
-            <span className={`absolute inset-0 [clip-path:polygon(100%_0,100%_100%,0_100%)] ${st.tile?.state === "mixed" ? "bg-rose-300" : st.tile?.direction === -1 ? "bg-teal-500" : "bg-teal-100"}`} />
-            <span className="relative mb-3 rounded-lg bg-white/90 px-2 py-0.5 text-sm font-bold text-stone-800">{AXIS_LABEL[SEED_AXIS].name[locale]}</span>
+        <section className="space-y-5 motion-safe:animate-[zoomIn_.5s_ease-out]">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-stone-900">✨ {w.revealTitle}</h1>
+            <p className="mt-2 text-stone-600">{w.revealLead}</p>
           </div>
-          {st.tile && (
-            <Card>
-              <p className="font-semibold text-stone-900">
-                {st.tile.state === "mixed" ? MANUAL[SEED_AXIS]!.mixed[locale] : TENDENCY_TEXT[SEED_AXIS][st.tile.direction === 1 ? "pos" : "neg"][locale]}
-              </p>
-              {st.tile.state !== "mixed" && <p className="mt-2 text-sm leading-7 text-stone-600">{(st.tile.direction === 1 ? MANUAL[SEED_AXIS]!.pos : MANUAL[SEED_AXIS]!.neg).portrait[locale]}</p>}
-            </Card>
-          )}
+          <SeedPieces pieces={await seedPieces(uid, locale)} t={t} />
           <Link href="/welcome?step=5" className="block rounded-full bg-teal-700 py-3 text-center font-semibold text-white">{w.next}</Link>
         </section>
       ))}
@@ -155,7 +142,7 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
         </section>
       )}
 
-      {step === 6 && <Finished uid={uid} t={t} locale={locale} tile={st.tile} answered={st.left.length === 0} />}
+      {step === 6 && <Finished uid={uid} t={t} locale={locale} answered={st.left.length === 0} />}
     </main>
   );
 }
@@ -214,14 +201,37 @@ async function ChartResult({ t, locale, tv }: { t: Awaited<ReturnType<typeof get
   );
 }
 
+// One soft colour per chapter the guide asks from (literal classes for Tailwind).
+const PIECE_TONE: Partial<Record<SeedPiece["chapter"], string>> = {
+  likes: "bg-rose-50 text-rose-800 ring-rose-100",
+  mind: "bg-sky-50 text-sky-800 ring-sky-100",
+  story: "bg-violet-50 text-violet-800 ring-violet-100",
+};
+
+/** The first piece in each chapter: the chapter, what was asked, and the answer in your words. */
+function SeedPieces({ pieces, t }: { pieces: SeedPiece[]; t: Awaited<ReturnType<typeof getT>>["t"] }) {
+  return (
+    <ul className="space-y-2.5" data-testid="seed-pieces">
+      {pieces.map((x, i) => (
+        <li key={x.chapter} className={`rounded-2xl p-4 text-left ring-1 ${["motion-safe:animate-[riseIn_.5s_ease-out_.1s_both]", "motion-safe:animate-[riseIn_.5s_ease-out_.25s_both]", "motion-safe:animate-[riseIn_.5s_ease-out_.4s_both]"][i] ?? ""} ${PIECE_TONE[x.chapter] ?? "bg-teal-50 text-teal-800 ring-teal-100"}`}>
+          <p className="flex items-center gap-1.5 text-xs font-bold"><span aria-hidden>{x.icon}</span>{x.chapterTitle}</p>
+          <p className="mt-1 text-xs text-stone-500">{x.prompt}</p>
+          <p className="mt-1 font-semibold text-stone-900">{t.common.quoteOpen}{x.answer}{t.common.quoteClose}</p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /**
  * The end of the guide: a clear "done", then what the few minutes made — the chart's word on you,
- * the first tile, the manual — to read now. Connecting is offered, lightly, for later. Reaching
+ * the first pieces in three chapters, the manual — to read now. Connecting is offered, lightly, for later. Reaching
  * this page finishes the guide.
  */
-async function Finished({ uid, t, locale, tile, answered }: { uid: string; t: Awaited<ReturnType<typeof getT>>["t"]; locale: Awaited<ReturnType<typeof getT>>["locale"]; tile: Awaited<ReturnType<typeof onboardingState>>["tile"]; answered: boolean }) {
+async function Finished({ uid, t, locale, answered }: { uid: string; t: Awaited<ReturnType<typeof getT>>["t"]; locale: Awaited<ReturnType<typeof getT>>["locale"]; answered: boolean }) {
   const w = t.welcome;
   await finishOnboarding(uid);
+  const pieces = await seedPieces(uid, locale);
   const tv = await getTuvi(uid, locale);
   const persona = tv.sections.find((x) => x.section === "personality")?.persona;
   const manual = await buildManual(uid, locale);
@@ -248,14 +258,14 @@ async function Finished({ uid, t, locale, tile, answered }: { uid: string; t: Aw
         <p className="relative mx-auto mt-3 max-w-sm break-keep text-sm leading-7 text-white/90 motion-safe:animate-[riseIn_.6s_ease-out_1s_both]">{w.doneLead}</p>
         <ul className="relative mx-auto mt-6 grid max-w-sm grid-cols-3 gap-2 text-left" data-testid="guide-achievements">
           {[
-            { done: !!tv.chart, label: w.achDone[0]!, delay: "[animation-delay:1.15s]" },
-            { done: answered, label: w.achDone[1]!, delay: "[animation-delay:1.3s]" },
-            { done: manual.sections.some((x) => x.id === "intro"), label: w.achDone[2]!, delay: "[animation-delay:1.45s]" },
+            { done: !!tv.chart, label: w.achDone[0]!, delay: "motion-safe:animate-[popIn_.55s_ease-out_1.15s_both]" },
+            { done: answered, label: w.achDone[1]!, delay: "motion-safe:animate-[popIn_.55s_ease-out_1.3s_both]" },
+            { done: manual.sections.some((x) => x.id === "intro"), label: w.achDone[2]!, delay: "motion-safe:animate-[popIn_.55s_ease-out_1.45s_both]" },
           ].map((x) => (
             <li
               key={x.label}
               data-done={x.done}
-              className={`rounded-2xl px-2.5 py-2.5 text-[11px] font-semibold leading-tight motion-safe:animate-[popIn_.55s_ease-out_both] ${x.delay} ${
+              className={`rounded-2xl px-2.5 py-2.5 text-[11px] font-semibold leading-tight ${x.delay} ${
                 x.done ? "bg-white text-teal-900 shadow-md" : "border border-dashed border-white/60 text-white"
               }`}
             >
@@ -278,12 +288,10 @@ async function Finished({ uid, t, locale, tile, answered }: { uid: string; t: Aw
         </Link>
       )}
 
-      {tile && (
-        <div className="rounded-3xl bg-white/85 p-5 shadow-sm ring-1 ring-stone-200/60">
+      {pieces.length > 0 && (
+        <div className="space-y-3 rounded-3xl bg-white/85 p-5 shadow-sm ring-1 ring-stone-200/60">
           <p className="text-xs font-semibold text-teal-700">🧩 {w.achTile}</p>
-          <p className="mt-1 font-semibold text-stone-900">
-            {AXIS_LABEL[SEED_AXIS].name[locale]}{t.common.colon}{tile.state === "mixed" ? MANUAL[SEED_AXIS]!.mixed[locale] : TENDENCY_TEXT[SEED_AXIS][tile.direction === 1 ? "pos" : "neg"][locale]}
-          </p>
+          <SeedPieces pieces={pieces} t={t} />
         </div>
       )}
 

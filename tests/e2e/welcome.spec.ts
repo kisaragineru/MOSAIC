@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 
 const E2E_OWNER_DB = process.env.E2E_MIGRATION_DATABASE_URL ?? "postgres://mosaic_owner:owner_dev_pw@localhost:5432/mosaic_e2e";
 
-test("a new account is guided: the chart (not skippable) and its tour, three questions to a first tile, a bio, then a connection", async ({ browser }) => {
+test("a new account is guided: the chart (not skippable) and its tour, three questions from three chapters, a bio, then a connection", async ({ browser }) => {
   const ctx = await browser.newContext({ locale: "ja-JP", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.2.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
   const page = await ctx.newPage();
   await page.goto("/register");
@@ -44,26 +44,35 @@ test("a new account is guided: the chart (not skippable) and its tour, three que
   await expect(tour).toContainText("これで命盤の基本はばっちりです！");
   await page.getByRole("link", { name: /次へ（質問に答える）/ }).click();
 
-  for (const [n, label] of [[0, "予定を立てる"], [1, "リストで確認して詰め終わっている"], [2, "すぐ始めて早めに終わらせる"]] as const) {
-    await expect(page.getByText(`${n} / 3`)).toBeVisible();
-    await page.getByLabel(label, { exact: true }).check();
-    await page.getByRole("button", { name: "回答を保存" }).click();
-    await page.waitForURL(/step=4/);
-  }
-  await expect(page.getByRole("heading", { name: /最初のタイルが見えました/ })).toBeVisible();
-  await expect(page.getByText("先に計画を立てるのを好むことが多いようです。")).toBeVisible();
+  // One question from each of three chapters: what you love, how you decide, what comes next.
+  await expect(page.getByText("0 / 3")).toBeVisible();
+  await page.getByLabel("海", { exact: true }).check();
+  await page.getByRole("button", { name: "回答を保存" }).click();
+  await page.waitForURL(/step=4/);
+  await expect(page.getByText("1 / 3")).toBeVisible();
+  await page.getByLabel("自分の直感", { exact: true }).check();
+  await page.getByRole("button", { name: "回答を保存" }).click();
+  await page.waitForURL(/step=4/);
+  await expect(page.getByText("2 / 3")).toBeVisible();
+  await page.getByLabel("今年中にやりたいことを一つ。").fill("富士山に登る");
+  await page.getByRole("button", { name: "回答を保存" }).click();
+  await page.waitForURL(/step=4/);
+  await expect(page.getByRole("heading", { name: /3つの章に、最初のピースが置かれました/ })).toBeVisible();
+  const seeded = page.getByTestId("seed-pieces");
+  for (const x of ["好きなもの", "「海」", "考え方・決め方", "「自分の直感」", "これまでとこれから", "「富士山に登る」"]) await expect(seeded).toContainText(x);
   await page.getByRole("link", { name: "次へ" }).click();
 
   await expect(page.getByRole("heading", { name: "大切な人に伝える、ひとこと" })).toBeVisible();
   await page.getByRole("textbox").fill("週末は山とパン屋めぐり。");
   await page.getByRole("button", { name: "保存して次へ" }).click();
   await page.waitForURL(/step=6/);
-  // A clear end, then what the guide made: the chart's word, the first tile, the manual.
+  // A clear end, then what the guide made: the chart's word, the first pieces, the manual.
   const done = page.getByTestId("guide-finished");
   await expect(done.getByRole("heading", { name: "はじめてガイド、完了です！" })).toBeVisible();
   await expect(page.getByTestId("guide-achievements").locator('li[data-done="true"]')).toHaveCount(3);
   await expect(done).toContainText("あなたの本質は「");
-  await expect(done).toContainText("モザイクの最初のタイル");
+  await expect(done).toContainText("3つの章の最初のピース");
+  await expect(done.getByTestId("seed-pieces")).toContainText("「富士山に登る」");
   await expect(done).toContainText(/文字・\d+章が書けました/);
   await expect(page.getByTestId("pieces")).toHaveText("16"); // 3 answers + bio + chart
   // Connecting is offered lightly, for later; going home is the main way on.
@@ -87,7 +96,7 @@ test("a new account is guided: the chart (not skippable) and its tour, three que
   await expect(page.getByRole("heading", { level: 2, name: /年\d+月のあなた/ })).toBeVisible();
   // What was answered this month is listed, once per question.
   await expect(page.getByRole("heading", { name: "💬 この月に答えたこと（3問）" })).toBeVisible();
-  await expect(page.getByText("予定を立てる", { exact: true })).toBeVisible();
+  await expect(page.getByText("富士山に登る", { exact: true })).toBeVisible();
   await page.getByLabel("この1か月で、いちばん心に残ったことは？").fill("はじめてMOSAICを使った。");
   await page.getByRole("button", { name: "振り返りを記録する" }).click();
   await expect(page).toHaveURL(/ok=saved/);

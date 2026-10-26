@@ -4,21 +4,24 @@ import { withUser } from "@/server/db/tx";
 import { answerQuestion, setChangeKind } from "@/server/services/discovery";
 import { createMemory, listMemories } from "@/server/services/memories";
 import { activeMonths, lookBackDue, lookBackSections, monthReport, parseMonth, saveLookBack, shiftMonth, thisMonth } from "@/server/services/monthly";
-import { finishOnboarding, onboardingState, SEED_QUESTIONS } from "@/server/services/onboarding";
+import { finishOnboarding, onboardingState, SEED_QUESTIONS, seedPieces } from "@/server/services/onboarding";
 import { makeUser } from "../helpers/factory";
 
 describe("first-run guide", () => {
-  it("counts down the three seed questions to a first tile, then remembers it was finished", async () => {
+  it("counts down the three seed questions, one per chapter, then remembers it was finished", async () => {
     const u = await makeUser();
     let s = await onboardingState(u.userId);
-    expect(s).toMatchObject({ done: false, left: [...SEED_QUESTIONS], tile: null });
-    await answerQuestion(u.userId, { questionId: "p.weekend_plan", questionVersion: 1, answer: { choice: "plan" } });
-    await answerQuestion(u.userId, { questionId: "ax.plan_pack", questionVersion: 1, answer: { choice: "packed_list" } });
+    expect(s).toMatchObject({ done: false, left: [...SEED_QUESTIONS] });
+    await answerQuestion(u.userId, { questionId: "l.place_relax", questionVersion: 1, answer: { choice: "sea" } });
+    await answerQuestion(u.userId, { questionId: "p.decide", questionVersion: 1, answer: { choice: "gut" } });
     s = await onboardingState(u.userId);
-    expect(s.left).toEqual(["ax.plan_deadline"]);
-    await answerQuestion(u.userId, { questionId: "ax.plan_deadline", questionVersion: 1, answer: { choice: "early" } });
-    s = await onboardingState(u.userId);
-    expect(s).toMatchObject({ left: [], tile: { direction: 1, state: "consistent" } });
+    expect(s.left).toEqual(["fut.one_thing"]);
+    await answerQuestion(u.userId, { questionId: "fut.one_thing", questionVersion: 1, answer: { text: "Learn to swim" } });
+    expect((await onboardingState(u.userId)).left).toEqual([]);
+    // A first piece in each of three chapters, with the answer in words.
+    const pieces = await seedPieces(u.userId, "en");
+    expect(pieces.map((p) => p.chapter)).toEqual(["likes", "mind", "story"]);
+    expect(pieces.map((p) => p.answer)).toEqual(["By the sea", "My gut feeling", "Learn to swim"]);
     await finishOnboarding(u.userId);
     expect((await onboardingState(u.userId)).done).toBe(true);
   });
