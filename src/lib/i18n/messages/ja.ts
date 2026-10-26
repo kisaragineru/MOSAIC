@@ -7,7 +7,6 @@ export const ja: Dict = {
     loading: "読み込み中…",
     appName: "MOSAIC",
     tagline: "A lifetime, piece by piece.",
-    brand: "あなたを、少しずつ知っていく。",
     save: "保存",
     cancel: "キャンセル",
     delete: "削除",

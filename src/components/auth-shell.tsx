@@ -13,7 +13,6 @@ export function AuthShell({ t, locale, back, trial = false, children }: { t: Dic
       <div className="mb-8 text-center">
         <h1><BrandLockup /></h1>
         <p className="mt-4 text-sm text-stone-600">{t.common.tagline}</p>
-        <p className="text-xs text-stone-500">{t.common.brand}</p>
       </div>
       {children}
       <form action={setLocaleCookieAction} className="mt-6 flex items-center justify-center gap-2 text-sm">

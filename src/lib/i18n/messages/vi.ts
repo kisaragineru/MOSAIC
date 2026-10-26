@@ -7,7 +7,6 @@ export const vi: Dict = {
     loading: "Đang tải…",
     appName: "MOSAIC",
     tagline: "A lifetime, piece by piece.",
-    brand: "Hiểu bạn, từng chút một.",
     save: "Lưu",
     cancel: "Hủy",
     delete: "Xóa",

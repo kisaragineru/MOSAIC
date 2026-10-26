@@ -5,7 +5,6 @@ export const en = {
     loading: "Loading…",
     appName: "MOSAIC",
     tagline: "A lifetime, piece by piece.",
-    brand: "Getting to know you, little by little.",
     save: "Save",
     cancel: "Cancel",
     delete: "Delete",
