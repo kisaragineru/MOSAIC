@@ -15,8 +15,9 @@ export async function saveBirthAction(form: FormData) {
       lunarMonth: str(form, "lunarMonth"),
       lunarDay: str(form, "lunarDay"),
       lunarLeap: bool(form, "lunarLeap"),
-      timeKnown: bool(form, "timeKnown"),
-      birthTime: bool(form, "timeKnown") ? str(form, "birthTime") : "",
+      // The guide's form has no checkbox: a time given means it is known.
+      timeKnown: str(form, "timeFromInput") === "1" ? !!str(form, "birthTime") : bool(form, "timeKnown"),
+      birthTime: str(form, "timeFromInput") === "1" || bool(form, "timeKnown") ? str(form, "birthTime") : "",
       timeZone: str(form, "timeZone"),
       placeLabel: str(form, "placeLabel"),
       sex: str(form, "sex") || "unspecified",

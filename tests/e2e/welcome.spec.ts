@@ -109,9 +109,8 @@ test("while the guide isn't finished every page says so, with the way back; it c
   await bar.getByRole("link", { name: /Back to the guide/ }).click();
   await page.waitForURL(/\/welcome\?step=2$/);
   await expect(page.getByTestId("guide-bar")).toHaveCount(0);
-  // Only the birth date is needed: no time, no sex.
+  // Only the birth date is needed: the time left empty, no sex.
   await page.getByLabel("Date of birth (Solar (Gregorian))").fill("1990-06-07");
-  await page.getByLabel("I know my birth time").uncheck();
   await page.getByRole("button", { name: "Make my chart" }).click();
   await page.waitForURL(/step=3/);
   await expect(page.getByTestId("chart-result")).toContainText("Your chart is ready");

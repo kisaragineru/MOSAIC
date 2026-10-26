@@ -40,7 +40,13 @@ export function BirthForm({ t, p, needs, back, simple = false }: { t: Dict; p: T
       <Checkbox name="lunarLeap" defaultChecked={p?.lunarLeap} label={t.tuvi.lunarLeap} />
     </>
   );
-  const time = (
+  // In the guide the time is simply optional: left empty, the chart is made without it.
+  const time = simple ? (
+    <>
+      <input type="hidden" name="timeFromInput" value="1" />
+      <Field label={t.tuvi.time} hint={t.welcome.timeHint}><Input type="time" name="birthTime" defaultValue={p?.birthTime?.slice(0, 5) ?? ""} /></Field>
+    </>
+  ) : (
     <>
       <Checkbox name="timeKnown" defaultChecked={p ? p.timeKnown : true} label={t.tuvi.timeKnown} />
       <Field label={t.tuvi.time}><Input type="time" name="birthTime" defaultValue={p?.birthTime?.slice(0, 5) ?? ""} /></Field>

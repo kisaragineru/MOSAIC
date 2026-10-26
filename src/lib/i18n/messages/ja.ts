@@ -73,6 +73,10 @@ export const ja: Dict = {
       "記録は初期設定で非公開です。あなたが共有リンクを作り、相手とあなたの両方が同意しない限り、誰とも共有されません。",
   },
   errors: {
+    time_required: "出生時刻を入れてください（わからない場合は「出生時刻がわかる」のチェックを外してください）。",
+    solar_date_required: "生年月日を入れてください。",
+    lunar_date_required: "旧暦の年・月・日をすべて入れてください。",
+    invalid_time: "出生時刻が正しくありません。",
     oauth_unavailable: "このログイン方法は、いま使えません。",
     oauth_cancelled: "ログインがキャンセルされました。",
     oauth_failed: "ログインできませんでした。もう一度お試しください。",
@@ -1129,6 +1133,7 @@ export const ja: Dict = {
     tuviQuick: "入力は30秒。生年月日だけでOKです。出生時刻や性別がわからなくても大丈夫です。",
     tuviPrivacy: "🔒 生年月日と時刻は、あなたにしか見えません。つながった相手にも表示されません。",
     tuviMore: "その他の設定（旧暦で入れる・タイムゾーン・出生地）",
+    timeHint: "わからなければ空欄のままで大丈夫です（時刻なしで命盤をつくります）。",
     tuviMake: "命盤をつくる",
     resultEyebrow: "あなたの命盤ができました",
     resultPersona: (p: string) => `あなたの本質は「${p}」`,

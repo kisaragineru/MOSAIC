@@ -73,6 +73,10 @@ export const vi: Dict = {
       "Mọi ghi chép mặc định là riêng tư. Không có gì được chia sẻ trừ khi bạn tự tạo liên kết chia sẻ và cả hai người cùng đồng ý.",
   },
   errors: {
+    time_required: "Hãy nhập giờ sinh (hoặc bỏ chọn “Tôi biết giờ sinh”).",
+    solar_date_required: "Hãy nhập ngày sinh.",
+    lunar_date_required: "Hãy nhập đủ năm, tháng, ngày âm lịch.",
+    invalid_time: "Giờ sinh không hợp lệ.",
     oauth_unavailable: "Cách đăng nhập này hiện chưa dùng được.",
     oauth_cancelled: "Đã hủy đăng nhập.",
     oauth_failed: "Không đăng nhập được. Hãy thử lại.",
@@ -1129,6 +1133,7 @@ export const vi: Dict = {
     tuviQuick: "Chỉ 30 giây. Ngày sinh là đủ — không biết giờ sinh hay không muốn cho biết giới tính cũng được.",
     tuviPrivacy: "🔒 Chỉ bạn thấy ngày giờ sinh. Người đã kết nối không bao giờ thấy.",
     tuviMore: "Cài đặt khác (âm lịch, múi giờ, nơi sinh)",
+    timeHint: "Không biết thì cứ để trống (lá số sẽ được lập không có giờ sinh).",
     tuviMake: "Lập lá số",
     resultEyebrow: "Lá số của bạn đã sẵn sàng",
     resultPersona: (p: string) => `Bản chất của bạn là “${p}”`,

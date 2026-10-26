@@ -71,6 +71,10 @@ export const en = {
       "Your records are private by default. Nothing is shared with anyone unless you explicitly create a share link and both people consent.",
   },
   errors: {
+    time_required: "Please enter the birth time (or untick “I know my birth time”).",
+    solar_date_required: "Please enter the date of birth.",
+    lunar_date_required: "Please enter the lunar year, month and day.",
+    invalid_time: "That birth time isn't valid.",
     oauth_unavailable: "This way of signing in isn't available right now.",
     oauth_cancelled: "Sign-in was cancelled.",
     oauth_failed: "Couldn't sign you in. Please try again.",
@@ -1127,6 +1131,7 @@ export const en = {
     tuviQuick: "Takes 30 seconds. Your birth date is enough — it's fine if you don't know the time or would rather not give a sex.",
     tuviPrivacy: "🔒 Only you can see your birth date and time. People you're connected to never see them.",
     tuviMore: "More settings (lunar date, time zone, place)",
+    timeHint: "Leave it empty if you don't know (the chart is made without the time).",
     tuviMake: "Make my chart",
     resultEyebrow: "Your chart is ready",
     resultPersona: (p: string) => `At heart, you are “${p}”`,
