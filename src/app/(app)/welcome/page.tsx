@@ -10,6 +10,8 @@ import { ChartTour } from "@/components/chart-tour";
 import { Flash } from "@/components/flash";
 import { ConfirmButton } from "@/components/confirm-button";
 import { TuviChart } from "@/components/tuvi-chart";
+import { TypeImage, TypePortraits } from "@/components/tuvi-type";
+import { essenceTypes } from "@/lib/tuvi/type-view";
 import { Button, Card, Textarea } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
@@ -176,6 +178,7 @@ async function ChartResult({ t, locale, tv }: { t: Awaited<ReturnType<typeof get
   const c = tv.chart!;
   const view = chartView(c, locale, t, { birth: true });
   const persona = tv.sections.find((x) => x.section === "personality")?.persona;
+  const essence = essenceTypes(c, locale);
   // The plain reading opens with what the palace is and how many faces it has; the star portraits follow.
   const plain = tv.sections.find((x) => x.section === "personality")?.plain?.slice(2, 4) ?? [];
   const hasNow = tv.currentAge !== null && c.palaces.some((p) => p.daiHan && tv.currentAge! >= p.daiHan.from && tv.currentAge! <= p.daiHan.to);
@@ -183,7 +186,11 @@ async function ChartResult({ t, locale, tv }: { t: Awaited<ReturnType<typeof get
     <section className="space-y-4">
       <div className="rounded-3xl bg-linear-to-br from-teal-100 via-sky-50 to-violet-200 p-5 text-teal-950 shadow-[0_10px_30px_-14px_rgba(91,70,160,0.35)] motion-safe:animate-[zoomIn_.5s_ease-out]" data-testid="chart-result">
         <p className="text-xs font-semibold text-teal-700">✨ {w.resultEyebrow}</p>
-        {persona && <p className="mt-2 text-xl font-bold leading-snug">{w.resultPersona(persona)}</p>}
+        <div className="mt-3">
+          <TypePortraits types={essence.types} note={essence.borrowed ? t.tuvi.ui.typeBorrowed : null}>
+            {persona && <p className="text-xl font-bold leading-snug">{w.resultPersona(persona)}</p>}
+          </TypePortraits>
+        </div>
         {plain.map((x) => <p key={x} className="mt-2 text-sm leading-7 text-teal-950/90">{x}</p>)}
         <p className="mt-3 text-xs leading-5 text-rose-900">{w.resultShare}</p>
       </div>
@@ -234,6 +241,7 @@ async function Finished({ uid, t, locale, answered }: { uid: string; t: Awaited<
   const pieces = await seedPieces(uid, locale);
   const tv = await getTuvi(uid, locale);
   const persona = tv.sections.find((x) => x.section === "personality")?.persona;
+  const essence = tv.chart ? essenceTypes(tv.chart, locale) : { types: [], borrowed: false };
   const manual = await buildManual(uid, locale);
   const summary = manual.sections.find((x) => x.id === "summary")?.blocks.find((b) => b.t === "list");
   return (
@@ -283,7 +291,14 @@ async function Finished({ uid, t, locale, answered }: { uid: string; t: Awaited<
       {tv.chart && (
         <Link href="/tuvi" className="block rounded-3xl bg-linear-to-br from-teal-100 via-sky-50 to-violet-200 p-5 text-teal-950 shadow-sm">
           <p className="text-xs font-semibold text-teal-700">⭐ {w.achTuvi}</p>
-          {persona ? <p className="mt-1 text-lg font-bold leading-snug">{w.resultPersona(persona)}</p> : <p className="mt-1 text-lg font-bold">{w.resultEyebrow}</p>}
+          <div className="mt-2 flex items-center gap-3">
+            {essence.types.length > 0 && (
+              <span className="flex shrink-0 gap-1.5">
+                {essence.types.map((x) => <span key={x.id} className="w-14 overflow-hidden rounded-xl ring-2 ring-white shadow-sm"><TypeImage t={x} small /></span>)}
+              </span>
+            )}
+            {persona ? <p className="text-lg font-bold leading-snug">{w.resultPersona(persona)}</p> : <p className="text-lg font-bold">{w.resultEyebrow}</p>}
+          </div>
           <p className="mt-2 text-right text-sm font-semibold text-teal-800">{w.openTuvi} →</p>
         </Link>
       )}

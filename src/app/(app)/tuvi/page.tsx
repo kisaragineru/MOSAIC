@@ -6,6 +6,8 @@ import { Flash } from "@/components/flash";
 import { TuviChart } from "@/components/tuvi-chart";
 import { TuviStages, type StageView } from "@/components/tuvi-stages";
 import { TuviThemes } from "@/components/tuvi-themes";
+import { TypePortraits } from "@/components/tuvi-type";
+import { essenceTypes } from "@/lib/tuvi/type-view";
 import { themeLabels } from "@/lib/tuvi/theme-labels";
 import { Button, Card, Checkbox, Field, Input, Notice, Page, Select } from "@/components/ui";
 import { BRANCHES } from "@/lib/tuvi/canchi";
@@ -57,6 +59,7 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
   const menh = c && c.menh !== null ? details.find((d) => d.branch === c.menh) : undefined;
   const ORDER = ["personality", "love", "career", "family", "wealth", "relationships"];
   const persona = v.sections.find((x) => x.section === "personality")?.persona;
+  const essence = c ? essenceTypes(c, locale) : { types: [], borrowed: false };
   const cyclesPlain = v.sections.find((x) => x.section === "cycles")?.plain ?? [];
   const themes = v.sections.filter((x) => x.section !== "cycles").sort((a, b) => ORDER.indexOf(a.section) - ORDER.indexOf(b.section));
   return (
@@ -69,12 +72,20 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
           <p className="mt-1 text-sm text-teal-900/80">{c.yearPillar.name} · {t.tuvi.napAm} {c.napAm.name}</p>
           {menh ? (
             <>
-              <p className="mt-3 text-xs text-teal-700">{ui.menhStars}</p>
-              <p className="text-2xl font-semibold tracking-tight">{menh.mains.map((m) => m.name).join(" · ") || "—"}</p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {menh.mains.map((m) => <span key={m.name} className="rounded-full bg-white/70 px-2.5 py-0.5 text-xs text-violet-900">{m.keywords}</span>)}
+              <p className="mt-3 text-xs font-semibold text-teal-700">✨ {ui.typeEyebrow}</p>
+              {/* The type(s) as pictures first: easier to take in than star names. */}
+              <div className="mt-2">
+                <TypePortraits types={essence.types} note={essence.borrowed ? ui.typeBorrowed : null}>
+                  <div>
+                    <p className="text-xs text-teal-700">{ui.menhStars}</p>
+                    <p className="text-xl font-semibold tracking-tight">{menh.mains.map((m) => m.name).join(" · ") || "—"}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {menh.mains.map((m) => <span key={m.name} className="rounded-full bg-white/70 px-2.5 py-0.5 text-xs text-violet-900">{m.keywords}</span>)}
+                  </div>
+                  {persona && <p className="text-sm text-teal-950"><span className="text-xs text-teal-700">{ui.personaLead}{t.common.colon}</span><b>{t.common.quoteOpen}{persona}{t.common.quoteClose}</b></p>}
+                </TypePortraits>
               </div>
-              {persona && <p className="mt-3 text-sm text-teal-950"><span className="text-xs text-teal-700">{ui.personaLead}{t.common.colon}</span><b>{t.common.quoteOpen}{persona}{t.common.quoteClose}</b></p>}
             </>
           ) : (
             <p className="mt-3 text-sm text-teal-900/80">{v.sections[0]?.paragraphs[0]?.text}</p>

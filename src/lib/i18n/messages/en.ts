@@ -461,6 +461,8 @@ export const en = {
       terms: "Words used in this reading",
       guideLink: "New to Tử Vi? How to read it",
       guideSub: "The chart, the twelve palaces and the stars, explained simply",
+      typeEyebrow: "Your essence",
+      typeBorrowed: "Your Mệnh has no main star of its own, so it is read through the stars of the opposite palace.",
       personaLead: "In a word",
       reflectTitle: "To look back",
       aheadTitle: "Something to think about",

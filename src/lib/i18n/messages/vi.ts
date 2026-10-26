@@ -463,6 +463,8 @@ export const vi: Dict = {
       terms: "Thuật ngữ trong phần luận giải",
       guideLink: "Mới làm quen Tử Vi? Cách đọc lá số",
       guideSub: "Giải thích dễ hiểu về lá số, mười hai cung và các sao",
+      typeEyebrow: "Bản chất của bạn",
+      typeBorrowed: "Cung Mệnh vô chính diệu nên được đọc qua các chính tinh của cung đối diện.",
       personaLead: "Nói ngắn gọn",
       reflectTitle: "Gợi ý để nhìn lại",
       aheadTitle: "Điều để suy ngẫm",

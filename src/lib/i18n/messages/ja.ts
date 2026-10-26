@@ -463,6 +463,8 @@ export const ja: Dict = {
       terms: "この読みに出てくる言葉",
       guideLink: "はじめての方へ：Tử Vi の読み方",
       guideSub: "命盤の見方、12の宮、星の意味をやさしく説明します",
+      typeEyebrow: "あなたの本質",
+      typeBorrowed: "命宮に主役の星（主星）がないため、真向かいの宮の星を借りて読んでいます。",
       personaLead: "ひとことで言うと",
       reflectTitle: "振り返りのヒント",
       aheadTitle: "これからへの問い",

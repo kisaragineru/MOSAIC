@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TypeImage } from "@/components/tuvi-type";
 import { Card, Page } from "@/components/ui";
 import { GUIDE } from "@/content/tuvi-guide";
 import { getT } from "@/lib/i18n/server";
@@ -96,10 +97,15 @@ export default async function TuviGuidePage() {
         <P>{L(GUIDE.starsLead)}</P>
         <ul className="grid gap-2 sm:grid-cols-2">
           {MAIN_STARS.map((s) => (
-            <li key={s} className="rounded-2xl bg-white/85 p-3 ring-1 ring-stone-200/60">
-              <p className="font-semibold text-stone-900">{STAR_INFO[s].vi}</p>
-              <p className="text-sm font-semibold text-violet-800">{t.common.quoteOpen}{L(STAR_PLAIN[s].persona)}{t.common.quoteClose}</p>
-              <p className="mt-1 text-sm leading-6 text-stone-700">{L(STAR_PLAIN[s].plain)}</p>
+            <li key={s} className="flex gap-3 rounded-2xl bg-white/85 p-3 ring-1 ring-stone-200/60">
+              <span className="w-20 shrink-0 self-start overflow-hidden rounded-xl ring-1 ring-stone-200/60">
+                <TypeImage t={{ id: s, name: STAR_INFO[s].vi, persona: L(STAR_PLAIN[s].persona) }} small />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-semibold text-stone-900">{STAR_INFO[s].vi}</span>
+                <span className="block text-sm font-semibold text-violet-800">{t.common.quoteOpen}{L(STAR_PLAIN[s].persona)}{t.common.quoteClose}</span>
+                <span className="mt-1 block text-sm leading-6 text-stone-700">{L(STAR_PLAIN[s].plain)}</span>
+              </span>
             </li>
           ))}
         </ul>
