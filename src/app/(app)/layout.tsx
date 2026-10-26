@@ -7,6 +7,8 @@ import { getAccount } from "@/server/services/account";
 import { dmUnreadTotal } from "@/server/services/dm";
 import { myAvatarUrl } from "@/server/services/avatars";
 import { Avatar } from "@/components/avatar";
+import { TrialBar } from "@/components/trial-bar";
+import { trialReturnUser } from "@/server/services/dev-trial";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const uid = await requireUser();
@@ -15,8 +17,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const unread = await dmUnreadTotal(uid);
   const avatar = await myAvatarUrl(uid);
   const initial = Array.from(acc.profile.displayName.trim())[0]?.toUpperCase() ?? "?";
+  // Development: trying sign-up with a test account, with the way back to your own.
+  const trialOwner = await trialReturnUser();
   return (
     <>
+      {trialOwner && trialOwner !== uid && <TrialBar t={t} />}
       <header className="sticky top-0 z-10 print:hidden border-b border-white/60 bg-[#faf8f5]/75 backdrop-blur-md">
         <div className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-2">
           <Link href="/home" className="flex items-center gap-2">

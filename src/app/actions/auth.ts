@@ -5,13 +5,17 @@ import { isLocale } from "@/lib/i18n/locales";
 import { LOCALE_COOKIE } from "@/lib/i18n/server";
 import { clearSessionCookie, clientKey, currentUserId, sessionToken, setSessionCookie } from "@/server/auth/session";
 import { login, logout, register } from "@/server/services/account";
+import { endTrial, isTrialEmail, startTrial, trialAccount, trialReturnUser } from "@/server/services/dev-trial";
 import { attempt, safeNext, str, withParam } from "./util";
 
 export async function registerAction(form: FormData) {
   const next = safeNext(str(form, "next"));
+  // Trying sign-up from settings (development): always a throwaway address, no invite code needed.
+  const trial = !!(await trialReturnUser());
+  const email = trial && !isTrialEmail(str(form, "email")) ? trialAccount().email : str(form, "email");
   const r = await attempt("register", async () =>
     register(
-      { email: str(form, "email"), password: str(form, "password"), displayName: str(form, "displayName"), locale: str(form, "locale") || "en", inviteCode: str(form, "inviteCode") },
+      { email, password: str(form, "password"), displayName: str(form, "displayName"), locale: str(form, "locale") || "en", inviteCode: trial ? process.env.REGISTRATION_CODE : str(form, "inviteCode") },
       await clientKey(),
     ),
   );
@@ -41,4 +45,19 @@ export async function setLocaleCookieAction(form: FormData) {
   const l = str(form, "locale");
   if (isLocale(l)) (await cookies()).set(LOCALE_COOKIE, l, { path: "/", sameSite: "lax", maxAge: 60 * 60 * 24 * 365 });
   redirect(safeNext(str(form, "back"), "/login"));
+}
+
+/** Development: sign out to sign-up with a throwaway account, keeping your own to come back to. */
+export async function startTrialAction() {
+  const uid = await currentUserId();
+  if (!uid) redirect("/login");
+  const r = await attempt("dev.trial_start", () => startTrial(uid));
+  if (!r.ok) redirect(`/settings?e=${r.error}#dev`);
+  redirect("/register");
+}
+
+/** Development: back to your own account; the throwaway account is deleted. */
+export async function endTrialAction() {
+  const back = await endTrial(await currentUserId());
+  redirect(back ? "/settings?ok=trial_ended#dev" : "/login");
 }

@@ -761,6 +761,16 @@ export const en = {
     checking: "Checking link…",
     own: "This is your own link.",
   },
+  trial: {
+    title: "Try sign-up and the welcome guide",
+    help: "Step out of your account and try sign-up and the welcome guide with a new test account. Name, email and password are filled in for you. When you're done, \"Back to my account\" deletes the test account and signs you back in.",
+    start: "Try from sign-up",
+    bar: "🧪 You're in a test account",
+    barAuth: "🧪 Trying sign-up (your own account is kept)",
+    back: "Back to my account",
+    registerNote: "This is a test sign-up. Name, email and password are filled in — just press Create account.",
+    ended: "You're back in your account. The test account was deleted.",
+  },
   pair: {
     title: "Our story",
     lead: "You both see the same.",

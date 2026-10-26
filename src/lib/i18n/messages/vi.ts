@@ -763,6 +763,16 @@ export const vi: Dict = {
     checking: "Đang kiểm tra liên kết…",
     own: "Đây là liên kết của chính bạn.",
   },
+  trial: {
+    title: "Thử đăng ký và hướng dẫn ban đầu",
+    help: "Tạm rời tài khoản của bạn để thử đăng ký và hướng dẫn ban đầu bằng một tài khoản thử mới. Tên, email và mật khẩu được điền sẵn. Xong thì bấm “Quay lại tài khoản của tôi”: tài khoản thử bị xoá và bạn được đăng nhập lại.",
+    start: "Thử từ bước đăng ký",
+    bar: "🧪 Bạn đang ở tài khoản thử",
+    barAuth: "🧪 Đang thử đăng ký (tài khoản của bạn vẫn giữ nguyên)",
+    back: "Quay lại tài khoản của tôi",
+    registerNote: "Đây là đăng ký thử. Tên, email và mật khẩu đã được điền sẵn — chỉ cần bấm Tạo tài khoản.",
+    ended: "Đã quay lại tài khoản của bạn. Tài khoản thử đã bị xoá.",
+  },
   pair: {
     title: "Hành trình của hai bạn",
     lead: "Cả hai cùng thấy nội dung giống nhau.",

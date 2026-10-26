@@ -1,5 +1,8 @@
+import { execSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
+
+const E2E_OWNER_DB = process.env.E2E_MIGRATION_DATABASE_URL ?? "postgres://mosaic_owner:owner_dev_pw@localhost:5432/mosaic_e2e";
 
 test("a new account is guided: the chart (not skippable) and its tour, three questions to a first tile, a bio, then a connection", async ({ browser }) => {
   const ctx = await browser.newContext({ locale: "ja-JP", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.2.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
@@ -113,5 +116,39 @@ test("after the chart the guide can be put off, and is offered again from home",
   await page.waitForURL(/\/home$/);
   await expect(page.getByText("Continue the welcome guide")).toHaveCount(0);
   await expect(page.getByTestId("starter-checklist").getByText("Make your chart")).toBeVisible();
+  await ctx.close();
+});
+
+test("development: try sign-up and the guide with a throwaway account, then go back to your own", async ({ browser }) => {
+  const ctx = await browser.newContext({ locale: "ja-JP", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.5.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
+  const page = await ctx.newPage();
+  await page.goto("/register");
+  await page.getByLabel("なんと呼べばいいですか？").fill("ねる");
+  await page.getByLabel("メールアドレス").fill(`${randomUUID().slice(0, 8)}@example.test`);
+  await page.getByLabel(/^パスワード/).fill("e2e correct horse battery");
+  await page.getByRole("button", { name: "アカウントを作成" }).click();
+  await page.waitForURL(/\/welcome$/);
+
+  await page.goto("/settings");
+  await page.getByTestId("trial-start").getByRole("button", { name: /会員登録から試す/ }).click();
+  await page.waitForURL(/\/register$/);
+  await expect(page.getByTestId("trial-bar")).toContainText("会員登録のテスト中です");
+  // Everything is filled in; the address is a throwaway one.
+  await expect(page.getByLabel("メールアドレス")).toHaveValue(/@trial\.mosaic\.invalid$/);
+  const trialEmail = await page.getByLabel("メールアドレス").inputValue();
+  await page.getByRole("button", { name: "アカウントを作成" }).click();
+  await page.waitForURL(/\/welcome$/);
+  await expect(page.getByRole("heading", { name: /^ようこそ、テスト/ })).toBeVisible();
+  await expect(page.getByTestId("trial-bar")).toContainText("テスト用アカウントで体験中です");
+
+  await page.getByTestId("trial-bar").getByRole("button", { name: "元のアカウントに戻る" }).click();
+  await page.waitForURL(/\/settings\?ok=trial_ended/);
+  await expect(page.getByText("元のアカウントに戻りました。テスト用アカウントは削除しました。")).toBeVisible();
+  await expect(page.getByTestId("trial-bar")).toHaveCount(0);
+  // The throwaway account is gone.
+  const left = execSync(`psql ${E2E_OWNER_DB} -tAc "select count(*) from users where email = '${trialEmail}'"`).toString().trim();
+  expect(left).toBe("0");
+  await page.goto("/home");
+  await expect(page.getByRole("heading", { level: 1, name: "こんにちは、ねるさん" })).toBeVisible();
   await ctx.close();
 });

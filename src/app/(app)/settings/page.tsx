@@ -12,6 +12,7 @@ import { requireUser } from "@/server/auth/session";
 import { aiConfigured } from "@/server/ai/claude";
 import { getAccount, getNotificationPrefs } from "@/server/services/account";
 import { companionAsks, companionConnected, companionPending, devToolsEnabled, listCompanions } from "@/server/services/dev-companion";
+import { startTrialAction } from "@/app/actions/auth";
 import { companionAnswersAction, companionAsksOwnerAction, companionCommentsAction, companionGroupMessagesAction, companionMessagesAction, companionWritesAction, createCompanionAction, deleteCompanionAction, enrichCompanionAction, reconnectCompanionAction } from "@/app/actions/dev";
 
 
@@ -86,6 +87,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       </p>
       {devToolsEnabled() && (
         <section id="dev" className="scroll-mt-20 space-y-3 rounded-3xl border-2 border-dashed border-amber-300 bg-amber-50/70 p-5">
+          <div className="space-y-2 rounded-2xl bg-white p-4" data-testid="trial-start">
+            <p className="text-sm font-semibold text-amber-950">🧭 {t.trial.title}</p>
+            <p className="text-xs leading-5 text-amber-900">{t.trial.help}</p>
+            <form action={startTrialAction}>
+              <Button type="submit" className="min-h-9 px-4 py-1.5 text-sm">{t.trial.start} →</Button>
+            </form>
+          </div>
           <h2 className="font-semibold text-amber-950">🧪 {td.title}</h2>
           <p className="text-xs leading-5 text-amber-900">{td.help}</p>
           {companions.length > 0 && (

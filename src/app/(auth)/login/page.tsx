@@ -9,6 +9,7 @@ import { getT } from "@/lib/i18n/server";
 import { currentUserId } from "@/server/auth/session";
 import { enabledProviders } from "@/server/auth/oauth";
 import { OAuthButtons } from "@/components/oauth-buttons";
+import { trialReturnUser } from "@/server/services/dev-trial";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const sp = await searchParams;
@@ -16,7 +17,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   if (await currentUserId()) redirect(next);
   const { t, locale } = await getT();
   return (
-    <AuthShell t={t} locale={locale} back={`/login?next=${encodeURIComponent(next)}`}>
+    <AuthShell t={t} locale={locale} back={`/login?next=${encodeURIComponent(next)}`} trial={!!(await trialReturnUser())}>
       <Card title={t.auth.loginTitle}>
         <form action={loginAction} className="space-y-3">
           <Flash t={t} sp={sp} />

@@ -8,7 +8,7 @@ export function Flash({ t, sp }: { t: Dict; sp: Record<string, string | string[]
   return (
     <>
       {e && <Notice kind="error">{(t.errors as Record<string, string>)[e] ?? t.errors.generic}</Notice>}
-      {ok && <Notice kind="success">{ok === "deleted" ? t.common.deleted : ok === "password" ? t.settings.passwordChanged : ok === "answered" ? t.discover.saved : t.common.saved}</Notice>}
+      {ok && <Notice kind="success">{ok === "deleted" ? t.common.deleted : ok === "password" ? t.settings.passwordChanged : ok === "answered" ? t.discover.saved : ok === "trial_ended" ? t.trial.ended : t.common.saved}</Notice>}
     </>
   );
 }

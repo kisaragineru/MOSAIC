@@ -11,33 +11,37 @@ import { currentUserId } from "@/server/auth/session";
 import { registrationCodeRequired } from "@/server/services/account";
 import { enabledProviders } from "@/server/auth/oauth";
 import { OAuthButtons } from "@/components/oauth-buttons";
+import { trialAccount, trialReturnUser } from "@/server/services/dev-trial";
 
 export default async function RegisterPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const sp = await searchParams;
   const next = safeNext(sp.next);
   if (await currentUserId()) redirect(next);
   const { t, locale } = await getT();
+  // Development: trying sign-up from settings, with a throwaway account filled in.
+  const trial = (await trialReturnUser()) ? trialAccount() : null;
   return (
-    <AuthShell t={t} locale={locale} back={`/register?next=${encodeURIComponent(next)}`}>
+    <AuthShell t={t} locale={locale} back={`/register?next=${encodeURIComponent(next)}`} trial={!!trial}>
       <Card title={t.auth.registerTitle}>
         <form action={registerAction} className="space-y-3">
           <Flash t={t} sp={sp} />
           <input type="hidden" name="next" value={next} />
-          {registrationCodeRequired() && (
+          {trial && <Notice>{t.trial.registerNote}</Notice>}
+          {registrationCodeRequired() && !trial && (
             <Field label={t.auth.inviteCode} hint={t.auth.inviteHint}>
               <Input name="inviteCode" autoComplete="off" required maxLength={200} />
             </Field>
           )}
           {/* Google / Facebook first: the quickest way in. The invite code above applies to them too. */}
-          <OAuthButtons providers={enabledProviders()} next={next} from="register" labels={{ google: t.auth.continueGoogle, facebook: t.auth.continueFacebook, or: t.auth.orEmail }} />
+          <OAuthButtons providers={trial ? [] : enabledProviders()} next={next} from="register" labels={{ google: t.auth.continueGoogle, facebook: t.auth.continueFacebook, or: t.auth.orEmail }} />
           <Field label={t.auth.displayName}>
-            <Input name="displayName" autoComplete="nickname" required maxLength={80} />
+            <Input name="displayName" autoComplete="nickname" required maxLength={80} defaultValue={trial?.displayName} />
           </Field>
           <Field label={t.auth.email}>
-            <Input name="email" type="email" autoComplete="email" required />
+            <Input name="email" type="email" autoComplete="email" required defaultValue={trial?.email} readOnly={!!trial} />
           </Field>
           <Field label={t.auth.password} hint={t.auth.passwordHint}>
-            <Input name="password" type="password" autoComplete="new-password" minLength={10} required />
+            <Input name="password" type="password" autoComplete="new-password" minLength={10} required defaultValue={trial?.password} />
           </Field>
           <Field label={t.common.language}>
             <Select name="locale" defaultValue={locale}>

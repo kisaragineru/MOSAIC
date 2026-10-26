@@ -3,9 +3,12 @@ import { BrandLockup } from "@/components/brand";
 import { setLocaleCookieAction } from "@/app/actions/auth";
 import { LOCALE_NAMES, SUPPORTED_LOCALES, type Locale } from "@/lib/i18n/locales";
 import type { Dict } from "@/lib/i18n/messages/en";
+import { TrialBar } from "./trial-bar";
 
-export function AuthShell({ t, locale, back, children }: { t: Dict; locale: Locale; back: string; children: ReactNode }) {
+export function AuthShell({ t, locale, back, trial = false, children }: { t: Dict; locale: Locale; back: string; trial?: boolean; children: ReactNode }) {
   return (
+    <>
+    {trial && <TrialBar t={t} inAuth />}
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-4 py-10">
       <div className="mb-8 text-center">
         <h1><BrandLockup /></h1>
@@ -22,5 +25,6 @@ export function AuthShell({ t, locale, back, children }: { t: Dict; locale: Loca
         ))}
       </form>
     </main>
+    </>
   );
 }
