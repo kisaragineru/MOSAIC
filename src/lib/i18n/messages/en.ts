@@ -1132,7 +1132,7 @@ export const en = {
     tuviTitle: "First, let's make your chart",
     tuviLead: "Tử Vi, the traditional Vietnamese art, reads your core nature from when you were born, and how you are in love, work and friendship.",
     tuviPreviewTitle: "What your chart shows",
-    tuviPreview: ["Your core nature (e.g. “The sun”)", "How you are in love, work and friendship", "The theme of each decade of life"] as string[],
+    tuviPreview: ["Your core nature (e.g. “the warm sun”)", "How you are in love, work and friendship", "The theme of each decade of life"] as string[],
     tuviPreviewLock: "Add your birth date to see yours",
     typesTitle: "Fourteen types — which one are you?",
     typesLead: "Your type comes from the star at the heart of the chart (the Self palace). Add your birth time too and you'll see which one is yours.",

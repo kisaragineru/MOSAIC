@@ -312,7 +312,7 @@ function areaName(id: PalaceId | null, branch: number, locale: Locale) {
   return locale === "ja" ? `${plain}（${PALACE_JA[id]}）` : `${plain} (${PALACE_INFO[id].vi})`;
 }
 
-/** "「のんびり屋」（Thiên Đồng）" — what the star is like, then its own name. */
+/** "「平和主義者」（Thiên Đồng）" — what the star is like, then its own name. */
 function starPlain(id: MainStarId, locale: Locale) {
   return locale === "ja" ? `「${STAR_SHORT[id].ja}」（${STAR_INFO[id].vi}）` : `“${STAR_SHORT[id][locale]}” (${STAR_INFO[id].vi})`;
 }

@@ -8,19 +8,20 @@ import type { HoaId, MainStarId, PalaceId } from "./stars";
 type T = { en: string; vi: string; ja: string };
 
 export const STAR_SHORT: Record<MainStarId, T> = {
-  tu_vi: { ja: "まとめ役", en: "The leader", vi: "Người dẫn dắt" },
+  // The noun of each type's full name (STAR_PLAIN.persona), for places too small for the whole name.
+  tu_vi: { ja: "王様", en: "The leader", vi: "Người dẫn dắt" },
   thien_co: { ja: "作戦参謀", en: "The strategist", vi: "Nhà chiến lược" },
-  thai_duong: { ja: "照らす人", en: "The sun", vi: "Mặt trời" },
+  thai_duong: { ja: "太陽", en: "The sun", vi: "Mặt trời" },
   vu_khuc: { ja: "実務家", en: "The doer", vi: "Người thực tế" },
-  thien_dong: { ja: "のんびり屋", en: "The easygoing", vi: "Người thong dong" },
-  liem_trinh: { ja: "こだわり派", en: "The principled", vi: "Người nguyên tắc" },
-  thien_phu: { ja: "蓄える人", en: "The keeper", vi: "Người tích lũy" },
-  thai_am: { ja: "やさしさ", en: "The gentle moon", vi: "Vầng trăng dịu" },
-  tham_lang: { ja: "社交家", en: "The socialite", vi: "Người giao thiệp" },
-  cu_mon: { ja: "言葉の人", en: "The voice", vi: "Người của lời nói" },
-  thien_tuong: { ja: "調整役", en: "The mediator", vi: "Người dung hòa" },
-  thien_luong: { ja: "見守り役", en: "The guardian", vi: "Người che chở" },
-  that_sat: { ja: "突破力", en: "The trailblazer", vi: "Người tiên phong" },
+  thien_dong: { ja: "平和主義者", en: "The peacemaker", vi: "Người hiền hòa" },
+  liem_trinh: { ja: "情熱家", en: "The idealist", vi: "Người nguyên tắc" },
+  thien_phu: { ja: "金庫番", en: "The keeper", vi: "Người giữ kho" },
+  thai_am: { ja: "月", en: "The moon", vi: "Vầng trăng" },
+  tham_lang: { ja: "人気者", en: "The charmer", vi: "Người cuốn hút" },
+  cu_mon: { ja: "分析家", en: "The analyst", vi: "Nhà phân tích" },
+  thien_tuong: { ja: "世話役", en: "The helper", vi: "Người giúp đỡ" },
+  thien_luong: { ja: "兄貴・姉御", en: "The mentor", vi: "Người anh chị" },
+  that_sat: { ja: "勇者", en: "The trailblazer", vi: "Người tiên phong" },
   pha_quan: { ja: "改革者", en: "The reformer", vi: "Người đổi mới" },
 };
 

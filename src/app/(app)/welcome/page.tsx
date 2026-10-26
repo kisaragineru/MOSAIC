@@ -10,7 +10,7 @@ import { ChartTour } from "@/components/chart-tour";
 import { Flash } from "@/components/flash";
 import { ConfirmButton } from "@/components/confirm-button";
 import { TuviChart } from "@/components/tuvi-chart";
-import { TypeGallery, TypeImage, TypePortraits } from "@/components/tuvi-type";
+import { TypeGallery, TypeImage, TypeName, TypePortraits } from "@/components/tuvi-type";
 import { allTypes, essenceTypes } from "@/lib/tuvi/type-view";
 import { Button, Card, Textarea } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
@@ -331,7 +331,7 @@ async function Finished({ uid, t, locale, answered }: { uid: string; t: Awaited<
                   <li key={x.id} className={essence.types.length > 1 ? "space-y-1.5" : "flex items-start gap-3"}>
                     <span className={`block overflow-hidden rounded-2xl bg-white shadow-md ring-2 ring-white ${essence.types.length > 1 ? "" : "w-[38%] shrink-0"}`}><TypeImage t={x} small /></span>
                     <span className="block min-w-0">
-                      <span className="block text-sm font-bold text-stone-900">{x.short}<span className="ml-1.5 text-[11px] font-normal text-stone-500">{x.name}</span></span>
+                      <span className="block text-sm font-bold leading-snug text-stone-900"><TypeName t={x} /><span className="text-[11px] font-normal text-stone-500">{x.name}</span></span>
                       <span className="mt-0.5 block text-xs leading-5 text-stone-700">{firstSentence(x.plain)}</span>
                     </span>
                   </li>

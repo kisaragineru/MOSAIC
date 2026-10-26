@@ -6,8 +6,8 @@ export interface TypeView {
   name: string;
   /** The type in the reader's words, e.g. "まわりを照らす太陽タイプ". */
   persona: string;
-  /** The type in a word or two, e.g. "照らす人" (captions under a pair). */
-  short: string;
+  /** The same name in lines for narrow captions (each line kept whole). */
+  lines: string[];
   /** What the type is like, in a sentence or two. */
   plain: string;
 }
@@ -34,6 +34,17 @@ export function TypeImage({ t, small = false, className = "" }: { t: Pick<TypeVi
  * stars share the Self palace as equals (the chart gives no ground to rank them), so they stand
  * side by side, joined by "×", each with its own name. `children` (keywords, notes) follow.
  */
+/** A type's name in its lines: the last (the noun) never breaks. */
+export function TypeName({ t }: { t: Pick<TypeView, "lines"> }) {
+  return (
+    <>
+      {t.lines.map((l, i) => (
+        <span key={i} className={`block ${i === t.lines.length - 1 && t.lines.length > 1 ? "whitespace-nowrap" : ""}`}>{l}</span>
+      ))}
+    </>
+  );
+}
+
 export function TypePortraits({ types, children }: { types: TypeView[]; children?: React.ReactNode }) {
   if (types.length === 0) return children ? <div className="space-y-3">{children}</div> : null;
   if (types.length === 1) {
@@ -63,7 +74,7 @@ export function TypePortraits({ types, children }: { types: TypeView[]; children
           >
             <TypeImage t={x} />
             <figcaption className="flex flex-1 flex-col justify-center px-2 py-2 text-center [word-break:auto-phrase]">
-              <span className="block text-[13px] font-bold leading-snug text-stone-900">{x.short}</span>
+              <span className="block text-[13px] font-bold leading-snug text-stone-900"><TypeName t={x} /></span>
               <span className="mt-0.5 block text-[11px] text-stone-500">{x.name}</span>
             </figcaption>
           </figure>
@@ -84,10 +95,10 @@ export function TypeGallery({ types, mine = [], hint }: { types: TypeView[]; min
     <div data-testid="type-gallery">
       <ul className="-mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-2 [scrollbar-width:none]">
         {types.map((x) => (
-          <li key={x.id} className={`w-[5.75rem] shrink-0 snap-start overflow-hidden rounded-xl bg-white shadow-sm ${mine.includes(x.id) ? "ring-2 ring-violet-500" : "ring-1 ring-stone-200/70"}`}>
+          <li key={x.id} className={`w-[6.5rem] shrink-0 snap-start overflow-hidden rounded-xl bg-white shadow-sm ${mine.includes(x.id) ? "ring-2 ring-violet-500" : "ring-1 ring-stone-200/70"}`}>
             <TypeImage t={x} small />
             <p className="px-1.5 pb-1.5 pt-1 text-center leading-tight">
-              <span className="block text-[11px] font-bold text-stone-900">{x.short}</span>
+              <span className="block text-[11px] font-bold text-stone-900"><TypeName t={x} /></span>
               <span className="block text-[10px] text-stone-500">{x.name}</span>
             </p>
           </li>

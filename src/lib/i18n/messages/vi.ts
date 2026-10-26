@@ -1134,7 +1134,7 @@ export const vi: Dict = {
     tuviTitle: "Trước tiên, hãy lập lá số của bạn",
     tuviLead: "Tử Vi đọc bản chất của bạn từ ngày sinh, cùng con người bạn trong tình cảm, công việc và tình bạn.",
     tuviPreviewTitle: "Lá số cho bạn biết",
-    tuviPreview: ["Bản chất của bạn (ví dụ: “Mặt trời”)", "Bạn trong tình cảm, công việc, tình bạn", "Chủ đề của mỗi 10 năm"] as string[],
+    tuviPreview: ["Bản chất của bạn (ví dụ: “mặt trời ấm áp”)", "Bạn trong tình cảm, công việc, tình bạn", "Chủ đề của mỗi 10 năm"] as string[],
     tuviPreviewLock: "Nhập ngày sinh để xem của bạn",
     typesTitle: "Mười bốn kiểu người — bạn là kiểu nào?",
     typesLead: "Kiểu người của bạn đến từ chính tinh ở trung tâm lá số (cung Mệnh). Nhập cả giờ sinh để biết bạn thuộc kiểu nào.",
