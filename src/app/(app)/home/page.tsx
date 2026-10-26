@@ -29,7 +29,6 @@ import { KnowledgeCard } from "@/components/knowledge-card";
 import { StarterChecklist } from "@/components/starter-checklist";
 import { pairDate, pairEventText } from "@/components/pair-history";
 import { recentAnniversaries } from "@/server/services/pair-history";
-import { arrivedLetters } from "@/server/services/memories";
 import { dmOpenForConnectionAction } from "@/app/actions/dm";
 import { knowledge } from "@/server/services/knowledge";
 import { lookBackDue, monthKey } from "@/server/services/monthly";
@@ -76,28 +75,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         resume={!account.profile.onboardedAt}
         done={{ chart: !!chart, answers: know.parts.answers >= 3, bio: know.parts.bio, record: know.parts.records > 0, connect: comparisons.some((c) => c.status === "active") }}
       />
-      {/* Letters to the future that have opened and aren't read yet: one small card until read. */}
-      {await (async () => {
-        const letters = await arrivedLetters(uid);
-        if (letters.length === 0) return null;
-        const l = t.memories.letters;
-        return (
-          <section className="rounded-2xl bg-violet-50/80 px-4 py-3 ring-1 ring-violet-100" data-testid="letter-arrived">
-            <p className="text-sm font-semibold text-violet-950">✉ {l.arrived(letters.length)}</p>
-            <ul className="mt-1.5 space-y-1">
-              {letters.slice(0, 3).map((x) => (
-                <li key={x.id}>
-                  <Link href={`/memories/${x.id}`} className="flex items-center justify-between gap-2 text-xs text-violet-900 hover:underline">
-                    <span>{l.fromYou(pairDate(x.writtenOn, locale))}</span>
-                    <span className="shrink-0 font-semibold text-violet-700">{l.open} →</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            {letters.length > 3 && <Link href="/memories?kind=letter_to_future" className="mt-1 block text-xs text-violet-700 underline">{l.more(letters.length - 3)}</Link>}
-          </section>
-        );
-      })()}
       {/* Anniversaries with the people you're connected to (today, or in the last few days). */}
       {(await recentAnniversaries(uid, account.profile.timeZone)).map((a) => (
         <section key={a.sessionId} className="rounded-3xl bg-linear-to-br from-amber-50 via-rose-50 to-violet-50 p-5 shadow-sm ring-1 ring-amber-100" data-testid="anniversary">

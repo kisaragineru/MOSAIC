@@ -11,7 +11,7 @@ import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { LABELS } from "@/lib/labels";
 import { getAccount } from "@/server/services/account";
-import { listMemories, listTags, sealedLetters, type MemorySummary } from "@/server/services/memories";
+import { arrivedLetters, listMemories, listTags, sealedLetters, type MemorySummary } from "@/server/services/memories";
 import { LetterShelf } from "@/components/letter-shelf";
 import { todayIn } from "@/lib/validation/common";
 import { shareTargets, connectionFeed, feedForPage, feedToEntry, mineToEntry } from "@/server/services/memory-share";
@@ -99,7 +99,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
         </nav>
       )}
       {withWho && targets.length <= 1 && <p className="px-1 text-sm font-semibold text-rose-900">{tl.onlyFrom(withWho.name)}</p>}
-      {view !== "friends" && page === 0 && <LetterShelf letters={await sealedLetters(uid)} today={todayIn(tz)} t={t} locale={locale} />}
+      {view !== "friends" && page === 0 && <LetterShelf letters={await sealedLetters(uid)} arrived={await arrivedLetters(uid)} today={todayIn(tz)} t={t} locale={locale} />}
       {view !== "friends" && <Card>
         <form method="get" className="space-y-2" role="search">
           {view !== "all" && <input type="hidden" name="view" value={view} />}
