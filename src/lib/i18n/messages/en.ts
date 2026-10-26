@@ -270,8 +270,9 @@ export const en = {
       next: (days: number, date: string) => `Next in ${days} day${days === 1 ? "" : "s"} (${date})`,
       item: (written: string, reveal: string) => `Written ${written} → arrives ${reveal}`,
       note: "What they say stays sealed until the day they arrive.",
-      arrivedToday: (written: string) => `✉ A letter from you on ${written} has arrived`,
-      arrivedRecent: (written: string, on: string) => `✉ A letter from you on ${written} is here (${on})`,
+      arrived: (n: number) => (n === 1 ? "A letter to the future has arrived" : `${n} letters to the future have arrived`),
+      fromYou: (written: string) => `From you, ${written}`,
+      more: (n: number) => `${n} more`,
       open: "Open and read",
     },
     timeline: {

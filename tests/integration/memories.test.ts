@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { withUser } from "@/server/db/tx";
 import { people } from "@/server/db/schema";
-import { createMemory, deleteMemory, editMemory, getMemory, listMemories, listTags, arrivedLetters, sealedLetters } from "@/server/services/memories";
+import { createMemory, deleteMemory, editMemory, getMemory, listMemories, listTags, arrivedLetters, markLetterRead, sealedLetters } from "@/server/services/memories";
 import { sql } from "drizzle-orm";
 import { buildTimeline } from "@/lib/timeline";
 import { mineToEntry } from "@/server/services/memory-share";
@@ -115,7 +115,10 @@ describe("memories & timeline", () => {
     expect(await sealedLetters(u.userId)).toEqual([]);
     // Opening today: Home says it has arrived.
     await withUser(u.userId, (tx) => tx.execute(sql`update memory_entries set reveal_on = (now() at time zone (select time_zone from profiles where user_id = ${u.userId}))::date where id = ${letter}`));
-    expect(await arrivedLetters(u.userId)).toMatchObject([{ id: letter, writtenOn: "2026-03-01", today: true }]);
+    expect(await arrivedLetters(u.userId)).toMatchObject([{ id: letter, writtenOn: "2026-03-01" }]);
+    // Read once, Home stops announcing it.
+    await markLetterRead(u.userId, letter);
+    expect(await arrivedLetters(u.userId)).toEqual([]);
   });
 
   it("deletes permanently, including all versions", async () => {

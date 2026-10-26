@@ -7,7 +7,7 @@ import { Card, LinkButton, Notice, Page, Pill } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { AppError } from "@/server/errors";
-import { getMemory } from "@/server/services/memories";
+import { getMemory, markLetterRead } from "@/server/services/memories";
 import { getAccount } from "@/server/services/account";
 import { listPeople } from "@/server/services/people";
 import { shareTargets } from "@/server/services/memory-share";
@@ -32,6 +32,8 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
     if (e instanceof AppError || (e as Error).name === "ZodError") notFound();
     throw e;
   }
+  // An opened letter, now read: Home stops announcing it.
+  if (m.kind === "letter_to_future" && !m.sealed) await markLetterRead(uid, m.id);
   const editing = sp.edit === "1" && !m.sealed;
   const media = m.sealed ? [] : ((await mediaFor(uid, [m.id])).get(m.id) ?? []);
   const people = await listPeople(uid);

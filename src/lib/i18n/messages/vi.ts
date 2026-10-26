@@ -272,8 +272,9 @@ export const vi: Dict = {
       next: (days: number, date: string) => `Lá tiếp theo sau ${days} ngày (${date})`,
       item: (written: string, reveal: string) => `Viết ngày ${written} → đến ngày ${reveal}`,
       note: "Nội dung được niêm phong đến ngày thư đến.",
-      arrivedToday: (written: string) => `✉ Lá thư bạn viết ngày ${written} đã đến`,
-      arrivedRecent: (written: string, on: string) => `✉ Lá thư bạn viết ngày ${written} đang chờ bạn (${on})`,
+      arrived: (n: number) => (n === 1 ? "Một lá thư gửi tương lai đã đến" : `${n} lá thư gửi tương lai đã đến`),
+      fromYou: (written: string) => `Từ bạn, ngày ${written}`,
+      more: (n: number) => `Thêm ${n} lá`,
       open: "Mở và đọc",
     },
     timeline: {

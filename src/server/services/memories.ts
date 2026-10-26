@@ -258,8 +258,8 @@ export async function sealedLetters(userId: string): Promise<{ id: string; writt
   });
 }
 
-/** Letters that opened today or in the last few days (for Home). */
-export async function arrivedLetters(userId: string, withinDays = 3): Promise<{ id: string; writtenOn: string; revealOn: string; today: boolean }[]> {
+/** Letters that have opened and not been read yet, newest first (Home announces them until read). */
+export async function arrivedLetters(userId: string): Promise<{ id: string; writtenOn: string; revealOn: string }[]> {
   return withUser(userId, async (tx) => {
     const tz = await userZone(tx, userId);
     const today = todayIn(tz);
@@ -270,11 +270,29 @@ export async function arrivedLetters(userId: string, withinDays = 3): Promise<{ 
         and(
           eq(memoryEntries.userId, userId),
           eq(memoryEntries.kind, "letter_to_future"),
-          sql`${memoryEntries.revealOn} <= ${today}::date and ${memoryEntries.revealOn} >= ${today}::date - ${withinDays}::int`,
+          sql`${memoryEntries.revealOn} <= ${today}::date and ${memoryEntries.letterReadAt} is null`,
         ),
       )
-      .orderBy(desc(memoryEntries.revealOn));
-    return rows.map((r) => ({ id: r.id, writtenOn: todayIn(tz, r.createdAt), revealOn: r.revealOn!, today: r.revealOn === today }));
+      .orderBy(desc(memoryEntries.revealOn), desc(memoryEntries.createdAt));
+    return rows.map((r) => ({ id: r.id, writtenOn: todayIn(tz, r.createdAt), revealOn: r.revealOn! }));
+  });
+}
+
+/** The owner has read an opened letter: Home stops announcing it. */
+export async function markLetterRead(userId: string, entryId: string) {
+  await withUser(userId, async (tx) => {
+    const today = await userToday(tx, userId);
+    await tx
+      .update(memoryEntries)
+      .set({ letterReadAt: new Date() })
+      .where(
+        and(
+          eq(memoryEntries.id, entryId),
+          eq(memoryEntries.userId, userId),
+          eq(memoryEntries.kind, "letter_to_future"),
+          sql`${memoryEntries.revealOn} <= ${today}::date and ${memoryEntries.letterReadAt} is null`,
+        ),
+      );
   });
 }
 

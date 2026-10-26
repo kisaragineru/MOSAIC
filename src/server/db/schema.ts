@@ -257,6 +257,8 @@ export const memoryEntries = pgTable(
     occurredOn: date("occurred_on", { mode: "string" }),
     /** Letters to the future stay sealed until this date. */
     revealOn: date("reveal_on", { mode: "string" }),
+    /** When the owner first read a letter after it opened (Home stops announcing it). */
+    letterReadAt: timestamp("letter_read_at", { withTimezone: true }),
     visibility: text("visibility").notNull().default("private"),
     currentVersion: integer("current_version").notNull().default(1),
     /** What it is about (several allowed): read from the words, or set by the owner. */
