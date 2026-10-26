@@ -17,7 +17,7 @@ import { todayIn } from "@/lib/validation/common";
 import { shareTargets, connectionFeed, feedForPage, feedToEntry, mineToEntry } from "@/server/services/memory-share";
 import { listPeople } from "@/server/services/people";
 import { avatarUrls, myAvatarUrl } from "@/server/services/avatars";
-import { commentInbox, commentPreviews, countsByEntry } from "@/server/services/comments";
+import { replyCounts, replyInbox, replyPreviews } from "@/server/services/replies";
 
 const PAGE_SIZE = 50;
 
@@ -58,8 +58,8 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
     }
   }
   const days = buildTimeline(entries, tz);
-  const counts = countsByEntry(await commentInbox(uid));
-  const previews = await commentPreviews(uid, entries.filter((e) => counts.has(e.id)).map((e) => e.id));
+  const { previews, counts: replyTotals } = await replyPreviews(uid, entries.filter((e) => !e.sealed).map((e) => e.id));
+  const counts = replyCounts(replyTotals, await replyInbox(uid));
   const media = await mediaFor(uid, entries.filter((e) => !e.sealed).map((e) => e.id));
   const pageHref = (n: number) => {
     const q = new URLSearchParams(Object.entries(filters).filter(([, v]) => v !== ""));

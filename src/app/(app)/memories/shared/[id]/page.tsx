@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Avatar } from "@/components/avatar";
 import { CommentThread } from "@/components/comment-thread";
 import { RecordReplies } from "@/components/record-replies";
-import { sharedReplies } from "@/server/services/replies";
+import { readReplies } from "@/server/services/replies";
 import { avatarUrls } from "@/server/services/avatars";
 import { Flash } from "@/components/flash";
 import { Card, Page, Pill } from "@/components/ui";
@@ -27,7 +27,7 @@ export default async function SharedRecordPage({ params, searchParams }: { param
   if (!e) notFound();
   const tz = (await getAccount(uid)).profile.timeZone;
   const comments = await readThread(uid, id, null).catch(() => []);
-  const replies = await sharedReplies(uid, id);
+  const replies = await readReplies(uid, id);
   const media = (await mediaFor(uid, [e.id])).get(e.id) ?? [];
   return (
     <Page title={t.comments.recordOf(e.ownerName)} back="/memories?view=friends">
@@ -45,16 +45,18 @@ export default async function SharedRecordPage({ params, searchParams }: { param
         {e.body && <p className="emoji-color whitespace-pre-line leading-relaxed text-stone-800">{e.body}</p>}
         {media.length > 0 && <div className={e.body ? "mt-3" : ""}><MediaGallery media={media} label={t.memories.media.label} /></div>}
       </article>
-      <RecordReplies t={t} locale={locale} tz={tz} replies={replies} entryId={e.id} editable={false} title={t.replies.by(e.ownerName)} />
+      <RecordReplies t={t} locale={locale} tz={tz} replies={replies} entryId={e.id} ownerId={e.ownerId} ownerName={e.ownerName} ownRecord={false} back={`/memories/shared/${e.id}`} avatars={await avatarUrls(uid, replies.map((x) => x.authorId))} note={t.replies.sharedNote} />
       <Link href={`/messages/new?record=${e.id}`} className="inline-flex min-h-10 items-center rounded-full bg-white px-4 text-sm font-semibold text-teal-800 ring-1 ring-stone-200 transition hover:ring-teal-300">
         {t.messages.shareRecord}
       </Link>
-      <section id="comments" className="scroll-mt-24">
-        <Card title={`💬 ${t.comments.title}`}>
-          <p className="-mt-1 mb-3 text-xs leading-relaxed text-stone-500">{t.comments.private(e.ownerName)}</p>
-          <CommentThread t={t} locale={locale} tz={tz} comments={comments} otherName={e.ownerName} entryId={e.id} partnerId={null} back={`/memories/shared/${e.id}`} />
-        </Card>
-      </section>
+      {comments.length > 0 && (
+        <section id="comments" className="scroll-mt-24">
+          <Card title={`💬 ${t.replies.legacyTitle}`}>
+            <p className="-mt-1 mb-3 text-xs leading-relaxed text-stone-500">{t.replies.legacyNote}</p>
+            <CommentThread t={t} locale={locale} tz={tz} comments={comments} back={`/memories/shared/${e.id}`} />
+          </Card>
+        </section>
+      )}
     </Page>
   );
 }

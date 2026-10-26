@@ -15,7 +15,8 @@ import { CIRCLE_ICON } from "@/components/circle-icon";
 import { todayIn } from "@/lib/validation/common";
 import { CommentThread } from "@/components/comment-thread";
 import { RecordReplies } from "@/components/record-replies";
-import { myReplies } from "@/server/services/replies";
+import { readReplies } from "@/server/services/replies";
+import { avatarUrls } from "@/server/services/avatars";
 import { commentInbox, readThread } from "@/server/services/comments";
 import { MediaGallery } from "@/components/media-grid";
 import { PostAbout } from "@/components/post-about";
@@ -43,7 +44,8 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
   const ta = t.memories.audience;
   // One conversation per person who commented (each sees only theirs); unread counted before reading.
   const threads = m.sealed ? [] : (await commentInbox(uid)).filter((x) => x.entryId === m.id && x.iOwn);
-  const replies = m.sealed || m.kind === "letter_to_future" ? [] : await myReplies(uid, m.id);
+  const replies = m.sealed || m.kind === "letter_to_future" ? [] : await readReplies(uid, m.id);
+  const replyAvatars = await avatarUrls(uid, replies.map((x) => x.authorId));
   const convos = await Promise.all(threads.map(async (th) => ({ th, comments: await readThread(uid, m.id, th.partnerId) })));
   return (
     <Page title={m.title ?? (m.kind === "letter_to_future" ? t.memories.kinds[m.kind] : t.memories.post.titleOf)} back="/memories">
@@ -105,28 +107,22 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
         </Card>
       )}
       {!m.sealed && !editing && m.kind !== "letter_to_future" && (
-        <RecordReplies t={t} locale={locale} tz={tz} replies={replies} entryId={m.id} editable title={t.replies.title} note={m.visibility === "private" ? t.replies.privateNote : t.replies.sharedNote} />
+        <RecordReplies t={t} locale={locale} tz={tz} replies={replies} entryId={m.id} ownerId={uid} ownerName="" ownRecord back={`/memories/${m.id}`} avatars={replyAvatars} note={m.visibility === "private" ? t.replies.privateNote : t.replies.sharedNote} />
       )}
       {!m.sealed && !editing && m.kind !== "letter_to_future" && <PostAbout t={t} id={m.id} labels={m.labels} by={m.labelsBy} feeling={m.feeling} ask={sp.ask === "feeling"} />}
-      {(convos.length > 0 || (!m.sealed && m.visibility !== "private")) && (
+      {/* Earlier one-to-one comments (ended): still readable by the two people, nothing new. */}
+      {convos.length > 0 && (
         <section id="comments" className="scroll-mt-24">
-          <Card title={`💬 ${t.comments.title}`}>
-            <p className="-mt-1 mb-3 text-xs leading-relaxed text-stone-500">{t.comments.privateOwner}</p>
-            {convos.length === 0 ? (
-              <p className="text-sm text-stone-500">{t.comments.noneOwner}</p>
-            ) : (
-              <div className="space-y-5">
-                {convos.map(({ th, comments }) => (
-                  <section key={th.partnerId} id={`c-${th.partnerId}`} className="rounded-2xl bg-stone-50/80 p-3 ring-1 ring-stone-100">
-                    <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-stone-800">
-                      {t.comments.with(th.otherName)}
-                      {th.unread > 0 && <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">{t.comments.newBadge}</span>}
-                    </h3>
-                    <CommentThread t={t} locale={locale} tz={tz} comments={comments} otherName={th.otherName} entryId={m.id} partnerId={th.partnerId} back={`/memories/${m.id}`} reply />
-                  </section>
-                ))}
-              </div>
-            )}
+          <Card title={`💬 ${t.replies.legacyTitle}`}>
+            <p className="-mt-1 mb-3 text-xs leading-relaxed text-stone-500">{t.replies.legacyNote}</p>
+            <div className="space-y-5">
+              {convos.map(({ th, comments }) => (
+                <section key={th.partnerId} id={`c-${th.partnerId}`} className="rounded-2xl bg-stone-50/80 p-3 ring-1 ring-stone-100">
+                  <h3 className="mb-2 text-sm font-semibold text-stone-800">{t.comments.with(th.otherName)}</h3>
+                  <CommentThread t={t} locale={locale} tz={tz} comments={comments} back={`/memories/${m.id}`} />
+                </section>
+              ))}
+            </div>
           </Card>
         </section>
       )}

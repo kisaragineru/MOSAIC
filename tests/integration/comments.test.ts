@@ -1,11 +1,25 @@
 import { describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
-import { addComment, commentInbox, commentPreviews, countsByEntry, deleteComment, readThread, sharedEntry } from "@/server/services/comments";
+import { commentInbox, commentPreviews, countsByEntry, deleteComment, readThread, sharedEntry } from "@/server/services/comments";
 import { createMemory, deleteMemory } from "@/server/services/memories";
 import { setMemoryAudience } from "@/server/services/memory-share";
 import { createShare, giveConsent, openComparison, revokeComparison } from "@/server/services/sharing";
 import { withUser } from "@/server/db/tx";
+import { mapDbError } from "@/server/errors";
 import { makeUser } from "../helpers/factory";
+
+// One-to-one comments have ended (replies under records took their place), so the app no longer
+// writes them; earlier conversations are made here the way they were written, to check they still
+// read as before: only between their two people, and only while the record is shared.
+async function addComment(userId: string, entryId: string, partnerId: string | null, body: string) {
+  return withUser(userId, async (tx) => {
+    try {
+      return (await tx.execute<{ id: string }>(sql`select memory_comment_add(${entryId}::uuid, ${partnerId}::uuid, ${body}) as id`)).rows[0]!.id;
+    } catch (e) {
+      mapDbError(e);
+    }
+  });
+}
 
 async function connect(a: string, b: string) {
   const s = await createShare(a);
@@ -15,7 +29,7 @@ async function connect(a: string, b: string) {
   return id;
 }
 
-describe("one-to-one comments on shared records", () => {
+describe("earlier one-to-one comments on shared records", () => {
   it("are only between the record's owner and each writer, and the owner answers each separately", async () => {
     const hana = await makeUser("Hana");
     const sora = await makeUser("Sora");

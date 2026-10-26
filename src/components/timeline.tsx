@@ -3,7 +3,7 @@ import type { Dict } from "@/lib/i18n/messages/en";
 import type { Locale } from "@/lib/i18n/locales";
 import { FEELING_EMOJI, type Feeling } from "@/lib/labels";
 import { KIND_ICON, relativeDay, type TimelineDay, type TimelineItem } from "@/lib/timeline";
-import type { CommentPreview } from "@/server/services/comments";
+import type { ReplyPreview } from "@/server/services/replies";
 import { Avatar } from "./avatar";
 import { MediaGrid } from "./media-grid";
 import type { MediaItem } from "@/server/services/media";
@@ -14,7 +14,7 @@ const dayLabel = (day: string, locale: Locale) =>
 
 /** Days of records on a vertical line: mine link to the record, others' are shown in full. */
 type Counts = Map<string, { count: number; unread: number }>;
-type Previews = Map<string, CommentPreview[]>;
+type Previews = Map<string, ReplyPreview[]>;
 type Media = Map<string, MediaItem[]>;
 
 export function Timeline({ t, locale, tz, days, compact = false, comments = new Map(), previews = new Map(), media = new Map(), avatars = new Map(), me }: { t: Dict; locale: Locale; tz: string; days: TimelineDay[]; compact?: boolean; comments?: Counts; previews?: Previews; media?: Media; avatars?: Map<string, string>; /** My name and photo, shown on my own posts. */ me?: { name: string; src?: string } }) {
@@ -69,9 +69,9 @@ function CommentCount({ t, c }: { t: Dict; c: { count: number; unread: number } 
 }
 
 /** The newest comments under a record, shown as they are (name and words). */
-function Comments({ t, items, total }: { t: Dict; items: CommentPreview[]; total: number }) {
+function Comments({ t, items, total }: { t: Dict; items: ReplyPreview[]; total: number }) {
   return (
-    <ul className="mt-2.5 space-y-1 border-l-2 border-sky-200 pl-3" aria-label={t.comments.title}>
+    <ul className="mt-2.5 space-y-1 border-l-2 border-sky-200 pl-3" aria-label={t.replies.title}>
       {items.map((c, i) => (
         <li key={i} className="text-sm leading-snug">
           <span className={`mr-1.5 font-semibold ${c.mine ? "text-teal-800" : "text-sky-900"}`}>{c.mine ? t.comments.you : c.authorName}</span>
@@ -83,7 +83,7 @@ function Comments({ t, items, total }: { t: Dict; items: CommentPreview[]; total
   );
 }
 
-function Mine({ t, locale, it, compact, c, p, media, me }: { t: Dict; locale: Locale; it: TimelineItem; compact: boolean; c?: { count: number; unread: number }; p?: CommentPreview[]; media?: MediaItem[]; me?: { name: string; src?: string } }) {
+function Mine({ t, locale, it, compact, c, p, media, me }: { t: Dict; locale: Locale; it: TimelineItem; compact: boolean; c?: { count: number; unread: number }; p?: ReplyPreview[]; media?: MediaItem[]; me?: { name: string; src?: string } }) {
   const m = it.entry;
   const tl = t.memories.timeline;
   if (it.letter) {
@@ -131,7 +131,7 @@ function Mine({ t, locale, it, compact, c, p, media, me }: { t: Dict; locale: Lo
 }
 
 /** Someone else's shared record: the whole card opens it (text, photos and our comments). */
-function Theirs({ t, it, compact, c, p, media, src }: { t: Dict; it: TimelineItem; compact: boolean; c?: { count: number; unread: number }; p?: CommentPreview[]; media?: MediaItem[]; src?: string }) {
+function Theirs({ t, it, compact, c, p, media, src }: { t: Dict; it: TimelineItem; compact: boolean; c?: { count: number; unread: number }; p?: ReplyPreview[]; media?: MediaItem[]; src?: string }) {
   const m = it.entry;
   const tl = t.memories.timeline;
   const name = m.ownerName ?? "?";

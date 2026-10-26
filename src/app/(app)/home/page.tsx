@@ -15,7 +15,7 @@ import { listTendencies } from "@/server/services/tendencies";
 import { AXIS_CHAPTER, PEER_POLES } from "@/content/axes";
 import { MANUAL_CHAPTERS } from "@/content/manual-text";
 import { avatarUrls, myAvatarUrl } from "@/server/services/avatars";
-import { commentInbox, commentPreviews, countsByEntry } from "@/server/services/comments";
+import { replyCounts, replyInbox, replyPreviews } from "@/server/services/replies";
 import { mediaFor } from "@/server/services/media";
 import { Timeline } from "@/components/timeline";
 import { buildTimeline } from "@/lib/timeline";
@@ -57,10 +57,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const pic = await portrait(uid);
   const know = await knowledge(uid);
   const lookBack = await lookBackDue(uid);
-  const inbox = await commentInbox(uid);
-  const newComments = inbox.filter((x) => x.unread > 0);
-  const counts = countsByEntry(inbox);
-  const previews = await commentPreviews(uid, recent.flatMap((d) => d.items.map((x) => x.entry.id)).filter((id) => counts.has(id)));
+  const inbox = await replyInbox(uid);
+  const newReplies = inbox.filter((x) => x.unread > 0);
+  const { previews, counts: replyTotals } = await replyPreviews(uid, recent.flatMap((d) => d.items.filter((x) => !x.entry.sealed).map((x) => x.entry.id)));
+  const counts = replyCounts(replyTotals, inbox);
   // The manual at a glance, from the tendencies the page already reads (no extra queries).
   const traits = (await listTendencies(uid))
     .filter((c) => c.userStatus !== "rejected" && (c.state === "consistent" || c.state === "emerging"))
@@ -111,20 +111,20 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           <span className="shrink-0 rounded-full bg-white px-3 py-1 font-semibold text-violet-800">{t.peers.homeAnswer} →</span>
         </Link>
       ))}
-      {newComments.length > 0 && (
+      {newReplies.length > 0 && (
         <section className="rounded-3xl border border-sky-200 bg-sky-50/80 p-4">
           <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-sky-950">
             <span aria-hidden className="text-xl">💬</span>
-            {t.comments.homeTitle}
+            {t.replies.homeTitle}
           </h2>
           <ul className="space-y-2">
-            {newComments.slice(0, 3).map((x) => (
-              <li key={`${x.entryId}-${x.partnerId}`}>
+            {newReplies.slice(0, 3).map((x) => (
+              <li key={x.entryId}>
                 <Link
-                  href={x.iOwn ? `/memories/${x.entryId}#c-${x.partnerId}` : `/memories/shared/${x.entryId}#comments`}
+                  href={x.iOwn ? `/memories/${x.entryId}#replies` : `/memories/shared/${x.entryId}#replies`}
                   className="block rounded-2xl bg-white px-3.5 py-2.5 text-sm ring-1 ring-sky-100 transition hover:ring-sky-300"
                 >
-                  <span className="block text-xs text-sky-800">{t.comments.fromOn(x.otherName, x.iOwn)}</span>
+                  <span className="block text-xs text-sky-800">{t.replies.fromOn(x.lastAuthorName ?? "", x.iOwn ? null : x.ownerName)}</span>
                   <span className="line-clamp-2 text-stone-900">{x.lastBody}</span>
                 </Link>
               </li>

@@ -18,7 +18,7 @@ import { answerQuestion } from "./discovery";
 import { setManualShare } from "./manual-share";
 import { createMemory } from "./memories";
 import { connectionFeed, setMemoryAudience } from "./memory-share";
-import { addComment, commentInbox } from "./comments";
+import { addReply, replyInbox } from "./replies";
 import { dmConversation, dmInbox, dmMessages, markRead, openDirect, reactToMessage, sendMessage } from "./dm";
 import { addPreference, updatePerson } from "./people";
 import { ANSWERS, BIO, BIRTH, FAVOURITES, INTRO, LEAN, MORE, MOTHER_COMMENT, MOTHER_GUESS, MOTHER_SEES_OTHERWISE, RECORDS } from "./dev-persona";
@@ -273,19 +273,19 @@ const REPLIES = ["コメントありがとう。読んでうれしかったよ�
 const NOTES = ["いい一日だったみたいね。よかった。", "読んで、ちょっとほっとしたよ。無理しないでね。", "今度ゆっくり聞かせてね。"];
 
 /**
- * She takes part in comments: answers whoever is waiting for her reply on her records, and writes
- * on the owner's newest record shared with her (once per record).
+ * She takes part in replies: answers on her records when someone else wrote there since she last
+ * looked, and replies under the owner's newest record shared with her (once per record).
  */
 export async function companionComments(ownerId: string, companionId: string) {
   const cid = await own(ownerId, companionId);
-  const inbox = await commentInbox(cid);
+  const inbox = await replyInbox(cid);
   let i = 0;
-  for (const th of inbox.filter((x) => x.iOwn && !x.lastMine)) {
-    await addComment(cid, th.entryId, th.partnerId, REPLIES[i++ % REPLIES.length]);
+  for (const th of inbox.filter((x) => x.iOwn && x.unread > 0)) {
+    await addReply(cid, th.entryId, REPLIES[i++ % REPLIES.length]);
   }
-  const commented = new Set(inbox.filter((x) => !x.iOwn).map((x) => x.entryId));
-  const next = (await connectionFeed(cid, { limit: 20 })).find((x) => x.ownerId === ownerId && !commented.has(x.id));
-  if (next) await addComment(cid, next.id, null, NOTES[next.body.length % NOTES.length]);
+  const replied = new Set(inbox.filter((x) => !x.iOwn).map((x) => x.entryId));
+  const next = (await connectionFeed(cid, { limit: 20 })).find((x) => x.ownerId === ownerId && !replied.has(x.id));
+  if (next) await addReply(cid, next.id, NOTES[next.body.length % NOTES.length]);
 }
 
 const DM_LINES = ["メッセージありがとう。元気にしてる？", "こっちは畑の大根がよく育ってるよ。今度持っていくね。", "無理しないでね。ちゃんと寝てる？", "今度お茶でもしようか。"];

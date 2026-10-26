@@ -5,7 +5,7 @@ import { answerQuestion } from "@/server/services/discovery";
 import { askPeer, myPeerRequests, peerResults } from "@/server/services/peers";
 import { portrait } from "@/server/services/mosaic";
 import { connectionFeed, setMemoryAudience, shareTargets } from "@/server/services/memory-share";
-import { addComment, commentInbox } from "@/server/services/comments";
+import { addReply, readReplies, replyInbox } from "@/server/services/replies";
 import { createMemory } from "@/server/services/memories";
 import { getComparison, giveConsent, listComparisons, revokeComparison } from "@/server/services/sharing";
 import { createGroup, dmMessages, openDirect, sendMessage } from "@/server/services/dm";
@@ -72,17 +72,17 @@ describe("development test companion", () => {
     expect(seen.named[0]!.comment).toMatch(/たまには頼ってね/);
     expect(Object.keys(seen.named[0]!.answers).length).toBeGreaterThan(5);
 
-    // Comments: she writes on the owner's newest shared record, and answers the owner on hers.
+    // Replies: she replies under the owner's newest shared record, and answers the owner on hers.
     const ownerRec = await createMemory(u.userId, { body: "オーナーの記録" });
     await setMemoryAudience(u.userId, ownerRec, { visibility: "connections" });
     const hers = (await connectionFeed(u.userId, { limit: 1 }))[0]!;
-    await addComment(u.userId, hers.id, null, "元気？");
+    await addReply(u.userId, hers.id, "元気？");
     await companionComments(u.userId, id);
-    const threads = await commentInbox(u.userId);
-    expect(threads.find((x) => x.entryId === ownerRec)).toMatchObject({ otherName: "Mina (test)", unread: 1 });
-    expect(threads.find((x) => x.entryId === hers.id)).toMatchObject({ count: 2, unread: 1, lastMine: false });
-    await companionComments(u.userId, id); // nothing new to answer, already commented
-    expect((await commentInbox(u.userId)).reduce((a, x) => a + x.count, 0)).toBe(3);
+    const threads = await replyInbox(u.userId);
+    expect(threads.find((x) => x.entryId === ownerRec)).toMatchObject({ lastAuthorName: "Mina (test)", unread: 1, iOwn: true });
+    expect(threads.find((x) => x.entryId === hers.id)).toMatchObject({ unread: 1, iOwn: false });
+    await companionComments(u.userId, id); // nothing new to answer, already replied
+    expect((await readReplies(u.userId, ownerRec)).length + (await readReplies(u.userId, hers.id)).length).toBe(3);
 
     // She asks the owner in turn; it reaches the owner as a pending request.
     await companionAsksOwner(u.userId, id);

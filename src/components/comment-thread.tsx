@@ -1,33 +1,25 @@
-import { addCommentAction, deleteCommentAction } from "@/app/actions/comments";
+import { deleteCommentAction } from "@/app/actions/comments";
 import type { Dict } from "@/lib/i18n/messages/en";
 import type { Locale } from "@/lib/i18n/locales";
 import type { Comment } from "@/server/services/comments";
 import { ConfirmButton } from "./confirm-button";
 
 /**
- * One one-to-one conversation about a record: my words on the right, theirs on the left, and a
- * box to write more. `partnerId` is set when the record is mine (I'm answering that person).
+ * An earlier one-to-one conversation about a record (they've ended; replies under the record took
+ * their place): my words on the right, theirs on the left. Each can take back their own words.
  */
 export function CommentThread({
   t,
   locale,
   tz,
   comments,
-  otherName,
-  entryId,
-  partnerId,
   back,
-  reply = false,
 }: {
   t: Dict;
   locale: Locale;
   tz: string;
   comments: Comment[];
-  otherName: string;
-  entryId: string;
-  partnerId: string | null;
   back: string;
-  reply?: boolean;
 }) {
   const c = t.comments;
   const when = new Intl.DateTimeFormat(locale, { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: tz });
@@ -58,23 +50,6 @@ export function CommentThread({
       ) : (
         <p className="text-sm text-stone-500">{c.none}</p>
       )}
-      <form action={addCommentAction} className="flex items-end gap-2">
-        <input type="hidden" name="entryId" value={entryId} />
-        {partnerId && <input type="hidden" name="partnerId" value={partnerId} />}
-        <input type="hidden" name="back" value={back} />
-        <textarea
-          name="body"
-          required
-          maxLength={2000}
-          rows={1}
-          aria-label={reply ? c.reply : c.write}
-          placeholder={reply ? c.replyPlaceholder(otherName) : c.placeholder(otherName)}
-          className="field-sizing-content max-h-40 min-h-11 flex-1 resize-none rounded-2xl border border-stone-200 bg-white px-3.5 py-2.5 text-base text-stone-900 placeholder:text-stone-400 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20"
-        />
-        <button type="submit" className="min-h-11 shrink-0 rounded-full bg-teal-700 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-teal-800 active:scale-95">
-          {c.send}
-        </button>
-      </form>
     </div>
   );
 }

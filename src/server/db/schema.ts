@@ -1331,8 +1331,9 @@ export const manualShareRewrites = pgTable(
 );
 
 /**
- * The owner's own follow-ups on a record (a thread under it). They go to whoever can see the
- * record: only the owner for a private one, the same people for a shared one.
+ * Replies under a record, as one thread: the owner's follow-ups and the words of people the record
+ * is shared with. Everyone who can see the record sees the whole thread (only the owner for a
+ * private one).
  */
 export const memoryReplies = pgTable(
   "memory_replies",
@@ -1344,8 +1345,27 @@ export const memoryReplies = pgTable(
     ownerId: uuid("owner_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    /** Who wrote it: the record's owner, or someone the record is shared with. */
+    authorId: uuid("author_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     body: text("body").notNull(),
     createdAt: createdAt(),
   },
-  (t) => [index("memory_replies_entry_idx").on(t.entryId, t.createdAt), check("memory_replies_body_ck", sql`char_length(${t.body}) between 1 and 2000`)],
+  (t) => [index("memory_replies_author_idx").on(t.authorId), index("memory_replies_entry_idx").on(t.entryId, t.createdAt), check("memory_replies_body_ck", sql`char_length(${t.body}) between 1 and 2000`)],
+);
+
+/** When each person last read a record's replies (for "new replies"). Own rows only. */
+export const memoryReplyReads = pgTable(
+  "memory_reply_reads",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    entryId: uuid("entry_id")
+      .notNull()
+      .references(() => memoryEntries.id, { onDelete: "cascade" }),
+    readAt: timestamp("read_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.entryId] })],
 );

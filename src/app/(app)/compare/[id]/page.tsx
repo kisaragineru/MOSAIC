@@ -233,7 +233,7 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                     <p className="mb-1 text-xs text-stone-500"><span aria-hidden>{KIND_ICON[x.kind]} </span>{x.effectiveOn}</p>
                     {x.title && <p className="emoji-color text-sm font-semibold text-stone-900">{x.title}</p>}
                     <p className="emoji-color line-clamp-3 whitespace-pre-line text-sm text-stone-800">{x.body}</p>
-                    <Link href={`/memories/shared/${x.id}`} className="mt-2 inline-block rounded-full bg-white px-3 py-1 text-xs font-semibold text-teal-700 ring-1 ring-stone-200 hover:ring-teal-300">{cc.comment}</Link>
+                    <Link href={`/memories/shared/${x.id}#replies`} className="mt-2 inline-block rounded-full bg-white px-3 py-1 text-xs font-semibold text-teal-700 ring-1 ring-stone-200 hover:ring-teal-300">{cc.comment}</Link>
                   </li>
                 ))}
               </ul>
@@ -256,7 +256,7 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
             )}
             {theirRecords[0] && (
               <Starter icon={KIND_ICON[theirRecords[0].kind] ?? "📝"} text={`${cc.starterRecord(v.otherName)}${locale === "ja" ? "：" : ": "}${(theirRecords[0].title ?? theirRecords[0].body).slice(0, 40)}`}>
-                <Link href={`/memories/shared/${theirRecords[0].id}`} className={SMALL}>{cc.comment}</Link>
+                <Link href={`/memories/shared/${theirRecords[0].id}#replies`} className={SMALL}>{cc.comment}</Link>
               </Starter>
             )}
             {same && (

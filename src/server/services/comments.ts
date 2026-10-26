@@ -1,4 +1,8 @@
 /**
+ * One-to-one comments on shared records — ended: replies under a record (./replies) took their place.
+ * Conversations already written stay readable to their two people (and each can take back their own
+ * words); no new ones are written. What follows describes how they worked.
+ *
  * One-to-one comments on shared records. Someone who can see a record you shared can write to
  * you about it; you can answer them. Each conversation is only between the two of you: other
  * people who can see the same record never see it. A conversation can be read while the record
@@ -72,23 +76,6 @@ export async function sharedEntry(userId: string, entryId: string): Promise<Shar
   );
   const x = r.rows[0];
   return x ? { id: x.id, ownerId: x.owner_id, ownerName: x.owner_name, sessionId: x.session_id, kind: x.kind, title: x.title, body: x.body, occurredOn: dateStr(x.occurred_on), createdAt: new Date(x.created_at) } : null;
-}
-
-/**
- * Write in a thread: on someone else's record, to its owner (`partnerId` is ignored); on my own
- * record, an answer to `partnerId`, who must have written first.
- */
-export async function addComment(userId: string, entryId: string, partnerId: string | null, body: unknown) {
-  const id = uuid.parse(entryId);
-  const partner = partnerId ? uuid.parse(partnerId) : null;
-  const text = bodySchema.safeParse(body);
-  if (!text.success) throw invalid("invalid_comment");
-  await enforceRateLimit("comment", userId);
-  return run(userId, async (tx) => {
-    const r = await tx.execute<{ id: string }>(sql`select memory_comment_add(${id}, ${partner}, ${text.data}) as id`);
-    await audit(tx, userId, "comment.added", "memory_entry", id);
-    return r.rows[0]!.id;
-  });
 }
 
 /** One thread, oldest first; reading it marks it read. */
