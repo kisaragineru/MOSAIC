@@ -11,7 +11,9 @@ import { Flash } from "@/components/flash";
 import { ConfirmButton } from "@/components/confirm-button";
 import { TuviChart } from "@/components/tuvi-chart";
 import { TypeGallery, TypeImage, TypeName, TypePortraits } from "@/components/tuvi-type";
-import { allTypes, essenceTypes } from "@/lib/tuvi/type-view";
+import { allTypes, essenceTypes, typesById } from "@/lib/tuvi/type-view";
+import { TypeStatus } from "@/components/type-status";
+import { typeInsight } from "@/server/services/tuvi-type";
 import { Button, Card, Textarea } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
@@ -120,7 +122,7 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
         </section>
       )}
 
-      {step === 3 && tv?.chart && <ChartResult t={t} locale={locale} tv={tv} />}
+      {step === 3 && tv?.chart && <ChartResult uid={uid} t={t} locale={locale} tv={tv} error={sp.e} />}
 
       {step === 4 && (st.left.length > 0 ? (
         <SeedQuestion id={st.left[0]!} answered={3 - st.left.length} t={t} locale={locale} />
@@ -179,12 +181,13 @@ async function SeedQuestion({ id, answered, t, locale }: { id: string; answered:
 }
 
 /** The chart's first result in a sentence, then the board itself with a hands-on tour. */
-async function ChartResult({ t, locale, tv }: { t: Awaited<ReturnType<typeof getT>>["t"]; locale: Awaited<ReturnType<typeof getT>>["locale"]; tv: Awaited<ReturnType<typeof getTuvi>> }) {
+async function ChartResult({ uid, t, locale, tv, error }: { error?: string; uid: string; t: Awaited<ReturnType<typeof getT>>["t"]; locale: Awaited<ReturnType<typeof getT>>["locale"]; tv: Awaited<ReturnType<typeof getTuvi>> }) {
   const w = t.welcome;
   const c = tv.chart!;
   const view = chartView(c, locale, t, { birth: true });
   const persona = tv.sections.find((x) => x.section === "personality")?.persona;
   const essence = essenceTypes(c, locale);
+  const insight = essence.types.length ? null : await typeInsight(uid, c);
   // The plain reading opens with what the palace is and how many faces it has; the star portraits follow.
   const plain = tv.sections.find((x) => x.section === "personality")?.plain?.slice(2, 4) ?? [];
   const hasNow = tv.currentAge !== null && c.palaces.some((p) => p.daiHan && tv.currentAge! >= p.daiHan.from && tv.currentAge! <= p.daiHan.to);
@@ -212,7 +215,11 @@ async function ChartResult({ t, locale, tv }: { t: Awaited<ReturnType<typeof get
         </>
       ) : (
         <>
-          <NeedTime t={t} locale={locale} href="/welcome?step=2" />
+          {insight && (
+            <section className="rounded-3xl bg-white/85 p-4 shadow-sm ring-1 ring-violet-100">
+              <TypeStatus t={t} all={allTypes(locale)} judged={typesById(insight.types, locale)} progress={insight.progress} picked={insight.selfTypes} addTimeHref="/welcome?step=2" back="/welcome?step=3" guide error={error} />
+            </section>
+          )}
           <Link href="/welcome?step=4" className="block rounded-full bg-teal-700 py-3 text-center font-semibold text-white">{w.tourNext} →</Link>
         </>
       )}
@@ -248,19 +255,6 @@ function firstSentence(x: string) {
   return (m ? m[0] : x).trim();
 }
 
-/** Without the birth hour the Self palace (and so the type) is unknown: say why, show the types, offer the way. */
-function NeedTime({ t, locale, href, bare = false }: { t: Awaited<ReturnType<typeof getT>>["t"]; locale: Awaited<ReturnType<typeof getT>>["locale"]; href: string; bare?: boolean }) {
-  const w = t.welcome;
-  return (
-    <section className={`space-y-2 ${bare ? "" : "rounded-3xl bg-white/85 p-4 shadow-sm ring-1 ring-violet-100"}`} data-testid="types-need-time">
-      <h2 className="font-bold text-stone-900">🔒 {w.typesNeedTime}</h2>
-      <p className="text-xs leading-5 text-stone-600">{w.typesNeedTimeLead}</p>
-      <TypeGallery types={allTypes(locale)} hint={w.typesSwipe} />
-      <Link href={href} className="inline-block rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-800">{w.typesAddTime} →</Link>
-    </section>
-  );
-}
-
 /**
  * The end of the guide: a clear "done", then what the few minutes made — the chart's word on you,
  * the first pieces in three chapters, the manual — to read now. Connecting is offered, lightly, for later. Reaching
@@ -273,6 +267,7 @@ async function Finished({ uid, t, locale, answered }: { uid: string; t: Awaited<
   const tv = await getTuvi(uid, locale);
   const persona = tv.sections.find((x) => x.section === "personality")?.persona;
   const essence = tv.chart ? essenceTypes(tv.chart, locale) : { types: [], borrowed: false };
+  const insight = essence.types.length ? null : await typeInsight(uid, tv.chart);
   const manual = await buildManual(uid, locale);
   const summary = manual.sections.find((x) => x.id === "summary")?.blocks.find((b) => b.t === "list");
   return (
@@ -339,7 +334,7 @@ async function Finished({ uid, t, locale, answered }: { uid: string; t: Awaited<
               </ul>
             </>
           ) : (
-            <div className="mt-2"><NeedTime t={t} locale={locale} href="/tuvi?edit=birth#birth" bare /></div>
+            insight && <div className="mt-2"><TypeStatus t={t} all={allTypes(locale)} judged={typesById(insight.types, locale)} progress={insight.progress} picked={insight.selfTypes} addTimeHref="/tuvi?edit=birth#birth" back="/welcome?step=6" guide /></div>
           )}
           <p className="mt-3 text-right"><Link href="/tuvi" className="text-sm font-semibold text-teal-800">{w.openTuvi} →</Link></p>
         </section>

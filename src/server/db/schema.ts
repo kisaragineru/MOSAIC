@@ -123,6 +123,8 @@ export const profiles = pgTable("profiles", {
   introPieces: integer("intro_pieces"),
   /** When the user finished or skipped the first-run guide (null: not yet). */
   onboardedAt: ts("onboarded_at"),
+  /** Tử Vi types the user chose as "probably me" while their birth time is unknown (up to two). */
+  selfTypes: text("self_types").array(),
   /** When the user closed Home's getting-started checklist (null: still shown until all done). */
   starterDismissedAt: ts("starter_dismissed_at"),
   createdAt: createdAt(),

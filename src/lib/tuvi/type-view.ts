@@ -28,3 +28,6 @@ export function essenceTypes(chart: Chart, locale: Locale): { types: TypeView[];
   if (!m) return { types: [], borrowed: false };
   return { types: m.mains.map((id) => typeOf(id, locale)), borrowed: m.borrowed };
 }
+
+/** The given types, as views (in the order given). */
+export const typesById = (ids: MainStarId[], locale: Locale): TypeView[] => ids.map((id) => typeOf(id, locale));

@@ -135,10 +135,25 @@ test("while the guide isn't finished every page says so, with the way back; it c
   await page.getByRole("button", { name: "Make my chart" }).click();
   await page.waitForURL(/step=3/);
   await expect(page.getByTestId("chart-result")).toContainText("Your chart is ready");
-  // Without the time there is no type yet: why, the fourteen to look forward to, and the way to add it.
-  const needTime = page.getByTestId("types-need-time");
-  await expect(needTime).toContainText("Your type needs your birth time");
-  await expect(needTime.getByRole("link", { name: /Add your birth time/ })).toHaveAttribute("href", "/welcome?step=2");
+  // Without the time MOSAIC doesn't guess a type: it says why, offers to add the time, and lets you
+  // pick up to two that feel like you — kept as your own pick, not MOSAIC's judgment.
+  const status = page.getByTestId("type-status");
+  await expect(status).toContainText("Your type isn't known yet");
+  await expect(status).toContainText("as you answer more questions, MOSAIC will judge it");
+  await expect(status.getByRole("link", { name: /Add your birth time/ })).toHaveAttribute("href", "/welcome?step=2");
+  const pick = (name: RegExp) => status.locator("label").filter({ hasText: name }).first().click();
+  await pick(/warm sun/);
+  await pick(/quiet moon/);
+  await pick(/curious charmer/); // a third tick is undone, with a note
+  await expect(status.getByRole("alert")).toContainText("up to two");
+  await status.getByRole("button", { name: "Save my pick" }).click();
+  await expect(page.getByTestId("self-types")).toContainText("the warm sun");
+  await expect(page.getByTestId("self-types")).toContainText("the quiet moon");
+  await expect(page.getByTestId("self-types")).toContainText("not MOSAIC's judgment");
+  // On the Tử Vi page: not known yet, how far along MOSAIC is, and what helps.
+  await page.goto("/tuvi");
+  await expect(page.getByTestId("type-progress")).toContainText(/MOSAIC understands \d+% of you/);
+  await expect(page.getByTestId("type-status").getByRole("link", { name: /Answer questions/ })).toBeVisible();
   await page.goto("/home");
   await expect(page.getByTestId("guide-bar")).toContainText("Welcome guide (4/6)");
   // Ending it (after a confirmation) keeps you where you are; Home's checklist keeps what is left.

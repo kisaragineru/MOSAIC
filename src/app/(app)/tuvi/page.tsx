@@ -6,8 +6,10 @@ import { Flash } from "@/components/flash";
 import { TuviChart } from "@/components/tuvi-chart";
 import { TuviStages, type StageView } from "@/components/tuvi-stages";
 import { TuviThemes } from "@/components/tuvi-themes";
-import { TypeGallery, TypePortraits } from "@/components/tuvi-type";
-import { allTypes, essenceTypes } from "@/lib/tuvi/type-view";
+import { TypePortraits } from "@/components/tuvi-type";
+import { TypeStatus } from "@/components/type-status";
+import { allTypes, essenceTypes, typesById } from "@/lib/tuvi/type-view";
+import { typeInsight } from "@/server/services/tuvi-type";
 import { themeLabels } from "@/lib/tuvi/theme-labels";
 import { Button, Card, Checkbox, Field, Input, Notice, Page, Select } from "@/components/ui";
 import { BRANCHES } from "@/lib/tuvi/canchi";
@@ -60,6 +62,8 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
   const ORDER = ["personality", "love", "career", "family", "wealth", "relationships"];
   const persona = v.sections.find((x) => x.section === "personality")?.persona;
   const essence = c ? essenceTypes(c, locale) : { types: [], borrowed: false };
+  // Without a Self palace (no birth time): MOSAIC's judgment from answers, or how far along it is.
+  const insight = c && !essence.types.length ? await typeInsight(uid, c) : null;
   const cyclesPlain = v.sections.find((x) => x.section === "cycles")?.plain ?? [];
   const themes = v.sections.filter((x) => x.section !== "cycles").sort((a, b) => ORDER.indexOf(a.section) - ORDER.indexOf(b.section));
   return (
@@ -98,12 +102,11 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
           ) : (
             <>
               <p className="mt-3 text-sm text-teal-900/80">{v.sections[0]?.paragraphs[0]?.text}</p>
-              <div className="mt-4 space-y-2 rounded-3xl bg-white/70 p-4 ring-1 ring-white/80" data-testid="types-need-time">
-                <p className="font-bold text-stone-900">🔒 {t.welcome.typesNeedTime}</p>
-                <p className="text-xs leading-5 text-stone-600">{t.welcome.typesNeedTimeLead}</p>
-                <TypeGallery types={allTypes(locale)} hint={t.welcome.typesSwipe} />
-                <a href="?edit=birth#birth" className="inline-block rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-800">{t.welcome.typesAddTime} →</a>
-              </div>
+              {insight && (
+                <div id="type" className="mt-4 scroll-mt-20 rounded-3xl bg-white/70 p-4 ring-1 ring-white/80">
+                  <TypeStatus t={t} all={allTypes(locale)} judged={typesById(insight.types, locale)} progress={insight.progress} picked={insight.selfTypes} addTimeHref="?edit=birth#birth" back="/tuvi#type" error={sp.e} />
+                </div>
+              )}
             </>
           )}
           {now && (

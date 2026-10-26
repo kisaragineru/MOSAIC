@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/server/auth/session";
 import { deleteBirthProfile, saveBirthProfile } from "@/server/services/tuvi";
+import { saveSelfTypes } from "@/server/services/tuvi-type";
 import { attempt, bool, safeNext, str, withParam } from "./util";
 
 export async function saveBirthAction(form: FormData) {
@@ -45,4 +46,11 @@ export async function deleteBirthAction() {
   const r = await attempt("tuvi.delete", () => deleteBirthProfile(uid));
   revalidatePath("/tuvi");
   redirect(r.ok ? "/tuvi?ok=deleted" : `/tuvi?e=${r.error}`);
+}
+
+export async function saveSelfTypesAction(form: FormData) {
+  const uid = await requireUser();
+  const r = await attempt("tuvi.self_types", () => saveSelfTypes(uid, form.getAll("type").map(String)));
+  const [path, hash] = safeNext(str(form, "back"), "/tuvi").split("#");
+  redirect(`${r.ok ? withParam(path!, "ok", "saved") : withParam(path!, "e", r.error)}${hash ? `#${hash}` : ""}`);
 }
