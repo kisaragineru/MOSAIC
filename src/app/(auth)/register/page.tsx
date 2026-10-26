@@ -19,7 +19,7 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
   if (await currentUserId()) redirect(next);
   const { t, locale } = await getT();
   // Development: trying sign-up from settings, with a throwaway account filled in.
-  const trial = (await trialReturnUser()) ? trialAccount() : null;
+  const trial = (await trialReturnUser()) ? trialAccount(locale) : null;
   return (
     <AuthShell t={t} locale={locale} back={`/register?next=${encodeURIComponent(next)}`} trial={!!trial}>
       <Card title={t.auth.registerTitle}>

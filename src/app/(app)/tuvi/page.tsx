@@ -74,7 +74,7 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {menh.mains.map((m) => <span key={m.name} className="rounded-full bg-white/70 px-2.5 py-0.5 text-xs text-violet-900">{m.keywords}</span>)}
               </div>
-              {persona && <p className="mt-3 text-sm text-teal-950"><span className="text-xs text-teal-700">{ui.personaLead}：</span><b>「{persona}」</b></p>}
+              {persona && <p className="mt-3 text-sm text-teal-950"><span className="text-xs text-teal-700">{ui.personaLead}{t.common.colon}</span><b>{t.common.quoteOpen}{persona}{t.common.quoteClose}</b></p>}
             </>
           ) : (
             <p className="mt-3 text-sm text-teal-900/80">{v.sections[0]?.paragraphs[0]?.text}</p>

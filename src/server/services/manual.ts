@@ -197,7 +197,7 @@ export function composeManual(d: ManualInput, locale: Locale): Manual {
       if (w?.window === "open") extra.push(L(P.othersSame(L(P.people))));
       else if (w?.window === "different" && w.lean !== 0) extra.push(L(P.othersDiff(L(P.people), poleOf(key, w.lean))));
       else if (w?.window === "blind" && w.lean !== 0) extra.push(L(P.othersBlind(L(P.people), poleOf(key, w.lean))));
-      if (c.userNote) extra.push(`${L(P.yourNote)}：${c.userNote}`);
+      if (c.userNote) extra.push(`${L(P.yourNote)}${locale === "ja" ? "：" : ": "}${c.userNote}`);
       const labels = { thrive: L(P.thrive), watch: L(P.watch) };
       if (c.state === "mixed") {
         blocks.push({ t: "axis", key, name: L(AXIS_LABEL[key].name), pole: `${L(AXIS_LABEL[key].pos)} / ${L(AXIS_LABEL[key].neg)}`, level: "mixed", badge: L(P.mixed), portrait: L(text.mixed), labels, meta: L(P.basedOn(c.evidence)), extra });

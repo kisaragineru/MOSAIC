@@ -166,9 +166,9 @@ export function TuviStages({ stages, labels, currentAge }: { stages: StageView[]
               <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-bold ${tone(x).chip}`}>{x.short}</span>
               <span className="mt-1 block line-clamp-2 text-xs font-semibold text-stone-900">{x.label}</span>
               {x.borrowedFrom ? (
-                <span className="mt-0.5 block truncate text-[11px] text-stone-500">{labels.noMain} · <span className="text-rose-800/70">{x.stars.join("・")}</span></span>
+                <span className="mt-0.5 block truncate text-[11px] text-stone-500">{labels.noMain} · <span className="text-rose-800/70">{x.stars.join(" · ")}</span></span>
               ) : (
-                <span className="mt-0.5 block truncate text-[11px] text-rose-800">{x.stars.join("・") || "—"}</span>
+                <span className="mt-0.5 block truncate text-[11px] text-rose-800">{x.stars.join(" · ") || "—"}</span>
               )}
             </button>
           );

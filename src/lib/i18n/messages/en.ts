@@ -1,6 +1,9 @@
 /** English UI strings. `vi.ts` must have exactly the same shape (enforced by the type). */
 export const en = {
   common: {
+    colon: ": ",
+    quoteOpen: "“",
+    quoteClose: "”",
     listSeparator: ", ",
     loading: "Loading…",
     appName: "MOSAIC",
@@ -1173,6 +1176,8 @@ export const en = {
     endConfirm: "End the welcome guide? You can pick up any time from the checklist on Home.",
     resume: "Continue the welcome guide",
     resumeSub: "Pick up from making your chart.",
+    checklistEnd: "Dismiss",
+    checklistEndConfirm: "Close this checklist? You can still do the rest from each page any time.",
     checklistTitle: "Getting started",
     checklistSub: (n: number) => `Know yourself, share it, know them. ${n} to go`,
     checklist: { chart: "Make your chart", answers: "Answer 3 questions", bio: "Write your bio", record: "Write your first record", connect: "Connect with someone" },

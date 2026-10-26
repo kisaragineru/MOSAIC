@@ -34,7 +34,13 @@ import { addPersonFromConnection, createShare, getComparison, giveConsent, linkP
 
 export const devToolsEnabled = () => process.env.DEV_TOOLS === "on";
 const MAX = 3;
-const NAMES = ["ミナ（テスト）", "ソウ（テスト）", "リコ（テスト）"];
+// Named in the owner's language (the sample answers and records themselves are Japanese).
+const NAMES = { ja: ["ミナ（テスト）", "ソウ（テスト）", "リコ（テスト）"], en: ["Mina (test)", "Sou (test)", "Riko (test)"], vi: ["Mina (thử)", "Sou (thử)", "Riko (thử)"] };
+const COMPANION_BIO = { ja: "開発用のテスト相手です。本物の人ではありません。", en: "A test companion for development. Not a real person.", vi: "Người thử nghiệm để phát triển. Không phải người thật." };
+async function ownerLocale(ownerId: string): Promise<keyof typeof NAMES> {
+  const [p] = await withUser(ownerId, (tx) => tx.select({ l: profiles.locale }).from(profiles).where(eq(profiles.userId, ownerId)));
+  return p?.l === "en" || p?.l === "vi" ? p.l : "ja";
+}
 const RELATIONSHIPS = ["partner", "family", "friend", "colleague", "other"] as const;
 
 function guard() {
@@ -46,7 +52,8 @@ const day = (back: number) => new Date(Date.now() - back * 86400_000).toISOStrin
 export async function listCompanions(ownerId: string) {
   if (!devToolsEnabled()) return [];
   const rows = await withUser(ownerId, (tx) => tx.select().from(devCompanions).where(eq(devCompanions.ownerId, ownerId)).orderBy(asc(devCompanions.createdAt)));
-  return rows.map((r, i) => ({ id: r.companionId, name: NAMES[i] ?? `テスト相手 ${i + 1}`, createdAt: r.createdAt }));
+  const names = NAMES[await ownerLocale(ownerId)];
+  return rows.map((r, i) => ({ id: r.companionId, name: names[i] ?? `${names[0]} ${i + 1}`, createdAt: r.createdAt }));
 }
 
 /** Create a companion connected to the owner; `relationship` is how the owner files it in People. */
@@ -56,12 +63,13 @@ export async function createCompanion(ownerId: string, relationship: unknown): P
   const existing = await listCompanions(ownerId);
   if (existing.length >= MAX) throw new AppError("too_many_companions", 400);
   const id = randomUUID();
-  const name = NAMES[existing.length] ?? "テスト相手";
+  const locale = await ownerLocale(ownerId);
+  const name = NAMES[locale][existing.length] ?? NAMES[locale][0]!;
   // A password nobody knows: the account exists only to be connected with.
   const passwordHash = await hashPassword(randomToken());
   await withUser(id, async (tx) => {
     await tx.insert(users).values({ id, email: `companion-${id}@companion.invalid`, passwordHash });
-    await tx.insert(profiles).values({ userId: id, displayName: name, locale: "ja", timeZone: "Asia/Tokyo", bio: "開発用のテスト相手です。本物の人ではありません。" });
+    await tx.insert(profiles).values({ userId: id, displayName: name, locale, timeZone: "Asia/Tokyo", bio: COMPANION_BIO[locale] });
     await tx.insert(notificationPreferences).values({ userId: id });
     await audit(tx, id, "account.dev_companion");
   });

@@ -70,11 +70,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   return (
     <Page title={t.home.hello(account.profile.displayName)}>
       <Flash t={t} sp={sp} />
-      <StarterChecklist
+      {!account.profile.starterDismissedAt && <StarterChecklist
         t={t}
         resume={!account.profile.onboardedAt}
         done={{ chart: !!chart, answers: know.parts.answers >= 3, bio: know.parts.bio, record: know.parts.records > 0, connect: comparisons.some((c) => c.status === "active") }}
-      />
+      />}
       {/* Anniversaries with the people you're connected to (today, or in the last few days). */}
       {(await recentAnniversaries(uid, account.profile.timeZone)).map((a) => (
         <section key={a.sessionId} className="rounded-3xl bg-linear-to-br from-amber-50 via-rose-50 to-violet-50 p-5 shadow-sm ring-1 ring-amber-100" data-testid="anniversary">

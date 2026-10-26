@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/server/auth/session";
-import { finishOnboarding } from "@/server/services/onboarding";
+import { dismissStarter, finishOnboarding } from "@/server/services/onboarding";
 import { safeNext, str } from "./util";
 
 export async function finishOnboardingAction(form: FormData) {
@@ -11,4 +11,10 @@ export async function finishOnboardingAction(form: FormData) {
   // Every page's guide bar goes away.
   revalidatePath("/", "layout");
   redirect(safeNext(str(form, "next"), "/home"));
+}
+
+export async function dismissStarterAction() {
+  const uid = await requireUser();
+  await dismissStarter(uid);
+  redirect("/home");
 }

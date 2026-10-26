@@ -4,6 +4,7 @@
  * you out to the sign-up page, filled in with a throwaway account; going back deletes that
  * account and signs you in as yourself again.
  */
+import type { Locale } from "@/lib/i18n/locales";
 import "server-only";
 import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
@@ -38,9 +39,10 @@ export async function trialReturnUser(): Promise<string | null> {
 }
 
 /** A throwaway account to sign up with. */
-export function trialAccount() {
+export function trialAccount(locale: Locale = "ja") {
   const id = randomBytes(4).toString("hex");
-  return { displayName: `テスト${id.slice(0, 3)}`, email: `trial-${id}@${TRIAL_DOMAIN}`, password: randomBytes(12).toString("base64url") };
+  // Named in the language the trial runs in, so the guide reads as one language.
+  return { displayName: `${{ ja: "テスト", en: "Trial ", vi: "Thử " }[locale]}${id.slice(0, 3)}`, email: `trial-${id}@${TRIAL_DOMAIN}`, password: randomBytes(12).toString("base64url") };
 }
 
 export const isTrialEmail = (email: string) => email.toLowerCase().endsWith(`@${TRIAL_DOMAIN}`);

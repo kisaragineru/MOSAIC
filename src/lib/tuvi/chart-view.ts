@@ -40,7 +40,7 @@ export function chartView(c: Chart, locale: Locale, t: Dict, opts: { birth: bool
             `${t.tuvi.hour}: ${c.hourBranch !== null ? BRANCHES[c.hourBranch] : "?"}`,
           ]
         : []),
-      `${ui.plainNature}: ${ELEMENT_NAMES[c.napAm.element][locale]}（${c.napAm.name}）`,
+      `${ui.plainNature}: ${ELEMENT_NAMES[c.napAm.element][locale]}${locale === "ja" ? `（${c.napAm.name}）` : ` (${c.napAm.name})`}`,
       ...(c.cuc ? [`${ui.plainRhythm}: ${c.cuc.number}`] : []),
       ...(c.yinYangSex ? [ui.plainYinYang[c.yinYangSex]] : []),
     ],

@@ -78,7 +78,7 @@ export default async function MonthPage({ params, searchParams }: { params: Prom
           <ul className="flex flex-wrap gap-1.5">
             {r.deepened.map((k) => {
               const c = claims.find((x) => x.claimKey === k)!;
-              return <li key={k} className="rounded-full bg-teal-50 px-3 py-1 text-xs text-teal-900 ring-1 ring-teal-100">{AXIS_LABEL[k].name[locale]}：{(c.direction === 1 ? PEER_POLES[k].pos : PEER_POLES[k].neg)[locale]}</li>;
+              return <li key={k} className="rounded-full bg-teal-50 px-3 py-1 text-xs text-teal-900 ring-1 ring-teal-100">{AXIS_LABEL[k].name[locale]}{t.common.colon}{(c.direction === 1 ? PEER_POLES[k].pos : PEER_POLES[k].neg)[locale]}</li>;
             })}
           </ul>
         </Card>

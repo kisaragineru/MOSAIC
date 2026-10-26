@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { Dict } from "@/lib/i18n/messages/en";
+import { dismissStarterAction } from "@/app/actions/onboarding";
+import { ConfirmButton } from "./confirm-button";
 
 export interface StarterState {
   chart: boolean;
@@ -11,7 +13,8 @@ export interface StarterState {
 
 /**
  * Home's "getting started" card: what MOSAIC is for — know yourself, share it, know the people
- * who matter — as five first steps, ticked off as they're done. Gone once all are done.
+ * who matter — as five first steps, ticked off as they're done. Gone once all are done, or once
+ * closed (only after the guide; while it runs, the guide bar ends both).
  */
 export function StarterChecklist({ t, done, resume }: { t: Dict; done: StarterState; resume: boolean }) {
   const w = t.welcome;
@@ -31,7 +34,13 @@ export function StarterChecklist({ t, done, resume }: { t: Dict; done: StarterSt
           <h2 className="font-bold text-teal-950">🧭 {w.checklistTitle}</h2>
           <p className="text-xs text-stone-600">{w.checklistSub(left)}</p>
         </div>
-        {resume && <Link href="/welcome" className="shrink-0 text-xs font-semibold text-teal-700 underline underline-offset-4">{w.resume} →</Link>}
+        {resume ? (
+          <Link href="/welcome" className="shrink-0 text-xs font-semibold text-teal-700 underline underline-offset-4">{w.resume} →</Link>
+        ) : (
+          <form action={dismissStarterAction} className="shrink-0">
+            <ConfirmButton bare message={w.checklistEndConfirm} className="text-xs text-stone-500 underline underline-offset-4 hover:text-stone-800">{w.checklistEnd}</ConfirmButton>
+          </form>
+        )}
       </div>
       <ul className="mt-3 space-y-1.5">
         {items.map((x) => (

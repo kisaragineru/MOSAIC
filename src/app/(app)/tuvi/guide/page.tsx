@@ -27,7 +27,7 @@ const SECTIONS = ["what", "chart", "palaces", "stars", "steps", "mosaic", "care"
 
 export default async function TuviGuidePage() {
   await requireUser();
-  const { locale } = await getT();
+  const { t, locale } = await getT();
   const L = (x: { ja: string; en: string; vi: string }) => x[locale];
   const palaceName = (id: (typeof PALACES)[number]) => (locale === "ja" ? `${PALACE_JA[id]}（${PALACE_INFO[id].vi}）` : PALACE_INFO[id].vi);
   const titles: Record<(typeof SECTIONS)[number], string> = {
@@ -98,7 +98,7 @@ export default async function TuviGuidePage() {
           {MAIN_STARS.map((s) => (
             <li key={s} className="rounded-2xl bg-white/85 p-3 ring-1 ring-stone-200/60">
               <p className="font-semibold text-stone-900">{STAR_INFO[s].vi}</p>
-              <p className="text-sm font-semibold text-violet-800">「{L(STAR_PLAIN[s].persona)}」</p>
+              <p className="text-sm font-semibold text-violet-800">{t.common.quoteOpen}{L(STAR_PLAIN[s].persona)}{t.common.quoteClose}</p>
               <p className="mt-1 text-sm leading-6 text-stone-700">{L(STAR_PLAIN[s].plain)}</p>
             </li>
           ))}

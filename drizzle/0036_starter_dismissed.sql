@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ADD COLUMN "starter_dismissed_at" timestamp with time zone;

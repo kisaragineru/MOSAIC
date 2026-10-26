@@ -39,6 +39,14 @@ export async function onboardingState(userId: string): Promise<OnboardingState> 
   };
 }
 
+/** Close Home's getting-started checklist for good (what is left stays doable from each page). */
+export async function dismissStarter(userId: string) {
+  await withUser(userId, async (tx) => {
+    await tx.update(profiles).set({ starterDismissedAt: new Date() }).where(eq(profiles.userId, userId));
+    await audit(tx, userId, "onboarding.starter_dismissed");
+  });
+}
+
 export async function finishOnboarding(userId: string) {
   await withUser(userId, async (tx) => {
     await tx.update(profiles).set({ onboardedAt: new Date() }).where(eq(profiles.userId, userId));

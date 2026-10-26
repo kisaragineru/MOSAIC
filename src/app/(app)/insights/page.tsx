@@ -69,7 +69,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
             <p className="text-xs font-semibold text-violet-700">✦ {READING.combosTitle[locale]}</p>
             {rd.combos.map((c) => (
               <div key={c.title} className="rounded-2xl bg-white/85 p-4 ring-1 ring-violet-100">
-                <p className="font-bold text-stone-900">「{c.title}」</p>
+                <p className="font-bold text-stone-900">{t.common.quoteOpen}{c.title}{t.common.quoteClose}</p>
                 <p className="mt-1 text-sm leading-7 text-stone-700">{c.text}</p>
               </div>
             ))}
@@ -98,7 +98,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
                   {c.quotes.length > 0 && (
                     <div className="rounded-xl bg-stone-50 p-3">
                       <p className="text-[11px] font-semibold text-stone-500">{READING.yourAnswers[locale]}</p>
-                      <ul className="mt-1 space-y-1 text-xs leading-5 text-stone-700">{c.quotes.map((q) => <li key={q}>・{q}</li>)}</ul>
+                      <ul className="mt-1 space-y-1 text-xs leading-5 text-stone-700">{c.quotes.map((q) => <li key={q}>• {q}</li>)}</ul>
                     </div>
                   )}
                   <p className="flex flex-wrap items-center justify-between gap-2 text-xs text-stone-500">

@@ -86,7 +86,7 @@ body {
 .scrollbar-none::-webkit-scrollbar { display: none; }
 
 /* The welcome guide's finish: a medal that pops in, a check that draws itself, rings that
-   ripple out, confetti that falls, and lines that rise in turn. */
+   ripple out, and lines that rise in turn. */
 @keyframes popIn {
   0% { opacity: 0; transform: scale(0.3); }
   60% { opacity: 1; transform: scale(1.12); }
@@ -100,12 +100,6 @@ body {
 @keyframes drawCheck {
   from { stroke-dashoffset: 1; }
   to { stroke-dashoffset: 0; }
-}
-@keyframes confettiFall {
-  0% { opacity: 0; transform: translateY(-40px) rotate(0deg); }
-  10% { opacity: 1; }
-  85% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(560px) rotate(540deg); }
 }
 @keyframes riseIn {
   from { opacity: 0; transform: translateY(16px) scale(0.98); }

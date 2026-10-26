@@ -3,6 +3,9 @@ import type { Dict } from "./en";
 /** Japanese UI strings. Tử Vi terms keep their Vietnamese names, with kanji where helpful. */
 export const ja: Dict = {
   common: {
+    colon: "：",
+    quoteOpen: "「",
+    quoteClose: "」",
     listSeparator: "、",
     loading: "読み込み中…",
     appName: "MOSAIC",
@@ -1175,6 +1178,8 @@ export const ja: Dict = {
     endConfirm: "はじめてガイドを終了しますか？続きは、ホームのチェックリストからいつでもできます。",
     resume: "はじめてガイドの続き",
     resumeSub: "命盤づくりから続けられます。",
+    checklistEnd: "チェックリストを終了",
+    checklistEndConfirm: "チェックリストを終了しますか？残りはそれぞれのページからいつでもできます。",
     checklistTitle: "はじめてのチェックリスト",
     checklistSub: (n: number) => `自分を知って、伝えて、相手を知る。あと${n}つ`,
     checklist: { chart: "命盤をつくる", answers: "質問に3つ答える", bio: "自己紹介を書く", record: "最初の記録を書く", connect: "大切な人とつながる" },

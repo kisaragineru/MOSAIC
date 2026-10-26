@@ -75,6 +75,12 @@ test("a new account is guided: the chart (not skippable) and its tour, three que
   await expect(list.getByRole("link", { name: /最初の記録を書く/ })).toBeVisible();
   await expect(list.getByRole("link", { name: /大切な人とつながる/ })).toBeVisible();
   await expect(page.getByText("はじめてガイドの続き")).toHaveCount(0);
+  // After the guide the checklist can be closed for good; the rest stays doable from each page.
+  page.once("dialog", (d) => void d.accept());
+  await list.getByRole("button", { name: "チェックリストを終了" }).click();
+  await expect(page.getByTestId("starter-checklist")).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByTestId("starter-checklist")).toHaveCount(0);
 
   // Monthly look back: this month so far, and a note saved as a record.
   await page.goto("/reflection");

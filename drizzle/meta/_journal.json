@@ -253,6 +253,13 @@
       "when": 1792989373456,
       "tag": "0035_letter_read_at",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1793012873063,
+      "tag": "0036_starter_dismissed",
+      "breakpoints": true
     }
   ]
 }

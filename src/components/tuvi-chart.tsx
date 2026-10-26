@@ -179,7 +179,7 @@ export function TuviChart({
                 {x.stars.length === 0 ? (
                   <span className="text-[11px] text-stone-400">{labels.noMain}</span>
                 ) : (
-                  x.stars.map((st) => <span key={st.name} className="block truncate text-[12.5px] font-bold text-stone-800">{st.word}</span>)
+                  x.stars.map((st) => <span key={st.name} className="line-clamp-2 text-[12px] font-bold leading-[1.15] text-stone-800 [overflow-wrap:anywhere]">{st.word}</span>)
                 )}
               </button>
             );
@@ -278,11 +278,11 @@ export function TuviChart({
             </div>
             <div className="flex gap-3">
               <dt className="w-24 shrink-0 pt-0.5 text-xs font-semibold text-stone-500">{labels.lucky}</dt>
-              <dd className="min-w-0 flex-1 text-stone-800">{cell.lucky.length ? cell.lucky.join("・") : labels.none}</dd>
+              <dd className="min-w-0 flex-1 text-stone-800">{cell.lucky.length ? cell.lucky.join(" · ") : labels.none}</dd>
             </div>
             <div className="flex gap-3">
               <dt className="w-24 shrink-0 pt-0.5 text-xs font-semibold text-stone-500">{labels.malefic}</dt>
-              <dd className="min-w-0 flex-1 text-stone-800">{cell.malefic.length ? cell.malefic.join("・") : labels.none}</dd>
+              <dd className="min-w-0 flex-1 text-stone-800">{cell.malefic.length ? cell.malefic.join(" · ") : labels.none}</dd>
             </div>
             {d.ageText && (
               <div className="flex gap-3">
@@ -293,7 +293,7 @@ export function TuviChart({
           </dl>
           {d.notes.length > 0 && (
             <ul className="mt-3 space-y-1 rounded-2xl bg-stone-50 px-3 py-2 text-[13.5px] leading-6 text-stone-700">
-              {d.notes.map((n, i) => <li key={i}>・{n}</li>)}
+              {d.notes.map((n, i) => <li key={i}>• {n}</li>)}
             </ul>
           )}
           {cell.hoaTips.map((tip) => <p key={tip} className="mt-2 rounded-2xl bg-stone-900 px-3 py-2 text-[13px] leading-6 text-white">💡 {tip}</p>)}

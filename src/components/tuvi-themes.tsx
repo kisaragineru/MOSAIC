@@ -3,6 +3,8 @@ import { useState } from "react";
 import type { InterpretationParagraph, InterpretationSection } from "@/lib/tuvi/interpret";
 
 export interface ThemeLabels {
+  quoteOpen: string;
+  quoteClose: string;
   related: string;
   strength: string;
   caution: string;
@@ -75,7 +77,7 @@ export function TuviThemes({ sections, labels }: { sections: InterpretationSecti
         {s.plain && s.plain.length > 0 && (
           <div className="space-y-2 rounded-2xl bg-linear-to-br from-violet-50 to-sky-50 p-4 ring-1 ring-violet-100">
             <p className="text-xs font-semibold text-violet-700">💡 {labels.plain}</p>
-            {s.persona && <p className="text-base font-bold text-stone-900">「{s.persona}」</p>}
+            {s.persona && <p className="text-base font-bold text-stone-900">{labels.quoteOpen}{s.persona}{labels.quoteClose}</p>}
             {s.plain.map((x, i) => <p key={i} className="text-sm leading-7 text-stone-800">{x}</p>)}
           </div>
         )}

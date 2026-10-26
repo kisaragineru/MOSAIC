@@ -28,8 +28,8 @@ describe("development test companion", () => {
     const other = await makeUser();
     const id = await createCompanion(u.userId, "family");
     const [c] = await listCompanions(u.userId);
-    expect(c).toMatchObject({ id, name: "ミナ（テスト）" });
-    expect((await listComparisons(u.userId))[0]).toMatchObject({ status: "active", otherName: "ミナ（テスト）" });
+    expect(c).toMatchObject({ id, name: "Mina (test)" });
+    expect((await listComparisons(u.userId))[0]).toMatchObject({ status: "active", otherName: "Mina (test)" });
     expect((await shareTargets(u.userId))[0]!.circle).toBe("family");
     // A made-up woman in her sixties: bio, intro, a chart, answers to everything, months of records.
     // An answer left over from an older persona is corrected on the next fill.
@@ -68,7 +68,7 @@ describe("development test companion", () => {
     await companionAnswersAsks(u.userId, id);
     expect(await companionAsks(id)).toHaveLength(0);
     const seen = await peerResults(u.userId);
-    expect(seen.named[0]).toMatchObject({ name: "ミナ（テスト）" });
+    expect(seen.named[0]).toMatchObject({ name: "Mina (test)" });
     expect(seen.named[0]!.comment).toMatch(/たまには頼ってね/);
     expect(Object.keys(seen.named[0]!.answers).length).toBeGreaterThan(5);
 
@@ -79,7 +79,7 @@ describe("development test companion", () => {
     await addComment(u.userId, hers.id, null, "元気？");
     await companionComments(u.userId, id);
     const threads = await commentInbox(u.userId);
-    expect(threads.find((x) => x.entryId === ownerRec)).toMatchObject({ otherName: "ミナ（テスト）", unread: 1 });
+    expect(threads.find((x) => x.entryId === ownerRec)).toMatchObject({ otherName: "Mina (test)", unread: 1 });
     expect(threads.find((x) => x.entryId === hers.id)).toMatchObject({ count: 2, unread: 1, lastMine: false });
     await companionComments(u.userId, id); // nothing new to answer, already commented
     expect((await commentInbox(u.userId)).reduce((a, x) => a + x.count, 0)).toBe(3);
@@ -88,7 +88,7 @@ describe("development test companion", () => {
     await companionAsksOwner(u.userId, id);
     const mine = (await myPeerRequests(u.userId)).filter((r) => r.role === "responder" && r.status === "pending");
     expect(mine).toHaveLength(1);
-    expect(mine[0]!.otherName).toBe("ミナ（テスト）");
+    expect(mine[0]!.otherName).toBe("Mina (test)");
 
     // Ended by the owner, then connected again: same person entry, records visible again.
     const before = (await listComparisons(u.userId)).find((c) => c.status === "active")!;

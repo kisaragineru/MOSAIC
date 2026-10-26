@@ -3,6 +3,9 @@ import type { Dict } from "./en";
 /** Vietnamese UI strings. */
 export const vi: Dict = {
   common: {
+    colon: ": ",
+    quoteOpen: "“",
+    quoteClose: "”",
     listSeparator: ", ",
     loading: "Đang tải…",
     appName: "MOSAIC",
@@ -1175,6 +1178,8 @@ export const vi: Dict = {
     endConfirm: "Kết thúc hướng dẫn? Bạn có thể tiếp tục bất cứ lúc nào từ danh sách trên trang chủ.",
     resume: "Tiếp tục hướng dẫn",
     resumeSub: "Tiếp tục từ bước lập lá số.",
+    checklistEnd: "Ẩn danh sách",
+    checklistEndConfirm: "Ẩn danh sách này? Bạn vẫn có thể làm phần còn lại từ từng trang bất cứ lúc nào.",
     checklistTitle: "Bắt đầu",
     checklistSub: (n: number) => `Hiểu mình, chia sẻ, hiểu người. Còn ${n} việc`,
     checklist: { chart: "Lập lá số", answers: "Trả lời 3 câu hỏi", bio: "Viết lời giới thiệu", record: "Viết ghi chép đầu tiên", connect: "Kết nối với người thân yêu" },

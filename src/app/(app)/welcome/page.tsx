@@ -5,6 +5,7 @@ import { BrandMark } from "@/components/brand";
 import { KnowledgeCard } from "@/components/knowledge-card";
 import { QuestionForm } from "@/components/question-form";
 import { BirthForm } from "@/components/birth-form";
+import { Confetti } from "@/components/confetti";
 import { ChartTour } from "@/components/chart-tour";
 import { Flash } from "@/components/flash";
 import { ConfirmButton } from "@/components/confirm-button";
@@ -43,19 +44,19 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
 
   // The guide can be ended at any step; what is left stays on Home's checklist.
   const skip = (
-    <form action={finishOnboardingAction}>
+    <form action={finishOnboardingAction} className="shrink-0">
       <input type="hidden" name="next" value="/home" />
-      <ConfirmButton bare message={w.endConfirm} className="text-sm text-stone-500 underline underline-offset-4 hover:text-stone-800">{w.endGuide}</ConfirmButton>
+      <ConfirmButton bare message={w.endConfirm} className="shrink-0 whitespace-nowrap text-sm text-stone-500 underline underline-offset-4 hover:text-stone-800">{w.endGuide}</ConfirmButton>
     </form>
   );
 
   return (
     <main className="mx-auto w-full max-w-xl space-y-5 px-4 pb-28 pt-6">
       {/* The step bar only while under way: the finish is a page of its own. */}
-      {step < STEPS && <div className="flex items-center justify-between">
-        <ol className="flex gap-1.5" aria-label={w.stepOf(step, STEPS)}>
+      {step < STEPS && <div className="flex items-center gap-3">
+        <ol className="flex min-w-0 flex-1 gap-1.5" aria-label={w.stepOf(step, STEPS)}>
           {Array.from({ length: STEPS }, (_, i) => (
-            <li key={i} className={`h-1.5 w-8 rounded-full ${i < step ? "bg-teal-600" : "bg-stone-200"}`} />
+            <li key={i} className={`h-1.5 max-w-8 flex-1 rounded-full ${i < step ? "bg-teal-600" : "bg-stone-200"}`} />
           ))}
         </ol>
         {skip}
@@ -213,36 +214,6 @@ async function ChartResult({ t, locale, tv }: { t: Awaited<ReturnType<typeof get
   );
 }
 
-// Confetti that falls across the finish (where, how big, which colour, when and how fast).
-const CONFETTI = [
-  "left-[2%] h-3 w-2 bg-amber-300 [animation-delay:0s] [animation-duration:2.4s]",
-  "left-[6%] h-2 w-2 bg-white [animation-delay:0.75s] [animation-duration:3.2s]",
-  "left-[10%] h-2.5 w-1.5 bg-amber-200 [animation-delay:0.3s] [animation-duration:3s]",
-  "left-[14%] h-1.5 w-3 bg-rose-300 [animation-delay:1.05s] [animation-duration:2.8s]",
-  "left-[17%] h-2 w-1 bg-teal-200 [animation-delay:0.6s] [animation-duration:2.6s]",
-  "left-[21%] h-3 w-2 bg-rose-200 [animation-delay:0.15s] [animation-duration:2.4s]",
-  "left-[25%] h-2 w-2 bg-sky-200 [animation-delay:0.9s] [animation-duration:3.2s]",
-  "left-[29%] h-2.5 w-1.5 bg-violet-200 [animation-delay:0.45s] [animation-duration:3s]",
-  "left-[33%] h-1.5 w-3 bg-amber-300 [animation-delay:0s] [animation-duration:2.8s]",
-  "left-[37%] h-2 w-1 bg-white [animation-delay:0.75s] [animation-duration:2.6s]",
-  "left-[40%] h-3 w-2 bg-amber-200 [animation-delay:0.3s] [animation-duration:2.4s]",
-  "left-[44%] h-2 w-2 bg-rose-300 [animation-delay:1.05s] [animation-duration:3.2s]",
-  "left-[48%] h-2.5 w-1.5 bg-teal-200 [animation-delay:0.6s] [animation-duration:3s]",
-  "left-[52%] h-1.5 w-3 bg-rose-200 [animation-delay:0.15s] [animation-duration:2.8s]",
-  "left-[56%] h-2 w-1 bg-sky-200 [animation-delay:0.9s] [animation-duration:2.6s]",
-  "left-[60%] h-3 w-2 bg-violet-200 [animation-delay:0.45s] [animation-duration:2.4s]",
-  "left-[63%] h-2 w-2 bg-amber-300 [animation-delay:0s] [animation-duration:3.2s]",
-  "left-[67%] h-2.5 w-1.5 bg-white [animation-delay:0.75s] [animation-duration:3s]",
-  "left-[71%] h-1.5 w-3 bg-amber-200 [animation-delay:0.3s] [animation-duration:2.8s]",
-  "left-[75%] h-2 w-1 bg-rose-300 [animation-delay:1.05s] [animation-duration:2.6s]",
-  "left-[79%] h-3 w-2 bg-teal-200 [animation-delay:0.6s] [animation-duration:2.4s]",
-  "left-[83%] h-2 w-2 bg-rose-200 [animation-delay:0.15s] [animation-duration:3.2s]",
-  "left-[86%] h-2.5 w-1.5 bg-sky-200 [animation-delay:0.9s] [animation-duration:3s]",
-  "left-[90%] h-1.5 w-3 bg-violet-200 [animation-delay:0.45s] [animation-duration:2.8s]",
-  "left-[94%] h-2 w-1 bg-amber-300 [animation-delay:0s] [animation-duration:2.6s]",
-  "left-[98%] h-3 w-2 bg-white [animation-delay:0.75s] [animation-duration:2.4s]",
-];
-
 /**
  * The end of the guide: a clear "done", then what the few minutes made — the chart's word on you,
  * the first tile, the manual — to read now. Connecting is offered, lightly, for later. Reaching
@@ -259,11 +230,7 @@ async function Finished({ uid, t, locale, tile, answered }: { uid: string; t: Aw
     <section className="space-y-4" data-testid="guide-finished">
       {/* Edge to edge: a finish that feels like one. */}
       <div className="relative -mx-4 -mt-6 overflow-hidden bg-linear-to-br from-teal-600 via-indigo-600 to-violet-600 px-6 pb-10 pt-12 text-center text-white shadow-lg">
-        <div aria-hidden className="pointer-events-none absolute inset-0">
-          {CONFETTI.map((c, i) => (
-            <span key={i} className={`absolute -top-4 rounded-sm opacity-0 motion-safe:animate-[confettiFall_3s_ease-in_both] motion-safe:[animation-iteration-count:2] ${c}`} />
-          ))}
-        </div>
+        <Confetti />
         {/* A medal that pops in, rings that ripple out, and a tick drawn on it. */}
         <div className="relative mx-auto h-28 w-28">
           <span aria-hidden className="absolute inset-0 rounded-full ring-4 ring-white/50 opacity-0 motion-safe:animate-[ripple_1.8s_ease-out_.5s_infinite]" />
@@ -315,7 +282,7 @@ async function Finished({ uid, t, locale, tile, answered }: { uid: string; t: Aw
         <div className="rounded-3xl bg-white/85 p-5 shadow-sm ring-1 ring-stone-200/60">
           <p className="text-xs font-semibold text-teal-700">🧩 {w.achTile}</p>
           <p className="mt-1 font-semibold text-stone-900">
-            {AXIS_LABEL[SEED_AXIS].name[locale]}：{tile.state === "mixed" ? MANUAL[SEED_AXIS]!.mixed[locale] : TENDENCY_TEXT[SEED_AXIS][tile.direction === 1 ? "pos" : "neg"][locale]}
+            {AXIS_LABEL[SEED_AXIS].name[locale]}{t.common.colon}{tile.state === "mixed" ? MANUAL[SEED_AXIS]!.mixed[locale] : TENDENCY_TEXT[SEED_AXIS][tile.direction === 1 ? "pos" : "neg"][locale]}
           </p>
         </div>
       )}
@@ -325,7 +292,7 @@ async function Finished({ uid, t, locale, tile, answered }: { uid: string; t: Aw
         <p className="mt-1 text-lg font-bold text-stone-900">{w.manualStats(manual.chars, manual.stats.written)}</p>
         {summary && summary.t === "list" && (
           <ul className="mt-2 space-y-1 text-sm text-stone-700">
-            {summary.items.slice(0, 3).map((x) => <li key={x}>・{x}</li>)}
+            {summary.items.slice(0, 3).map((x) => <li key={x}>• {x}</li>)}
           </ul>
         )}
         <p className="mt-2 text-right text-sm font-semibold text-amber-800">{w.readManual} →</p>

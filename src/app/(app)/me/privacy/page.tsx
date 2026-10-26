@@ -50,7 +50,7 @@ export default async function PrivacyPage() {
       <Section id="only-you" title={tp.onlyYouTitle} help={tp.onlyYouHelp}>
         <ul className="list-disc space-y-1 pl-5 text-sm leading-6 text-stone-700">
           {tp.onlyYou.map((x) => <li key={x}>{x}</li>)}
-          <li>{tp.privateRecords(o.records.private)}・{tp.letters(o.records.letters)}</li>
+          <li>{tp.privateRecords(o.records.private)}{t.common.listSeparator}{tp.letters(o.records.letters)}</li>
           <li>{tp.privateAnswers(o.answers.private)}</li>
         </ul>
       </Section>
