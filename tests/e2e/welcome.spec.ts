@@ -59,11 +59,16 @@ test("a new account is guided: the chart (not skippable) and its tour, three que
   await page.getByRole("textbox").fill("週末は山とパン屋めぐり。");
   await page.getByRole("button", { name: "保存して次へ" }).click();
   await page.waitForURL(/step=6/);
-  await expect(page.getByRole("heading", { name: /準備ができました/ })).toBeVisible();
+  // A clear end, then what the guide made: the chart's word, the first tile, the manual.
+  const done = page.getByTestId("guide-finished");
+  await expect(done.getByRole("heading", { name: "はじめてガイド、完了です！" })).toBeVisible();
+  await expect(done).toContainText("あなたの本質は「");
+  await expect(done).toContainText("モザイクの最初のタイル");
+  await expect(done).toContainText(/文字・\d+章が書けました/);
   await expect(page.getByTestId("pieces")).toHaveText("16"); // 3 answers + bio + chart
-  // The guide ends by inviting a connection; home keeps what is left as a checklist.
-  await expect(page.getByRole("button", { name: /大切な人とつながる（QR）/ })).toBeVisible();
-  await page.getByRole("button", { name: "あとで（ホームへ）" }).click();
+  // Connecting is offered lightly, for later; going home is the main way on.
+  await expect(done.getByRole("link", { name: /QRでつながる（あとでOK）/ })).toBeVisible();
+  await done.getByRole("link", { name: "ホームへ（MOSAICをはじめる）" }).click();
   await page.waitForURL(/\/home$/);
   const list = page.getByTestId("starter-checklist");
   await expect(list).toContainText("あと2つ");

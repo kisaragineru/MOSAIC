@@ -17,7 +17,8 @@ import { requireUser } from "@/server/auth/session";
 import { getAccount } from "@/server/services/account";
 import { getQuestion } from "@/server/services/discovery";
 import { knowledge } from "@/server/services/knowledge";
-import { onboardingState, SEED_AXIS } from "@/server/services/onboarding";
+import { finishOnboarding, onboardingState, SEED_AXIS } from "@/server/services/onboarding";
+import { buildManual } from "@/server/services/manual";
 import { getTuvi } from "@/server/services/tuvi";
 import { chartView } from "@/lib/tuvi/chart-view";
 
@@ -151,22 +152,7 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
         </section>
       )}
 
-      {step === 6 && (
-        <section className="space-y-4">
-          <h1 className="text-2xl font-bold text-stone-900">🎉 {w.doneTitle}</h1>
-          <p className="leading-7 text-stone-600">{w.doneLead}</p>
-          <KnowledgeCard k={await knowledge(uid)} t={t} locale={locale} />
-          {/* The guide ends where MOSAIC leads: to someone who matters. */}
-          <form action={finishOnboardingAction}>
-            <input type="hidden" name="next" value="/share" />
-            <Button type="submit" className="w-full">🤝 {w.connectNow}</Button>
-          </form>
-          <form action={finishOnboardingAction} className="text-center">
-            <input type="hidden" name="next" value="/home" />
-            <button type="submit" className="text-sm text-stone-500 underline underline-offset-4 hover:text-stone-800">{w.goHome}</button>
-          </form>
-        </section>
-      )}
+      {step === 6 && <Finished uid={uid} t={t} locale={locale} tile={st.tile} />}
     </main>
   );
 }
@@ -221,6 +207,66 @@ async function ChartResult({ t, locale, tv }: { t: Awaited<ReturnType<typeof get
       ) : (
         <Link href="/welcome?step=4" className="block rounded-full bg-teal-700 py-3 text-center font-semibold text-white">{w.tourNext} →</Link>
       )}
+    </section>
+  );
+}
+
+/**
+ * The end of the guide: a clear "done", then what the few minutes made — the chart's word on you,
+ * the first tile, the manual — to read now. Connecting is offered, lightly, for later. Reaching
+ * this page finishes the guide.
+ */
+async function Finished({ uid, t, locale, tile }: { uid: string; t: Awaited<ReturnType<typeof getT>>["t"]; locale: Awaited<ReturnType<typeof getT>>["locale"]; tile: Awaited<ReturnType<typeof onboardingState>>["tile"] }) {
+  const w = t.welcome;
+  await finishOnboarding(uid);
+  const tv = await getTuvi(uid, locale);
+  const persona = tv.sections.find((x) => x.section === "personality")?.persona;
+  const manual = await buildManual(uid, locale);
+  const summary = manual.sections.find((x) => x.id === "summary")?.blocks.find((b) => b.t === "list");
+  return (
+    <section className="space-y-4" data-testid="guide-finished">
+      <div className="rounded-3xl bg-linear-to-br from-teal-600 to-violet-600 px-5 py-6 text-center text-white shadow-lg motion-safe:animate-[zoomIn_.5s_ease-out]">
+        <p className="text-4xl" aria-hidden>🎉</p>
+        <h1 className="mt-2 text-2xl font-bold">{w.doneTitle}</h1>
+        <p className="mt-2 text-sm leading-6 text-white/90">{w.doneLead}</p>
+      </div>
+
+      {tv.chart && (
+        <Link href="/tuvi" className="block rounded-3xl bg-linear-to-br from-teal-100 via-sky-50 to-violet-200 p-5 text-teal-950 shadow-sm">
+          <p className="text-xs font-semibold text-teal-700">⭐ {w.achTuvi}</p>
+          {persona ? <p className="mt-1 text-lg font-bold leading-snug">{w.resultPersona(persona)}</p> : <p className="mt-1 text-lg font-bold">{w.resultEyebrow}</p>}
+          <p className="mt-2 text-right text-sm font-semibold text-teal-800">{w.openTuvi} →</p>
+        </Link>
+      )}
+
+      {tile && (
+        <div className="rounded-3xl bg-white/85 p-5 shadow-sm ring-1 ring-stone-200/60">
+          <p className="text-xs font-semibold text-teal-700">🧩 {w.achTile}</p>
+          <p className="mt-1 font-semibold text-stone-900">
+            {AXIS_LABEL[SEED_AXIS].name[locale]}：{tile.state === "mixed" ? MANUAL[SEED_AXIS]!.mixed[locale] : TENDENCY_TEXT[SEED_AXIS][tile.direction === 1 ? "pos" : "neg"][locale]}
+          </p>
+        </div>
+      )}
+
+      <Link href="/me/manual" className="block rounded-3xl bg-linear-to-br from-amber-50 to-teal-50 p-5 shadow-sm ring-1 ring-amber-100">
+        <p className="text-xs font-semibold text-amber-800">📖 {w.achManual}</p>
+        <p className="mt-1 text-lg font-bold text-stone-900">{w.manualStats(manual.chars, manual.stats.written)}</p>
+        {summary && summary.t === "list" && (
+          <ul className="mt-2 space-y-1 text-sm text-stone-700">
+            {summary.items.slice(0, 3).map((x) => <li key={x}>・{x}</li>)}
+          </ul>
+        )}
+        <p className="mt-2 text-right text-sm font-semibold text-amber-800">{w.readManual} →</p>
+      </Link>
+
+      <KnowledgeCard k={await knowledge(uid)} t={t} locale={locale} />
+
+      <Link href="/home" className="block rounded-full bg-teal-700 py-3 text-center font-semibold text-white shadow-sm hover:bg-teal-800">{w.goHome}</Link>
+      {/* Connecting is where MOSAIC leads, but it can wait: offered lightly, never in the way. */}
+      <div className="rounded-2xl bg-white/70 px-4 py-3 text-center ring-1 ring-stone-200">
+        <p className="text-xs leading-5 text-stone-600">{w.connectLater}</p>
+        <Link href="/share" className="mt-1 inline-block text-sm font-semibold text-teal-700 underline underline-offset-4">🤝 {w.connectNow}</Link>
+      </div>
     </section>
   );
 }
