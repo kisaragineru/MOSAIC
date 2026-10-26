@@ -53,7 +53,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <Link href="/me/privacy" className="mb-3 flex items-center justify-between rounded-2xl bg-teal-50/70 px-4 py-3 text-sm font-semibold text-teal-900 hover:bg-teal-50">
           <span>🛡 {t.privacyHub.link}</span><span aria-hidden>→</span>
         </Link>
-        <form action={aiOptInAction} className="space-y-2">
+        <form id="ai" action={aiOptInAction} className="scroll-mt-20 space-y-2">
           <Checkbox name="aiOptIn" defaultChecked={acc.profile.aiOptIn} label={t.settings.aiOptIn} />
           <p className="text-xs text-stone-500">{t.settings.aiHelp}</p>
           {!aiConfigured() && <p className="text-xs text-amber-700">{t.insights.aiReasons.not_configured}</p>}

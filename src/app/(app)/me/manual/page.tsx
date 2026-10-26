@@ -7,6 +7,11 @@ import { MANUAL_PRESETS, SHARED_TEXT } from "@/content/manual-text";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { buildManual, type ManualBlock } from "@/server/services/manual";
+import { getManualRewrite, REWRITABLE } from "@/server/services/manual-rewrite";
+import { aiConfigured } from "@/server/ai/claude";
+import { getAccount } from "@/server/services/account";
+import { clearManualRewriteAction, rewriteManualAction } from "@/app/actions/manual";
+import { PendingButton } from "@/components/pending-button";
 
 // Literal class strings (Tailwind only generates classes it can see).
 const HUE: Record<Chapter, { chip: string; ring: string }> = {
@@ -132,12 +137,19 @@ function Block({ b }: { b: ManualBlock }) {
   }
 }
 
-export default async function ManualPage() {
+export default async function ManualPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
+  const sp = await searchParams;
   const { t, locale } = await getT();
   const m = await buildManual(uid, locale);
   const know = await knowledge(uid);
   const tm = t.manual;
+  const ai = tm.ai;
+  const rewrite = await getManualRewrite(uid, locale);
+  const optIn = (await getAccount(uid)).profile.aiOptIn;
+  const aiNote = sp.ai ? (ai.reason[sp.ai] ?? ai.reason.unavailable) : null;
+  // In the AI rewrite, a section's prose is replaced; its links, locks and cards stay.
+  const kept = (b: ManualBlock) => b.t === "link" || b.t === "locked" || b.t === "axis" || b.t === "episode" || b.t === "storyTitle";
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pb-28 pt-4 print:pb-0">
       <div className="mb-4 flex items-center gap-3 print:hidden">
@@ -186,6 +198,39 @@ export default async function ManualPage() {
         </div>
       </section>
 
+      {/* AI rewrite: offered when it can be used; owner only, never in shared manuals. */}
+      <section id="ai" className="mt-4 scroll-mt-20 rounded-3xl bg-linear-to-br from-violet-50 to-white p-5 shadow-sm ring-1 ring-violet-100 print:hidden" data-testid="manual-ai">
+        <h2 className="text-sm font-semibold text-violet-900">✍️ {ai.title}</h2>
+        {rewrite ? (
+          <p className="mt-1 text-xs leading-5 text-violet-900">{ai.showing(rewrite.createdAt.toISOString().slice(0, 10))}</p>
+        ) : (
+          <p className="mt-1 text-xs leading-5 text-stone-600">{ai.lead}</p>
+        )}
+        {rewrite && rewrite.growth >= 5 && <p className="mt-1 text-xs leading-5 text-amber-800">{ai.stale(rewrite.growth)}</p>}
+        {aiNote && <p role="status" className="mt-2 rounded-xl bg-white/80 px-3 py-2 text-xs leading-5 text-stone-700 ring-1 ring-stone-200">{aiNote}</p>}
+        {!optIn ? (
+          <p className="mt-2 text-xs leading-5 text-stone-600">
+            {ai.off} <Link href="/settings#ai" className="font-semibold text-teal-700 underline">{ai.offLink} →</Link>
+          </p>
+        ) : !aiConfigured() ? (
+          <p className="mt-2 text-xs leading-5 text-stone-500">{ai.reason.not_configured}</p>
+        ) : (
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <form action={rewriteManualAction}>
+              <PendingButton pending={ai.pending} className="rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-800">
+                {rewrite ? ai.redo : ai.button}
+              </PendingButton>
+            </form>
+            {rewrite && (
+              <form action={clearManualRewriteAction}>
+                <button type="submit" className="text-xs text-stone-500 underline underline-offset-4 hover:text-stone-800">{ai.clear}</button>
+              </form>
+            )}
+          </div>
+        )}
+        {optIn && !rewrite && <p className="mt-2 text-[11px] leading-5 text-stone-500">{ai.privacy}</p>}
+      </section>
+
       <article className="mt-6 space-y-10">
         {m.sections.map((s) => (
           <section key={s.id} id={`sec-${s.id}`} aria-labelledby={`h-${s.id}`} className="scroll-mt-20 space-y-4">
@@ -193,7 +238,17 @@ export default async function ManualPage() {
               <span aria-hidden>{s.icon}</span>
               {s.title}
             </h2>
-            {s.blocks.map((b, i) => <Block key={i} b={b} />)}
+            {(() => {
+              const paras = rewrite && (REWRITABLE as readonly string[]).includes(s.id) ? rewrite.sections[s.id as (typeof REWRITABLE)[number]] : undefined;
+              if (!paras?.length) return s.blocks.map((b, i) => <Block key={i} b={b} />);
+              return (
+                <>
+                  <p className="inline-block rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-semibold text-violet-800 ring-1 ring-violet-100">✍️ {ai.badge}</p>
+                  {paras.map((x, i) => <p key={`ai${i}`} className="leading-8 text-stone-800">{x}</p>)}
+                  {s.blocks.filter(kept).map((b, i) => <Block key={i} b={b} />)}
+                </>
+              );
+            })()}
             <p className="text-right print:hidden">
               <a href="#toc" className="text-xs text-stone-400 hover:text-teal-700">↑ {tm.top}</a>
             </p>

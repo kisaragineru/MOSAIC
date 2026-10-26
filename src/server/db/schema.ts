@@ -1289,3 +1289,17 @@ export const memoryMediaChunks = pgTable(
   },
   (t) => [primaryKey({ columns: [t.mediaId, t.idx] })],
 );
+
+/**
+ * The manual rewritten by AI, at the owner's request and only with AI turned on. Only the owner
+ * reads it (shared manuals keep MOSAIC's template text). One per user, replaced on each rewrite.
+ */
+export const manualRewrites = pgTable("manual_rewrites", {
+  userId: userRef().primaryKey(),
+  locale: text("locale").notNull(),
+  /** { [sectionId]: paragraphs } */
+  sections: jsonb("sections").notNull(),
+  /** How many pieces MOSAIC knew when it was written (to suggest a fresh rewrite later). */
+  pieces: integer("pieces").notNull(),
+  createdAt: createdAt(),
+});

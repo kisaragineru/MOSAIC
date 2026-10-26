@@ -86,9 +86,9 @@ const n = (x: number) => String(x);
 
 export const MANUAL_PHRASE = {
   introBody: (name: string, answers: number, memories: number): I18nText => ({
-    ja: `これは、${name}さんがMOSAICに残してきた ${n(answers)} 件の答えと ${n(memories)} 件の記録から組み立てた「取扱説明書」です。占いでも診断でもなく、あなた自身の言葉を、読み物の形に並べ直したものです。`,
-    en: `This is ${name}'s manual, put together from ${n(answers)} answers and ${n(memories)} records left in MOSAIC. It isn't a fortune or a diagnosis — it's your own words, rearranged into something to read.`,
-    vi: `Đây là cẩm nang của ${name}, được ghép từ ${n(answers)} câu trả lời và ${n(memories)} ghi chép trong MOSAIC. Nó không phải bói toán hay chẩn đoán — mà là chính lời của bạn, sắp xếp lại thành một bài đọc.`,
+    ja: `これは、${name}さんがMOSAICに残してきた ${n(answers)} 件の答えと ${n(memories)} 件の記録から組み立てた「取扱説明書」です。占いでも診断でもなく、あなたの答えからMOSAICが読みとったことを、読み物として書いたものです。`,
+    en: `This is ${name}'s manual, put together from ${n(answers)} answers and ${n(memories)} records left in MOSAIC. It isn't a fortune or a diagnosis — it's what MOSAIC reads in your answers, written as something to read.`,
+    vi: `Đây là cẩm nang của ${name}, được ghép từ ${n(answers)} câu trả lời và ${n(memories)} ghi chép trong MOSAIC. Nó không phải bói toán hay chẩn đoán — mà là những gì MOSAIC đọc được từ câu trả lời của bạn, viết thành một bài đọc.`,
   }),
   introHow: {
     ja: "文章の言い切り方は、どれだけ確かかで変えています。「はっきり表れています」は答えがそろっているところ、「見えはじめています」はまだ途中のところです。当てはまらないと感じたら、インサイトの画面から「違う」と伝えてください。説明書もそれに合わせて書き変わります。",

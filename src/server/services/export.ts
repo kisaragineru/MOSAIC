@@ -48,6 +48,7 @@ export async function buildExport(userId: string) {
     const photo = (await tx.execute<{ mime: string; bytes: Buffer; version: number }>(sql`select * from avatar_get(${userId})`)).rows[0];
     const profilePhoto = photo ? { mime: photo.mime, base64: Buffer.from(photo.bytes).toString("base64") } : null;
     const manualShares = await tx.select().from(s.manualShares).where(eq(s.manualShares.ownerId, userId));
+    const [manualRewrite] = await tx.select().from(s.manualRewrites).where(eq(s.manualRewrites.userId, userId));
     // Gift boxes I write in or received, each as I may see it (see gift_box_read).
     const giftIds = (await tx.execute<{ id: string }>(sql`select id from gift_boxes_mine()`)).rows;
     const giftBoxes = [];
@@ -121,6 +122,7 @@ export async function buildExport(userId: string) {
       messagesSent,
       profilePhoto,
       manualShares,
+      manualRewrite: manualRewrite ?? null,
       giftBoxes,
       tendencies: claims.map((c) => ({ ...c, evidence: evidence.filter((e) => e.claimId === c.id) })),
       tuvi: {

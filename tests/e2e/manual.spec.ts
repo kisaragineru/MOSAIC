@@ -42,6 +42,11 @@ test("the manual is a long read that grows with answers", async ({ browser }) =>
   await expect(card.getByText("はっきり表れています")).toBeVisible();
   await expect(card.getByText("力が出やすい場所")).toBeVisible();
   await expect(card.getByText("3 件の答えから")).toBeVisible();
+  // "In a few words" is MOSAIC's own sentence, not a list of quotes.
+  await expect(page.locator("#sec-summary")).toContainText("先に計画を立てる人です。");
+  // AI rewriting is offered only once AI is allowed in settings.
+  await expect(page.getByTestId("manual-ai")).toContainText("AIによる振り返りを許可する");
+  await expect(page.getByTestId("manual-ai").getByRole("button", { name: "AIで書き直す" })).toHaveCount(0);
 
   // The contents jump to each section; the tips speak in the reader's voice.
   const toc = page.getByRole("navigation", { name: "目次" });
