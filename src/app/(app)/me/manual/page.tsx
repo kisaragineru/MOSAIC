@@ -7,7 +7,7 @@ import { MANUAL_PRESETS, SHARED_TEXT } from "@/content/manual-text";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { buildManual, type ManualBlock } from "@/server/services/manual";
-import { getManualRewrite, REWRITABLE } from "@/server/services/manual-rewrite";
+import { getManualRewrite, novelUnits, REWRITABLE } from "@/server/services/manual-rewrite";
 import { aiConfigured } from "@/server/ai/claude";
 import { getAccount } from "@/server/services/account";
 import { clearManualRewriteAction } from "@/app/actions/manual";
@@ -217,7 +217,7 @@ export default async function ManualPage({ searchParams }: { searchParams: Promi
         ) : (
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <ManualRewriter
-              sections={m.sections.filter((x) => (REWRITABLE as readonly string[]).includes(x.id) && !x.locked).map((x) => x.id)}
+              sections={[...m.sections.filter((x) => (REWRITABLE as readonly string[]).includes(x.id) && !x.locked).map((x) => x.id as string), ...novelUnits(m.sections)]}
               label={rewrite ? ai.redo : ai.button}
               labels={{ progress: ai.progress, reasons: ai.reason, fallback: ai.reason.unavailable! }}
             />
@@ -239,7 +239,20 @@ export default async function ManualPage({ searchParams }: { searchParams: Promi
               {s.title}
             </h2>
             {(() => {
-              const paras = rewrite && (REWRITABLE as readonly string[]).includes(s.id) ? rewrite.sections[s.id as (typeof REWRITABLE)[number]] : undefined;
+              // The story: each rewritten episode replaces its own, as a longer scene.
+              if (s.id === "novel" && rewrite) {
+                const any = s.blocks.some((b) => b.t === "episode" && b.key && rewrite.sections[`novel.${b.key}`]?.length);
+                return (
+                  <>
+                    {any && <p className="inline-block rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-semibold text-violet-800 ring-1 ring-violet-100">✍️ {ai.badge}</p>}
+                    {s.blocks.map((b, i) => {
+                      const scene = b.t === "episode" && b.key ? rewrite.sections[`novel.${b.key}`] : undefined;
+                      return <Block key={i} b={scene?.length && b.t === "episode" ? { ...b, paragraphs: scene } : b} />;
+                    })}
+                  </>
+                );
+              }
+              const paras = rewrite && (REWRITABLE as readonly string[]).includes(s.id) ? rewrite.sections[s.id] : undefined;
               if (!paras?.length) return s.blocks.map((b, i) => <Block key={i} b={b} />);
               return (
                 <>

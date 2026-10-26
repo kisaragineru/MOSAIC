@@ -45,8 +45,11 @@ export type ManualBlock =
   /** A chapter not written yet: a blurred sample, how far away it is, and where to go. */
   | { t: "locked"; text: string; sample: string; href: string; label: string }
   | { t: "link"; href: string; text: string }
-  | { t: "episode"; title: string; paragraphs: string[] }
+  | { t: "episode"; key?: EpisodeKey; title: string; paragraphs: string[] }
   | { t: "storyTitle"; title: string; subtitle: string };
+
+export const EPISODES = ["prologue", "childhood", "path", "now", "future", "epilogue"] as const;
+export type EpisodeKey = (typeof EPISODES)[number];
 
 /** "core": built from answers and tendencies; "personal": your stories, plans and others' words. */
 export type ManualScope = "core" | "personal" | "self";
@@ -429,7 +432,7 @@ function story(
   ];
   const tv = d.tuvi;
   const prologue = tv?.yearName && tv.napAm ? [L(STORY.born(name, tv.yearName, tv.napAm)), ...(tv.persona ? [L(STORY.star(tv.persona))] : [])] : [L(STORY.bornUnknown(name))];
-  out.push({ t: "episode", title: L(STORY.episodes.prologue), paragraphs: prologue });
+  out.push({ t: "episode", key: "prologue", title: L(STORY.episodes.prologue), paragraphs: prologue });
 
   const fromFamily = (d.gifts ?? [])
     .slice()
@@ -440,9 +443,9 @@ function story(
       return L(STORY.giftLine(date, x.from, clip(x.title ? `${x.title} — ${x.body}` : x.body, 160)));
     });
   const childhood = [...fromFamily, ...lines("childhood")];
-  if (childhood.length) out.push({ t: "episode", title: L(STORY.episodes.childhood), paragraphs: childhood });
+  if (childhood.length) out.push({ t: "episode", key: "childhood", title: L(STORY.episodes.childhood), paragraphs: childhood });
   const path = [...lines("path"), ...records(["achievement", "decision", "memory", "regret", "value"])];
-  if (path.length) out.push({ t: "episode", title: L(STORY.episodes.path), paragraphs: path });
+  if (path.length) out.push({ t: "episode", key: "path", title: L(STORY.episodes.path), paragraphs: path });
 
   const now: string[] = [];
   if (known.length) {
@@ -454,14 +457,14 @@ function story(
   } else now.push(L(STORY.nowUnknown(name)));
   if (d.peers.responders > 0) now.push(L(STORY.nowPeers(name, d.peers.responders)));
   if (tv?.cycleTopic) now.push(L(STORY.nowCycle(tv.cycleTopic)));
-  out.push({ t: "episode", title: L(STORY.nowTitle(name)), paragraphs: now });
+  out.push({ t: "episode", key: "now", title: L(STORY.nowTitle(name)), paragraphs: now });
 
   const future = [...lines("future"), ...records(["goal", "dream"])];
   for (const m of d.memories.filter((x) => x.kind === "letter_to_future" && x.sealedUntil)) future.push(L(STORY.letter(m.sealedUntil!)));
-  if (future.length) out.push({ t: "episode", title: L(STORY.episodes.future), paragraphs: future });
+  if (future.length) out.push({ t: "episode", key: "future", title: L(STORY.episodes.future), paragraphs: future });
 
   if (!childhood.length && !path.length) out.push({ t: "locked", text: L(STORY.locked), sample: L(SAMPLE_STORY), href: "/memories/new", label: L(STORY.lockedButton) });
-  out.push({ t: "episode", title: L(STORY.episodes.epilogue), paragraphs: L(STORY.epilogue(name)).split("\n") });
+  out.push({ t: "episode", key: "epilogue", title: L(STORY.episodes.epilogue), paragraphs: L(STORY.epilogue(name)).split("\n") });
   return out;
 }
 

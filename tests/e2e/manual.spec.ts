@@ -56,6 +56,8 @@ test("the manual is a long read that grows with answers", async ({ browser }) =>
   await page.getByTestId("manual-ai").getByRole("button", { name: "AIで書き直す" }).click();
   await expect(page.locator("#sec-summary")).toContainText("[AI] ひとことで言うとを書き直した文章です。", { timeout: 20_000 });
   await expect(page.locator("#sec-summary")).toContainText("AIが書き直しました");
+  // The closing story is rewritten episode by episode, as longer scenes.
+  await expect(page.locator("#sec-novel")).toContainText("プロローグの場面を書き直した物語です。");
   await expect(page.getByTestId("manual-ai")).toContainText("AIが書き直した文章を表示中");
   await page.getByTestId("manual-ai").getByRole("button", { name: "MOSAICの文章に戻す" }).click();
   await expect(page.locator("#sec-summary")).toContainText("先に計画を立てる人です。");

@@ -7,8 +7,8 @@ vi.mock("@/server/ai/claude", () => ({
   generateStructured: async (o: { system: string; user: string; timeoutMs?: number }) => {
     if (!o.timeoutMs || o.timeoutMs > 26_000) throw new Error("each call must fit a hosted request");
     ai.calls.push(o);
-    const { chapter } = JSON.parse(o.user) as { chapter: { id: string } };
-    return { ok: true, data: { paragraphs: [`REWRITTEN ${chapter.id}`] } };
+    const u = JSON.parse(o.user) as { chapter?: { id: string }; episode?: { title: string } };
+    return { ok: true, data: { paragraphs: [u.chapter ? `REWRITTEN ${u.chapter.id}` : `SCENE ${u.episode!.title}`] } };
   },
 }));
 
@@ -45,7 +45,12 @@ describe("manual rewritten by AI", () => {
 
     expect(await rewriteManual(u.userId, "en")).toEqual({ ok: true });
     // One request per chapter (each fits inside a hosted request's time limit).
-    const sent = ai.calls.map((c) => JSON.parse(c.user) as { name: string; chapter: { id: string; text: string } });
+    const all = ai.calls.map((c) => JSON.parse(c.user) as { name: string; chapter?: { id: string; text: string }; episode?: { title: string; lines: string[] } });
+    // The closing story goes episode by episode, each as a longer scene from the person's own facts.
+    const scenes = all.filter((x) => x.episode);
+    expect(scenes.length).toBeGreaterThanOrEqual(3);
+    expect(ai.calls.find((c) => c.user.includes('"episode"'))!.system).toMatch(/never invent events/);
+    const sent = all.filter((x) => x.chapter) as { name: string; chapter: { id: string; text: string } }[];
     expect(sent.every((x) => x.name === "Hana")).toBe(true);
     expect(sent.map((x) => x.chapter.id)).toContain("summary");
     expect(sent.find((x) => x.chapter.id === "future")!.chapter.text).toContain("Learn to swim");
@@ -55,6 +60,7 @@ describe("manual rewritten by AI", () => {
 
     const r = await getManualRewrite(u.userId, "en");
     expect(r?.sections.summary).toEqual(["REWRITTEN summary"]);
+    expect(r?.sections["novel.prologue"]?.[0]).toMatch(/^SCENE /);
     expect(await getManualRewrite(u.userId, "ja")).toBeNull(); // written for one language
     expect(await getManualRewrite(other.userId, "en")).toBeNull();
     // Row-level security: another user's whole-table read sees nothing.
