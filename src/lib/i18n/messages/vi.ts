@@ -1020,7 +1020,7 @@ export const vi: Dict = {
     tuviTodo: "Nhập ngày sinh để ô này hiện lá số của bạn.",
     tuviOpen: "Xem lá số",
     tuviStart: "Lập lá số",
-    likesShort: "Sở thích",
+    likesShort: "Điều bạn thích",
     storyShort: "Câu chuyện",
     chapterBody: (n: number, all: number) => `Bạn đã trả lời ${n}/${all} câu.`,
   },

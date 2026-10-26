@@ -18,7 +18,7 @@ export const STORY_LINES: Record<string, { episode: "childhood" | "path" | "futu
   "s.proud_recent": { episode: "path", line: (n, a) => ({ ja: `最近、${n}は小さな誇りを手にした。「${a}」`, en: `Not long ago, ${n} earned a small pride: “${a}”`, vi: `Gần đây, ${n} có được một niềm tự hào nhỏ: “${a}”` }) },
   "s.changed_year": { episode: "path", line: (n, a) => ({ ja: `この一年で、${n}の中で何かが変わった。「${a}」`, en: `Something in ${n} changed this past year: “${a}”`, vi: `Trong năm qua, có điều gì đó trong ${n} đã đổi khác: “${a}”` }) },
   "s.bucket": { episode: "future", line: (n, a) => ({ ja: `${n}には、いつか叶えたいことがある。「${a}」`, en: `There's something ${n} wants to do someday: “${a}”`, vi: `${n} có một điều muốn làm vào một ngày nào đó: “${a}”` }) },
-  "fut.one_thing": { episode: "future", line: (n, a) => ({ ja: `これから大切にしたいのは、「${a}」。`, en: `What ${n} wants to hold on to from here: “${a}”.`, vi: `Điều ${n} muốn gìn giữ từ nay: “${a}”.` }) },
+  "fut.one_thing": { episode: "future", line: (n, a) => ({ ja: `今年のうちに、${n}にはやってみたいことがある。「${a}」`, en: `Before the year is out, ${n} wants to do one thing: “${a}”.`, vi: `Trước khi năm nay khép lại, ${n} muốn làm một điều: “${a}”.` }) },
   "fut.five_years": { episode: "future", line: (n, a) => ({ ja: `五年後の自分を思い描くと——「${a}」`, en: `Picturing five years from now: “${a}”`, vi: `Hình dung năm năm nữa: “${a}”` }) },
   "s.ten_years": { episode: "future", line: (n, a) => ({ ja: `十年後は「${a}」でいたい、と${n}は答えた。`, en: `In ten years, ${n} hopes for “${a}”.`, vi: `Mười năm nữa, ${n} mong là “${a}”.` }) },
   "fut.where_live": { episode: "future", line: (n, a) => ({ ja: `暮らしてみたい場所は、「${a}」。`, en: `Where ${n} would like to live: “${a}”.`, vi: `Nơi ${n} muốn sống: “${a}”.` }) },

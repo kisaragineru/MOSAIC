@@ -1018,8 +1018,8 @@ export const en = {
     tuviTodo: "Add your birth date and this tile fills with your chart.",
     tuviOpen: "Open your chart",
     tuviStart: "Make your chart",
-    likesShort: "Likes",
-    storyShort: "Story",
+    likesShort: "Things you love",
+    storyShort: "Your story",
     chapterBody: (n: number, all: number) => `You have answered ${n} of ${all} questions.`,
   },
   giftBox: {

@@ -16,7 +16,7 @@ export const SECTION_TEXT: Record<ManualSectionId, { title: I18nText; icon: stri
   summary: {
     icon: "✨",
     title: { ja: "ひとことで言うと", en: "In a few words", vi: "Tóm lại trong vài dòng" },
-    lead: { ja: "これまでの答えの中で、いちばんはっきり表れているところです。", en: "These are the things your answers show most clearly so far.", vi: "Đây là những điều câu trả lời của bạn thể hiện rõ nhất cho đến nay." },
+    lead: { ja: "これまでの答えから、MOSAICが読みとった姿です。", en: "Here is how MOSAIC reads you from your answers so far.", vi: "Đây là cách MOSAIC hiểu về bạn từ những câu trả lời đến nay." },
   },
   self: {
     icon: "🌱",

@@ -112,12 +112,14 @@ describe("composeManual", () => {
     expect(others.blocks.some((b) => b.t === "quote" && b.cite === "Ken")).toBe(true);
   });
 
-  it("starts with the clearest three and the bio", () => {
+  it("sums you up in MOSAIC's own words, not quotes; your bio opens the manual", () => {
     const m = composeManual(fullInput(), "ja");
     const s = m.sections.find((x) => x.id === "summary")!;
-    const list = s.blocks.find((b) => b.t === "list");
-    expect(list && list.t === "list" && list.items).toHaveLength(3);
-    expect(s.blocks.some((b) => b.t === "quote" && b.text.includes("パン屋"))).toBe(true);
+    const prose = s.blocks.filter((b) => b.t === "p").map((b) => (b.t === "p" ? b.text : "")).join("");
+    expect(prose).toContain("Hanaさんは、");
+    expect(s.blocks.some((b) => b.t === "quote" || b.t === "list")).toBe(false);
+    const intro = m.sections.find((x) => x.id === "intro")!;
+    expect(intro.blocks.some((b) => b.t === "quote" && b.text.includes("パン屋"))).toBe(true);
   });
 
   it("leaves out an axis the user rejected, everywhere", () => {

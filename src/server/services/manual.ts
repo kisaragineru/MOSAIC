@@ -13,6 +13,8 @@ import { PALACE_PLAIN } from "@/lib/tuvi/plain";
 import { MANUAL, type ManualPart } from "@/content/manual-axes";
 import { RECORD_KIND, STORY, STORY_LINES } from "@/content/manual-story";
 import { MANUAL_CHAPTERS, MANUAL_PHRASE as P, SECTION_TEXT, type ManualSectionId } from "@/content/manual-text";
+import { LIKE_LINES, VOICE } from "@/content/manual-voice";
+import { GIFT_HINTS } from "@/content/gift-hints";
 import type { I18nText, TendencyKey } from "@/content/questions";
 import type { Answer } from "@/lib/discovery/answers";
 import { answerLabel } from "@/lib/discovery/format";
@@ -85,6 +87,8 @@ export interface ManualAnswer {
   category: string;
   /** The answer as text in each locale (choices resolved to their labels). */
   label: I18nText;
+  /** The chosen option values (empty for text and scale answers). */
+  values?: string[];
   isText: boolean;
   answeredAt: string;
   /** When the user said their view changed: the previous answer. */
@@ -168,6 +172,8 @@ export function composeManual(d: ManualInput, locale: Locale): Manual {
   add("intro", "self", [
     { t: "p", text: L(P.introBody(d.name, d.answers.length, records)) },
     { t: "p", text: L(P.introHow) },
+    // Their own words for the people who matter open the manual, as written.
+    ...(d.bio?.trim() ? ([{ t: "p", text: L(VOICE.bioLead(d.name)) }, { t: "quote", text: clip(d.bio.trim(), 600) }] as ManualBlock[]) : []),
   ]);
 
   // 1. In a few words
@@ -175,9 +181,33 @@ export function composeManual(d: ManualInput, locale: Locale): Manual {
     .filter(said)
     .sort((a, b) => (a.state === b.state ? b.confidence - a.confidence || a.key.localeCompare(b.key) : a.state === "consistent" ? -1 : 1))
     .slice(0, 3);
+  // MOSAIC's reading in its own words: one portrait from the tendencies, the Tử Vi type, how they
+  // decide, what they love and what they're aiming for, rather than the answers quoted back.
+  const answer = (id: string) => d.answers.find((a) => a.questionId === id);
+  const likeLines = d.answers
+    .filter((a) => LIKE_LINES[a.questionId] && a.values?.length)
+    .map((a) => LIKE_LINES[a.questionId]!(d.name, a.values![0]!, a.label))
+    .filter((x): x is I18nText => !!x)
+    .map(L);
+  const portrait: string[] = [];
+  if (top.length) {
+    portrait.push(L(VOICE.traits(d.name, top.map((c) => poleOf(c.key, c.direction)))));
+    const combo = COMBOS.find((x) => top.some((c) => c.key === x.a[0] && c.direction === x.a[1]) && d.claims.filter(said).some((c) => c.key === x.b[0] && c.direction === x.b[1]));
+    if (combo) portrait.push(L(VOICE.combo(d.name, combo.title)));
+  }
+  const decide = answer("p.decide")?.values?.[0];
+  const decideLine = decide ? VOICE.decide(d.name, decide) : null;
+  const daily = [decideLine ? L(decideLine) : null, ...likeLines.slice(0, 2)].filter((x): x is string => !!x);
   const summary: ManualBlock[] = [];
-  if (top.length) summary.push({ t: "list", items: top.map((c) => L(poleOf(c.key, c.direction))) });
-  if (d.bio?.trim()) summary.push({ t: "quote", text: clip(d.bio.trim(), 600), cite: L(P.bioCite) });
+  if (portrait.length) summary.push({ t: "p", text: portrait.join(locale === "ja" ? "" : " ") });
+  if (daily.length) summary.push({ t: "p", text: daily.join(locale === "ja" ? "" : " ") });
+  if (d.tuvi?.persona) summary.push({ t: "p", text: L(VOICE.tuvi(d.name, d.tuvi.persona, d.tuvi.keywords)) });
+  const goal = answer("fut.one_thing");
+  if (goal) summary.push({ t: "p", text: L(VOICE.goal(d.name, clip(L(goal.label), 120))) });
+  const lead = top[0];
+  const leadAsk = lead && MANUAL[lead.key] ? L((lead.direction === 1 ? MANUAL[lead.key]!.pos : MANUAL[lead.key]!.neg).ask) : null;
+  if (leadAsk) summary.push({ t: "p", text: L(VOICE.ask(leadAsk)) });
+  if (summary.length && summary.length < 3) summary.push({ t: "note", text: L(VOICE.thin) });
   if (!summary.length) summary.push({ t: "locked", text: L(P.lockedSummary), sample: L(P.sample), href: "/discover/all", label: L(P.answerMore) });
   add("summary", "core", summary);
 
@@ -232,7 +262,16 @@ export function composeManual(d: ManualInput, locale: Locale): Manual {
   // 3. Likes
   const likes: ManualBlock[] = [];
   const likeAnswers = textAnswers((a) => a.chapter === "likes" || a.questionId.startsWith("l."));
-  if (likeAnswers.length) likes.push({ t: "kv", title: L(P.likesFromAnswers), items: likeAnswers.map((a) => ({ k: L(a.prompt), v: L(a.label) })) });
+  // First in MOSAIC's words: how they like to live, what they love, and what that suggests.
+  const loves = d.prefs.filter((p) => p.sentiment === "love" || p.sentiment === "like").map((p) => p.label).slice(0, 6);
+  const likeProse = [...likeLines, ...(loves.length ? [L(VOICE.favourites(d.name, loves))] : [])];
+  if (likeProse.length) likes.push({ t: "p", text: L(VOICE.likesIntro(d.name)) }, { t: "p", text: likeProse.join(locale === "ja" ? "" : " ") });
+  const hints = d.answers
+    .flatMap((a) => (a.values ?? []).map((v) => GIFT_HINTS[a.questionId]?.[v]?.idea))
+    .filter((x): x is I18nText => !!x)
+    .slice(0, 2);
+  if (hints.length) likes.push({ t: "p", text: hints.map((h) => L(VOICE.hint(h))).join(locale === "ja" ? "" : " ") });
+  if (likeAnswers.length) likes.push({ t: "kv", title: L(VOICE.likesList), items: likeAnswers.map((a) => ({ k: L(a.prompt), v: L(a.label) })) });
   const bySentiment = (["love", "like", "wants", "dislike", "avoid"] as const)
     .map((s) => ({ s, items: d.prefs.filter((p) => p.sentiment === s).map((p) => p.label) }))
     .filter((g) => g.items.length);
@@ -292,7 +331,11 @@ export function composeManual(d: ManualInput, locale: Locale): Manual {
     const ans = textAnswers((a) => a.category === cat);
     if (ans.length) {
       out.push({ t: "p", text: `— ${L(P.storyAnswers)}` });
-      for (const a of ans) out.push(a.isText ? { t: "quote", text: clip(L(a.label)), cite: L(a.prompt) } : { t: "kv", items: [{ k: L(a.prompt), v: L(a.label) }] });
+      for (const a of ans) {
+        const line = STORY_LINES[a.questionId];
+        if (line) out.push({ t: "p", text: L(line.line(d.name, clip(L(a.label), 280))) });
+        else out.push(a.isText ? { t: "quote", text: clip(L(a.label)), cite: L(a.prompt) } : { t: "kv", items: [{ k: L(a.prompt), v: L(a.label) }] });
+      }
     }
     const recs = d.memories.filter((m) => m.labels.some((l) => kinds.includes(l)) && !m.sealedUntil && (m.title || m.body)).slice(0, MAX_RECORDS);
     if (recs.length) {
@@ -458,6 +501,10 @@ export async function gatherManual(userId: string, locale: Locale): Promise<Manu
       chapter: chapterOf({ category: q.category as never, signals: q.signals ?? undefined }),
       category: q.category,
       label: allLocales((l) => answerLabel(q.options, latest.answer as Answer, l)),
+      values: (() => {
+        const a = latest.answer as Answer;
+        return "choice" in a ? [a.choice] : "choices" in a ? a.choices : [];
+      })(),
       isText: q.format === "short" || q.format === "free",
       answeredAt: day(latest.answeredAt),
       changedFrom: prev && JSON.stringify(prev.answer) !== JSON.stringify(latest.answer) ? allLocales((l) => answerLabel(q.options, prev.answer as Answer, l)) : null,

@@ -1020,8 +1020,8 @@ export const ja: Dict = {
     tuviTodo: "生年月日を入れると、命盤のタイルが埋まります。",
     tuviOpen: "命盤を見る",
     tuviStart: "命盤をつくる",
-    likesShort: "好き",
-    storyShort: "物語",
+    likesShort: "好きなもの",
+    storyShort: "これまでとこれから",
     chapterBody: (n: number, all: number) => `${all}問のうち${n}問に答えています。`,
   },
   giftBox: {
