@@ -10,7 +10,7 @@ import { buildManual, type ManualBlock } from "@/server/services/manual";
 import { getManualRewrite, novelUnits, REWRITABLE } from "@/server/services/manual-rewrite";
 import { aiConfigured } from "@/server/ai/claude";
 import { getAccount } from "@/server/services/account";
-import { clearManualRewriteAction } from "@/app/actions/manual";
+import { clearManualRewriteAction, refreshManualAction, rewriteManualSectionAction } from "@/app/actions/manual";
 import { ManualRewriter } from "@/components/manual-rewriter";
 
 // Literal class strings (Tailwind only generates classes it can see).
@@ -220,6 +220,8 @@ export default async function ManualPage({ searchParams }: { searchParams: Promi
               sections={[...m.sections.filter((x) => (REWRITABLE as readonly string[]).includes(x.id) && !x.locked).map((x) => x.id as string), ...novelUnits(m.sections)]}
               label={rewrite ? ai.redo : ai.button}
               labels={{ progress: ai.progress, reasons: ai.reason, fallback: ai.reason.unavailable! }}
+              run={rewriteManualSectionAction}
+              refresh={refreshManualAction}
             />
             {rewrite && (
               <form action={clearManualRewriteAction}>

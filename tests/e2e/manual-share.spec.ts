@@ -64,6 +64,23 @@ test("show your manual to a connection: friend preset, preview, and stop", async
   await expect(sora.getByText("ハナさんから").first()).toBeVisible();
   const manualUrl = new URL(sora.url()).pathname;
 
+  // Hana has AI rewrite the friend version from only what it shows; Sora sees it only after Hana
+  // checks it and chooses to show it.
+  await hana.goto("/settings#ai");
+  await hana.locator("form#ai").getByLabel("AIによる振り返りを許可する").check();
+  await hana.locator("form#ai").getByRole("button", { name: "保存" }).click();
+  await hana.goto("/me/manual/shared?preset=friend#share-ai");
+  await hana.getByTestId("share-ai").getByRole("button", { name: "AIで書き直す" }).click();
+  await expect(hana.getByTestId("share-ai")).toContainText("まだ相手には見えていません", { timeout: 20_000 });
+  await expect(hana.getByText(/\[AI共有\] ch\.self/).first()).toBeVisible();
+  await sora.reload();
+  await expect(sora.getByText(/\[AI共有\]/)).toHaveCount(0);
+  await hana.getByTestId("share-ai").getByRole("button", { name: "この文章で見せる" }).click();
+  await expect(hana.getByTestId("share-ai")).toContainText("この文章を、つながっている相手に見せています。");
+  await sora.reload();
+  await expect(sora.getByText(/\[AI共有\] ch\.self/).first()).toBeVisible();
+  await expect(sora.getByTestId("shared-ai-note")).toContainText("本人が確認した文章です");
+
   // Hana stops showing it; the page is gone for Sora.
   await hana.goto(compare);
   await hana.locator("#manual").getByRole("radio", { name: /見せない/ }).check();

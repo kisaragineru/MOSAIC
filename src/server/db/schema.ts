@@ -1305,3 +1305,27 @@ export const manualRewrites = pgTable("manual_rewrites", {
   pieces: integer("pieces").notNull(),
   createdAt: createdAt(),
 });
+
+/**
+ * The shared manual rewritten by AI for one preset, from only what that preset shows. Others read it
+ * (through manual_share_rewrite_for_me) only once the owner approved it, and the app shows it only
+ * while the shared content still matches `sourceHash`; otherwise readers get MOSAIC's own text.
+ */
+export const manualShareRewrites = pgTable(
+  "manual_share_rewrites",
+  {
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    preset: text("preset").notNull(),
+    locale: text("locale").notNull(),
+    /** { [unit]: paragraphs } — "summary", "ch.<chapter>", "likes". */
+    sections: jsonb("sections").notNull(),
+    /** A fingerprint of the shared content it was written from. */
+    sourceHash: text("source_hash").notNull(),
+    approved: boolean("approved").notNull().default(false),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [primaryKey({ columns: [t.ownerId, t.preset] }), check("manual_share_rewrites_preset_ck", sql`${t.preset} in ('friend','partner')`)],
+);

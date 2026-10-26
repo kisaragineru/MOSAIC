@@ -1472,6 +1472,18 @@ export const en = {
     meLink: "Your user's manual",
     teaser: "Everything MOSAIC knows about you, as one piece of reading.",
     grows: "The manual rewrites itself as you answer, record and ask others.",
+    shareAi: {
+      title: "Let AI make it read well",
+      lead: "From only what you show, AI rewrites it as something to read. Nobody sees it until you check it and press 'Show this text'.",
+      approved: "This text is shown to the people you share with.",
+      notApproved: "Not shown to anyone yet — check it in the preview below.",
+      stale: "What you show has changed, so people see MOSAIC's text for now. Rewrite it again.",
+      approve: "Show this text",
+      withdraw: "Stop showing it",
+      clear: "Back to MOSAIC's text",
+      previewNote: "Preview: shown as the AI rewrite",
+      viewerNote: "Checked by them (rewritten with AI)",
+    },
     ai: {
       title: "Let AI write it more like you",
       lead: "Starting from MOSAIC's text, AI (Claude) reads what even your short answers suggest and rewrites each chapter as something to read. The rewrite is shown only to you and is never used in a manual you share.",

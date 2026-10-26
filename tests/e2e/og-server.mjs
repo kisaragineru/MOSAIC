@@ -72,7 +72,8 @@ function anthropic(req, res) {
     const system = String(body.system ?? "");
     const user = String(body.messages?.[0]?.content ?? "");
     let out = {};
-    if (system.includes("light novel")) out = { paragraphs: [`[AI] ${JSON.parse(user).episode?.title ?? ""}の場面を書き直した物語です。`, "[AI] もう一段落。"] };
+    if (system.includes("will read it")) out = { paragraphs: [`[AI共有] ${JSON.parse(user).part}を見せる相手向けに書き直した文章です。`] };
+    else if (system.includes("light novel")) out = { paragraphs: [`[AI] ${JSON.parse(user).episode?.title ?? ""}の場面を書き直した物語です。`, "[AI] もう一段落。"] };
     else if (system.includes("user manual")) out = { paragraphs: [`[AI] ${JSON.parse(user).chapter?.title ?? ""}を書き直した文章です。`] };
     else if (system.includes("translate one chat message")) out = { same: false, translation: `[AI訳] ${user.replace(/<\/?message>/g, "").trim()}` };
     else if (system.includes("self-introduction")) out = { text: "[AI] 自己紹介の下書きです。" };

@@ -14,10 +14,16 @@ const BADGE = {
   mixed: "bg-linear-to-r from-teal-100 to-rose-100 text-stone-700",
 };
 
-/** Someone's manual as they chose to show it (or my own, previewed). */
-export function SharedManualView({ m, locale, levels }: { m: SharedManual; locale: Locale; levels: Record<"consistent" | "emerging" | "mixed", string> }) {
+const Prose = ({ paras }: { paras: string[] }) => <div className="space-y-3">{paras.map((x, i) => <p key={i} className="leading-8 text-stone-800">{x}</p>)}</div>;
+
+/**
+ * Someone's manual as they chose to show it (or my own, previewed). With `ai`, the parts it covers
+ * are read as the owner's approved AI rewrite (written from this same shared content); the rest stays.
+ */
+export function SharedManualView({ m, locale, levels, ai, aiNote }: { m: SharedManual; locale: Locale; levels: Record<"consistent" | "emerging" | "mixed", string>; ai?: Record<string, string[]> | null; aiNote?: string }) {
   return (
     <article className="space-y-6">
+      {ai && aiNote && <p className="inline-block rounded-full bg-violet-50 px-3 py-1 text-[11px] font-semibold text-violet-800 ring-1 ring-violet-100" data-testid="shared-ai-note">✍️ {aiNote}</p>}
       <header className="rounded-3xl bg-linear-to-br from-amber-50 via-white to-teal-50 p-5 shadow-sm ring-1 ring-white/80">
         <h1 className="text-xl font-bold tracking-tight text-stone-900">{m.heading}</h1>
         <p className="mt-2 text-sm leading-7 text-stone-700">{m.lead}</p>
@@ -25,7 +31,12 @@ export function SharedManualView({ m, locale, levels }: { m: SharedManual; local
         {m.intro && <blockquote className="mt-3 whitespace-pre-line rounded-2xl bg-white/70 p-3 text-sm leading-7 text-stone-800 ring-1 ring-sky-100">🧩 {m.intro}</blockquote>}
       </header>
       {m.empty && <p className="rounded-2xl bg-stone-100/80 px-4 py-3 text-sm text-stone-600">{m.empty}</p>}
-      {m.summary.length > 0 && (
+      {ai?.summary?.length ? (
+        <section className="space-y-2">
+          <h2 className="text-lg font-bold text-stone-900">✨ {m.summaryTitle}</h2>
+          <Prose paras={ai.summary} />
+        </section>
+      ) : m.summary.length > 0 && (
         <section className="space-y-2">
           <h2 className="text-lg font-bold text-stone-900">✨ {m.summaryTitle}</h2>
           <ul className="space-y-2">
@@ -43,7 +54,14 @@ export function SharedManualView({ m, locale, levels }: { m: SharedManual; local
         return (
           <section key={c.chapter} aria-labelledby={`sh-${c.chapter}`} className="space-y-3">
             <h2 id={`sh-${c.chapter}`} className="border-b border-stone-200 pb-2 text-lg font-bold text-stone-900">{info.icon} {info.title[locale]}</h2>
-            {c.traits.map((t) => (
+            {ai?.[`ch.${c.chapter}`]?.length ? (
+              <>
+                <Prose paras={ai[`ch.${c.chapter}`]!} />
+                <ul className="flex flex-wrap gap-1.5">
+                  {c.traits.map((t) => <li key={t.key} className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs text-stone-700">{t.name}{locale === "ja" ? "：" : ": "}{t.pole}</li>)}
+                </ul>
+              </>
+            ) : c.traits.map((t) => (
               <div key={t.key} className={`space-y-2 rounded-2xl border-l-4 bg-white/85 p-4 shadow-sm ring-1 ring-stone-200/60 ${HUE[c.chapter] ?? ""}`}>
                 <p className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-semibold text-stone-700">{t.name}</span>
@@ -65,6 +83,7 @@ export function SharedManualView({ m, locale, levels }: { m: SharedManual; local
       {m.likes.length > 0 && (
         <section className="space-y-2">
           <h2 className="border-b border-stone-200 pb-2 text-lg font-bold text-stone-900">🍀 {m.likesTitle}</h2>
+          {ai?.likes?.length ? <Prose paras={ai.likes} /> : null}
           <dl className="divide-y divide-stone-100 rounded-2xl bg-white/80 px-4 ring-1 ring-stone-200/60">
             {m.likes.map((l) => (
               <div key={l.k} className="py-2.5">

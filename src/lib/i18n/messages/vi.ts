@@ -1474,6 +1474,18 @@ export const vi: Dict = {
     meLink: "Cẩm nang về bạn",
     teaser: "Mọi điều MOSAIC biết về bạn, gói trong một bài đọc.",
     grows: "Cẩm nang tự viết lại khi bạn trả lời, ghi chép và hỏi người khác.",
+    shareAi: {
+      title: "Để AI viết cho dễ đọc",
+      lead: "Chỉ từ những gì bạn cho xem, AI viết lại thành một bài đọc. Không ai thấy cho đến khi bạn kiểm tra và bấm \"Cho xem bản này\".",
+      approved: "Bản này đang được cho những người bạn chia sẻ xem.",
+      notApproved: "Chưa ai thấy — hãy kiểm tra ở phần xem trước bên dưới.",
+      stale: "Nội dung bạn cho xem đã thay đổi nên tạm thời mọi người thấy bản của MOSAIC. Hãy viết lại.",
+      approve: "Cho xem bản này",
+      withdraw: "Ngừng cho xem",
+      clear: "Quay về bản của MOSAIC",
+      previewNote: "Xem trước: hiển thị bản AI viết lại",
+      viewerNote: "Đã được họ kiểm tra (viết lại bằng AI)",
+    },
     ai: {
       title: "Để AI viết giống bạn hơn",
       lead: "Từ phần MOSAIC đã viết, AI (Claude) đọc ra cả ý nghĩa của những câu trả lời ngắn và viết lại từng chương thành một bài đọc. Bản viết lại chỉ hiển thị cho bạn và không dùng trong cẩm nang bạn chia sẻ.",

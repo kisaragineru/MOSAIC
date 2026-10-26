@@ -4,6 +4,7 @@ import { SharedManualView } from "@/components/shared-manual";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { sharedManualFor } from "@/server/services/manual-share";
+import { sharedRewriteFor } from "@/server/services/manual-share-rewrite";
 
 /** The other participant's manual, as much as they chose to show. */
 export default async function TheirManualPage({ params }: { params: Promise<{ id: string }> }) {
@@ -12,10 +13,12 @@ export default async function TheirManualPage({ params }: { params: Promise<{ id
   const { t, locale } = await getT();
   const m = await sharedManualFor(uid, id, locale).catch(() => null);
   if (!m) notFound();
+  // Their approved AI rewrite, when it was written from exactly what they show now, in my language.
+  const ai = await sharedRewriteFor(uid, id, locale, m).catch(() => null);
   return (
     <main className="mx-auto w-full max-w-2xl space-y-4 px-4 pb-28 pt-4">
       <Link href={`/compare/${id}`} className="inline-block rounded-full px-2 py-1 text-stone-500 hover:bg-stone-200" aria-label="Back">←</Link>
-      <SharedManualView m={m} locale={locale} levels={{ consistent: t.manual.levelConsistent, emerging: t.manual.levelEmerging, mixed: t.manual.levelMixed }} />
+      <SharedManualView m={m} locale={locale} levels={{ consistent: t.manual.levelConsistent, emerging: t.manual.levelEmerging, mixed: t.manual.levelMixed }} ai={ai} aiNote={t.manual.shareAi.viewerNote} />
     </main>
   );
 }

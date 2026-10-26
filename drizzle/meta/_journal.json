@@ -281,6 +281,20 @@
       "when": 1793021873367,
       "tag": "0039_self_types",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1793029717129,
+      "tag": "0040_manual_share_rewrites",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793029718512,
+      "tag": "0041_manual_share_rewrites_access",
+      "breakpoints": true
     }
   ]
 }

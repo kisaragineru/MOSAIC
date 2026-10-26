@@ -1,39 +1,50 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { refreshManualAction, rewriteManualSectionAction } from "@/app/actions/manual";
 
 /**
  * Rewrites the manual with AI one chapter at a time (each request stays inside the host's time
  * limit), showing how far along it is; the page reloads when every chapter is done. A failure stops
  * there and says why; chapters already rewritten are kept.
  */
-export function ManualRewriter({ sections, label, labels }: { sections: string[]; label: string; labels: { /** "… {done} / {all} …" (a string: functions can't cross to the browser). */ progress: string; reasons: Record<string, string>; fallback: string } }) {
+export function ManualRewriter({
+  sections,
+  label,
+  labels,
+  run,
+  refresh,
+}: {
+  sections: string[];
+  label: string;
+  /** Server actions: rewrite one unit, and refresh the page's data afterwards. */
+  run: (unit: string, first: boolean) => Promise<{ ok: boolean; reason?: string }>;
+  refresh: () => Promise<void>;
+  labels: { /** "… {done} / {all} …" (a string: functions can't cross to the browser). */ progress: string; reasons: Record<string, string>; fallback: string } }) {
   const router = useRouter();
   const [done, setDone] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const run = async () => {
+  const start = async () => {
     setError(null);
     for (const [i, id] of sections.entries()) {
       setDone(i);
-      const r = await rewriteManualSectionAction(id, i === 0);
+      const r = await run(id, i === 0);
       if (!r.ok) {
         setError(labels.reasons[r.reason ?? ""] ?? labels.fallback);
         setDone(null);
-        await refreshManualAction();
+        await refresh();
         router.refresh();
         return;
       }
     }
     setDone(sections.length);
-    await refreshManualAction();
+    await refresh();
     router.refresh();
     setDone(null);
   };
   const busy = done !== null;
   return (
     <div className="space-y-2">
-      <button type="button" onClick={run} disabled={busy || sections.length === 0} aria-busy={busy} className="rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-800 disabled:cursor-wait disabled:opacity-70">
+      <button type="button" onClick={start} disabled={busy || sections.length === 0} aria-busy={busy} className="rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-800 disabled:cursor-wait disabled:opacity-70">
         {busy ? labels.progress.replace("{done}", String(done)).replace("{all}", String(sections.length)) : label}
       </button>
       {busy && (
