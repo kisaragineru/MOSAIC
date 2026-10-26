@@ -1152,6 +1152,7 @@ export const en = {
     skip: "Skip",
     doneTitle: "Welcome guide complete!",
     doneLead: "Well done. In just a few minutes, this much of you has come into view.",
+    achDone: ["Chart made", "3 questions answered", "Manual written"] as string[],
     achTuvi: "Your chart",
     achTile: "The first tile of your mosaic",
     achManual: "Your user's manual",

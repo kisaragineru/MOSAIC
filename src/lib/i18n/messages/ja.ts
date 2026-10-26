@@ -1154,6 +1154,7 @@ export const ja: Dict = {
     skip: "スキップ",
     doneTitle: "はじめてガイド、完了です！",
     doneLead: "おつかれさまでした。たった数分で、あなたのことがこれだけ見えてきました。",
+    achDone: ["命盤ができた", "質問に3つ答えた", "取扱説明書ができた"] as string[],
     achTuvi: "あなたの命盤",
     achTile: "モザイクの最初のタイル",
     achManual: "あなたの取扱説明書",

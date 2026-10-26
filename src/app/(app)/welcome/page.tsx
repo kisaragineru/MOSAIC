@@ -51,14 +51,15 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
 
   return (
     <main className="mx-auto w-full max-w-xl space-y-5 px-4 pb-28 pt-6">
-      <div className="flex items-center justify-between">
+      {/* The step bar only while under way: the finish is a page of its own. */}
+      {step < STEPS && <div className="flex items-center justify-between">
         <ol className="flex gap-1.5" aria-label={w.stepOf(step, STEPS)}>
           {Array.from({ length: STEPS }, (_, i) => (
             <li key={i} className={`h-1.5 w-8 rounded-full ${i < step ? "bg-teal-600" : "bg-stone-200"}`} />
           ))}
         </ol>
-        {step < STEPS && skip}
-      </div>
+        {skip}
+      </div>}
 
       {step === 1 && (
         <section className="space-y-5 motion-safe:animate-[fadeUp_.4s_ease-out]">
@@ -212,6 +213,20 @@ async function ChartResult({ t, locale, tv }: { t: Awaited<ReturnType<typeof get
   );
 }
 
+// Little squares of colour around the finish (where, how big, which colour, at what angle).
+const CONFETTI = [
+  "left-[6%] top-[12%] h-3 w-2 rotate-12 bg-amber-300",
+  "left-[18%] top-[30%] h-2 w-2 -rotate-6 bg-rose-300",
+  "left-[10%] top-[62%] h-2.5 w-1.5 rotate-45 bg-sky-200",
+  "left-[28%] top-[8%] h-1.5 w-3 -rotate-12 bg-white/80",
+  "right-[8%] top-[10%] h-3 w-2 -rotate-12 bg-rose-300",
+  "right-[20%] top-[26%] h-2 w-2 rotate-12 bg-amber-200",
+  "right-[12%] top-[58%] h-2.5 w-1.5 -rotate-45 bg-teal-200",
+  "right-[30%] top-[6%] h-1.5 w-3 rotate-6 bg-white/80",
+  "left-[40%] top-[88%] h-2 w-2 rotate-45 bg-amber-300",
+  "right-[38%] top-[90%] h-2 w-1.5 -rotate-12 bg-rose-200",
+];
+
 /**
  * The end of the guide: a clear "done", then what the few minutes made — the chart's word on you,
  * the first tile, the manual — to read now. Connecting is offered, lightly, for later. Reaching
@@ -226,10 +241,31 @@ async function Finished({ uid, t, locale, tile }: { uid: string; t: Awaited<Retu
   const summary = manual.sections.find((x) => x.id === "summary")?.blocks.find((b) => b.t === "list");
   return (
     <section className="space-y-4" data-testid="guide-finished">
-      <div className="rounded-3xl bg-linear-to-br from-teal-600 to-violet-600 px-5 py-6 text-center text-white shadow-lg motion-safe:animate-[zoomIn_.5s_ease-out]">
-        <p className="text-4xl" aria-hidden>🎉</p>
-        <h1 className="mt-2 text-2xl font-bold">{w.doneTitle}</h1>
-        <p className="mt-2 text-sm leading-6 text-white/90">{w.doneLead}</p>
+      {/* Edge to edge: a finish that feels like one. */}
+      <div className="relative -mx-4 -mt-6 overflow-hidden bg-linear-to-br from-teal-600 via-indigo-600 to-violet-600 px-6 pb-10 pt-12 text-center text-white shadow-lg">
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          {CONFETTI.map((c, i) => (
+            <span key={i} className={`absolute rounded-sm motion-safe:animate-[zoomIn_.8s_ease-out_both] ${c}`} />
+          ))}
+        </div>
+        <div className="relative mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-white/15 ring-4 ring-white/40 motion-safe:animate-[zoomIn_.6s_ease-out_both]">
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-4xl font-black text-teal-700 shadow-lg">✓</span>
+        </div>
+        <p className="relative mt-5 inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-bold tracking-[0.2em]">COMPLETE</p>
+        <h1 className="relative mt-3 text-[1.7rem] font-black leading-tight">{w.doneTitle}</h1>
+        <p className="relative mx-auto mt-3 max-w-sm text-sm leading-7 text-white/90">{w.doneLead}</p>
+        <ul className="relative mx-auto mt-6 grid max-w-sm grid-cols-3 gap-2 text-left" data-testid="guide-achievements">
+          {[
+            { done: !!tv.chart, label: w.achDone[0]! },
+            { done: !!tile, label: w.achDone[1]! },
+            { done: manual.sections.some((x) => x.id === "intro"), label: w.achDone[2]! },
+          ].map((x) => (
+            <li key={x.label} className={`rounded-2xl px-2.5 py-2 text-[11px] font-semibold leading-tight ${x.done ? "bg-white text-teal-800" : "bg-white/15 text-white/80"}`}>
+              <span aria-hidden className={`mb-1 flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-black ${x.done ? "bg-teal-600 text-white" : "bg-white/30"}`}>{x.done ? "✓" : ""}</span>
+              {x.label}
+            </li>
+          ))}
+        </ul>
       </div>
 
       {tv.chart && (

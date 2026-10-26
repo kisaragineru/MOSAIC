@@ -1154,6 +1154,7 @@ export const vi: Dict = {
     skip: "Bỏ qua",
     doneTitle: "Hoàn thành hướng dẫn!",
     doneLead: "Bạn đã làm rất tốt. Chỉ vài phút mà đã hiểu thêm về bạn nhiều thế này.",
+    achDone: ["Đã lập lá số", "Đã trả lời 3 câu", "Đã có cẩm nang"] as string[],
     achTuvi: "Lá số của bạn",
     achTile: "Ô đầu tiên trong bức tranh",
     achManual: "Cẩm nang về bạn",
