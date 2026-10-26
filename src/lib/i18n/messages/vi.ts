@@ -1493,6 +1493,7 @@ export const vi: Dict = {
       privacy: "Khi viết lại, nội dung cẩm nang này được gửi đến nhà cung cấp AI (Anthropic).",
       button: "Viết lại bằng AI",
       progress: "Đang viết lại… {done} / {all} chương",
+      stay: "Vui lòng giữ trang này mở cho đến khi xong. Nếu chuyển trang hoặc đóng, việc viết lại sẽ dừng giữa chừng (các chương đã xong vẫn được giữ).",
       redo: "Viết lại lần nữa",
       clear: "Quay về bản của MOSAIC",
       showing: (date: string) => `Đang hiển thị bản AI viết lại (${date})`,

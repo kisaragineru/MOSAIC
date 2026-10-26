@@ -1491,6 +1491,7 @@ export const en = {
       privacy: "Rewriting sends this manual's content to the AI provider (Anthropic).",
       button: "Rewrite with AI",
       progress: "Rewriting… {done} / {all} chapters",
+      stay: "Please keep this page open until it finishes. Leaving or closing it stops the rewrite partway (chapters already done are kept).",
       redo: "Rewrite again",
       clear: "Back to MOSAIC's text",
       showing: (date: string) => `Showing the AI rewrite (${date})`,

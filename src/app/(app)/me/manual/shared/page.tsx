@@ -60,7 +60,7 @@ export default async function SharedPreviewPage({ searchParams }: { searchParams
             <ManualRewriter
               sections={sharedUnits(m)}
               label={state ? ai.redo : ai.button}
-              labels={{ progress: ai.progress, reasons: ai.reason, fallback: ai.reason.unavailable! }}
+              labels={{ progress: ai.progress, stay: ai.stay, reasons: ai.reason, fallback: ai.reason.unavailable! }}
               run={rewriteSharedUnitAction.bind(null, preset)}
               refresh={refreshSharedPreviewAction}
             />

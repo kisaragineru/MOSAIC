@@ -10,6 +10,7 @@ import { eq } from "drizzle-orm";
 import { AXES, AXIS_CHAPTER, AXIS_LABEL, chapterOf, PEER_POLES, type Chapter } from "@/content/axes";
 import { COMBOS } from "@/content/insight-combos";
 import { PALACE_PLAIN } from "@/lib/tuvi/plain";
+import type { MainStarId } from "@/lib/tuvi/stars";
 import { MANUAL, type ManualPart } from "@/content/manual-axes";
 import { RECORD_KIND, STORY, STORY_LINES } from "@/content/manual-story";
 import { MANUAL_CHAPTERS, MANUAL_PHRASE as P, SECTION_TEXT, type ManualSectionId } from "@/content/manual-text";
@@ -29,6 +30,7 @@ import { listPreferences } from "./people";
 import { johari } from "./peers";
 import { listTendencies, type ClaimState } from "./tendencies";
 import { getTuvi } from "./tuvi";
+import { typeInsight } from "./tuvi-type";
 import { receivedGifts } from "./gift-boxes";
 
 // ---------------------------------------------------------------------------
@@ -46,7 +48,9 @@ export type ManualBlock =
   | { t: "locked"; text: string; sample: string; href: string; label: string }
   | { t: "link"; href: string; text: string }
   | { t: "episode"; key?: EpisodeKey; title: string; paragraphs: string[] }
-  | { t: "storyTitle"; title: string; subtitle: string };
+  | { t: "storyTitle"; title: string; subtitle: string }
+  /** The Tử Vi type(s) as pictures, with where the type comes from. */
+  | { t: "types"; ids: MainStarId[]; caption: string };
 
 export const EPISODES = ["prologue", "childhood", "path", "now", "future", "epilogue"] as const;
 export type EpisodeKey = (typeof EPISODES)[number];
@@ -108,6 +112,8 @@ export interface ManualInput {
   memories: { kind: string; labels: string[]; title: string | null; body: string | null; date: string; sealedUntil: string | null }[];
   /** Growth records from gift boxes this user received (parents' and grandparents' words). */
   gifts?: { from: string; date: string | null; title: string | null; body: string }[];
+  /** The type: from the chart, MOSAIC's judgment from answers, a provisional lean, or the person's own pick. */
+  types?: { ids: MainStarId[]; source: "chart" | "answers" | "provisional" | "picked" } | null;
   tuvi: {
     summary: string | null;
     keywords: string[];
@@ -149,6 +155,7 @@ function blockText(b: ManualBlock): string {
       return b.name + b.portrait + (b.thrive ?? "") + (b.watch ?? "") + b.extra.join("");
     case "link":
     case "locked":
+    case "types":
       return "";
     case "episode":
       return b.title + b.paragraphs.join("");
@@ -317,6 +324,7 @@ export function composeManual(d: ManualInput, locale: Locale): Manual {
 
   // 6. Tử Vi
   const tuvi: ManualBlock[] = [];
+  if (d.types?.ids.length) tuvi.push({ t: "types", ids: d.types.ids, caption: L(P.typeCaption[d.types.source]) });
   if (!d.tuvi) {
     tuvi.push({ t: "locked", text: L(P.tuviNone), sample: L(P.sample), href: "/tuvi", label: L(P.tuviSetup) });
   } else {
@@ -490,6 +498,7 @@ export async function gatherManual(userId: string, locale: Locale): Promise<Manu
   const memories = await listMemories(userId, { limit: 200 });
   const tv = await getTuvi(userId, locale);
   const received = await receivedGifts(userId);
+  const ti = await typeInsight(userId, tv.chart ?? null);
 
   const answers: ManualAnswer[] = [];
   for (const h of history) {
@@ -547,6 +556,13 @@ export async function gatherManual(userId: string, locale: Locale): Promise<Manu
     ),
     prefs: prefs.map((p) => ({ label: p.label, sentiment: p.current.sentiment })),
     memories: memories.map((m) => ({ kind: m.kind, labels: m.labels, title: m.title, body: m.body, date: m.occurredOn ?? day(m.createdAt), sealedUntil: m.sealed ? m.revealOn : null })),
+    types: ti.types.length
+      ? { ids: ti.types, source: ti.source === "chart" ? "chart" : "answers" }
+      : ti.provisional.length
+        ? { ids: ti.provisional, source: "provisional" }
+        : ti.selfTypes.length
+          ? { ids: ti.selfTypes, source: "picked" }
+          : null,
     tuvi: tv.chart
       ? {
           summary: personality?.summary ?? null,

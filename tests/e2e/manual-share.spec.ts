@@ -70,8 +70,16 @@ test("show your manual to a connection: friend preset, preview, and stop", async
   await hana.locator("form#ai").getByLabel("AIによる振り返りを許可する").check();
   await hana.locator("form#ai").getByRole("button", { name: "保存" }).click();
   await hana.goto("/me/manual/shared?preset=friend#share-ai");
+  // Each chapter is asked from the page (held a moment here), so it asks to stay until done.
+  await hana.route("**/me/manual/shared**", async (r) => {
+    if (r.request().method() === "POST") await new Promise((ok) => setTimeout(ok, 800));
+    await r.continue();
+  });
   await hana.getByTestId("share-ai").getByRole("button", { name: "AIで書き直す" }).click();
+  await expect(hana.getByTestId("rewrite-stay")).toContainText("このページを開いたままにしてください");
   await expect(hana.getByTestId("share-ai")).toContainText("まだ相手には見えていません", { timeout: 20_000 });
+  await expect(hana.getByTestId("rewrite-stay")).toBeHidden();
+  await hana.unroute("**/me/manual/shared**");
   await expect(hana.getByText(/\[AI共有\] ch\.self/).first()).toBeVisible();
   await sora.reload();
   await expect(sora.getByText(/\[AI共有\]/)).toHaveCount(0);

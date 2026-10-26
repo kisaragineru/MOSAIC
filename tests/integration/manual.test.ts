@@ -6,6 +6,7 @@ import { answerQuestion } from "@/server/services/discovery";
 import { buildManual } from "@/server/services/manual";
 import { createMemory } from "@/server/services/memories";
 import { saveBirthProfile } from "@/server/services/tuvi";
+import { saveSelfTypes } from "@/server/services/tuvi-type";
 import { makeUser } from "../helpers/factory";
 
 /** The answer that supports the positive pole of the question's first axis. */
@@ -61,6 +62,16 @@ describe("self manual", () => {
     expect(text).toContain("2031-01-01");
     const tuvi = m.sections.find((s) => s.id === "tuvi")!;
     expect(tuvi.blocks.filter((b) => b.t === "p").length).toBeGreaterThan(1);
+    // The type opens the Tử Vi chapter as a picture, from the chart.
+    expect(tuvi.blocks.find((b) => b.t === "types")).toMatchObject({ t: "types", caption: "命盤が示す、あなたの本質のタイプ" });
+  });
+
+  it("without a chart, shows the type the person picked, labelled as their own pick", async () => {
+    const u = await makeUser();
+    await saveSelfTypes(u.userId, ["thai_am", "thien_co"]);
+    const tuvi = (await buildManual(u.userId, "ja")).sections.find((s) => s.id === "tuvi")!;
+    expect(tuvi.blocks.find((b) => b.t === "types")).toEqual({ t: "types", ids: ["thai_am", "thien_co"], caption: "あなたが選んだタイプ" });
+    expect(tuvi.blocks.some((b) => b.t === "locked")).toBe(true);
   });
 
   it("follows the reader's language", async () => {

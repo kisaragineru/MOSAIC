@@ -143,6 +143,12 @@ export const MANUAL_PHRASE = {
   } as Record<string, I18nText>,
   tipsOutro: { ja: "そして何より、ここに書いたことが全部ではありません。分からないときは、直接聞いてもらうのがいちばんです。", en: "And above all, this isn't everything. When in doubt, just ask me.", vi: "Và trên hết, đây chưa phải là tất cả. Khi không chắc, cứ hỏi trực tiếp tôi nhé." } as I18nText,
   tuviMenh: { ja: "命宮", en: "Mệnh palace", vi: "Cung Mệnh" } as I18nText,
+  typeCaption: {
+    chart: { ja: "命盤が示す、あなたの本質のタイプ", en: "The type at your core, as the chart shows it", vi: "Kiểu người cốt lõi của bạn, theo lá số" } as I18nText,
+    answers: { ja: "回答からMOSAICが判断したタイプ", en: "Your type, as MOSAIC judged it from your answers", vi: "Kiểu của bạn, MOSAIC nhận định từ câu trả lời" } as I18nText,
+    provisional: { ja: "いまのところ近そうなタイプ（暫定）", en: "The type you seem closest to so far (provisional)", vi: "Kiểu có vẻ gần bạn nhất lúc này (tạm thời)" } as I18nText,
+    picked: { ja: "あなたが選んだタイプ", en: "The type you picked for yourself", vi: "Kiểu bạn tự chọn" } as I18nText,
+  },
   tuviKeywords: { ja: "伝統的なキーワード", en: "Traditional keywords", vi: "Từ khóa truyền thống" } as I18nText,
   tuviNow: { ja: "いまの大限（10年の流れ）", en: "Your current 10-year cycle", vi: "Đại Hạn hiện tại" } as I18nText,
   tuviMore: { ja: "命盤をくわしく見る", en: "See the full chart", vi: "Xem lá số đầy đủ" } as I18nText,

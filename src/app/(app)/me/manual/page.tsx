@@ -12,6 +12,9 @@ import { aiConfigured } from "@/server/ai/claude";
 import { getAccount } from "@/server/services/account";
 import { clearManualRewriteAction, refreshManualAction, rewriteManualSectionAction } from "@/app/actions/manual";
 import { ManualRewriter } from "@/components/manual-rewriter";
+import { TypePortraits } from "@/components/tuvi-type";
+import type { Locale } from "@/lib/i18n/locales";
+import { typesById } from "@/lib/tuvi/type-view";
 
 // Literal class strings (Tailwind only generates classes it can see).
 const HUE: Record<Chapter, { chip: string; ring: string }> = {
@@ -28,7 +31,7 @@ const BADGE = {
   mixed: "bg-linear-to-r from-teal-100 to-rose-100 text-stone-700",
 };
 
-function Block({ b }: { b: ManualBlock }) {
+function Block({ b, locale }: { b: ManualBlock; locale: Locale }) {
   switch (b.t) {
     case "p":
       return <p className="leading-8 text-stone-800">{b.text}</p>;
@@ -97,6 +100,13 @@ function Block({ b }: { b: ManualBlock }) {
           </div>
         </div>
       );
+    case "types":
+      return (
+        <div className="space-y-2" data-testid="manual-types">
+          <p className="text-xs font-bold tracking-wide text-violet-700">✨ {b.caption}</p>
+          <TypePortraits types={typesById(b.ids, locale)} />
+        </div>
+      );
     case "link":
       return (
         <p className="print:hidden">
@@ -149,7 +159,7 @@ export default async function ManualPage({ searchParams }: { searchParams: Promi
   const optIn = (await getAccount(uid)).profile.aiOptIn;
   const aiNote = sp.ai ? (ai.reason[sp.ai] ?? ai.reason.unavailable) : null;
   // In the AI rewrite, a section's prose is replaced; its links, locks and cards stay.
-  const kept = (b: ManualBlock) => b.t === "link" || b.t === "locked" || b.t === "axis" || b.t === "episode" || b.t === "storyTitle";
+  const kept = (b: ManualBlock) => b.t === "link" || b.t === "types" || b.t === "locked" || b.t === "axis" || b.t === "episode" || b.t === "storyTitle";
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pb-28 pt-4 print:pb-0">
       <div className="mb-4 flex items-center gap-3 print:hidden">
@@ -219,7 +229,7 @@ export default async function ManualPage({ searchParams }: { searchParams: Promi
             <ManualRewriter
               sections={[...m.sections.filter((x) => (REWRITABLE as readonly string[]).includes(x.id) && !x.locked).map((x) => x.id as string), ...novelUnits(m.sections)]}
               label={rewrite ? ai.redo : ai.button}
-              labels={{ progress: ai.progress, reasons: ai.reason, fallback: ai.reason.unavailable! }}
+              labels={{ progress: ai.progress, stay: ai.stay, reasons: ai.reason, fallback: ai.reason.unavailable! }}
               run={rewriteManualSectionAction}
               refresh={refreshManualAction}
             />
@@ -249,18 +259,19 @@ export default async function ManualPage({ searchParams }: { searchParams: Promi
                     {any && <p className="inline-block rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-semibold text-violet-800 ring-1 ring-violet-100">✍️ {ai.badge}</p>}
                     {s.blocks.map((b, i) => {
                       const scene = b.t === "episode" && b.key ? rewrite.sections[`novel.${b.key}`] : undefined;
-                      return <Block key={i} b={scene?.length && b.t === "episode" ? { ...b, paragraphs: scene } : b} />;
+                      return <Block key={i} locale={locale} b={scene?.length && b.t === "episode" ? { ...b, paragraphs: scene } : b} />;
                     })}
                   </>
                 );
               }
               const paras = rewrite && (REWRITABLE as readonly string[]).includes(s.id) ? rewrite.sections[s.id] : undefined;
-              if (!paras?.length) return s.blocks.map((b, i) => <Block key={i} b={b} />);
+              if (!paras?.length) return s.blocks.map((b, i) => <Block key={i} locale={locale} b={b} />);
               return (
                 <>
                   <p className="inline-block rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-semibold text-violet-800 ring-1 ring-violet-100">✍️ {ai.badge}</p>
+                  {s.blocks.filter((b) => b.t === "types").map((b, i) => <Block key={`ty${i}`} locale={locale} b={b} />)}
                   {paras.map((x, i) => <p key={`ai${i}`} className="leading-8 text-stone-800">{x}</p>)}
-                  {s.blocks.filter(kept).map((b, i) => <Block key={i} b={b} />)}
+                  {s.blocks.filter((b) => kept(b) && b.t !== "types").map((b, i) => <Block key={i} locale={locale} b={b} />)}
                 </>
               );
             })()}

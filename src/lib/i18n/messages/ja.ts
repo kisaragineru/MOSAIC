@@ -1493,6 +1493,7 @@ export const ja: Dict = {
       privacy: "書き直すときは、この説明書の内容がAIの提供元（Anthropic）に送られます。",
       button: "AIで書き直す",
       progress: "書き直しています… {done} / {all}章",
+      stay: "書き終わるまで、このページを開いたままにしてください。ほかのページに移ったり閉じたりすると、途中で止まります（書き終わった章はそのまま残ります）。",
       redo: "もう一度書き直す",
       clear: "MOSAICの文章に戻す",
       showing: (date: string) => `AIが書き直した文章を表示中（${date}）`,
