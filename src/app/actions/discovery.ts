@@ -43,7 +43,8 @@ export async function answerAction(form: FormData) {
   revalidatePath("/discover");
   revalidatePath("/home");
   if (r.value.changedFromPrevious) redirect(`/discover?changed=${r.value.responseId}`);
-  if (r.value.followUpQuestionId) {
+  // The type quiz keeps its own pace: no follow-ups in between.
+  if (r.value.followUpQuestionId && !back.startsWith("/tuvi/type")) {
     // Inside a run of questions (all, or a chapter) the follow-up is asked in place.
     const inFlow = back.startsWith("/discover/all") || back.startsWith("/discover/chapter/");
     redirect(inFlow ? withParam(withParam(back.split("?")[0]!, "f", r.value.followUpQuestionId), "ok", "answered") : `/discover/q/${encodeURIComponent(r.value.followUpQuestionId)}?ok=answered`);

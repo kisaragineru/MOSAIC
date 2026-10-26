@@ -217,7 +217,7 @@ async function ChartResult({ uid, t, locale, tv, error }: { error?: string; uid:
         <>
           {insight && (
             <section className="rounded-3xl bg-white/85 p-4 shadow-sm ring-1 ring-violet-100">
-              <TypeStatus t={t} all={allTypes(locale)} judged={typesById(insight.types, locale)} progress={insight.progress} picked={insight.selfTypes} addTimeHref="/welcome?step=2" back="/welcome?step=3" guide error={error} />
+              <TypeStatus t={t} all={allTypes(locale)} judged={typesById(insight.types, locale)} provisional={typesById(insight.provisional, locale)} progress={insight.progress} picked={insight.selfTypes} addTimeHref="/welcome?step=2" back="/welcome?step=3" guide error={error} />
             </section>
           )}
           <Link href="/welcome?step=4" className="block rounded-full bg-teal-700 py-3 text-center font-semibold text-white">{w.tourNext} →</Link>
@@ -334,7 +334,7 @@ async function Finished({ uid, t, locale, answered }: { uid: string; t: Awaited<
               </ul>
             </>
           ) : (
-            insight && <div className="mt-2"><TypeStatus t={t} all={allTypes(locale)} judged={typesById(insight.types, locale)} progress={insight.progress} picked={insight.selfTypes} addTimeHref="/tuvi?edit=birth#birth" back="/welcome?step=6" guide /></div>
+            insight && <div className="mt-2"><TypeStatus t={t} all={allTypes(locale)} judged={typesById(insight.types, locale)} provisional={typesById(insight.provisional, locale)} progress={insight.progress} picked={insight.selfTypes} addTimeHref="/tuvi?edit=birth#birth" back="/welcome?step=6" guide /></div>
           )}
           <p className="mt-3 text-right"><Link href="/tuvi" className="text-sm font-semibold text-teal-800">{w.openTuvi} →</Link></p>
         </section>

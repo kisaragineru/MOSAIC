@@ -104,7 +104,7 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
               <p className="mt-3 text-sm text-teal-900/80">{v.sections[0]?.paragraphs[0]?.text}</p>
               {insight && (
                 <div id="type" className="mt-4 scroll-mt-20 rounded-3xl bg-white/70 p-4 ring-1 ring-white/80">
-                  <TypeStatus t={t} all={allTypes(locale)} judged={typesById(insight.types, locale)} progress={insight.progress} picked={insight.selfTypes} addTimeHref="?edit=birth#birth" back="/tuvi#type" error={sp.e} />
+                  <TypeStatus t={t} all={allTypes(locale)} judged={typesById(insight.types, locale)} provisional={typesById(insight.provisional, locale)} progress={insight.progress} picked={insight.selfTypes} addTimeHref="?edit=birth#birth" back="/tuvi#type" error={sp.e} />
                 </div>
               )}
             </>

@@ -13,6 +13,7 @@ export function TypeStatus({
   t,
   all,
   judged,
+  provisional = [],
   progress,
   picked,
   addTimeHref,
@@ -25,6 +26,8 @@ export function TypeStatus({
   all: TypeView[];
   /** MOSAIC's judgment from the answers (empty until settled). */
   judged: TypeView[];
+  /** Before it's settled: what the answers so far lean to. */
+  provisional?: TypeView[];
   progress: number;
   picked: string[];
   addTimeHref: string;
@@ -48,8 +51,19 @@ export function TypeStatus({
         </>
       ) : (
         <>
-          <p className="font-bold text-stone-900">🔒 {s.unknownTitle}</p>
-          <p className="text-xs leading-5 text-stone-600">{guide ? s.unknownGuide : s.unknownLead}</p>
+          {provisional.length > 0 ? (
+            <div className="space-y-2" data-testid="type-provisional">
+              <p className="text-xs font-bold tracking-wide text-violet-700">✨ {t.tuvi.quiz.provisionalEyebrow}</p>
+              <p className="text-lg font-black leading-snug text-stone-900">{provisional.map((x) => x.persona).join(" × ")}{t.tuvi.quiz.maybe}</p>
+              <TypePortraits types={provisional} />
+              <p className="text-xs leading-5 text-stone-600">{t.tuvi.quiz.provisionalNote}</p>
+            </div>
+          ) : (
+            <>
+              <p className="font-bold text-stone-900">🔒 {s.unknownTitle}</p>
+              <p className="text-xs leading-5 text-stone-600">{guide ? s.unknownGuide : s.unknownLead}</p>
+            </>
+          )}
           {!guide && (
             <div data-testid="type-progress">
               <p className="text-[11px] text-stone-500">{s.progressUntil}</p>
@@ -59,15 +73,14 @@ export function TypeStatus({
               </div>
             </div>
           )}
-          {!guide && (
-            <div className="flex flex-wrap gap-2">
-              <Link href="/discover" className="rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-800">{s.answer} →</Link>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href={`/tuvi/type?next=${encodeURIComponent(back)}`} className="rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-800">{t.tuvi.quiz.start} →</Link>
+            {!guide && <Link href="/discover" className="text-sm font-semibold text-violet-800 underline underline-offset-4">{s.answer}</Link>}
+          </div>
         </>
       )}
 
-      {mine.length > 0 && judged.length === 0 && (
+      {mine.length > 0 && (
         <div className="rounded-2xl bg-white/70 p-3 ring-1 ring-violet-100" data-testid="self-types">
           <p className="text-xs font-semibold text-stone-700">{s.pickedTitle}</p>
           <ul className="mt-2 flex gap-2">
@@ -78,6 +91,10 @@ export function TypeStatus({
               </li>
             ))}
           </ul>
+          {/* Their pick beside MOSAIC's reading, when there is one. */}
+          {(judged.length > 0 || provisional.length > 0) && (
+            <p className="mt-2 text-sm font-semibold text-violet-900">{[...judged, ...provisional].some((x) => picked.includes(x.id)) ? t.tuvi.quiz.matches : t.tuvi.quiz.differs}</p>
+          )}
           <p className="mt-2 text-[11px] leading-4 text-stone-500">{s.pickedNote}</p>
         </div>
       )}

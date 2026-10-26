@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getTuvi, saveBirthProfile } from "@/server/services/tuvi";
-import { saveSelfTypes, typeInsight } from "@/server/services/tuvi-type";
+import { nextTypeQuestion, saveSelfTypes, typeInsight } from "@/server/services/tuvi-type";
+import { QUESTION_BANK } from "@/content/questions";
 import { makeUser } from "../helpers/factory";
 
 describe("which type someone is", () => {
@@ -30,5 +31,14 @@ describe("which type someone is", () => {
     expect(i.source).toBe("none");
     await saveSelfTypes(u.userId, []);
     expect((await typeInsight(u.userId, tv.chart)).selfTypes).toEqual([]);
+  });
+
+  it("asks first about what tells the user's own picks apart, one tap each", async () => {
+    const u = await makeUser();
+    const id = await nextTypeQuestion(u.userId, ["thai_duong", "thai_am"]);
+    const q = QUESTION_BANK.find((x) => x.id === id)!;
+    expect(["single", "scale"]).toContain(q.format);
+    // The sun and the moon differ on energy, sharing, closeness and calm.
+    expect(q.signals!.some((s) => ["social_energy", "expressiveness", "closeness", "calm"].includes(s.claimKey))).toBe(true);
   });
 });

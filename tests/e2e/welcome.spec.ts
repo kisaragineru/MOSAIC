@@ -150,6 +150,19 @@ test("while the guide isn't finished every page says so, with the way back; it c
   await expect(page.getByTestId("self-types")).toContainText("the warm sun");
   await expect(page.getByTestId("self-types")).toContainText("the quiet moon");
   await expect(page.getByTestId("self-types")).toContainText("not MOSAIC's judgment");
+  // A short quiz tells the two picks apart; the result sits beside the pick.
+  await page.getByTestId("type-status").getByRole("link", { name: /Find your type in five questions/ }).click();
+  await page.waitForURL(/\/tuvi\/type/);
+  await expect(page.getByText(/You picked “the warm sun” and “the quiet moon”/)).toBeVisible();
+  for (let i = 0; i < 10 && !(await page.getByTestId("quiz-result").count()); i++) {
+    await page.locator('input[name="choice"], input[name="scale"]').first().check();
+    await page.locator('form:has(input[name="questionId"]) button[type="submit"]').first().click();
+    await page.waitForURL(new RegExp(`[?&]n=${i + 1}(&|$)`));
+  }
+  await expect(page.getByTestId("quiz-result")).toBeVisible();
+  await expect(page.getByTestId("quiz-compare")).toContainText("Types you picked");
+  await page.getByRole("link", { name: /Continue/ }).click();
+  await page.waitForURL(/\/welcome\?step=3/);
   // On the Tử Vi page: not known yet, how far along MOSAIC is, and what helps.
   await page.goto("/tuvi");
   await expect(page.getByTestId("type-progress")).toContainText(/MOSAIC understands \d+% of you/);
@@ -160,7 +173,8 @@ test("while the guide isn't finished every page says so, with the way back; it c
   page.once("dialog", (d) => void d.accept());
   await page.getByTestId("guide-bar").getByRole("button", { name: "End guide" }).click();
   await expect(page.getByTestId("guide-bar")).toHaveCount(0);
-  await expect(page.getByTestId("starter-checklist").getByRole("link", { name: /Answer 3 questions/ })).toBeVisible();
+  // The quiz's answers already count toward the questions; the bio is still left.
+  await expect(page.getByTestId("starter-checklist").getByRole("link", { name: /Write your bio/ })).toBeVisible();
   await ctx.close();
 });
 
