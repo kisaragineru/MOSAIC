@@ -269,6 +269,9 @@ test("replies under a record: one thread for everyone who can see it", async ({ 
   await sora.goto(shared);
   await expect(thread(sora)).toContainText("ハナさんの友だち");
   await expect(thread(sora)).not.toContainText("レン");
+  // Someone she's connected to (Hana) opens their page together from the icon; Ren's doesn't link.
+  await expect(thread(sora).getByRole("link", { name: "ハナさんとのページを開く" }).first()).toHaveAttribute("href", /^\/compare\/[0-9a-f-]+$/);
+  await expect(thread(sora).locator("li", { hasText: "ハナさんの友だち" }).getByRole("link")).toHaveCount(0);
   await hana.goto("/home");
   await expect(hana.getByText("新しい返信")).toHaveCount(0);
   await hana.goto("/memories");
@@ -322,6 +325,15 @@ test("a connection's page offers things to do: message, gift, ask, and conversat
   await expect(actions.getByRole("button", { name: /メッセージ/ })).toBeVisible();
   await expect(actions.getByRole("link", { name: /プレゼント/ })).toBeVisible();
   await expect(actions.getByRole("button", { name: /印象を聞く/ })).toBeVisible();
+  // Once she's among Hana's people, the present button lands on the ideas themselves, in view.
+  await hana.getByRole("button", { name: "大切な人に追加" }).click();
+  await hana.waitForURL(/\/people\/[0-9a-f-]+\?ok=saved/);
+  await hana.goto(compare);
+  await expect(actions.getByRole("link", { name: /プレゼント/ })).toHaveAttribute("href", /#gift-ideas$/);
+  await actions.getByRole("link", { name: /プレゼント/ }).click();
+  await expect(hana).toHaveURL(/\/people\/[0-9a-f-]+\?gifts=1#gift-ideas$/);
+  await expect(hana.getByTestId("gift-ideas")).toBeInViewport();
+  await hana.goto(compare);
   const starters = hana.getByTestId("starters");
   await expect(starters.getByText(/ソラさんの最近の記録：桜を見に行った。/)).toBeVisible();
   await expect(starters.getByText("「いちばん好きな季節は？」— お二人とも「春」")).toBeVisible();

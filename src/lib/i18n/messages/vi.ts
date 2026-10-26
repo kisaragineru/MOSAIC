@@ -1263,6 +1263,7 @@ export const vi: Dict = {
     privateNote: "🔒 Bản ghi này chỉ của riêng bạn, nên các trả lời cũng chỉ bạn thấy.",
     sharedNote: "👀 Ai xem được bản ghi này thì đều thấy các trả lời.",
     author: "Người đăng",
+    openProfile: (name: string) => `Mở trang của bạn với ${name}`,
     friendOf: (owner: string) => `Bạn của ${owner}`,
     nameNote: (owner: string) => `👤 Khi bạn trả lời, tên bạn hiện với những người xem được bản ghi này. Người chưa kết nối với bạn chỉ thấy "Bạn của ${owner}", không thấy hồ sơ hay ảnh của bạn.`,
     you: "Bạn",

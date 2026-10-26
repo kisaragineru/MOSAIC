@@ -48,7 +48,8 @@ export async function giftIdeasAction(form: FormData) {
   const q = new URLSearchParams({ gifts: "1", budget: str(form, "budget"), currency: str(form, "currency") });
   if (!r.ok) q.set("e", r.error ?? "generic");
   revalidatePath(`/people/${id}`);
-  redirect(`/people/${encodeURIComponent(id)}?${q}#gifts`);
+  // Straight to the ideas (back to the form when it failed).
+  redirect(`/people/${encodeURIComponent(id)}?${q}#${r.ok ? "gift-ideas" : "gifts"}`);
 }
 
 export async function deletePersonAction(form: FormData) {

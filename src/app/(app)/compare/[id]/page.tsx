@@ -170,7 +170,7 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
               <button type="submit" className={ACTION}><span aria-hidden className="text-xl">💬</span>{cc.actMessage}</button>
             </form>
             {personId ? (
-              <Link href={`/people/${personId}?gifts=1#gifts`} className={ACTION}><span aria-hidden className="text-xl">🎁</span>{cc.actGift}</Link>
+              <Link href={`/people/${personId}?gifts=1#gift-ideas`} className={ACTION}><span aria-hidden className="text-xl">🎁</span>{cc.actGift}</Link>
             ) : (
               <a href="#settings" className={ACTION}><span aria-hidden className="text-xl">🎁</span>{cc.actGift}</a>
             )}
@@ -251,7 +251,7 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
           <ul className="space-y-2" data-testid="starters">
             {date && (
               <Starter icon="🎂" text={cc.starterDate(date.label, date.daysUntil)}>
-                {date.daysUntil === 0 ? <TalkButton id={v.id} draft={cc.draftDate(date.label)} label={cc.talk} /> : <Link href={`/people/${personId}?gifts=1#gifts`} className={SMALL}>{cc.giftIdeas} →</Link>}
+                {date.daysUntil === 0 ? <TalkButton id={v.id} draft={cc.draftDate(date.label)} label={cc.talk} /> : <Link href={`/people/${personId}?gifts=1#gift-ideas`} className={SMALL}>{cc.giftIdeas} →</Link>}
               </Starter>
             )}
             {theirRecords[0] && (

@@ -381,7 +381,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
         </form>
         {giftResult && !ideas && <Notice kind="error">{t.gifts.error}</Notice>}
         {ideas && (
-          <div className="mt-3 space-y-3" data-testid="gift-ideas">
+          <div id="gift-ideas" className="mt-3 scroll-mt-24 space-y-3" data-testid="gift-ideas">
             {ideas.nextOccasion && <Notice>{t.gifts.nextOccasion(ideas.nextOccasion.label, ideas.nextOccasion.date, t.home.inDays(ideas.nextOccasion.daysUntil))}</Notice>}
             {ideas.budget && <Notice kind="warning">{ideas.budget.note[locale]}</Notice>}
             {ideas.thin && <Notice>{t.gifts.thin}</Notice>}

@@ -522,3 +522,21 @@ export async function connectionForPerson(userId: string, sessionId: string | nu
 
 /** Read once per page render (several parts of a page ask for it); actions always read fresh. */
 export const listComparisons = cache(listComparisonsUncached);
+
+/** My active connections with any of these people: their id → the connection (its page is /compare/<id>). */
+export async function activeConnectionsWith(userId: string, otherIds: string[]): Promise<Map<string, string>> {
+  const ids = [...new Set(otherIds)].filter((x) => x !== userId && uuid.safeParse(x).success);
+  if (!ids.length) return new Map();
+  const rows = await withUser(userId, (tx) =>
+    tx
+      .select({ id: comparisonSessions.id, a: comparisonSessions.userA, b: comparisonSessions.userB })
+      .from(comparisonSessions)
+      .where(
+        and(
+          eq(comparisonSessions.status, "active"),
+          or(and(eq(comparisonSessions.userA, userId), inArray(comparisonSessions.userB, ids)), and(eq(comparisonSessions.userB, userId), inArray(comparisonSessions.userA, ids))),
+        ),
+      ),
+  );
+  return new Map(rows.map((r) => [r.a === userId ? r.b! : r.a, r.id]));
+}

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { addReplyAction, deleteReplyAction } from "@/app/actions/comments";
 import type { Dict } from "@/lib/i18n/messages/en";
 import type { Locale } from "@/lib/i18n/locales";
@@ -23,6 +24,7 @@ export function RecordReplies({
   note,
   nameNote,
   avatars,
+  connections,
 }: {
   t: Dict;
   locale: Locale;
@@ -39,6 +41,8 @@ export function RecordReplies({
   /** Under someone else's record: that my name shows to the others who can see it. */
   nameNote?: string;
   avatars: Map<string, string>;
+  /** People I'm connected to among the writers: their id → our connection. */
+  connections: Map<string, string>;
 }) {
   const r = t.replies;
   const when = new Intl.DateTimeFormat(locale, { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: tz });
@@ -52,11 +56,24 @@ export function RecordReplies({
         <ol className="ml-4 space-y-3 border-l-2 border-teal-200 pl-4">
           {replies.map((x) => {
             const byOwner = x.authorId === ownerId;
+            const session = x.mine ? undefined : connections.get(x.authorId);
+            const link = session && x.authorName ? `/compare/${session}` : null;
             return (
               <li key={x.id} className="relative">
-                <Avatar name={x.authorName ?? "?"} src={avatars.get(x.authorId)} className="absolute -left-[1.95rem] top-0 h-7 w-7 text-[10px] ring-2 ring-white" />
+                {/* Someone I'm connected to: the icon and name open our page together. */}
+                {link ? (
+                  <Link href={link} aria-label={r.openProfile(x.authorName ?? "")} className="absolute -left-[1.95rem] top-0 rounded-full transition hover:scale-110 focus-visible:outline-2 focus-visible:outline-teal-600">
+                    <Avatar name={x.authorName ?? "?"} src={avatars.get(x.authorId)} className="h-7 w-7 text-[10px] ring-2 ring-white" />
+                  </Link>
+                ) : (
+                  <Avatar name={x.authorName ?? "?"} src={avatars.get(x.authorId)} className="absolute -left-[1.95rem] top-0 h-7 w-7 text-[10px] ring-2 ring-white" />
+                )}
                 <p className="flex flex-wrap items-center gap-1.5 px-1 text-xs">
-                  <span className={`font-semibold ${x.mine ? "text-teal-800" : "text-stone-800"}`}>{x.mine ? r.you : (x.authorName ?? r.friendOf(ownerName))}</span>
+                  {link ? (
+                    <Link href={link} className="font-semibold text-stone-800 underline-offset-2 hover:text-teal-800 hover:underline">{x.authorName}</Link>
+                  ) : (
+                    <span className={`font-semibold ${x.mine ? "text-teal-800" : "text-stone-800"}`}>{x.mine ? r.you : (x.authorName ?? r.friendOf(ownerName))}</span>
+                  )}
                   {byOwner && <span className="rounded-full bg-teal-50 px-1.5 py-px text-[10px] font-semibold text-teal-800 ring-1 ring-teal-100">{r.author}</span>}
                 </p>
                 <p className={`emoji-color mt-0.5 whitespace-pre-line rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed text-stone-900 shadow-sm ring-1 ${byOwner ? "bg-white ring-stone-200/70" : "bg-sky-50/70 ring-sky-100"}`}>{x.body}</p>

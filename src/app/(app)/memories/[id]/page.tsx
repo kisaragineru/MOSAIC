@@ -16,6 +16,7 @@ import { todayIn } from "@/lib/validation/common";
 import { CommentThread } from "@/components/comment-thread";
 import { RecordReplies } from "@/components/record-replies";
 import { readReplies } from "@/server/services/replies";
+import { activeConnectionsWith } from "@/server/services/sharing";
 import { avatarUrls } from "@/server/services/avatars";
 import { commentInbox, readThread } from "@/server/services/comments";
 import { MediaGallery } from "@/components/media-grid";
@@ -107,7 +108,7 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
         </Card>
       )}
       {!m.sealed && !editing && m.kind !== "letter_to_future" && (
-        <RecordReplies t={t} locale={locale} tz={tz} replies={replies} entryId={m.id} ownerId={uid} ownerName="" ownRecord back={`/memories/${m.id}`} avatars={replyAvatars} note={m.visibility === "private" ? t.replies.privateNote : t.replies.sharedNote} />
+        <RecordReplies t={t} locale={locale} tz={tz} replies={replies} entryId={m.id} ownerId={uid} ownerName="" ownRecord back={`/memories/${m.id}`} avatars={replyAvatars} connections={await activeConnectionsWith(uid, replies.map((x) => x.authorId))} note={m.visibility === "private" ? t.replies.privateNote : t.replies.sharedNote} />
       )}
       {!m.sealed && !editing && m.kind !== "letter_to_future" && <PostAbout t={t} id={m.id} labels={m.labels} by={m.labelsBy} feeling={m.feeling} ask={sp.ask === "feeling"} />}
       {/* Earlier one-to-one comments (ended): still readable by the two people, nothing new. */}
