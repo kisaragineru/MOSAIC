@@ -97,6 +97,18 @@ test("Tử Vi: plain words first, and a guide for beginners", async ({ browser }
   await expect(page.getByRole("heading", { level: 1, name: "Tử Vi の読み方ガイド" })).toBeVisible();
   await expect(page.getByRole("img", { name: /命宮が「寅」/ })).toBeVisible();
   await expect(page.getByText("「みんなをまとめる王様タイプ」")).toBeVisible();
+  // A type's picture opens the character full screen; the arrows go through the types; ✕ closes.
+  await page.getByRole("button", { name: "決断の早い実務家タイプを大きく見る" }).click();
+  const viewer = page.getByTestId("type-viewer");
+  await expect(viewer).toBeVisible();
+  await expect(viewer.getByText("決断の早い実務家タイプ", { exact: true })).toBeVisible();
+  await expect(viewer.getByText("TYPE 04 / 14")).toBeVisible();
+  await viewer.getByRole("button", { name: "次のタイプ" }).click();
+  await expect(viewer.getByText("おだやかな平和主義者タイプ", { exact: true })).toBeVisible();
+  await page.keyboard.press("ArrowLeft");
+  await expect(viewer.getByText("Vũ Khúc", { exact: true })).toBeVisible();
+  await viewer.getByRole("button", { name: "閉じる" }).click();
+  await expect(viewer).toBeHidden();
   await page.getByRole("link", { name: "5. 読み方の手順" }).click();
   await expect(page).toHaveURL(/#g-steps$/);
   await ctx.close();

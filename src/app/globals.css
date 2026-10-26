@@ -269,3 +269,13 @@ textarea,
 input {
   font-family: var(--font-rounded), "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", system-ui, sans-serif;
 }
+
+/* The type viewer's stage: soft lights drifting and stars breathing, slowly. */
+@keyframes drift {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(8vmax, -5vmax) scale(1.12); }
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.8; }
+}

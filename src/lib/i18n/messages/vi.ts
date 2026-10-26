@@ -585,6 +585,7 @@ export const vi: Dict = {
       more: "Trả lời thêm để chắc hơn",
       start: "Tìm kiểu người qua năm câu hỏi",
     },
+    viewer: { open: (name: string) => `Xem ${name} toàn màn hình`, close: "Đóng", prev: "Kiểu trước", next: "Kiểu tiếp theo", label: "TYPE", hint: "Vuốt để xem kiểu tiếp theo" },
     type: {
       judgedEyebrow: "Kiểu người của bạn, theo đánh giá của MOSAIC",
       judgedNote: "MOSAIC đánh giá điều này từ câu trả lời của bạn. Nếu biết giờ sinh, lá số sẽ cho biết chính xác.",

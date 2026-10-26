@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { TypeImage } from "@/components/tuvi-type";
+import { TypeViewer } from "@/components/type-viewer";
 import { Card, Page } from "@/components/ui";
 import { GUIDE } from "@/content/tuvi-guide";
 import { getT } from "@/lib/i18n/server";
@@ -7,6 +7,8 @@ import { BRANCHES } from "@/lib/tuvi/canchi";
 import { PALACE_JA } from "@/lib/tuvi/interpret-detail";
 import { GLOSSARY, PALACE_PLAIN, STAR_PLAIN, type GlossaryKey } from "@/lib/tuvi/plain";
 import { MAIN_STARS, PALACE_INFO, PALACES, STAR_INFO } from "@/lib/tuvi/stars";
+import { allTypes } from "@/lib/tuvi/type-view";
+import { viewerLabels } from "@/lib/tuvi/viewer-labels";
 import { requireUser } from "@/server/auth/session";
 
 // Where each earthly branch sits on the 4×4 chart (literal classes for Tailwind).
@@ -95,20 +97,7 @@ export default async function TuviGuidePage() {
       <section id="g-stars" className="scroll-mt-20 space-y-3">
         <h2 className="text-xl font-bold text-stone-900">{titles.stars}</h2>
         <P>{L(GUIDE.starsLead)}</P>
-        <ul className="grid gap-2 sm:grid-cols-2">
-          {MAIN_STARS.map((s) => (
-            <li key={s} className="flex gap-3 rounded-2xl bg-white/85 p-3 ring-1 ring-stone-200/60">
-              <span className="w-20 shrink-0 self-start overflow-hidden rounded-xl ring-1 ring-stone-200/60">
-                <TypeImage t={{ id: s, persona: L(STAR_PLAIN[s].persona) }} small />
-              </span>
-              <span className="min-w-0">
-                <span className="block font-semibold text-stone-900">{STAR_INFO[s].vi}</span>
-                <span className="block text-sm font-semibold text-violet-800">{t.common.quoteOpen}{L(STAR_PLAIN[s].persona)}{t.common.quoteClose}</span>
-                <span className="mt-1 block text-sm leading-6 text-stone-700">{L(STAR_PLAIN[s].plain)}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
+        <TypeViewer types={allTypes(locale)} labels={viewerLabels(t)} />
         <Card title={L(GUIDE.auxTitle)}>
           <p className="text-sm leading-7 text-stone-800">{L(GUIDE.aux)}</p>
         </Card>

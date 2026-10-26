@@ -585,6 +585,7 @@ export const ja: Dict = {
       more: "もう少し答えて確かめる",
       start: "5問でタイプを読み取る",
     },
+    viewer: { open: (name: string) => `${name}を大きく見る`, close: "閉じる", prev: "前のタイプ", next: "次のタイプ", label: "TYPE", hint: "スワイプで次のタイプへ" },
     type: {
       judgedEyebrow: "MOSAICが判断した、あなたのタイプ",
       judgedNote: "質問への回答から、MOSAICが判断しました。生まれた時間がわかれば、命盤から正確にわかります。",

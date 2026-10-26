@@ -10,7 +10,9 @@ import { ChartTour } from "@/components/chart-tour";
 import { Flash } from "@/components/flash";
 import { ConfirmButton } from "@/components/confirm-button";
 import { TuviChart } from "@/components/tuvi-chart";
-import { TypeGallery, TypeImage, TypeName, TypePortraits } from "@/components/tuvi-type";
+import { TypeViewer } from "@/components/type-viewer";
+import { viewerLabels } from "@/lib/tuvi/viewer-labels";
+import { TypeImage, TypeName, TypePortraits } from "@/components/tuvi-type";
 import { allTypes, essenceTypes, typesById } from "@/lib/tuvi/type-view";
 import { TypeStatus } from "@/components/type-status";
 import { typeInsight } from "@/server/services/tuvi-type";
@@ -111,7 +113,10 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
           <section className="space-y-2 rounded-3xl bg-white/85 p-4 shadow-sm ring-1 ring-violet-100">
             <h2 className="font-bold text-stone-900">{w.typesTitle}</h2>
             <p className="text-xs leading-5 text-stone-600">{w.typesLead}</p>
-            <TypeGallery types={allTypes(locale)} hint={w.typesSwipe} />
+            <div data-testid="type-gallery">
+              <TypeViewer types={allTypes(locale)} labels={viewerLabels(t)} layout="strip" />
+              <p className="text-right text-[11px] text-stone-500">{w.typesSwipe}</p>
+            </div>
           </section>
           <p className="rounded-2xl bg-rose-50/70 px-4 py-3 text-sm leading-6 text-rose-950">{w.tuviWhy}</p>
           <Card>

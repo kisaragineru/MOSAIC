@@ -583,6 +583,7 @@ export const en = {
       more: "Answer a few more to be surer",
       start: "Find your type in five questions",
     },
+    viewer: { open: (name: string) => `View ${name} full screen`, close: "Close", prev: "Previous type", next: "Next type", label: "TYPE", hint: "Swipe for the next type" },
     type: {
       judgedEyebrow: "Your type, as MOSAIC judges it",
       judgedNote: "MOSAIC judged this from your answers. With your birth time, the chart would show it exactly.",
