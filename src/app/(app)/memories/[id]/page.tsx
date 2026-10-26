@@ -14,6 +14,8 @@ import { shareTargets } from "@/server/services/memory-share";
 import { CIRCLE_ICON } from "@/components/circle-icon";
 import { todayIn } from "@/lib/validation/common";
 import { CommentThread } from "@/components/comment-thread";
+import { RecordReplies } from "@/components/record-replies";
+import { myReplies } from "@/server/services/replies";
 import { commentInbox, readThread } from "@/server/services/comments";
 import { MediaGallery } from "@/components/media-grid";
 import { PostAbout } from "@/components/post-about";
@@ -41,6 +43,7 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
   const ta = t.memories.audience;
   // One conversation per person who commented (each sees only theirs); unread counted before reading.
   const threads = m.sealed ? [] : (await commentInbox(uid)).filter((x) => x.entryId === m.id && x.iOwn);
+  const replies = m.sealed || m.kind === "letter_to_future" ? [] : await myReplies(uid, m.id);
   const convos = await Promise.all(threads.map(async (th) => ({ th, comments: await readThread(uid, m.id, th.partnerId) })));
   return (
     <Page title={m.title ?? (m.kind === "letter_to_future" ? t.memories.kinds[m.kind] : t.memories.post.titleOf)} back="/memories">
@@ -100,6 +103,9 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
             {m.visibility !== "private" && <LinkButton href={`/messages/new?record=${m.id}`} variant="secondary">{t.messages.shareRecord}</LinkButton>}
           </div>
         </Card>
+      )}
+      {!m.sealed && !editing && m.kind !== "letter_to_future" && (
+        <RecordReplies t={t} locale={locale} tz={tz} replies={replies} entryId={m.id} editable title={t.replies.title} note={m.visibility === "private" ? t.replies.privateNote : t.replies.sharedNote} />
       )}
       {!m.sealed && !editing && m.kind !== "letter_to_future" && <PostAbout t={t} id={m.id} labels={m.labels} by={m.labelsBy} feeling={m.feeling} ask={sp.ask === "feeling"} />}
       {(convos.length > 0 || (!m.sealed && m.visibility !== "private")) && (

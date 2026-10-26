@@ -1254,6 +1254,16 @@ export const ja: Dict = {
     hidden: "この記録はもう共有されていないため、やりとりは見られません。",
     recordOf: (name: string) => `${name}さんの記録`,
   },
+  replies: {
+    title: "返信・つづき",
+    label: "この記録に返信する",
+    placeholder: "そのあとのこと、思ったことを書き足す",
+    privateNote: "🔒 この記録は自分だけのものなので、返信もあなたにしか見えません。",
+    sharedNote: "記録を見られる人には、返信も見えます。",
+    by: (name: string) => `${name}さんのつづき`,
+    delete: "削除",
+    deleteConfirm: "この返信を削除しますか？",
+  },
   messages: {
     title: "メッセージ",
     search: "名前で検索",

@@ -227,6 +227,11 @@ test("one-to-one comments on a shared record", async ({ browser }) => {
   await hana.waitForURL(/\/memories\/[0-9a-f-]+\?ok=saved/);
   const record = new URL(hana.url()).pathname;
   await expect(hana.getByText("共有した相手がコメントすると、ここに届きます。")).toBeVisible();
+  // Her own record takes replies: a follow-up hangs under it, and those who can see the record see it.
+  await hana.getByLabel("この記録に返信する").fill("2回目はふっくら焼けた");
+  await hana.getByTestId("record-replies").getByRole("button", { name: "送る" }).click();
+  await expect(hana.getByTestId("record-replies")).toContainText("2回目はふっくら焼けた");
+  await expect(hana.getByText("記録を見られる人には、返信も見えます。")).toBeVisible();
 
   // Sora comments from the shared timeline; the page says it's only between the two of them.
   await sora.goto("/memories?view=friends");
@@ -234,6 +239,9 @@ test("one-to-one comments on a shared record", async ({ browser }) => {
   await sora.waitForURL(/\/memories\/shared\//);
   await expect(sora.getByText("はじめてパンを焼いた。")).toBeVisible();
   await expect(sora.getByText("🔒 このやりとりは、あなたとハナさんの2人だけに見えます。")).toBeVisible();
+  await expect(sora.getByTestId("record-replies")).toContainText("ハナさんのつづき");
+  await expect(sora.getByTestId("record-replies")).toContainText("2回目はふっくら焼けた");
+  await expect(sora.getByLabel("この記録に返信する")).toHaveCount(0);
   await sora.getByLabel("コメントを書く").fill("おいしそう！");
   await sora.getByRole("button", { name: "送る" }).click();
   await expect(sora.getByText("おいしそう！")).toBeVisible();
@@ -258,8 +266,8 @@ test("one-to-one comments on a shared record", async ({ browser }) => {
   await hana.getByRole("link", { name: /ソラさんからコメント/ }).click();
   await hana.waitForURL(new RegExp(record));
   await expect(hana.getByRole("heading", { name: /ソラさんとのやりとり/ })).toBeVisible();
-  await hana.getByLabel("返信する").fill("ありがとう、今度持っていくね");
-  await hana.getByRole("button", { name: "送る" }).click();
+  await hana.getByLabel("返信する", { exact: true }).fill("ありがとう、今度持っていくね");
+  await hana.locator("#comments").getByRole("button", { name: "送る" }).click();
   await expect(hana.getByText("ありがとう、今度持っていくね")).toBeVisible();
   await hana.goto("/home");
   await expect(hana.getByText("新しいコメント")).toHaveCount(0);

@@ -1329,3 +1329,23 @@ export const manualShareRewrites = pgTable(
   },
   (t) => [primaryKey({ columns: [t.ownerId, t.preset] }), check("manual_share_rewrites_preset_ck", sql`${t.preset} in ('friend','partner')`)],
 );
+
+/**
+ * The owner's own follow-ups on a record (a thread under it). They go to whoever can see the
+ * record: only the owner for a private one, the same people for a shared one.
+ */
+export const memoryReplies = pgTable(
+  "memory_replies",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    entryId: uuid("entry_id")
+      .notNull()
+      .references(() => memoryEntries.id, { onDelete: "cascade" }),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("memory_replies_entry_idx").on(t.entryId, t.createdAt), check("memory_replies_body_ck", sql`char_length(${t.body}) between 1 and 2000`)],
+);

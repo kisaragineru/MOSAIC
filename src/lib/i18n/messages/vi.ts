@@ -1254,6 +1254,16 @@ export const vi: Dict = {
     hidden: "Ghi chép này không còn được chia sẻ nên không thể hiển thị cuộc trò chuyện.",
     recordOf: (name: string) => `Ghi chép của ${name}`,
   },
+  replies: {
+    title: "Trả lời · viết tiếp",
+    label: "Trả lời bản ghi này",
+    placeholder: "Viết thêm điều xảy ra sau đó, hoặc suy nghĩ của bạn",
+    privateNote: "🔒 Bản ghi này chỉ của riêng bạn, nên các trả lời cũng chỉ bạn thấy.",
+    sharedNote: "Ai xem được bản ghi thì cũng xem được các trả lời.",
+    by: (name: string) => `${name} viết tiếp`,
+    delete: "Xóa",
+    deleteConfirm: "Xóa trả lời này?",
+  },
   messages: {
     title: "Tin nhắn",
     search: "Tìm theo tên",

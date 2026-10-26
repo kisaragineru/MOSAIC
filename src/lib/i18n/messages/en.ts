@@ -1252,6 +1252,16 @@ export const en = {
     hidden: "This record isn't shared any more, so the conversation can't be shown.",
     recordOf: (name: string) => `${name}'s record`,
   },
+  replies: {
+    title: "Replies",
+    label: "Reply to this record",
+    placeholder: "Add what happened next, or a later thought",
+    privateNote: "🔒 This record is only yours, so its replies are only seen by you.",
+    sharedNote: "Whoever can see the record can see its replies too.",
+    by: (name: string) => `${name}'s follow-ups`,
+    delete: "Delete",
+    deleteConfirm: "Delete this reply?",
+  },
   messages: {
     title: "Messages",
     search: "Search by name",
