@@ -74,3 +74,26 @@ export function TypePortraits({ types, children }: { types: TypeView[]; children
     </div>
   );
 }
+
+/**
+ * The fourteen types as a strip to swipe through: a hook before the chart is made, and a teaser
+ * when the birth time (and so the type) is still unknown. `mine` marks the reader's own.
+ */
+export function TypeGallery({ types, mine = [], hint }: { types: TypeView[]; mine?: string[]; hint?: string }) {
+  return (
+    <div data-testid="type-gallery">
+      <ul className="-mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-2 [scrollbar-width:none]">
+        {types.map((x) => (
+          <li key={x.id} className={`w-[5.75rem] shrink-0 snap-start overflow-hidden rounded-xl bg-white shadow-sm ${mine.includes(x.id) ? "ring-2 ring-violet-500" : "ring-1 ring-stone-200/70"}`}>
+            <TypeImage t={x} small />
+            <p className="px-1.5 pb-1.5 pt-1 text-center leading-tight">
+              <span className="block text-[11px] font-bold text-stone-900">{x.short}</span>
+              <span className="block text-[10px] text-stone-500">{x.name}</span>
+            </p>
+          </li>
+        ))}
+      </ul>
+      {hint && <p className="text-right text-[11px] text-stone-500">{hint}</p>}
+    </div>
+  );
+}

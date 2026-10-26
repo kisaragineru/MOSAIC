@@ -10,8 +10,8 @@ import { ChartTour } from "@/components/chart-tour";
 import { Flash } from "@/components/flash";
 import { ConfirmButton } from "@/components/confirm-button";
 import { TuviChart } from "@/components/tuvi-chart";
-import { TypeImage, TypePortraits } from "@/components/tuvi-type";
-import { essenceTypes } from "@/lib/tuvi/type-view";
+import { TypeGallery, TypeImage, TypePortraits } from "@/components/tuvi-type";
+import { allTypes, essenceTypes } from "@/lib/tuvi/type-view";
 import { Button, Card, Textarea } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
@@ -105,6 +105,12 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
             </ul>
             <p className="mt-3 inline-block rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-violet-800">🔓 {w.tuviPreviewLock}</p>
           </div>
+          {/* The fourteen types: a reason to enter the chart (and the birth time). */}
+          <section className="space-y-2 rounded-3xl bg-white/85 p-4 shadow-sm ring-1 ring-violet-100">
+            <h2 className="font-bold text-stone-900">{w.typesTitle}</h2>
+            <p className="text-xs leading-5 text-stone-600">{w.typesLead}</p>
+            <TypeGallery types={allTypes(locale)} hint={w.typesSwipe} />
+          </section>
           <p className="rounded-2xl bg-rose-50/70 px-4 py-3 text-sm leading-6 text-rose-950">{w.tuviWhy}</p>
           <Card>
             <p className="mb-1 text-sm font-semibold text-stone-800">⏱ {w.tuviQuick}</p>
@@ -205,7 +211,10 @@ async function ChartResult({ t, locale, tv }: { t: Awaited<ReturnType<typeof get
           </ChartTour>
         </>
       ) : (
-        <Link href="/welcome?step=4" className="block rounded-full bg-teal-700 py-3 text-center font-semibold text-white">{w.tourNext} →</Link>
+        <>
+          <NeedTime t={t} locale={locale} href="/welcome?step=2" />
+          <Link href="/welcome?step=4" className="block rounded-full bg-teal-700 py-3 text-center font-semibold text-white">{w.tourNext} →</Link>
+        </>
       )}
     </section>
   );
@@ -230,6 +239,25 @@ function SeedPieces({ pieces, t }: { pieces: SeedPiece[]; t: Awaited<ReturnType<
         </li>
       ))}
     </ul>
+  );
+}
+
+/** The first sentence of a short description (for a one-line caption). */
+function firstSentence(x: string) {
+  const m = x.match(/^.+?[。.!?！？](\s|$)/);
+  return (m ? m[0] : x).trim();
+}
+
+/** Without the birth hour the Self palace (and so the type) is unknown: say why, show the types, offer the way. */
+function NeedTime({ t, locale, href, bare = false }: { t: Awaited<ReturnType<typeof getT>>["t"]; locale: Awaited<ReturnType<typeof getT>>["locale"]; href: string; bare?: boolean }) {
+  const w = t.welcome;
+  return (
+    <section className={`space-y-2 ${bare ? "" : "rounded-3xl bg-white/85 p-4 shadow-sm ring-1 ring-violet-100"}`} data-testid="types-need-time">
+      <h2 className="font-bold text-stone-900">🔒 {w.typesNeedTime}</h2>
+      <p className="text-xs leading-5 text-stone-600">{w.typesNeedTimeLead}</p>
+      <TypeGallery types={allTypes(locale)} hint={w.typesSwipe} />
+      <Link href={href} className="inline-block rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-800">{w.typesAddTime} →</Link>
+    </section>
   );
 }
 
@@ -292,18 +320,29 @@ async function Finished({ uid, t, locale, answered }: { uid: string; t: Awaited<
       </div>
 
       {tv.chart && (
-        <Link href="/tuvi" className="block rounded-3xl bg-linear-to-br from-teal-100 via-sky-50 to-violet-200 p-5 text-teal-950 shadow-sm">
+        <section className="rounded-3xl bg-linear-to-br from-teal-100 via-sky-50 to-violet-200 p-5 text-teal-950 shadow-sm" data-testid="finish-tuvi">
           <p className="text-xs font-semibold text-teal-700">⭐ {w.achTuvi}</p>
-          <div className="mt-2 flex items-center gap-3">
-            {essence.types.length > 0 && (
-              <span className="flex shrink-0 gap-1.5">
-                {essence.types.map((x) => <span key={x.id} className="w-14 overflow-hidden rounded-xl ring-2 ring-white shadow-sm"><TypeImage t={x} small /></span>)}
-              </span>
-            )}
-            {persona ? <p className="text-lg font-bold leading-snug">{w.resultPersona(persona)}</p> : <p className="text-lg font-bold">{w.resultEyebrow}</p>}
-          </div>
-          <p className="mt-2 text-right text-sm font-semibold text-teal-800">{w.openTuvi} →</p>
-        </Link>
+          {essence.types.length > 0 ? (
+            <>
+              {persona && <p className="mt-1 text-lg font-black leading-snug text-stone-900 [word-break:auto-phrase]">{w.resultPersona(persona)}</p>}
+              {/* The type straight away, with what it means in a line: the hook into Tử Vi. */}
+              <ul className={`mt-3 grid gap-3 ${essence.types.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
+                {essence.types.map((x) => (
+                  <li key={x.id} className={essence.types.length > 1 ? "space-y-1.5" : "flex items-start gap-3"}>
+                    <span className={`block overflow-hidden rounded-2xl bg-white shadow-md ring-2 ring-white ${essence.types.length > 1 ? "" : "w-[38%] shrink-0"}`}><TypeImage t={x} small /></span>
+                    <span className="block min-w-0">
+                      <span className="block text-sm font-bold text-stone-900">{x.short}<span className="ml-1.5 text-[11px] font-normal text-stone-500">{x.name}</span></span>
+                      <span className="mt-0.5 block text-xs leading-5 text-stone-700">{firstSentence(x.plain)}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <div className="mt-2"><NeedTime t={t} locale={locale} href="/tuvi?edit=birth#birth" bare /></div>
+          )}
+          <p className="mt-3 text-right"><Link href="/tuvi" className="text-sm font-semibold text-teal-800">{w.openTuvi} →</Link></p>
+        </section>
       )}
 
       {pieces.length > 0 && (

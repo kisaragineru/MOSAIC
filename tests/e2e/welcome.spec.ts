@@ -28,6 +28,8 @@ test("a new account is guided: the chart (not skippable) and its tour, three que
   await expect(page.getByTestId("tuvi-preview")).toContainText("あなたの本質");
   await expect(page.getByText(/つながった人との相性や、お互いの取扱説明書も/)).toBeVisible();
   await expect(page.getByText(/生年月日と時刻は、あなたにしか見えません/)).toBeVisible();
+  // The fourteen types, as a reason to enter the chart (and the time).
+  await expect(page.getByTestId("type-gallery").locator("li")).toHaveCount(14);
   await page.getByLabel("生年月日 (新暦（グレゴリオ暦）)").fill("1990-06-07");
   await setBirthTime(page, "06:30");
   await page.getByLabel("伝統的な計算で使う性別").selectOption("male");
@@ -36,6 +38,8 @@ test("a new account is guided: the chart (not skippable) and its tour, three que
   // The result first, then the board with a hands-on tour.
   await page.waitForURL(/step=3/);
   await expect(page.getByTestId("chart-result")).toContainText("あなたの本質は「");
+  // The type straight away, as a picture.
+  await expect(page.getByTestId("chart-result").getByTestId("type-portraits").locator("img").first()).toBeVisible();
   const tour = page.getByTestId("chart-tour");
   await page.locator("[data-menh]").click();
   await expect(tour.locator("li").nth(0)).toContainText("✓");
@@ -131,6 +135,10 @@ test("while the guide isn't finished every page says so, with the way back; it c
   await page.getByRole("button", { name: "Make my chart" }).click();
   await page.waitForURL(/step=3/);
   await expect(page.getByTestId("chart-result")).toContainText("Your chart is ready");
+  // Without the time there is no type yet: why, the fourteen to look forward to, and the way to add it.
+  const needTime = page.getByTestId("types-need-time");
+  await expect(needTime).toContainText("Your type needs your birth time");
+  await expect(needTime.getByRole("link", { name: /Add your birth time/ })).toHaveAttribute("href", "/welcome?step=2");
   await page.goto("/home");
   await expect(page.getByTestId("guide-bar")).toContainText("Welcome guide (4/6)");
   // Ending it (after a confirmation) keeps you where you are; Home's checklist keeps what is left.

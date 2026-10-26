@@ -6,8 +6,8 @@ import { Flash } from "@/components/flash";
 import { TuviChart } from "@/components/tuvi-chart";
 import { TuviStages, type StageView } from "@/components/tuvi-stages";
 import { TuviThemes } from "@/components/tuvi-themes";
-import { TypePortraits } from "@/components/tuvi-type";
-import { essenceTypes } from "@/lib/tuvi/type-view";
+import { TypeGallery, TypePortraits } from "@/components/tuvi-type";
+import { allTypes, essenceTypes } from "@/lib/tuvi/type-view";
 import { themeLabels } from "@/lib/tuvi/theme-labels";
 import { Button, Card, Checkbox, Field, Input, Notice, Page, Select } from "@/components/ui";
 import { BRANCHES } from "@/lib/tuvi/canchi";
@@ -96,7 +96,15 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
               </div>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-teal-900/80">{v.sections[0]?.paragraphs[0]?.text}</p>
+            <>
+              <p className="mt-3 text-sm text-teal-900/80">{v.sections[0]?.paragraphs[0]?.text}</p>
+              <div className="mt-4 space-y-2 rounded-3xl bg-white/70 p-4 ring-1 ring-white/80" data-testid="types-need-time">
+                <p className="font-bold text-stone-900">🔒 {t.welcome.typesNeedTime}</p>
+                <p className="text-xs leading-5 text-stone-600">{t.welcome.typesNeedTimeLead}</p>
+                <TypeGallery types={allTypes(locale)} hint={t.welcome.typesSwipe} />
+                <a href="?edit=birth#birth" className="inline-block rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-800">{t.welcome.typesAddTime} →</a>
+              </div>
+            </>
           )}
           {now && (
             <a href="#stages" className="mt-4 block rounded-2xl bg-white/60 p-3 text-sm transition-colors hover:bg-white/80">
@@ -199,7 +207,7 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
           )}
         </Card>
       )}
-      <details open={!c} className="group">
+      <details id="birth" open={!c || sp.edit === "birth"} className="group scroll-mt-20">
         <summary className="flex cursor-pointer list-none items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-semibold text-stone-800 shadow-sm">
           {c ? ui.editBirth : t.tuvi.birthTitle}
           <span aria-hidden className="text-stone-400 transition-transform group-open:rotate-180">⌄</span>
