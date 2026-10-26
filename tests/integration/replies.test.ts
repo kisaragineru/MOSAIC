@@ -39,13 +39,20 @@ describe("replies under a record: one thread for everyone who can see it", () =>
     await addReply(hana.userId, id, "今度持っていくね");
     const all = ["二回目はうまくいった", "おいしそう！", "レシピ教えて", "今度持っていくね"];
     for (const u of [hana, sora, ren]) expect(bodies(await readReplies(u.userId, id))).toEqual(all);
-    expect((await readReplies(ren.userId, id)).map((x) => [x.authorName, x.mine])).toEqual([["Hana", false], ["Sora", false], ["Ren", true], ["Hana", false]]);
+    // Names: Hana (connected to both) sees every name; Ren and Sora aren't connected to each other,
+    // so each sees the other without a name (the app says "a friend of Hana").
+    const names = async (u: { userId: string }) => (await readReplies(u.userId, id)).map((x) => x.authorName);
+    expect(await names(hana)).toEqual(["Hana", "Sora", "Ren", "Hana"]);
+    expect(await names(ren)).toEqual(["Hana", null, "Ren", "Hana"]);
+    expect(await names(sora)).toEqual(["Hana", "Sora", null, "Hana"]);
+    expect((await readReplies(ren.userId, id)).map((x) => x.mine)).toEqual([false, false, true, false]);
     expect(await readReplies(stranger.userId, id)).toEqual([]);
     await expect(addReply(stranger.userId, id, "やあ")).rejects.toMatchObject({ code: "not_found" });
 
     // The timeline's newest two and the count; a stranger gets nothing.
     const p = await replyPreviews(sora.userId, [id]);
     expect(bodies(p.previews.get(id)!)).toEqual(["レシピ教えて", "今度持っていくね"]);
+    expect(p.previews.get(id)!.map((x) => x.authorName)).toEqual([null, "Hana"]);
     expect(p.counts.get(id)).toBe(4);
     expect((await replyPreviews(stranger.userId, [id])).counts.size).toBe(0);
 

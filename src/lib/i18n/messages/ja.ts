@@ -1263,6 +1263,8 @@ export const ja: Dict = {
     privateNote: "🔒 この記録は自分だけのものなので、返信もあなたにしか見えません。",
     sharedNote: "👀 返信は、この記録を見られる人全員に見えます。",
     author: "投稿者",
+    friendOf: (owner: string) => `${owner}さんの友だち`,
+    nameNote: (owner: string) => `👤 返信すると、あなたの名前もこの記録を見られる人に表示されます。あなたとつながっていない人には「${owner}さんの友だち」と表示され、プロフィールや写真は見えません。`,
     you: "あなた",
     delete: "削除",
     deleteConfirm: "この返信を削除しますか？",

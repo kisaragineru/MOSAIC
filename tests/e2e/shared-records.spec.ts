@@ -245,10 +245,13 @@ test("replies under a record: one thread for everyone who can see it", async ({ 
   await thread(sora).getByRole("button", { name: "送る" }).click();
   await expect(thread(sora)).toContainText("おいしそう！");
 
-  // Ren, who can see the record too, sees the whole thread with names, and joins in.
+  // Ren, who can see the record too, sees the whole thread and joins in. Ren isn't connected to
+  // Sora, so Sora shows as "a friend of Hana", without her name; Ren is told the same about himself.
   await ren.goto(shared);
-  await expect(thread(ren)).toContainText("ソラ");
   await expect(thread(ren)).toContainText("おいしそう！");
+  await expect(thread(ren)).toContainText("ハナさんの友だち");
+  await expect(thread(ren)).not.toContainText("ソラ");
+  await expect(ren.getByTestId("reply-name-note")).toContainText("あなたとつながっていない人には「ハナさんの友だち」と表示され");
   await ren.getByLabel("返信を書く").fill("レシピ知りたい");
   await thread(ren).getByRole("button", { name: "送る" }).click();
   await expect(thread(ren)).toContainText("レシピ知りたい");
@@ -259,6 +262,13 @@ test("replies under a record: one thread for everyone who can see it", async ({ 
   await hana.getByRole("link", { name: /あなたの記録にレンさんが返信/ }).click();
   await hana.waitForURL(new RegExp(record));
   await expect(thread(hana)).toContainText("おいしそう！");
+  // Hana is connected to both, so she sees both names.
+  await expect(thread(hana)).toContainText("ソラ");
+  await expect(thread(hana)).toContainText("レン");
+  // And Sora sees Ren only as "a friend of Hana".
+  await sora.goto(shared);
+  await expect(thread(sora)).toContainText("ハナさんの友だち");
+  await expect(thread(sora)).not.toContainText("レン");
   await hana.goto("/home");
   await expect(hana.getByText("新しい返信")).toHaveCount(0);
   await hana.goto("/memories");

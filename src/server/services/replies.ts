@@ -2,7 +2,8 @@
  * Replies under a record, as one thread: the owner's follow-ups and the words of the people the
  * record is shared with. Everyone who can see the record reads the whole thread (only the owner for
  * a private one); nobody does once it stops being shared with them. The writer, or the record's
- * owner, can delete a reply. Rules live in the SQL functions of migration 0045.
+ * owner, can delete a reply. A writer I'm not connected to shows without a name ("a friend of
+ * <owner>"). Rules live in the SQL functions of migrations 0045 and 0046.
  */
 import { sql } from "drizzle-orm";
 import { z } from "zod";
@@ -15,14 +16,16 @@ import { audit } from "./audit";
 export interface Reply {
   id: string;
   authorId: string;
-  authorName: string;
+  /** Null when I'm not connected to the writer: they show as "a friend of <owner>". */
+  authorName: string | null;
   mine: boolean;
   body: string;
   createdAt: Date;
 }
 
 export interface ReplyPreview {
-  authorName: string;
+  /** Null when I'm not connected to the writer. */
+  authorName: string | null;
   mine: boolean;
   body: string;
   createdAt: Date;
@@ -36,6 +39,7 @@ export interface ReplyThread {
   unread: number;
   /** The latest reply by someone else (null while only I have written there). */
   lastBody: string | null;
+  /** Its writer's name (also null when I'm not connected to them). */
   lastAuthorName: string | null;
   lastAt: Date | null;
 }
@@ -79,7 +83,7 @@ export async function deleteReply(userId: string, replyId: string): Promise<stri
 export async function readReplies(userId: string, entryId: string): Promise<Reply[]> {
   const id = uuid.parse(entryId);
   return run(userId, async (tx) => {
-    const r = await tx.execute<{ id: string; author_id: string; author_name: string; body: string; created_at: string | Date }>(sql`select * from memory_reply_thread(${id})`);
+    const r = await tx.execute<{ id: string; author_id: string; author_name: string | null; body: string; created_at: string | Date }>(sql`select * from memory_reply_thread(${id})`);
     if (r.rows.length) {
       await tx.execute(sql`insert into memory_reply_reads (user_id, entry_id, read_at) values (${userId}, ${id}, now())
         on conflict (user_id, entry_id) do update set read_at = now()`);
@@ -95,7 +99,7 @@ export async function replyPreviews(userId: string, entryIds: string[], per = 2)
   const counts = new Map<string, number>();
   if (!ids.length) return { previews, counts };
   const r = await run(userId, (tx) =>
-    tx.execute<{ entry_id: string; author_id: string; author_name: string; body: string; created_at: string | Date; n: number }>(
+    tx.execute<{ entry_id: string; author_id: string; author_name: string | null; body: string; created_at: string | Date; n: number }>(
       sql`select * from memory_reply_previews(${`{${ids.join(",")}}`}::uuid[], ${per})`,
     ),
   );

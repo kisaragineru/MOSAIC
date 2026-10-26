@@ -124,7 +124,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                   href={x.iOwn ? `/memories/${x.entryId}#replies` : `/memories/shared/${x.entryId}#replies`}
                   className="block rounded-2xl bg-white px-3.5 py-2.5 text-sm ring-1 ring-sky-100 transition hover:ring-sky-300"
                 >
-                  <span className="block text-xs text-sky-800">{t.replies.fromOn(x.lastAuthorName ?? "", x.iOwn ? null : x.ownerName)}</span>
+                  <span className="block text-xs text-sky-800">{t.replies.fromOn(x.lastAuthorName ?? t.replies.friendOf(x.ownerName), x.iOwn ? null : x.ownerName)}</span>
                   <span className="line-clamp-2 text-stone-900">{x.lastBody}</span>
                 </Link>
               </li>

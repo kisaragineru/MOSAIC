@@ -1261,6 +1261,8 @@ export const en = {
     privateNote: "🔒 This record is only yours, so its replies are only seen by you.",
     sharedNote: "👀 Replies are seen by everyone who can see this record.",
     author: "Author",
+    friendOf: (owner: string) => `A friend of ${owner}`,
+    nameNote: (owner: string) => `👤 When you reply, your name is shown to the people who can see this record. People you're not connected to see "A friend of ${owner}" instead, and never your profile or photo.`,
     you: "You",
     delete: "Delete",
     deleteConfirm: "Delete this reply?",

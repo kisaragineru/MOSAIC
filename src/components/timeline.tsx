@@ -69,12 +69,12 @@ function CommentCount({ t, c }: { t: Dict; c: { count: number; unread: number } 
 }
 
 /** The newest comments under a record, shown as they are (name and words). */
-function Comments({ t, items, total }: { t: Dict; items: ReplyPreview[]; total: number }) {
+function Comments({ t, items, total, ownerName = "" }: { t: Dict; items: ReplyPreview[]; total: number; /** For writers I'm not connected to ("a friend of …"). */ ownerName?: string }) {
   return (
     <ul className="mt-2.5 space-y-1 border-l-2 border-sky-200 pl-3" aria-label={t.replies.title}>
       {items.map((c, i) => (
         <li key={i} className="text-sm leading-snug">
-          <span className={`mr-1.5 font-semibold ${c.mine ? "text-teal-800" : "text-sky-900"}`}>{c.mine ? t.comments.you : c.authorName}</span>
+          <span className={`mr-1.5 font-semibold ${c.mine ? "text-teal-800" : "text-sky-900"}`}>{c.mine ? t.comments.you : (c.authorName ?? t.replies.friendOf(ownerName))}</span>
           <span className="emoji-color whitespace-pre-line text-stone-700 [overflow-wrap:anywhere]">{c.body}</span>
         </li>
       ))}
@@ -147,7 +147,7 @@ function Theirs({ t, it, compact, c, p, media, src }: { t: Dict; it: TimelineIte
       {m.title && <p className="emoji-color font-medium text-stone-900">{m.title}</p>}
       {m.body && <p className={`emoji-color whitespace-pre-line text-sm text-stone-800 ${compact ? "line-clamp-2" : "line-clamp-4"}`}>{m.body}</p>}
       {media && <MediaGrid media={media} label={t.memories.media.label} />}
-      {p && p.length > 0 && <Comments t={t} items={p} total={c?.count ?? p.length} />}
+      {p && p.length > 0 && <Comments t={t} items={p} total={c?.count ?? p.length} ownerName={name} />}
       <p className="mt-2 text-right text-xs font-semibold text-rose-800">{t.comments.openRecord} →</p>
     </Link>
   );

@@ -21,6 +21,7 @@ export function RecordReplies({
   ownRecord,
   back,
   note,
+  nameNote,
   avatars,
 }: {
   t: Dict;
@@ -35,6 +36,8 @@ export function RecordReplies({
   back: string;
   /** Who can see them. */
   note?: string;
+  /** Under someone else's record: that my name shows to the others who can see it. */
+  nameNote?: string;
   avatars: Map<string, string>;
 }) {
   const r = t.replies;
@@ -51,9 +54,9 @@ export function RecordReplies({
             const byOwner = x.authorId === ownerId;
             return (
               <li key={x.id} className="relative">
-                <Avatar name={x.authorName} src={avatars.get(x.authorId)} className="absolute -left-[1.95rem] top-0 h-7 w-7 text-[10px] ring-2 ring-white" />
+                <Avatar name={x.authorName ?? "?"} src={avatars.get(x.authorId)} className="absolute -left-[1.95rem] top-0 h-7 w-7 text-[10px] ring-2 ring-white" />
                 <p className="flex flex-wrap items-center gap-1.5 px-1 text-xs">
-                  <span className={`font-semibold ${x.mine ? "text-teal-800" : "text-stone-800"}`}>{x.mine ? r.you : x.authorName}</span>
+                  <span className={`font-semibold ${x.mine ? "text-teal-800" : "text-stone-800"}`}>{x.mine ? r.you : (x.authorName ?? r.friendOf(ownerName))}</span>
                   {byOwner && <span className="rounded-full bg-teal-50 px-1.5 py-px text-[10px] font-semibold text-teal-800 ring-1 ring-teal-100">{r.author}</span>}
                 </p>
                 <p className={`emoji-color mt-0.5 whitespace-pre-line rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed text-stone-900 shadow-sm ring-1 ${byOwner ? "bg-white ring-stone-200/70" : "bg-sky-50/70 ring-sky-100"}`}>{x.body}</p>
@@ -91,6 +94,7 @@ export function RecordReplies({
         </button>
       </form>
       {note && <p className="px-1 text-[11px] leading-4 text-stone-500">{note}</p>}
+      {nameNote && <p className="px-1 text-[11px] leading-4 text-stone-500" data-testid="reply-name-note">{nameNote}</p>}
     </section>
   );
 }

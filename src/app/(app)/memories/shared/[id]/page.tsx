@@ -45,7 +45,7 @@ export default async function SharedRecordPage({ params, searchParams }: { param
         {e.body && <p className="emoji-color whitespace-pre-line leading-relaxed text-stone-800">{e.body}</p>}
         {media.length > 0 && <div className={e.body ? "mt-3" : ""}><MediaGallery media={media} label={t.memories.media.label} /></div>}
       </article>
-      <RecordReplies t={t} locale={locale} tz={tz} replies={replies} entryId={e.id} ownerId={e.ownerId} ownerName={e.ownerName} ownRecord={false} back={`/memories/shared/${e.id}`} avatars={await avatarUrls(uid, replies.map((x) => x.authorId))} note={t.replies.sharedNote} />
+      <RecordReplies t={t} locale={locale} tz={tz} replies={replies} entryId={e.id} ownerId={e.ownerId} ownerName={e.ownerName} ownRecord={false} back={`/memories/shared/${e.id}`} avatars={await avatarUrls(uid, replies.map((x) => x.authorId))} note={t.replies.sharedNote} nameNote={t.replies.nameNote(e.ownerName)} />
       <Link href={`/messages/new?record=${e.id}`} className="inline-flex min-h-10 items-center rounded-full bg-white px-4 text-sm font-semibold text-teal-800 ring-1 ring-stone-200 transition hover:ring-teal-300">
         {t.messages.shareRecord}
       </Link>
