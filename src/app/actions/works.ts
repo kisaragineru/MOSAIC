@@ -72,7 +72,7 @@ export async function storyAskAction(form: FormData) {
   const uid = await requireUser();
   await attempt("work.story_asked", () => markStoryAsked(uid));
   revalidatePath("/home");
-  redirect(str(form, "go") === "work" ? PAGE : "/home");
+  redirect(str(form, "go") === "work" ? `${PAGE}#give` : "/home");
 }
 
 /** The reader opened the envelope of a work they were handed (the writer is told, once). */

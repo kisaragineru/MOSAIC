@@ -12,7 +12,7 @@ import { requireUser } from "@/server/auth/session";
 import { aiConfigured } from "@/server/ai/claude";
 import { getAccount, getNotificationPrefs } from "@/server/services/account";
 import { companionAsks, companionConnected, companionPending, devToolsEnabled, listCompanions } from "@/server/services/dev-companion";
-import { startTrialAction } from "@/app/actions/auth";
+import { actAsCompanionAction, startTrialAction } from "@/app/actions/auth";
 import { companionAnswersAction, companionAsksOwnerAction, companionCommentsAction, companionGroupMessagesAction, companionMessagesAction, companionWritesAction, createCompanionAction, deleteCompanionAction, enrichCompanionAction, reconnectCompanionAction } from "@/app/actions/dev";
 
 
@@ -145,6 +145,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                   <form action={companionWritesAction}>
                     <input type="hidden" name="id" value={c.id} />
                     <Button type="submit" variant="secondary" className="min-h-8 px-3 py-1 text-xs">✎ {td.write}</Button>
+                  </form>
+                  <form action={actAsCompanionAction}>
+                    <input type="hidden" name="id" value={c.id} />
+                    <Button type="submit" variant="secondary" className="min-h-8 px-3 py-1 text-xs">👤 {td.actAs}</Button>
                   </form>
                   <form action={deleteCompanionAction}>
                     <input type="hidden" name="id" value={c.id} />

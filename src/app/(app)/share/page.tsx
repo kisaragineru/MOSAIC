@@ -7,6 +7,8 @@ import { Card, Empty, Page, Pill } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { listComparisons, listShares } from "@/server/services/sharing";
+import { latestWork } from "@/server/services/works";
+import { handOverAction } from "@/app/actions/works";
 
 export default async function SharePage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
@@ -14,9 +16,27 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
   const { t } = await getT();
   const shares = await listShares(uid);
   const comps = await listComparisons(uid);
+  const work = await latestWork(uid);
+  const w = t.work;
   return (
     <Page title={t.share.title}>
       <Flash t={t} sp={sp} />
+      {/* Handing over the story: always here, from the header's QR button. */}
+      <section className="rounded-3xl bg-gradient-to-br from-violet-50 to-amber-50 p-5 shadow-sm ring-1 ring-violet-100" data-testid="share-work">
+        <h2 className="font-bold text-stone-900">✉️ {w.shareTitle}</h2>
+        <p className="mt-1 text-xs leading-5 text-stone-600">{w.shareLead}</p>
+        {work ? (
+          <form action={handOverAction} className="mt-3 flex flex-wrap gap-2">
+            <input type="hidden" name="workId" value={work.id} />
+            <input type="hidden" name="days" value="14" />
+            <input name="recipient" required maxLength={60} placeholder={w.recipientPh} aria-label={w.recipient} className="min-w-0 flex-1 rounded-full border border-violet-200 bg-white px-4 py-2 text-sm focus:border-violet-500 focus:outline-none" />
+            <button type="submit" className="shrink-0 rounded-full bg-violet-700 px-4 py-2 text-sm font-bold text-white hover:bg-violet-800">{w.give}</button>
+          </form>
+        ) : (
+          <p className="mt-3 text-sm text-stone-600">{w.shareNoWork} <Link href="/me/work" className="font-semibold text-violet-800 underline underline-offset-4">{w.shareMake} →</Link></p>
+        )}
+        {work && <Link href="/me/work#links" className="mt-2 inline-block text-xs font-semibold text-violet-800 underline underline-offset-4">{w.links} →</Link>}
+      </section>
       <p className="text-sm text-stone-600">{t.share.intro}</p>
       <Card>
         <ShareCreator

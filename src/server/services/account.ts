@@ -45,6 +45,11 @@ async function createSession(tx: Parameters<Parameters<typeof withUser>[1]>[0], 
   return { userId, token, expiresAt };
 }
 
+/** A new session for this account (development tools only: see dev-trial.ts). */
+export async function issueSession(userId: string): Promise<NewSession> {
+  return withUser(userId, (tx) => createSession(tx, userId));
+}
+
 /** clientKey: the caller's IP (or null when it cannot be determined reliably). */
 export async function register(input: unknown, clientKey: string | null): Promise<NewSession> {
   const data = registerSchema.parse(input);

@@ -91,7 +91,7 @@ export async function createCompanion(ownerId: string, relationship: unknown): P
   return id;
 }
 
-async function own(ownerId: string, companionId: string) {
+export async function ownCompanion(ownerId: string, companionId: string) {
   guard();
   const cid = z.string().uuid().parse(companionId);
   const [row] = await withUser(ownerId, (tx) => tx.select().from(devCompanions).where(and(eq(devCompanions.ownerId, ownerId), eq(devCompanions.companionId, cid))));
@@ -195,7 +195,7 @@ function leaning(q: (typeof QUESTION_BANK)[number]) {
 
 /** Fill (or refill) an existing companion with the persona. */
 export async function enrichCompanion(ownerId: string, companionId: string): Promise<number> {
-  return fill(await own(ownerId, companionId));
+  return fill(await ownCompanion(ownerId, companionId));
 }
 
 /** Whether the companion is still connected with its owner (they may have ended it to try that). */
@@ -208,7 +208,7 @@ export async function companionConnected(companionId: string) {
  * the owner's existing person entry moved onto it, her shares restored.
  */
 export async function reconnectCompanion(ownerId: string, companionId: string) {
-  const cid = await own(ownerId, companionId);
+  const cid = await ownCompanion(ownerId, companionId);
   if (await companionConnected(cid)) return;
   const ended = (await listComparisons(cid)).filter((c) => c.status === "revoked").map((c) => c.id);
   const ownerPerson = (await listComparisons(ownerId)).find((c) => ended.includes(c.id) && c.personId)?.personId ?? null;
@@ -232,7 +232,7 @@ export async function companionAsks(companionId: string) {
  * a few words of her own. Named, not anonymous.
  */
 export async function companionAnswersAsks(ownerId: string, companionId: string) {
-  const cid = await own(ownerId, companionId);
+  const cid = await ownCompanion(ownerId, companionId);
   const own_ = new Map((await listTendencies(ownerId)).filter((c) => c.userStatus !== "rejected" && c.direction).map((c) => [c.claimKey, c.direction as 1 | -1]));
   const answers: Partial<Record<TendencyKey, 1 | 0 | -1>> = {};
   AXES.forEach((k, i) => {
@@ -248,7 +248,7 @@ export async function companionAnswersAsks(ownerId: string, companionId: string)
 
 /** She asks the owner "how do you see me?" (shows up on the owner's Home and in "how others see you"). */
 export async function companionAsksOwner(ownerId: string, companionId: string) {
-  const cid = await own(ownerId, companionId);
+  const cid = await ownCompanion(ownerId, companionId);
   const conn = (await listComparisons(cid)).find((c) => c.status === "active");
   if (!conn) throw new AppError("connection_ended", 409);
   await askPeer(cid, conn.id);
@@ -256,7 +256,7 @@ export async function companionAsksOwner(ownerId: string, companionId: string) {
 
 /** The companion writes one more record, shared with everyone it's connected with. */
 export async function companionWrites(ownerId: string, companionId: string) {
-  const cid = await own(ownerId, companionId);
+  const cid = await ownCompanion(ownerId, companionId);
   const body = MORE[Math.floor(Math.random() * MORE.length)]!;
   const entry = await createMemory(cid, { kind: "thought", body });
   await setMemoryAudience(cid, entry, { visibility: "connections" });
@@ -264,7 +264,7 @@ export async function companionWrites(ownerId: string, companionId: string) {
 
 /** Remove the companion: its account and everything in it (connections end with it). */
 export async function deleteCompanion(ownerId: string, companionId: string) {
-  const cid = await own(ownerId, companionId);
+  const cid = await ownCompanion(ownerId, companionId);
   await withUser(cid, (tx) => tx.delete(users).where(eq(users.id, cid)));
   await withUser(ownerId, (tx) => audit(tx, ownerId, "dev.companion_deleted"));
 }
@@ -277,7 +277,7 @@ const NOTES = ["いい一日だったみたいね。よかった。", "読んで
  * looked, and replies under the owner's newest record shared with her (once per record).
  */
 export async function companionComments(ownerId: string, companionId: string) {
-  const cid = await own(ownerId, companionId);
+  const cid = await ownCompanion(ownerId, companionId);
   const inbox = await replyInbox(cid);
   let i = 0;
   for (const th of inbox.filter((x) => x.iOwn && x.unread > 0)) {
@@ -292,7 +292,7 @@ const DM_LINES = ["メッセージありがとう。元気にしてる？", "こ
 
 /** She answers your messages: reads them, puts a ❤️ on your last one and replies (or says hello first). */
 export async function companionMessages(ownerId: string, companionId: string) {
-  const cid = await own(ownerId, companionId);
+  const cid = await ownCompanion(ownerId, companionId);
   const conv = await openDirect(cid, ownerId);
   const msgs = await dmMessages(cid, conv, { limit: 40 });
   const yours = msgs.filter((m) => m.senderId === ownerId && !m.deleted && m.kind !== "system");
@@ -335,7 +335,7 @@ export async function companionsReplyInGroup(ownerId: string, conversationId: st
 
 /** This companion replies in every group it shares with you. */
 export async function companionGroupMessages(ownerId: string, companionId: string): Promise<number> {
-  const cid = await own(ownerId, companionId);
+  const cid = await ownCompanion(ownerId, companionId);
   const at = (await listCompanions(ownerId)).findIndex((c) => c.id === cid);
   const lines = GROUP_LINES[Math.max(0, at) % GROUP_LINES.length]!;
   const groups = (await dmInbox(cid)).filter((g) => g.kind === "group" && !g.leftGroup && g.canSend && g.others.some((o) => o.id === ownerId));

@@ -963,6 +963,7 @@ export const vi: Dict = {
   },
   settings: {
     dev: {
+      actAs: "Đăng nhập với tư cách người này",
       faces: "🎭 Đặt vị trí khuôn mặt trong hình minh họa",
       askOwner: "Cho họ hỏi bạn \"bạn thấy tôi thế nào?\"",
       dm: "Trả lời tin nhắn của bạn",
@@ -1690,6 +1691,10 @@ export const vi: Dict = {
     beginOwn: "Bắt đầu câu chuyện của bạn",
   },
   work: {
+    shareTitle: "Tạo đường dẫn để trao câu chuyện",
+    shareLead: "Khi có người bạn muốn họ hiểu mình, hãy bắt đầu từ đây. Mỗi người có một đường dẫn riêng.",
+    shareNoWork: "Câu chuyện chưa thành tác phẩm. Hãy đọc và tạo tác phẩm trước.",
+    shareMake: "Biến câu chuyện thành tác phẩm",
     envFrom: (name: string) => `Từ ${name}, gửi bạn`,
     envLead: (name: string) => `Đây là câu chuyện của ${name}, được tạo bằng MOSAIC.`,
     envAbout: "MOSAIC gom những dòng ghi chép mỗi ngày và câu trả lời, như những mảnh ghép, thành câu chuyện của riêng một người.",
@@ -1715,7 +1720,7 @@ export const vi: Dict = {
     storyRead: "Đọc câu chuyện",
     storyAskTitle: "Có ai bạn muốn họ biết câu chuyện của mình không?",
     storyAskLead: "Các ghi chép của bạn đã thành một câu chuyện. Nếu có ai bạn muốn họ đọc một ngày nào đó, bạn có thể làm thành một tác phẩm và trao cho họ. Nếu chưa, câu chuyện vẫn tiếp tục lớn lên ở đây, cho chính bạn.",
-    storyAskYes: "Xem cách trao",
+    storyAskYes: "Tạo đường dẫn để trao",
     storyAskNo: "Bây giờ thì chưa",
     title: "Trao câu chuyện cho người thân",
     lead: "Bạn có thể trao câu chuyện của mình, như một tác phẩm, cho người thân. Người nhận đọc được mà không cần đăng ký.",

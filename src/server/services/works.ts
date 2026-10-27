@@ -5,7 +5,7 @@
  * owner chooses otherwise); it can be extended or taken back any time. Someone with the link reads
  * it without signing up. Rules for reading live in work_open() (migration 0055).
  */
-import { and, desc, eq, isNull, isNotNull } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, isNotNull } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Locale } from "@/lib/i18n/locales";
@@ -183,15 +183,21 @@ export async function markOpensSeen(userId: string) {
 }
 
 /** The story grows with the records. Home says so when it has new pages, and once it has grown
- * (three pages or more, no work made yet) asks, once, whether there's someone to hand it to. */
+ * (three pages or more) asks now and then (a month apart, and not when a link was made lately)
+ * whether there's someone to hand it to. */
 export const STORY_ASK_PAGES = 3;
+export const STORY_ASK_DAYS = 30;
 
 export async function storyGrowth(userId: string, locale: Locale): Promise<{ pages: number; added: number; ask: boolean }> {
   const manual = await buildManual(userId, locale);
   const pages = manual.sections.find((s) => s.id === "novel")?.blocks.filter((b) => b.t === "episode").length ?? 0;
   const [p] = await withUser(userId, (tx) => tx.select({ seen: profiles.storyPagesSeen, asked: profiles.storyAskedAt }).from(profiles).where(eq(profiles.userId, userId)));
   const seen = p?.seen ?? 0;
-  const ask = pages >= STORY_ASK_PAGES && !p?.asked && !(await latestWork(userId));
+  // Asked again now and then (every STORY_ASK_DAYS), unless a link was made lately.
+  const since = new Date(Date.now() - STORY_ASK_DAYS * 86_400_000);
+  const due = !p?.asked || p.asked < since;
+  const recent = due ? (await withUser(userId, (tx) => tx.select({ id: workLinks.id }).from(workLinks).where(and(eq(workLinks.ownerId, userId), gt(workLinks.createdAt, since))).limit(1))).length > 0 : true;
+  const ask = pages >= STORY_ASK_PAGES && due && !recent;
   return { pages, added: Math.max(0, pages - seen), ask };
 }
 
@@ -201,10 +207,10 @@ export async function markStoryPagesSeen(userId: string, pages: number) {
   await withUser(userId, (tx) => tx.update(profiles).set({ storyPagesSeen: n }).where(eq(profiles.userId, userId)));
 }
 
-/** The one-time question has been answered (either way); it isn't asked again. */
+/** The question has been answered (either way): it waits a month before coming back. */
 export async function markStoryAsked(userId: string) {
   await withUser(userId, async (tx) => {
-    await tx.update(profiles).set({ storyAskedAt: new Date() }).where(and(eq(profiles.userId, userId), isNull(profiles.storyAskedAt)));
+    await tx.update(profiles).set({ storyAskedAt: new Date() }).where(eq(profiles.userId, userId));
     await audit(tx, userId, "work.story_asked");
   });
 }

@@ -301,3 +301,26 @@ test("test companions can reply in a group (development)", async ({ browser }) =
   // Each reply shows who wrote it.
   await expect(hana.getByText("ソウ（テスト）", { exact: true }).first()).toBeVisible();
 });
+
+test("development: sign in as a test companion (set their picture), then back to yourself", async ({ browser }) => {
+  const hana = await user(browser, "ハナ");
+  await hana.goto("/settings");
+  await hana.getByRole("button", { name: /テスト相手をつくる/ }).click();
+  await hana.waitForURL(/settings\?ok=saved/);
+  await hana.getByRole("button", { name: /このユーザーとしてログイン/ }).click();
+  await hana.waitForURL(/\/home$/);
+  await expect(hana.getByTestId("trial-bar")).toBeVisible();
+  await expect(hana.getByRole("heading", { level: 1 })).toContainText("ミナ（テスト）");
+  // As Mina: a picture from a type illustration.
+  await hana.goto("/me/photo");
+  await hana.getByTestId("avatar-types").getByRole("button", { name: "静かに見守る月タイプ 2" }).click();
+  await hana.getByRole("button", { name: "この写真にする" }).click();
+  await hana.waitForURL(/\/me\/photo\?ok=saved/);
+  // Back to Hana: Mina is still there, now with her picture.
+  await hana.getByTestId("trial-bar").getByRole("button").click();
+  await hana.waitForURL(/\/settings/);
+  await expect(hana.getByTestId("trial-bar")).toHaveCount(0);
+  await expect(hana.getByText("ミナ（テスト）").first()).toBeVisible();
+  await hana.goto("/people");
+  await expect(hana.locator('img[src^="/api/avatar/"]').first()).toBeVisible();
+});

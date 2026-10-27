@@ -5,7 +5,7 @@ import { isLocale } from "@/lib/i18n/locales";
 import { LOCALE_COOKIE } from "@/lib/i18n/server";
 import { clearSessionCookie, clientKey, currentUserId, sessionToken, setSessionCookie } from "@/server/auth/session";
 import { login, logout, register } from "@/server/services/account";
-import { endTrial, isTrialEmail, startTrial, trialAccount, trialReturnUser } from "@/server/services/dev-trial";
+import { actAsCompanion, endTrial, isTrialEmail, startTrial, trialAccount, trialReturnUser } from "@/server/services/dev-trial";
 import { attempt, safeNext, str, withParam } from "./util";
 
 export async function registerAction(form: FormData) {
@@ -54,6 +54,15 @@ export async function startTrialAction() {
   const r = await attempt("dev.trial_start", () => startTrial(uid));
   if (!r.ok) redirect(`/settings?e=${r.error}#dev`);
   redirect("/register");
+}
+
+/** Development: sign in as one of your test companions (back with the bar at the top). */
+export async function actAsCompanionAction(form: FormData) {
+  const uid = await currentUserId();
+  if (!uid) redirect("/login");
+  const r = await attempt("dev.act_as", () => actAsCompanion(uid, String(form.get("id") ?? "")));
+  if (!r.ok) redirect(`/settings?e=${r.error}#dev`);
+  redirect("/home");
 }
 
 /** Development: back to your own account; the throwaway account is deleted. */

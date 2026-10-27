@@ -963,6 +963,7 @@ export const ja: Dict = {
   },
   settings: {
     dev: {
+      actAs: "このユーザーとしてログイン",
       faces: "🎭 タイプの顔の切り抜きを設定する",
       askOwner: "あなたに「どう見える？」を聞かせる",
       dm: "メッセージに返信する",
@@ -1690,6 +1691,10 @@ export const ja: Dict = {
     beginOwn: "自分の物語を始める",
   },
   work: {
+    shareTitle: "物語を渡すURLをつくる",
+    shareLead: "知ってほしい人ができたら、いつでもここから。相手ごとに専用のURLができます。",
+    shareNoWork: "まだ作品になっていません。物語を読んで、作品にするところから始めましょう。",
+    shareMake: "物語を作品にする",
     envFrom: (name: string) => `${name}さんから、あなたへ`,
     envLead: (name: string) => `これは、MOSAICでつくられた${name}さんの物語です。`,
     envAbout: "MOSAICは、毎日のひとことや質問への答えを、かけらのように集めて、その人だけの物語にするアプリです。",
@@ -1715,7 +1720,7 @@ export const ja: Dict = {
     storyRead: "物語を読む",
     storyAskTitle: "あなたの物語を、知ってほしい人はいますか？",
     storyAskLead: "ここまでの記録から、物語が育ってきました。いつか読んでほしい人がいたら、作品として一冊にして渡せます。いなくても、物語はあなたのためにここで育ち続けます。",
-    storyAskYes: "渡し方を見る",
+    storyAskYes: "渡すURLをつくる",
     storyAskNo: "いまはいない",
     title: "物語を、大切な人に渡す",
     lead: "あなたの物語を、ひとつの作品として、大切な人に渡せます。受け取った人は、登録しなくても読めます。",

@@ -13,8 +13,8 @@ import { users } from "../db/schema";
 import { withUser } from "../db/tx";
 import { AppError } from "../errors";
 import { sessionCookieName, sessionToken } from "../auth/session";
-import { resolveSession, SESSION_TTL_DAYS } from "./account";
-import { devToolsEnabled } from "./dev-companion";
+import { issueSession, resolveSession, SESSION_TTL_DAYS } from "./account";
+import { devToolsEnabled, ownCompanion } from "./dev-companion";
 
 /** Trial accounts use this address domain (".invalid" can never receive mail). */
 export const TRIAL_DOMAIN = "trial.mosaic.invalid";
@@ -30,6 +30,21 @@ export async function startTrial(userId: string) {
   const jar = await cookies();
   jar.set(RETURN_COOKIE, token, { httpOnly: true, secure: secure(), sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 });
   jar.delete(sessionCookieName());
+}
+
+/**
+ * Sign in as one of your test companions (to set their photo, reply as them, see what they see).
+ * Your own session waits aside as for a trial; going back leaves the companion as it is.
+ */
+export async function actAsCompanion(userId: string, companionId: string) {
+  if (!devToolsEnabled()) throw new AppError("not_found", 404);
+  const cid = await ownCompanion(userId, companionId);
+  const token = await sessionToken();
+  if (!token || (await resolveSession(token)) !== userId) throw new AppError("unauthorized", 401);
+  const s = await issueSession(cid);
+  const jar = await cookies();
+  jar.set(RETURN_COOKIE, token, { httpOnly: true, secure: secure(), sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 });
+  jar.set(sessionCookieName(), s.token, { httpOnly: true, secure: secure(), sameSite: "lax", path: "/", expires: s.expiresAt });
 }
 
 /** The account a trial will return to, when one is in progress. */

@@ -109,8 +109,15 @@ test("hand the story over as a work: read it first, fix it, a link of their own,
   await hana.goto("/me/work");
   await expect(hana.getByTestId("work-links")).toContainText("✓ 開いてくれました");
 
+  // From the header's QR page, a new link any time.
+  await hana.goto("/share");
+  await hana.getByTestId("share-work").getByLabel("誰に渡しますか？").fill("父");
+  await hana.getByTestId("share-work").getByRole("button", { name: "渡すリンクをつくる" }).click();
+  await expect(hana.getByTestId("work-handed")).toContainText("父さんに渡すリンクができました");
+  await hana.goto("/me/work");
+
   // Taken back: the page says so and shows nothing of the work.
-  await hana.getByTestId("work-links").getByRole("button", { name: "取り消す" }).click();
+  await hana.getByTestId("work-links").locator("li", { hasText: "母" }).getByRole("button", { name: "取り消す" }).click();
   await confirm(hana);
   await hana.waitForURL(/ok=saved/);
   // (even for a reader who connected: the writer took it back)

@@ -961,6 +961,7 @@ export const en = {
   },
   settings: {
     dev: {
+      actAs: "Sign in as them",
       faces: "🎭 Set the faces in the type illustrations",
       askOwner: "Make them ask you \"how do you see me?\"",
       dm: "Reply to your messages",
@@ -1688,6 +1689,10 @@ export const en = {
     beginOwn: "Start your own story",
   },
   work: {
+    shareTitle: "Make a link to hand over your story",
+    shareLead: "Whenever there's someone you'd like to know you, start here. Each person gets a link of their own.",
+    shareNoWork: "It isn't a work yet. Read your story and make it one first.",
+    shareMake: "Make my story a work",
     envFrom: (name: string) => `From ${name}, to you`,
     envLead: (name: string) => `This is ${name}'s story, made with MOSAIC.`,
     envAbout: "MOSAIC gathers your one-line notes and answers to questions, like pieces, into a story that's yours alone.",
@@ -1713,7 +1718,7 @@ export const en = {
     storyRead: "Read your story",
     storyAskTitle: "Is there someone you'd like to know your story?",
     storyAskLead: "Your records have grown into a story. If there's someone you'd like to read it someday, you can make it into a single work and hand it to them. If not, it keeps growing here, for you.",
-    storyAskYes: "See how to hand it over",
+    storyAskYes: "Make a link to hand it over",
     storyAskNo: "Not right now",
     title: "Hand your story to someone close",
     lead: "You can hand your story, as a work, to someone close. They can read it without signing up.",
