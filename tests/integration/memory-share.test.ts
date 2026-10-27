@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildTimeline } from "@/lib/timeline";
-import { createMemory, getMemory } from "@/server/services/memories";
-import { connectionFeed, feedForPage, recentTimeline, setMemoryAudience, shareTargets, visibleCount } from "@/server/services/memory-share";
+import { createMemory, getMemory, listMemories } from "@/server/services/memories";
+import { connectionFeed, feedForPage, recentTimeline, setMemoriesAudience, setMemoryAudience, shareTargets, visibleCount } from "@/server/services/memory-share";
 import { addPersonFromConnection, createShare, giveConsent, openComparison, revokeComparison } from "@/server/services/sharing";
 import { updatePerson } from "@/server/services/people";
 import { makeUser } from "../helpers/factory";
@@ -122,5 +122,34 @@ describe("records shared with connections", () => {
     expect((await connectionFeed(a.userId, { sessionId: ac })).map((x) => x.body)).toEqual(["レンの記録"]);
     // Someone else's connection id gives nothing, not their records.
     expect(await connectionFeed(c.userId, { sessionId: ab })).toEqual([]);
+  });
+
+  it("finds what is shared at a glance and changes many at once; only your own, never letters", async () => {
+    const a = await makeUser("Hana");
+    const b = await makeUser("Sora");
+    await connect(a.userId, b.userId);
+    const ids = [];
+    for (const body of ["一", "二", "三"]) ids.push(await createMemory(a.userId, { kind: "note", body }));
+    const letter = await createMemory(a.userId, { kind: "letter_to_future", body: "未来へ", revealOn: "2099-01-01" });
+    const shared = async () => (await listMemories(a.userId, { audience: "shared" })).map((m) => m.id).sort();
+    const priv = async () => (await listMemories(a.userId, { audience: "private" })).map((m) => m.id).sort();
+    expect(await shared()).toEqual([]);
+    expect(await priv()).toEqual([...ids].sort()); // the letter isn't listed
+
+    await setMemoriesAudience(a.userId, [ids[0]!, ids[1]!], { visibility: "connections" });
+    expect(await shared()).toEqual([ids[0]!, ids[1]!].sort());
+    expect((await connectionFeed(b.userId)).map((x) => x.id).sort()).toEqual([ids[0]!, ids[1]!].sort());
+    await setMemoriesAudience(a.userId, [ids[1]!], { visibility: "circles", circles: ["family"] });
+    expect((await getMemory(a.userId, ids[1]!)).circles).toEqual(["family"]);
+    await setMemoriesAudience(a.userId, ids, { visibility: "private" });
+    expect(await shared()).toEqual([]);
+
+    // All or nothing: a letter, or someone else's record, in the batch changes none of them.
+    await expect(setMemoriesAudience(a.userId, [ids[0]!, letter], { visibility: "connections" })).rejects.toThrow();
+    const other = await createMemory(b.userId, { kind: "note", body: "Soraの" });
+    await expect(setMemoriesAudience(a.userId, [ids[0]!, other], { visibility: "connections" })).rejects.toThrow();
+    expect(await shared()).toEqual([]);
+    expect((await getMemory(b.userId, other)).visibility).toBe("private");
+    await expect(setMemoriesAudience(a.userId, [], { visibility: "private" })).rejects.toThrow();
   });
 });

@@ -192,6 +192,8 @@ export const memoryFilters = z.object({
   personId: z.preprocess((v) => (v === "" ? undefined : v), uuid.optional()),
   from: optionalDate,
   to: optionalDate,
+  /** shared: shown to anyone else; private: only you (letters, always private, are left out of both). */
+  audience: z.preprocess((v) => (v === "" ? undefined : v), z.enum(["shared", "private"]).optional()),
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).max(100_000).default(0),
 });
@@ -209,6 +211,7 @@ export async function listMemories(userId: string, filters: unknown = {}): Promi
     const conds: SQL[] = [eq(memoryEntries.userId, userId)];
     if (f.kind) conds.push(f.kind === "letter_to_future" || f.kind === "note" ? eq(memoryEntries.kind, f.kind) : sql`${f.kind} = any(${memoryEntries.labels})`);
     const onTimeline = timelineDate(today);
+    if (f.audience) conds.push(sql`${memoryEntries.kind} <> 'letter_to_future'`, f.audience === "shared" ? sql`${memoryEntries.visibility} <> 'private'` : eq(memoryEntries.visibility, "private"));
     if (f.from) conds.push(gte(onTimeline, f.from));
     if (f.to) conds.push(lte(onTimeline, f.to));
     if (f.tag) {

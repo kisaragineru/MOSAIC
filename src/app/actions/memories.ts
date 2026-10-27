@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { splitTags } from "@/lib/validation/common";
 import { requireUser } from "@/server/auth/session";
 import { createMemory, deleteMemory, editMemory, setMemoryFeeling, setMemoryLabels } from "@/server/services/memories";
-import { setMemoryAudience } from "@/server/services/memory-share";
+import { setMemoriesAudience, setMemoryAudience } from "@/server/services/memory-share";
 import { attempt, safeNext, str, withParam } from "./util";
 
 function fromForm(f: FormData) {
@@ -127,4 +127,16 @@ export async function quickFeelingAction(id: string, feeling: string): Promise<b
     revalidatePath("/home");
   }
   return r.ok;
+}
+
+/** Many records to one audience at once (from the privacy page's list). */
+export async function bulkAudienceAction(form: FormData) {
+  const uid = await requireUser();
+  const show = str(form, "show");
+  const back = `/me/privacy/records${show === "private" || show === "all" ? `?show=${show}` : ""}`;
+  const ids = form.getAll("id").filter((x): x is string => typeof x === "string" && x !== "");
+  if (!ids.length) redirect(withParam(back, "e", "choose_records"));
+  const r = await attempt("memory.bulk_audience", () => setMemoriesAudience(uid, ids, audienceFromForm(form)));
+  revalidatePath("/", "layout");
+  redirect(withParam(back, r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
 }

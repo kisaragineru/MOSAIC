@@ -56,6 +56,23 @@ export async function setMemoryAudience(userId: string, entryId: string, input: 
   });
 }
 
+/** The same audience for many records at once (the privacy page's bulk change). */
+export async function setMemoriesAudience(userId: string, entryIds: string[], input: unknown) {
+  const ids = z.array(uuid).min(1).max(200).parse(entryIds);
+  const d = audienceSchema.parse(input);
+  if (d.visibility === "circles" && d.circles.length === 0) throw invalid("choose_audience");
+  await withUser(userId, async (tx) => {
+    for (const id of ids) {
+      try {
+        await tx.execute(sql`select memory_set_audience(${id}, ${d.visibility}, ${`{${d.circles.join(",")}}`}::text[])`);
+      } catch (e) {
+        mapDbError(e);
+      }
+      await audit(tx, userId, `memory.audience_${d.visibility}`, "memory_entry", id);
+    }
+  });
+}
+
 export interface ShareTarget {
   sessionId: string;
   name: string;

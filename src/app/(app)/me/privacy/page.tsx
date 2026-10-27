@@ -61,7 +61,7 @@ export default async function PrivacyPage() {
 
       <Section id="profile" title={tp.profileTitle} help={tp.profileHelp}>
         <ul className="divide-y divide-stone-100">
-          <Row label={tp.name} value={<span className="text-sm font-medium text-stone-900">{o.profile.name}</span>} href="/settings" action={tp.change} />
+          <Row label={tp.name} value={<span className="text-sm font-medium text-stone-900">{o.profile.name}</span>} href="/me" action={tp.change} />
           <Row label={tp.photo} value={done(o.profile.hasPhoto)} href="/me/photo" action={tp.change} />
           <Row label={tp.bio} value={done(o.profile.hasBio)} href="/me#intro" action={tp.change} />
           <Row label={tp.intro2} value={done(o.profile.hasIntro)} href="/me#intro" action={tp.change} />
@@ -81,7 +81,7 @@ export default async function PrivacyPage() {
           ))}
           <li>🔒 {tp.privateOnly(o.records.private)}</li>
         </ul>
-        <Link href="/memories" className="inline-block text-sm font-semibold text-teal-700">{tp.see} →</Link>
+        <Link href="/me/privacy/records" className="inline-block text-sm font-semibold text-teal-700">{tp.bulk} →</Link>
       </Section>
 
       <Section id="answers" title={tp.answersTitle} help={tp.answersHelp}>
