@@ -5,6 +5,8 @@ import { typesById } from "@/lib/tuvi/type-view";
 import type { WorkContent } from "@/server/services/works";
 import { TypeImage } from "./tuvi-type";
 
+const HOW_ICON = ["⭐", "💬", "✏️"];
+
 /**
  * A work, read like a small book: a cover in the colours of the writer's type (their picture, the
  * story's title, the note they added), the story chapter by chapter on quiet paper, then how the
@@ -63,6 +65,19 @@ export function WorkView({ t, content, title, note, locale, children }: { t: Dic
       <section className="border-t border-stone-200/80 bg-white/70 px-6 py-8 sm:px-10" data-testid="work-backstage">
         <h2 className="text-center text-sm font-bold tracking-wide text-stone-900">{w.backstageTitle}</h2>
         <p className="mx-auto mt-3 max-w-md text-xs leading-6 text-stone-600">{w.backstageLead(content.name)}</p>
+        {/* How it was made, at a glance: three kinds of pieces, one story. */}
+        <div className="mx-auto mt-5 max-w-md" data-testid="work-how">
+          <ul className="grid grid-cols-3 gap-2">
+            {w.howParts.map((x, i) => (
+              <li key={i} className="flex flex-col items-center gap-1 rounded-2xl bg-white px-2 py-3 text-center ring-1 ring-stone-200/80">
+                <span aria-hidden className="text-xl">{HOW_ICON[i]}</span>
+                <span className="text-[11px] leading-4 text-stone-700">{x}</span>
+              </li>
+            ))}
+          </ul>
+          <p aria-hidden className="my-1 text-center text-stone-300">↓</p>
+          <p className="rounded-2xl bg-gradient-to-r from-violet-50 to-amber-50 px-3 py-2 text-center text-xs font-semibold text-violet-900 ring-1 ring-violet-100">📖 {w.howInto}</p>
+        </div>
         <div className="mt-6 space-y-5">
           {lead && (
             <div className="flex items-center gap-3">

@@ -47,11 +47,28 @@ test("hand the story over as a work: read it first, fix it, a link of their own,
   // Someone without an account reads it: the cover note, the story, how it came to be, and an invitation.
   const guest = await (await browser.newContext({ locale: "ja-JP" })).newPage();
   await guest.goto(url);
+  // Like a letter: the link's preview and the envelope say who it's from and what MOSAIC is.
+  await expect(guest).toHaveTitle("ハナさんから、物語が届きました — MOSAIC");
+  await expect(guest.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  const envelope = guest.getByTestId("envelope");
+  await expect(envelope).toContainText("ハナさんから、あなたへ");
+  await expect(envelope).toContainText("あなたに読んでほしくて");
+  await expect(envelope).toContainText("MOSAICでつくられたハナさんの物語です");
+  // Looking isn't opening: Hana hasn't been told yet.
+  await hana.goto("/home");
+  await expect(hana.getByTestId("work-opened")).toHaveCount(0);
+  await guest.getByRole("button", { name: /物語をひらく/ }).click();
   await expect(guest.getByRole("heading", { level: 1, name: "ハナの物語" })).toBeVisible();
   await expect(guest.getByTestId("work-note")).toContainText("あなたに読んでほしくて");
-  await expect(guest.getByTestId("work-backstage")).toBeVisible();
-  await expect(guest.getByRole("link", { name: "自分の物語を始める" })).toHaveAttribute("href", /\/register\?next=%2Fw%2F/);
-  await expect(guest.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  await expect(guest.getByTestId("work-how")).toContainText("MOSAICが、一冊の物語に");
+  // After reading: their own type, without signing up, beside Hana's.
+  const tryIt = guest.getByTestId("type-try");
+  await setDate(tryIt, "生年月日", "1995-03-03");
+  await tryIt.getByLabel(/生まれた時刻/).selectOption("10");
+  await tryIt.getByRole("button", { name: "タイプを見る" }).click();
+  await expect(guest.getByTestId("type-try-result")).toContainText("あなたは「");
+  await expect(guest.getByTestId("work-why")).toContainText("見せるのは、あなたが選んだ人だけ");
+  await expect(guest.getByRole("link", { name: "自分の物語を始める" })).toHaveAttribute("href", /\/register\?next=%2Fw%2F.+%3Fopen%3D1$/);
 
   // The reader signs up from the story, comes back to it, and connects in one tap.
   await guest.getByRole("link", { name: "自分の物語を始める" }).click();
@@ -65,6 +82,10 @@ test("hand the story over as a work: read it first, fix it, a link of their own,
   await guest.getByTestId("offer").getByRole("button", { name: "つながる" }).click();
   await expect(guest.getByTestId("offer-connected")).toContainText("ハナさんとつながりました");
   await expect(guest.getByRole("link", { name: "自分の物語を始める" })).toHaveAttribute("href", "/welcome");
+  // The guide's birth form starts with the date and hour they tried.
+  await guest.goto("/welcome?step=2");
+  await expect(guest.locator('input[name="solarDate"]')).toHaveValue("1995-03-03");
+  await expect(guest.locator('select[name="birthHour"]')).toHaveValue("10");
 
   // Once the reader has a chart, they're asked whether to tell Hana; they do.
   await guest.goto("/tuvi");

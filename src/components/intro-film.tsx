@@ -171,7 +171,7 @@ function Opening({ s, tx, greeting }: { s: boolean; tx: FilmText; greeting?: str
 }
 
 /** Nine pieces that come together into one small mosaic as the scene comes in. */
-function Gather({ s, size = "h-5 w-5" }: { s: boolean; size?: string }) {
+export function Gather({ s, size = "h-5 w-5" }: { s: boolean; size?: string }) {
   return (
     <div aria-hidden className="relative grid grid-cols-3 gap-1.5">
       {GATHER.map((g, i) => (

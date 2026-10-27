@@ -1,3 +1,6 @@
+import type { TuviView } from "@/server/services/tuvi";
+import { cookies } from "next/headers";
+import { TRY_COOKIE, triedBirth } from "@/server/services/tuvi-try";
 import Link from "next/link";
 import { IntroFilm } from "@/components/intro-film";
 import { finishOnboardingAction } from "@/app/actions/onboarding";
@@ -106,7 +109,7 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
           <Card>
             <p className="mb-1 text-sm font-semibold text-stone-800">⏱ {w.tuviQuick}</p>
             <p className="mb-4 text-xs leading-5 text-stone-500">{w.tuviPrivacy}</p>
-            <BirthForm t={t} p={tv.profile} needs={tv.needs} back="/welcome?step=3" simple />
+            <BirthForm t={t} p={tv.profile ?? (await triedProfile(uid))} needs={tv.needs} back="/welcome?step=3" simple />
           </Card>
         </section>
       )}
@@ -357,4 +360,19 @@ async function Finished({ uid, t, locale, answered }: { uid: string; t: Awaited<
       </div>
     </section>
   );
+}
+
+/**
+ * The date (and hour) tried after reading a work, before signing up: the form starts with them.
+ * Only a starting value; nothing is saved until the form is.
+ */
+async function triedProfile(uid: string): Promise<TuviView["profile"]> {
+  const tried = triedBirth((await cookies()).get(TRY_COOKIE)?.value);
+  if (!tried) return null;
+  const now = new Date();
+  return {
+    id: "", userId: uid, calendarInput: "solar", solarDate: tried.solarDate, lunarYear: null, lunarMonth: null, lunarDay: null, lunarLeap: false,
+    birthTime: tried.birthTime, timeKnown: !!tried.birthTime, timeZone: "Asia/Ho_Chi_Minh", placeLabel: null, sex: "unspecified",
+    lateRatHour: null, leapMonthRule: null, createdAt: now, updatedAt: now,
+  } as TuviView["profile"];
 }

@@ -209,15 +209,26 @@ export async function markStoryAsked(userId: string) {
   });
 }
 
+/** The reader opened the envelope: noted once (the writer is told), never for the writer themself. */
+export async function markWorkOpened(token: string, viewerId: string | null) {
+  if (!TOKEN.test(token)) return;
+  await as(viewerId)((tx) => tx.execute(sql`select work_mark_opened(${sha256(token)})`));
+}
+
 export type OpenedWork =
   | { status: "closed" }
   | { status: "open"; linkId: string; ownerId: string; mine: boolean; title: string; locale: string; content: WorkContent; note: string | null; expiresAt: Date };
 
-/** A work opened by its link, signed in or not. Null: no such link. */
+const TOKEN = /^[A-Za-z0-9_-]{16,64}$/;
+const as = (viewerId: string | null) => (viewerId ? <T,>(fn: Parameters<typeof withAnon<T>>[0]) => withUser(viewerId, fn) : withAnon);
+
+/**
+ * A work by its link, signed in or not (null: no such link). Looking doesn't count as opening:
+ * link previews fetch the page too. The reader opening the envelope does (markWorkOpened).
+ */
 export async function openWork(token: string, viewerId: string | null): Promise<OpenedWork | null> {
-  if (!/^[A-Za-z0-9_-]{16,64}$/.test(token)) return null;
-  const run = viewerId ? <T,>(fn: Parameters<typeof withAnon<T>>[0]) => withUser(viewerId, fn) : withAnon;
-  const r = await run((tx) => tx.execute<{ w: Record<string, unknown> | null }>(sql`select work_open(${sha256(token)}) as w`));
+  if (!TOKEN.test(token)) return null;
+  const r = await as(viewerId)((tx) => tx.execute<{ w: Record<string, unknown> | null }>(sql`select work_peek(${sha256(token)}) as w`));
   const w = r.rows[0]?.w;
   if (!w) return null;
   if (w.status !== "open") return { status: "closed" };
