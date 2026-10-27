@@ -1623,6 +1623,7 @@ export const en = {
     connectTitle: "closer to the people you love",
     connectBody: "Talk in messages, reply to each other's records, read each other's manuals, and get to know them too.",
     chat: ["I read your story. I never knew about the shelf at the back of the library.", "I never told anyone, did I.", "Someday I'd like you to read mine, too."] as string[],
+    chatInitials: ["E", "M"] as string[],
     storyEyebrow: "As your records grow",
     storyTitle: "the pieces become your story",
     sampleLabel: "Example",

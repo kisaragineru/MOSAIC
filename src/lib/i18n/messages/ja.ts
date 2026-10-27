@@ -1625,6 +1625,7 @@ export const ja: Dict = {
     connectTitle: "大切な人と、もっと近くに",
     connectBody: "メッセージで話したり、記録に返信したり。お互いの取扱説明書を読んで、相手のことも知っていけます。",
     chat: ["物語、読んだよ。図書館のいちばん奥の棚の話、はじめて知った。", "ずっと、話したことなかったね。", "わたしのも、いつか読んでほしいな。"] as string[],
+    chatInitials: ["ソ", "ミ"] as string[],
     storyEyebrow: "記録を重ねると",
     storyTitle: "かけらは、あなたの物語になる",
     sampleLabel: "例",

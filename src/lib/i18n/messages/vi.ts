@@ -1625,6 +1625,7 @@ export const vi: Dict = {
     connectTitle: "gần hơn với người thân",
     connectBody: "Nhắn tin, trả lời ghi chép của nhau, đọc bản hướng dẫn của nhau và hiểu thêm về họ.",
     chat: ["Mình đọc câu chuyện rồi. Chuyện cái kệ cuối thư viện, giờ mình mới biết.", "Mình chưa từng kể với ai nhỉ.", "Một ngày nào đó, mình cũng muốn bạn đọc chuyện của mình."] as string[],
+    chatInitials: ["L", "M"] as string[],
     storyEyebrow: "Khi ghi chép dày thêm",
     storyTitle: "các mảnh ghép thành câu chuyện của bạn",
     sampleLabel: "Ví dụ",

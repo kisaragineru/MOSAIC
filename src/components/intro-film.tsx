@@ -36,6 +36,8 @@ export interface FilmText {
   connectTitle: string;
   connectBody: string;
   chat: string[];
+  /** The two people's initials over the chat: the reader, then Mio (names common in the language). */
+  chatInitials: string[];
   storyEyebrow: string;
   storyTitle: string;
   sampleLabel: string;
@@ -361,9 +363,9 @@ export function IntroFilm({ tx, types, start, after, embedded = false, greeting 
             <p className={`text-xs font-bold tracking-[0.25em] text-teal-700 ${fade(s)}`}>{tx.connectEyebrow}</p>
             <h2 className={`mt-2 text-2xl font-black text-stone-900 [text-wrap:balance] ${fade(s, "delay-150")}`}>{tx.connectTitle}</h2>
             <div aria-hidden className={`mt-8 flex items-center gap-3 ${fade(s, "delay-300")}`}>
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-rose-200 to-amber-100 text-lg font-bold text-stone-700 ring-4 ring-white">ソ</span>
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-rose-200 to-amber-100 text-lg font-bold text-stone-700 ring-4 ring-white">{tx.chatInitials[0]}</span>
               <span className={`h-0.5 w-16 origin-left rounded-full bg-teal-300 ${IN} delay-500 ${s ? "scale-x-100" : "scale-x-0 motion-reduce:scale-x-100"}`} />
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-sky-200 to-violet-100 text-lg font-bold text-stone-700 ring-4 ring-white">ミ</span>
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-sky-200 to-violet-100 text-lg font-bold text-stone-700 ring-4 ring-white">{tx.chatInitials[1]}</span>
             </div>
             <div className="mt-6 w-full max-w-xs space-y-2">
               {tx.chat.map((line, i) => (
