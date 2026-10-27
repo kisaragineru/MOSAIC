@@ -3,8 +3,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getLocale } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
-import { extendLink, handOver, makeWork, revokeLink } from "@/server/services/works";
-import { attempt, str, withParam } from "./util";
+import { acceptOffer, answerStart, dismissOffer, extendLink, handOver, makeWork, revokeLink } from "@/server/services/works";
+import { attempt, safeNext, str, withParam } from "./util";
 
 const PAGE = "/me/work";
 
@@ -39,4 +39,30 @@ export async function revokeLinkAction(form: FormData) {
   const r = await attempt("work.revoke", () => revokeLink(uid, str(form, "linkId")));
   revalidatePath(PAGE);
   redirect(`${withParam(PAGE, r.ok ? "ok" : "e", r.ok ? "saved" : r.error)}#links`);
+}
+
+/** Take the writer's offer: connected in one tap. */
+export async function acceptOfferAction(form: FormData) {
+  const uid = await requireUser();
+  const back = safeNext(str(form, "back"), "/home");
+  const r = await attempt("work.offer_accept", () => acceptOffer(uid, str(form, "offerId")));
+  revalidatePath("/home");
+  revalidatePath("/people");
+  redirect(withParam(back, r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
+}
+
+export async function dismissOfferAction(form: FormData) {
+  const uid = await requireUser();
+  const back = safeNext(str(form, "back"), "/home");
+  const r = await attempt("work.offer_dismiss", () => dismissOffer(uid, str(form, "offerId")));
+  revalidatePath("/home");
+  redirect(r.ok ? back : withParam(back, "e", r.error));
+}
+
+/** Tell the writer I started my own story, or keep it to myself. */
+export async function answerStartAction(form: FormData) {
+  const uid = await requireUser();
+  const r = await attempt("work.offer_start", () => answerStart(uid, str(form, "offerId"), str(form, "tell") === "1"));
+  revalidatePath("/home");
+  redirect(r.ok ? "/home" : withParam("/home", "e", r.error));
 }

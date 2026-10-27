@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { extendLinkAction, handOverAction, makeWorkAction, revokeLinkAction } from "@/app/actions/works";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
@@ -10,7 +11,7 @@ import type { Locale } from "@/lib/i18n/locales";
 import { requireUser } from "@/server/auth/session";
 import { getAccount } from "@/server/services/account";
 import { appOrigin } from "@/server/services/sharing";
-import { answerChoices, draftWork, LINK_DAYS, latestWork, myLinks } from "@/server/services/works";
+import { answerChoices, draftWork, LINK_DAYS, latestWork, myLinks, myOffers } from "@/server/services/works";
 
 /**
  * Hand your story to someone close: read it as it would be, fix it as a work, then make a link of
@@ -27,6 +28,7 @@ export default async function WorkPage({ searchParams }: { searchParams: Promise
   const draft = await draftWork(uid, locale);
   const choices = draft ? await answerChoices(uid, locale) : [];
   const links = work ? await myLinks(uid) : [];
+  const received = await myOffers(uid);
   const handed = sp.link && /^[A-Za-z0-9_-]{16,64}$/.test(sp.link) ? sp.link : null;
   const input = "w-full rounded-2xl border border-stone-200 bg-white px-3.5 py-2.5 text-base focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20";
 
@@ -112,6 +114,22 @@ export default async function WorkPage({ searchParams }: { searchParams: Promise
             </div>
           </Card>
         </section>
+      )}
+
+      {received.length > 0 && (
+        <Card title={`📬 ${t.offer.receivedTitle}`}>
+          <ul className="divide-y divide-stone-100" data-testid="received">
+            {received.map((x) => (
+              <li key={x.id} className="flex items-center justify-between gap-3 py-3">
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold text-stone-900">{x.title}</span>
+                  <span className="block text-xs text-stone-500">{t.offer.fromWho(x.ownerName)} · {x.sessionId ? t.offer.stateConnected : t.offer.stateNot}</span>
+                </span>
+                <Link href={`/me/work/received/${x.id}`} className="shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-violet-800 ring-1 ring-violet-200">{t.offer.read} →</Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
       )}
 
       {!draft ? (

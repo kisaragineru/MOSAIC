@@ -15,7 +15,7 @@ import { randomToken, sha256 } from "../auth/crypto";
 import { enforceRateLimit } from "../auth/rate-limit";
 import { workLinks, works } from "../db/schema";
 import { withAnon, withUser } from "../db/tx";
-import { notFound } from "../errors";
+import { mapDbError, notFound } from "../errors";
 import { audit } from "./audit";
 import { buildManual, gatherManual } from "./manual";
 import { getManualRewrite } from "./manual-rewrite";
@@ -205,4 +205,91 @@ export async function openWork(token: string, viewerId: string | null): Promise<
     note: (w.note as string | null) ?? null,
     expiresAt: new Date(w.expires_at as string),
   };
+}
+
+// ── Offers: the reader's side of a work they were handed ─────────────────
+
+/** In a transaction as the user, with database errors turned into the app's own (not_found…). */
+async function run<T>(userId: string, fn: Parameters<typeof withUser<T>>[1]) {
+  return withUser(userId, async (tx) => {
+    try {
+      return await fn(tx);
+    } catch (e) {
+      mapDbError(e);
+    }
+  });
+}
+
+export interface Offer {
+  id: string;
+  ownerName: string;
+  title: string;
+  createdAt: Date;
+  dismissed: boolean;
+  accepted: boolean;
+  /** Our connection, while it lasts. */
+  sessionId: string | null;
+  startAnswer: "told" | "kept" | null;
+}
+
+/** I read a work I was handed (signed in, or signed up from its link): keep the writer's offer. */
+export async function recordOffer(userId: string, token: string): Promise<string | null> {
+  if (!/^[A-Za-z0-9_-]{16,64}$/.test(token)) return null;
+  const r = await run(userId, (tx) => tx.execute<{ id: string | null }>(sql`select work_offer_record(${sha256(token)}) as id`));
+  return r.rows[0]?.id ?? null;
+}
+
+export async function myOffers(userId: string): Promise<Offer[]> {
+  const r = await run(userId, (tx) =>
+    tx.execute<{ id: string; owner_name: string; title: string; created_at: string | Date; dismissed_at: string | null; accepted_at: string | null; session_id: string | null; start_answer: Offer["startAnswer"] }>(sql`select * from work_offers_mine()`),
+  );
+  return r.rows.map((x) => ({ id: x.id, ownerName: x.owner_name, title: x.title, createdAt: new Date(x.created_at), dismissed: !!x.dismissed_at, accepted: !!x.accepted_at, sessionId: x.session_id, startAnswer: x.start_answer }));
+}
+
+/** Connect with the writer in one step (nothing shown to each other yet). Returns our connection. */
+export async function acceptOffer(userId: string, offerId: string): Promise<string> {
+  const id = uuid.parse(offerId);
+  return run(userId, async (tx) => {
+    const r = await tx.execute<{ sid: string }>(sql`select work_offer_accept(${id}) as sid`);
+    await audit(tx, userId, "work.offer_accepted", "work_offer", id);
+    return r.rows[0]!.sid;
+  });
+}
+
+export async function dismissOffer(userId: string, offerId: string) {
+  const id = uuid.parse(offerId);
+  await run(userId, (tx) => tx.execute(sql`select work_offer_update(${id}, true, null)`));
+}
+
+/** Tell the writer I started my own story (or keep it to myself). */
+export async function answerStart(userId: string, offerId: string, tell: boolean) {
+  const id = uuid.parse(offerId);
+  await run(userId, (tx) => tx.execute(sql`select work_offer_update(${id}, false, ${tell ? "told" : "kept"})`));
+}
+
+/** A work I was handed, read in the app (also after its link ran out, while we're connected). */
+export async function readOffer(userId: string, offerId: string): Promise<OpenedWork | null> {
+  const id = uuid.parse(offerId);
+  const r = await run(userId, (tx) => tx.execute<{ w: Record<string, unknown> | null }>(sql`select work_offer_read(${id}) as w`));
+  const w = r.rows[0]?.w;
+  if (!w) return null;
+  if (w.status !== "open") return { status: "closed" };
+  return { status: "open", linkId: "", ownerId: "", mine: false, title: w.title as string, locale: w.locale as string, content: w.content as WorkContent, note: (w.note as string | null) ?? null, expiresAt: new Date(0) };
+}
+
+/** For the writer: who connected through a work, and who started their own story (said once). */
+export async function writerNews(userId: string): Promise<{ connected: string[]; started: string[] }> {
+  const rows = await run(userId, (tx) =>
+    tx.execute<{ recipient: string; accepted: boolean; started: boolean }>(sql`
+      select l.recipient,
+             (o.accepted_at is not null and o.accepted_seen_at is null) as accepted,
+             (o.start_answer = 'told' and o.start_seen_at is null) as started
+      from work_offers o join work_links l on l.id = o.link_id
+      where o.owner_id = ${userId}`),
+  );
+  return { connected: rows.rows.filter((x) => x.accepted).map((x) => x.recipient), started: rows.rows.filter((x) => x.started).map((x) => x.recipient) };
+}
+
+export async function markWriterNewsSeen(userId: string) {
+  await run(userId, (tx) => tx.execute(sql`select work_offer_seen()`));
 }

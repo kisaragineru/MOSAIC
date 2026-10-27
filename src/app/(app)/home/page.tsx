@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { setCardAction } from "@/app/actions/sharing";
 import { myCard } from "@/server/services/card";
-import { markOpensSeen, newOpens } from "@/server/services/works";
+import { acceptOfferAction, answerStartAction, dismissOfferAction } from "@/app/actions/works";
+import { markOpensSeen, markWriterNewsSeen, myOffers, newOpens, writerNews } from "@/server/services/works";
 import { QuickComposer } from "@/components/quick-composer";
 import { composerText } from "@/components/memory-form";
 import { myGiftBoxes } from "@/server/services/gift-boxes";
@@ -62,6 +63,13 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const lookBack = await lookBackDue(uid);
   const opens = await newOpens(uid);
   if (opens.length) await markOpensSeen(uid);
+  // Stories handed to me: the writer's offer to connect, and (once I have my own chart) whether to tell them.
+  const offers = await myOffers(uid);
+  const pendingOffer = offers.find((x) => !x.accepted && !x.dismissed);
+  const startAsk = chart ? offers.find((x) => x.startAnswer === null) : undefined;
+  // For the writer: who connected through a story, who started their own (said once).
+  const news = await writerNews(uid);
+  if (news.connected.length || news.started.length) await markWriterNewsSeen(uid);
   const inbox = await replyInbox(uid);
   const newReplies = inbox.filter((x) => x.unread > 0);
   const { previews, counts: replyTotals } = await replyPreviews(uid, recent.flatMap((d) => d.items.filter((x) => !x.entry.sealed).map((x) => x.entry.id)));
@@ -80,6 +88,42 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         resume={!account.profile.onboardedAt}
         done={{ chart: !!chart, answers: know.parts.answers >= 3, bio: know.parts.bio, record: know.parts.records > 0, connect: comparisons.some((c) => c.status === "active") }}
       />}
+      {pendingOffer && (
+        <section className="rounded-3xl bg-gradient-to-br from-violet-50 to-amber-50 p-5 shadow-sm ring-1 ring-violet-100" data-testid="offer-home">
+          <p className="font-bold text-stone-900">📖 {t.offer.homeTitle(pendingOffer.ownerName)}</p>
+          <p className="mt-1 text-sm text-stone-600">「{pendingOffer.title}」</p>
+          <p className="mt-2 text-xs leading-5 text-stone-500">{t.offer.askLead}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <form action={acceptOfferAction}>
+              <input type="hidden" name="offerId" value={pendingOffer.id} />
+              <input type="hidden" name="back" value="/home" />
+              <button type="submit" className="rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-800">{t.offer.connect}</button>
+            </form>
+            <Link href={`/me/work/received/${pendingOffer.id}`} className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-violet-800 ring-1 ring-violet-200">{t.offer.read}</Link>
+            <form action={dismissOfferAction}>
+              <input type="hidden" name="offerId" value={pendingOffer.id} />
+              <input type="hidden" name="back" value="/home" />
+              <button type="submit" className="px-2 text-sm text-stone-500 underline underline-offset-4">{t.offer.later}</button>
+            </form>
+          </div>
+        </section>
+      )}
+      {startAsk && (
+        <section className="rounded-3xl bg-white/85 p-4 shadow-sm ring-1 ring-amber-100" data-testid="offer-start">
+          <p className="font-semibold text-stone-900">🌱 {t.offer.startAsk(startAsk.ownerName)}</p>
+          <form action={answerStartAction} className="mt-3 flex flex-wrap gap-2">
+            <input type="hidden" name="offerId" value={startAsk.id} />
+            <button type="submit" name="tell" value="1" className="rounded-full bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">{t.offer.startTell}</button>
+            <button type="submit" name="tell" value="0" className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-stone-700 ring-1 ring-stone-200">{t.offer.startKeep}</button>
+          </form>
+        </section>
+      )}
+      {(news.connected.length > 0 || news.started.length > 0) && (
+        <section className="rounded-3xl bg-teal-50/80 p-4 ring-1 ring-teal-100" data-testid="writer-news">
+          {news.connected.map((w, i) => <p key={`c${i}`} className="font-semibold text-teal-950">🤝 {t.offer.newsConnected(w)}</p>)}
+          {news.started.map((w, i) => <p key={`s${i}`} className="font-semibold text-teal-950">🌱 {t.offer.newsStarted(w)}</p>)}
+        </section>
+      )}
       {/* Someone opened the story they were handed: said once. */}
       {opens.length > 0 && (
         <section className="rounded-3xl bg-gradient-to-br from-violet-50 to-amber-50 p-4 ring-1 ring-violet-100" data-testid="work-opened">

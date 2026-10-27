@@ -54,6 +54,8 @@ export async function buildExport(userId: string) {
     const myWorks = await tx.select().from(s.works).where(eq(s.works.ownerId, userId)).orderBy(asc(s.works.createdAt));
     // Who each work was handed to (the link itself is never kept, only its hash, which isn't exported).
     const myWorkLinks = (await tx.select().from(s.workLinks).where(eq(s.workLinks.ownerId, userId)).orderBy(asc(s.workLinks.createdAt))).map(({ tokenHash: _hash, ...l }) => l);
+    // Offers to connect from a story: ones I received, and ones from my stories.
+    const myWorkOffers = await tx.select().from(s.workOffers).where(or(eq(s.workOffers.recipientId, userId), eq(s.workOffers.ownerId, userId)));
     const manualShareRewrites = await tx.select().from(s.manualShareRewrites).where(eq(s.manualShareRewrites.ownerId, userId));
     // Gift boxes I write in or received, each as I may see it (see gift_box_read).
     const giftIds = (await tx.execute<{ id: string }>(sql`select id from gift_boxes_mine()`)).rows;
@@ -132,6 +134,7 @@ export async function buildExport(userId: string) {
       memoryReplies,
       works: myWorks,
       workLinks: myWorkLinks,
+      workOffers: myWorkOffers,
       manualShareRewrites,
       giftBoxes,
       tendencies: claims.map((c) => ({ ...c, evidence: evidence.filter((e) => e.claimId === c.id) })),

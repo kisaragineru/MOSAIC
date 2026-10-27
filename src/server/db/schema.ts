@@ -1426,3 +1426,39 @@ export const workLinks = pgTable(
     check("work_links_note_ck", sql`${t.note} IS NULL OR char_length(${t.note}) <= 300`),
   ],
 );
+
+/**
+ * Someone who read a work they were handed (signed in, or signed up from it): the writer's offer to
+ * connect, until they take it (one tap) or put it aside. Also whether they chose to tell the writer
+ * they have started their own story. Changed only through the work_offer_* functions.
+ */
+export const workOffers = pgTable(
+  "work_offers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    linkId: uuid("link_id")
+      .notNull()
+      .references(() => workLinks.id, { onDelete: "cascade" }),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    recipientId: uuid("recipient_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    sessionId: uuid("session_id").references(() => comparisonSessions.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    dismissedAt: timestamp("dismissed_at", { withTimezone: true }),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    acceptedSeenAt: timestamp("accepted_seen_at", { withTimezone: true }),
+    /** Asked once they have their own chart: told the writer, or kept it to themselves. */
+    startAnswer: text("start_answer"),
+    startSeenAt: timestamp("start_seen_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("work_offers_link_recipient_uq").on(t.linkId, t.recipientId),
+    index("work_offers_recipient_idx").on(t.recipientId),
+    index("work_offers_owner_idx").on(t.ownerId),
+    check("work_offers_start_ck", sql`${t.startAnswer} IS NULL OR ${t.startAnswer} in ('told','kept')`),
+    check("work_offers_distinct_ck", sql`${t.ownerId} <> ${t.recipientId}`),
+  ],
+);

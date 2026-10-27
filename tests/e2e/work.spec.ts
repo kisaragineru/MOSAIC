@@ -48,14 +48,41 @@ test("hand the story over as a work: read it first, fix it, a link of their own,
   await expect(guest.getByRole("heading", { level: 1, name: "ハナの物語" })).toBeVisible();
   await expect(guest.getByTestId("work-note")).toContainText("あなたに読んでほしくて");
   await expect(guest.getByTestId("work-backstage")).toBeVisible();
-  await expect(guest.getByRole("link", { name: "自分の物語を始める" })).toHaveAttribute("href", /\/register\?work=/);
+  await expect(guest.getByRole("link", { name: "自分の物語を始める" })).toHaveAttribute("href", /\/register\?next=%2Fw%2F/);
   await expect(guest.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+
+  // The reader signs up from the story, comes back to it, and connects in one tap.
+  await guest.getByRole("link", { name: "自分の物語を始める" }).click();
+  await guest.waitForURL(/\/register/);
+  await guest.getByLabel("なんと呼べばいいですか？").fill("ソラ");
+  await guest.getByLabel("メールアドレス").fill(`${randomUUID().slice(0, 8)}@example.test`);
+  await guest.getByLabel(/^パスワード/).fill("e2e correct horse battery");
+  await guest.getByRole("button", { name: "アカウントを作成" }).click();
+  await guest.waitForURL(/\/w\//);
+  await expect(guest.getByTestId("offer")).toContainText("ハナさんとつながりますか？");
+  await guest.getByTestId("offer").getByRole("button", { name: "つながる" }).click();
+  await expect(guest.getByTestId("offer-connected")).toContainText("ハナさんとつながりました");
+  await expect(guest.getByRole("link", { name: "自分の物語を始める" })).toHaveAttribute("href", "/welcome");
+
+  // Once the reader has a chart, they're asked whether to tell Hana; they do.
+  await guest.goto("/tuvi");
+  await guest.getByLabel(/^生年月日/).fill("1995-03-03");
+  await setBirthTime(guest, "10:00");
+  await guest.getByRole("button", { name: "保存して計算" }).click();
+  await expect(guest.getByTestId("essence")).toBeVisible();
+  await guest.goto("/home");
+  await guest.getByTestId("offer-start").getByRole("button", { name: "伝える" }).click();
+  await guest.waitForURL(/\/home/);
+  await expect(guest.getByTestId("offer-start")).toHaveCount(0);
 
   // Hana is told once that it was opened.
   await hana.goto("/home");
   await expect(hana.getByTestId("work-opened")).toContainText("母さんが、あなたの物語を開いてくれました");
+  await expect(hana.getByTestId("writer-news")).toContainText("母さんが、物語からつながってくれました");
+  await expect(hana.getByTestId("writer-news")).toContainText("母さんも、自分の物語を書き始めました");
   await hana.reload();
   await expect(hana.getByTestId("work-opened")).toHaveCount(0);
+  await expect(hana.getByTestId("writer-news")).toHaveCount(0);
   await hana.goto("/me/work");
   await expect(hana.getByTestId("work-links")).toContainText("✓ 開いてくれました");
 
@@ -63,7 +90,8 @@ test("hand the story over as a work: read it first, fix it, a link of their own,
   hana.once("dialog", (d) => d.accept());
   await hana.getByTestId("work-links").getByRole("button", { name: "取り消す" }).click();
   await hana.waitForURL(/ok=saved/);
-  await guest.reload();
+  // (even for a reader who connected: the writer took it back)
+  await guest.goto(url);
   await expect(guest.getByTestId("work-closed")).toContainText("この作品の公開は終わりました");
   await expect(guest.getByText("あなたに読んでほしくて")).toHaveCount(0);
 });
