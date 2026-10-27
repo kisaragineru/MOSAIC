@@ -8,6 +8,10 @@ export interface FilmText {
   typesEyebrow: string;
   typesTitle: string;
   typesBody: string;
+  /** The sample person's type, said over her card. */
+  typesMio: string;
+  pieceQ: string;
+  pieceA: string[];
   piecesEyebrow: string;
   piecesTitle: string;
   piecesBody: string;
@@ -16,10 +20,12 @@ export interface FilmText {
   selfBody: string;
   selfCardTitle: string;
   selfCard: string[];
+  selfQuote: string;
   recordsEyebrow: string;
   recordsTitle: string;
   recordsBody: string;
   recordItems: string[];
+  recordDates: string[];
   connectEyebrow: string;
   connectTitle: string;
   connectBody: string;
@@ -34,8 +40,10 @@ export interface FilmText {
   handTitle: string;
   handBody: string;
   handCard: string;
+  handNote: string;
   privacy: string;
   startTitle: string;
+  startNote: string;
   start: string;
   scroll: string;
 }
@@ -100,6 +108,18 @@ const GATHER = [
   { c: "bg-rose-400", from: "translate-x-24 translate-y-20 -rotate-45", d: "delay-[220ms]" },
 ];
 const RECORD_ICON = ["☕", "🍞", "🌙"];
+const CHAT_DELAY = ["delay-[700ms]", "delay-[1500ms]", "delay-[2300ms]"];
+
+/** Nine pieces that come together into one small mosaic as the scene comes in. */
+function Gather({ s, size = "h-5 w-5" }: { s: boolean; size?: string }) {
+  return (
+    <div aria-hidden className="relative grid grid-cols-3 gap-1.5">
+      {GATHER.map((g, i) => (
+        <span key={i} className={`block ${size} rounded-md ${g.c} shadow-sm transition duration-[1400ms] ease-out motion-reduce:transition-none ${g.d} ${s ? "translate-x-0 translate-y-0 rotate-0 scale-100 opacity-90" : `${g.from} opacity-0 motion-reduce:translate-x-0 motion-reduce:translate-y-0 motion-reduce:rotate-0 motion-reduce:scale-100 motion-reduce:opacity-90`}`} />
+      ))}
+    </div>
+  );
+}
 const STORY_DELAY = ["delay-[200ms]", "delay-[700ms]", "delay-[1200ms]", "delay-[1700ms]"];
 
 /**
@@ -123,11 +143,7 @@ export function IntroFilm({ tx, start, after, embedded = false, greeting }: { tx
               <div className="absolute -right-1/4 bottom-0 h-[45vmax] w-[45vmax] rounded-full bg-violet-200/40 blur-3xl motion-safe:animate-[drift_24s_ease-in-out_-5s_infinite_alternate-reverse]" />
             </div>
             {/* Scattered pieces come together into one small mosaic: the only mark on this screen. */}
-            <div aria-hidden className="relative mb-8 grid grid-cols-3 gap-1.5">
-              {GATHER.map((g, i) => (
-                <span key={i} className={`block h-5 w-5 rounded-md ${g.c} shadow-sm transition duration-[1400ms] ease-out motion-reduce:transition-none ${g.d} ${s ? "translate-x-0 translate-y-0 rotate-0 scale-100 opacity-90" : `${g.from} opacity-0 motion-reduce:translate-x-0 motion-reduce:translate-y-0 motion-reduce:rotate-0 motion-reduce:scale-100 motion-reduce:opacity-90`}`} />
-              ))}
-            </div>
+            <div className="mb-8"><Gather s={s} /></div>
             {greeting && <p className={`relative mb-8 text-sm font-semibold tracking-[0.2em] text-violet-900/80 ${fade(s, "delay-[1000ms]")}`}>{greeting}</p>}
             <p className="relative font-serif text-xl leading-[2.2] tracking-wide text-stone-800">
               {tx.open.map((line, i) => (
@@ -139,23 +155,33 @@ export function IntroFilm({ tx, start, after, embedded = false, greeting }: { tx
         )}
       </Scene>
 
-      {/* 2. A birth date, a type */}
+      {/* 2. A birth date, a type: the fourteen turn quietly behind; one steps forward, in its own light. */}
       <Scene tall={tall}>
         {(s) => (
           <>
-            <p className={`text-xs font-bold tracking-[0.25em] text-violet-700 ${fade(s)}`}>{tx.typesEyebrow}</p>
-            <h2 className={`mt-2 text-2xl font-black text-stone-900 ${fade(s, "delay-150")}`}>{tx.typesTitle}</h2>
-            <div className={`relative mt-8 w-full max-w-md overflow-hidden ${fade(s, "delay-300")}`} aria-hidden>
-              <div className="flex w-max gap-2 motion-safe:animate-[filmReel_28s_linear_infinite]">
-                {[...TYPES, ...TYPES].map((id, i) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={i} src={`/tuvi-types/${id}-sm.webp`} alt="" width={300} height={594} className="h-40 w-auto shrink-0 rounded-xl ring-1 ring-stone-200" />
-                ))}
-              </div>
-              <div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-[#fbf8f2] to-transparent" />
-              <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-[#fbf8f2] to-transparent" />
+            <div aria-hidden className="pointer-events-none absolute inset-0">
+              <div className={`absolute left-1/2 top-1/2 h-[40vmax] w-[40vmax] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-200/50 blur-3xl transition-opacity duration-[2000ms] delay-700 ${s ? "opacity-100" : "opacity-0"}`} />
             </div>
-            <p className={`mt-8 max-w-sm text-sm leading-7 text-stone-600 ${fade(s, "delay-500")}`}>{tx.typesBody}</p>
+            <p className={`relative text-xs font-bold tracking-[0.25em] text-violet-700 ${fade(s)}`}>{tx.typesEyebrow}</p>
+            <h2 className={`relative mt-2 text-2xl font-black text-stone-900 ${fade(s, "delay-150")}`}>{tx.typesTitle}</h2>
+            <div className="relative mt-12 w-full max-w-md" aria-hidden>
+              <div className={`overflow-hidden transition-opacity duration-1000 ${s ? "opacity-35" : "opacity-0"}`}>
+                <div className="flex w-max gap-2 blur-[1px] motion-safe:animate-[filmReel_40s_linear_infinite]">
+                  {[...TYPES, ...TYPES].map((id, i) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={i} src={`/tuvi-types/${id}-sm.webp`} alt="" width={300} height={594} className="h-44 w-auto shrink-0 rounded-xl" />
+                  ))}
+                </div>
+              </div>
+              <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-[#fbf8f2] to-transparent" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#fbf8f2] to-transparent" />
+              <div className={`absolute left-1/2 top-1/2 w-24 -translate-x-1/2 -translate-y-1/2 transition duration-[1200ms] ease-out delay-700 motion-reduce:transition-none ${s ? "scale-110 opacity-100" : "scale-75 opacity-0 motion-reduce:scale-110 motion-reduce:opacity-100"}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/tuvi-types/thai_am-sm.webp" alt="" width={300} height={594} className="block h-auto w-full rounded-2xl shadow-[0_0_40px_rgba(129,140,248,0.55)] ring-2 ring-white" />
+              </div>
+            </div>
+            <p className={`relative mt-14 font-serif text-base text-indigo-900 ${fade(s, "delay-[1500ms]")}`}>{tx.typesMio}</p>
+            <p className={`relative mt-4 max-w-sm text-sm leading-7 text-stone-600 ${fade(s, "delay-[1900ms]")}`}>{tx.typesBody}</p>
           </>
         )}
       </Scene>
@@ -166,9 +192,17 @@ export function IntroFilm({ tx, start, after, embedded = false, greeting }: { tx
           <>
             <p className={`text-xs font-bold tracking-[0.25em] text-teal-700 ${fade(s)}`}>{tx.piecesEyebrow}</p>
             <h2 className={`mt-2 text-2xl font-black text-stone-900 ${fade(s, "delay-150")}`}>{tx.piecesTitle}</h2>
-            <div aria-hidden className="mt-8 grid w-56 grid-cols-6 gap-1.5">
+            <div aria-hidden className={`mt-8 w-full max-w-xs rounded-2xl bg-white/90 px-4 py-4 text-left shadow-sm ring-1 ring-teal-100 ${fade(s, "delay-300")}`}>
+              <p className="text-sm font-semibold text-stone-800">{tx.pieceQ}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {tx.pieceA.map((a, i) => (
+                  <span key={i} className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-500 delay-[900ms] ${i === 0 && s ? "bg-teal-600 text-white" : "bg-stone-100 text-stone-600"}`}>{a}</span>
+                ))}
+              </div>
+            </div>
+            <div aria-hidden className="mt-6 grid w-56 grid-cols-6 gap-1.5">
               {TILE_COLOR.map((c, i) => (
-                <span key={i} className={`aspect-square rounded-md ${c} transition duration-500 ease-out motion-reduce:transition-none ${TILE_DELAY[i]} ${s ? "scale-100 opacity-100" : "scale-50 opacity-0 motion-reduce:scale-100 motion-reduce:opacity-100"}`} />
+                <span key={i} className={`aspect-square rounded-md ${c} transition duration-500 ease-out motion-reduce:transition-none ${TILE_DELAY[i]} ${s ? "scale-100 opacity-100" : "scale-50 opacity-0 motion-reduce:scale-100 motion-reduce:opacity-100"} ${i === 14 ? "ring-2 ring-white shadow-[0_0_16px_rgba(20,184,166,0.8)] motion-safe:animate-[twinkle_3s_ease-in-out_2s_infinite]" : ""}`} />
               ))}
             </div>
             <p className={`mt-8 max-w-sm text-sm leading-7 text-stone-600 ${fade(s, "delay-[1600ms]")}`}>{tx.piecesBody}</p>
@@ -191,7 +225,8 @@ export function IntroFilm({ tx, start, after, embedded = false, greeting }: { tx
                 ))}
               </ul>
             </figure>
-            <p className={`mt-8 max-w-sm text-sm leading-7 text-stone-600 ${fade(s, "delay-[1500ms]")}`}>{tx.selfBody}</p>
+            <p className={`mt-8 font-serif text-lg text-sky-900 ${fade(s, "delay-[1900ms]")}`}>{tx.selfQuote}</p>
+            <p className={`mt-4 max-w-sm text-sm leading-7 text-stone-600 ${fade(s, "delay-[2300ms]")}`}>{tx.selfBody}</p>
           </>
         )}
       </Scene>
@@ -206,6 +241,7 @@ export function IntroFilm({ tx, start, after, embedded = false, greeting }: { tx
               {tx.recordItems.map((line, i) => (
                 <li key={i} className={`relative rounded-2xl bg-white px-4 py-3 text-sm text-stone-800 shadow-sm ring-1 ring-rose-100 ${fade(s, STORY_DELAY[i])}`}>
                   <span aria-hidden className="absolute -left-[1.9rem] top-3 h-3 w-3 rounded-full bg-rose-300 ring-4 ring-[#fdf1ec]" />
+                  <span className="block text-[11px] font-semibold text-rose-400">{tx.recordDates[i]}</span>
                   <span aria-hidden className="mr-2">{RECORD_ICON[i]}</span>{line}
                 </li>
               ))}
@@ -225,7 +261,12 @@ export function IntroFilm({ tx, start, after, embedded = false, greeting }: { tx
               <span className="absolute right-4 top-3 rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold text-stone-500">{tx.sampleLabel}</span>
               <figcaption className="text-center font-serif text-sm font-bold text-stone-900">{tx.sampleName}</figcaption>
               <div className="mt-4 space-y-2 font-serif text-[15px] leading-8 text-stone-700">
-                {tx.sample.map((line, i) => <p key={i} className={fade(s, STORY_DELAY[i])}>{line}</p>)}
+                {tx.sample.map((line, i) => (
+                  <p key={i} className={fade(s, STORY_DELAY[i])}>
+                    {line}
+                    {i === tx.sample.length - 1 && <span aria-hidden className="ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 bg-stone-500 motion-safe:animate-[twinkle_1.2s_steps(2)_infinite]" />}
+                  </p>
+                ))}
               </div>
             </figure>
             <p className={`mt-8 max-w-sm whitespace-pre-line font-serif text-sm leading-7 text-stone-600 ${fade(s, "delay-[2200ms]")}`}>{tx.storyClose}</p>
@@ -246,7 +287,8 @@ export function IntroFilm({ tx, start, after, embedded = false, greeting }: { tx
               </div>
             </div>
             <p className={`mt-10 max-w-sm text-sm leading-7 text-stone-600 ${fade(s, "delay-700")}`}>{tx.handBody}</p>
-            <p className={`mt-4 max-w-sm text-xs leading-6 text-stone-500 ${fade(s, "delay-1000")}`}>{tx.privacy}</p>
+            <p className={`mt-3 max-w-sm text-xs leading-6 text-stone-500 ${fade(s, "delay-1000")}`}>{tx.handNote}</p>
+            <p className={`mt-1 max-w-sm text-xs leading-6 text-stone-500 ${fade(s, "delay-1000")}`}>{tx.privacy}</p>
           </>
         )}
       </Scene>
@@ -258,15 +300,16 @@ export function IntroFilm({ tx, start, after, embedded = false, greeting }: { tx
             <p className={`text-xs font-bold tracking-[0.25em] text-teal-700 ${fade(s)}`}>{tx.connectEyebrow}</p>
             <h2 className={`mt-2 text-2xl font-black text-stone-900 [text-wrap:balance] ${fade(s, "delay-150")}`}>{tx.connectTitle}</h2>
             <div aria-hidden className={`mt-8 flex items-center gap-3 ${fade(s, "delay-300")}`}>
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-rose-200 to-amber-100 text-lg font-bold text-stone-700 ring-4 ring-white">ミ</span>
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-rose-200 to-amber-100 text-lg font-bold text-stone-700 ring-4 ring-white">ソ</span>
               <span className={`h-0.5 w-16 origin-left rounded-full bg-teal-300 ${IN} delay-500 ${s ? "scale-x-100" : "scale-x-0 motion-reduce:scale-x-100"}`} />
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-sky-200 to-violet-100 text-lg font-bold text-stone-700 ring-4 ring-white">ソ</span>
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-sky-200 to-violet-100 text-lg font-bold text-stone-700 ring-4 ring-white">ミ</span>
             </div>
             <div className="mt-6 w-full max-w-xs space-y-2">
-              <p className={`ml-auto w-fit max-w-[85%] rounded-3xl rounded-br-md bg-teal-600 px-4 py-2 text-left text-sm text-white shadow-sm ${fade(s, "delay-700")}`}>{tx.chat[0]}</p>
-              <p className={`w-fit max-w-[85%] rounded-3xl rounded-bl-md bg-white px-4 py-2 text-left text-sm text-stone-800 shadow-sm ring-1 ring-stone-200 ${fade(s, "delay-[1200ms]")}`}>{tx.chat[1]}</p>
+              {tx.chat.map((line, i) => (
+                <p key={i} className={`w-fit max-w-[85%] rounded-3xl px-4 py-2 text-left text-sm shadow-sm ${i % 2 ? "ml-auto rounded-br-md bg-teal-600 text-white" : "rounded-bl-md bg-white text-stone-800 ring-1 ring-stone-200"} ${fade(s, CHAT_DELAY[i])}`}>{line}</p>
+              ))}
             </div>
-            <p className={`mt-8 max-w-sm text-sm leading-7 text-stone-600 ${fade(s, "delay-[1600ms]")}`}>{tx.connectBody}</p>
+            <p className={`mt-8 max-w-sm text-sm leading-7 text-stone-600 ${fade(s, "delay-[2800ms]")}`}>{tx.connectBody}</p>
           </>
         )}
       </Scene>
@@ -278,8 +321,9 @@ export function IntroFilm({ tx, start, after, embedded = false, greeting }: { tx
             <div aria-hidden className="pointer-events-none absolute inset-0">
               <div className="absolute -bottom-1/4 left-1/2 h-[50vmax] w-[50vmax] -translate-x-1/2 rounded-full bg-amber-200/50 blur-3xl" />
             </div>
-            <div className="mosaic-mark relative mb-6 h-12 w-12 rounded-xl" aria-hidden />
+            <div className="mb-8"><Gather s={s} size="h-4 w-4" /></div>
             <h2 className={`relative whitespace-pre-line font-serif text-xl font-bold leading-relaxed text-stone-900 [text-wrap:balance] ${fade(s)}`}>{tx.startTitle}</h2>
+            <p className={`relative mt-3 text-sm text-stone-600 ${fade(s, "delay-150")}`}>{tx.startNote}</p>
             <Link href={start} className={`relative mt-8 inline-block rounded-full bg-violet-700 px-8 py-3.5 font-bold text-white shadow-lg hover:bg-violet-800 ${fade(s, "delay-300")}`}>{tx.start}</Link>
             {after && <div className={`relative mt-6 ${fade(s, "delay-500")}`}>{after}</div>}
           </>
