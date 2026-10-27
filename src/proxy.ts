@@ -80,6 +80,7 @@ export function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const isDev = process.env.NODE_ENV === "development";
   const https = (process.env.APP_ORIGIN ?? "").startsWith("https://");
+  const turnstile = !!(process.env.TURNSTILE_SITE_KEY && process.env.TURNSTILE_SECRET_KEY);
   const csp = [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
@@ -88,7 +89,9 @@ export function proxy(request: NextRequest) {
     // Recorded videos play from here; a chosen video is read locally (blob:) for its first frame.
     "media-src 'self' blob:",
     "font-src 'self'",
-    "connect-src 'self'",
+    // Cloudflare Turnstile on sign-up, when its keys are set.
+    `connect-src 'self'${turnstile ? " https://challenges.cloudflare.com" : ""}`,
+    `frame-src ${turnstile ? "https://challenges.cloudflare.com" : "'none'"}`,
     // The service worker for push notifications (/sw.js).
     "worker-src 'self'",
     "manifest-src 'self'",

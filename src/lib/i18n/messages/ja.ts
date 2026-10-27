@@ -208,6 +208,7 @@ export const ja: Dict = {
     invalid_input: "入力内容を確認してください。",
     invalid_credentials: "メールアドレスまたはパスワードが正しくありません。",
     invite_required: "招待コードが入力されていないか、正しくありません。",
+    signup_refused: "うまく登録できませんでした。ページを開き直して、もう一度お試しください。",
     email_taken: "このメールアドレスのアカウントはすでにあります。",
     rate_limited: "試行回数が多すぎます。しばらく待ってからお試しください。",
     not_found: "見つかりません。",

@@ -59,6 +59,8 @@ export default defineConfig({
       TRUST_PROXY: "1",
       CLIENT_IP_HEADER: "x-e2e-client-ip",
       DEV_TOOLS: "on",
+      // Specs fill sign-up forms faster than a person could (the bot timing check is tested on its own).
+      SIGNUP_MIN_SECONDS: "0",
       VAPID_PUBLIC_KEY: vapid.pub,
       VAPID_PRIVATE_KEY: vapid.priv,
       VAPID_SUBJECT: "mailto:e2e@example.test",

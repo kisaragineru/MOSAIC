@@ -208,6 +208,7 @@ export const vi: Dict = {
     invalid_input: "Vui lòng kiểm tra lại thông tin.",
     invalid_credentials: "Email hoặc mật khẩu không đúng.",
     invite_required: "Mã mời bị thiếu hoặc không đúng.",
+    signup_refused: "Không thể hoàn tất đăng ký. Vui lòng tải lại trang và thử lại.",
     email_taken: "Email này đã có tài khoản.",
     rate_limited: "Thử quá nhiều lần. Vui lòng đợi một lúc rồi thử lại.",
     not_found: "Không tìm thấy.",

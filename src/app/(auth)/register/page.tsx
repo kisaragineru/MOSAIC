@@ -10,6 +10,9 @@ import { getT } from "@/lib/i18n/server";
 import { currentUserId } from "@/server/auth/session";
 import { invitedThrough, registrationCodeRequired } from "@/server/services/account";
 import { InviteField } from "@/components/invite-field";
+import Script from "next/script";
+import { headers } from "next/headers";
+import { formStamp, HONEYPOT, turnstileSiteKey } from "@/server/auth/human";
 import { enabledProviders } from "@/server/auth/oauth";
 import { OAuthButtons } from "@/components/oauth-buttons";
 import { trialAccount, trialReturnUser } from "@/server/services/dev-trial";
@@ -21,6 +24,8 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
   const { t, locale } = await getT();
   // Development: trying sign-up from settings, with a throwaway account filled in.
   const trial = (await trialReturnUser()) ? trialAccount(locale) : null;
+  const turnstile = trial ? null : turnstileSiteKey();
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   // Came from a story link someone gave them (and it's still open): that link is the invitation.
   const w = /^\/w\/([A-Za-z0-9_-]{16,64})/.exec(next)?.[1];
   const work = w && (await invitedThrough(`work:${w}`)) ? `work:${w}` : null;
@@ -30,6 +35,14 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
         <form action={registerAction} className="space-y-3">
           <Flash t={t} sp={sp} />
           <input type="hidden" name="next" value={next} />
+          {/* For people nothing to fill: a field only bots see, and when the form was shown. */}
+          <input type="hidden" name="shown" value={formStamp()} />
+          <div aria-hidden className="absolute -left-[9999px] h-px w-px overflow-hidden">
+            <label>
+              Website
+              <input name={HONEYPOT} tabIndex={-1} autoComplete="off" defaultValue="" />
+            </label>
+          </div>
           {trial && <Notice>{t.trial.registerNote}</Notice>}
           {!trial && (
             <InviteField
@@ -56,6 +69,12 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
               {SUPPORTED_LOCALES.map((l) => <option key={l} value={l}>{LOCALE_NAMES[l]}</option>)}
             </Select>
           </Field>
+          {turnstile && (
+            <>
+              <div className="cf-turnstile" data-sitekey={turnstile} data-language={locale} data-testid="turnstile" />
+              <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" nonce={nonce} />
+            </>
+          )}
           <Notice>{t.auth.privacyNote}</Notice>
           <Button type="submit" className="w-full">{t.auth.submitRegister}</Button>
         </form>

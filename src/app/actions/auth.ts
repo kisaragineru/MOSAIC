@@ -6,6 +6,7 @@ import { LOCALE_COOKIE } from "@/lib/i18n/server";
 import { clearSessionCookie, clientKey, currentUserId, sessionToken, setSessionCookie } from "@/server/auth/session";
 import { login, logout, register } from "@/server/services/account";
 import { actAsCompanion, endTrial, isTrialEmail, startTrial, trialAccount, trialReturnUser } from "@/server/services/dev-trial";
+import { notHuman } from "@/server/auth/human";
 import { attempt, safeNext, str, withParam } from "./util";
 
 export async function registerAction(form: FormData) {
@@ -16,6 +17,12 @@ export async function registerAction(form: FormData) {
   // A story or share link they came through stands in for the invite code (checked in register()).
   const w = /^\/w\/([A-Za-z0-9_-]{16,64})/.exec(next)?.[1];
   const invite = str(form, "invite") || (w ? `work:${w}` : "");
+  // Bots don't get in (the trial's throwaway sign-up is the admin's own).
+  const bot = trial ? null : await notHuman(form, await clientKey());
+  if (bot) {
+    console.warn(`register.refused ${bot}`);
+    redirect(withParam(`/register?next=${encodeURIComponent(next)}`, "e", "signup_refused"));
+  }
   const r = await attempt("register", async () =>
     register(
       { email, password: str(form, "password"), displayName: str(form, "displayName"), locale: str(form, "locale") || "en", inviteCode: trial ? process.env.REGISTRATION_CODE : str(form, "inviteCode"), invite },

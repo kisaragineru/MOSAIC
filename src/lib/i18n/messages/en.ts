@@ -206,6 +206,7 @@ export const en = {
     invalid_input: "Please check the form.",
     invalid_credentials: "Email or password is incorrect.",
     invite_required: "The invite code is missing or incorrect.",
+    signup_refused: "We couldn't complete sign-up. Please reload the page and try again.",
     email_taken: "An account with this email already exists.",
     rate_limited: "Too many attempts. Please wait a while and try again.",
     not_found: "Not found.",
