@@ -9,10 +9,12 @@ import { typesById } from "@/lib/tuvi/type-view";
 import { getT } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n/locales";
 import { currentUserId } from "@/server/auth/session";
-import { acceptOfferAction, dismissOfferAction } from "@/app/actions/works";
+import { acceptOfferAction, dismissOfferAction, translateWorkAction } from "@/app/actions/works";
+import { SubmitButton } from "@/components/submit-button";
+import { LOCALE_NAMES } from "@/lib/i18n/locales";
 import { dmOpenForConnectionAction } from "@/app/actions/dm";
 import { getAccount } from "@/server/services/account";
-import { myOffers, openWork, recordOffer } from "@/server/services/works";
+import { myOffers, openWork, recordOffer, translatedWork } from "@/server/services/works";
 
 // A private page: never indexed, and the link isn't passed on to other sites. Its preview (LINE,
 // messages…) says who it's from, like the outside of a letter; looking doesn't count as opening.
@@ -43,6 +45,9 @@ export default async function WorkLinkPage({ params, searchParams }: { params: P
   const offerId = viewer && work.status === "open" && !work.mine ? await recordOffer(viewer, token) : null;
   const offer = offerId ? (await myOffers(viewer!)).find((x) => x.id === offerId) ?? null : null;
   const onboarded = viewer ? !!(await getAccount(viewer)).profile.onboardedAt : false;
+  // In the reader's language: a kept translation shows unless they asked for the original.
+  const translation = work.status === "open" && !work.mine && work.locale !== locale ? await translatedWork(token, viewer, locale, false) : null;
+  const shown = translation && sp.orig !== "1" ? translation : null;
   const writerType = work.status === "open" ? typesById(work.content.types, locale)[0] : undefined;
   return (
     <main className="mx-auto min-h-dvh max-w-2xl px-3 py-6 sm:py-10">
@@ -55,7 +60,31 @@ export default async function WorkLinkPage({ params, searchParams }: { params: P
       ) : (
         <>
           <WorkEnvelope token={token} note={work.note} skip={sp.open === "1" || !!offer} text={{ from: w.envFrom(work.content.name), lead: w.envLead(work.content.name), about: w.envAbout, open: w.envOpen }}>
-          <WorkView t={t} content={work.content} title={work.title} note={work.note} locale={work.locale as Locale}>
+          {/* Written in another language: read it in yours (translated by AI, once), or the original. */}
+          {work.locale !== locale && !work.mine && (
+            <div className="mb-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-2xl bg-white/80 px-4 py-3 text-center text-xs text-stone-600 ring-1 ring-stone-200" data-testid="work-translate">
+              {shown ? (
+                <>
+                  <span>🌐 {w.translated(LOCALE_NAMES[locale])}</span>
+                  <Link href={`/w/${token}?open=1&orig=1`} className="font-semibold text-violet-800 underline underline-offset-4">{w.readOriginal(LOCALE_NAMES[work.locale as Locale])}</Link>
+                </>
+              ) : (
+                <>
+                  <span>{w.writtenIn(LOCALE_NAMES[work.locale as Locale])}</span>
+                  {translation ? (
+                    <Link href={`/w/${token}?open=1`} className="font-semibold text-violet-800 underline underline-offset-4">{w.readIn(LOCALE_NAMES[locale])}</Link>
+                  ) : (
+                    <form action={translateWorkAction}>
+                      <input type="hidden" name="token" value={token} />
+                      <SubmitButton pending={w.translating} className="min-h-8 bg-violet-700 px-4 py-1.5 text-xs hover:bg-violet-800">🌐 {w.readIn(LOCALE_NAMES[locale])}</SubmitButton>
+                    </form>
+                  )}
+                  {sp.e === "translate_failed" && <span className="w-full text-rose-700">{w.translateFailed}</span>}
+                </>
+              )}
+            </div>
+          )}
+          <WorkView t={t} content={shown?.content ?? work.content} title={shown?.title ?? work.title} note={shown ? shown.note : work.note} locale={shown ? locale : (work.locale as Locale)}>
             {!work.mine && (
               <section id="start" className="scroll-mt-4 bg-gradient-to-b from-violet-50 to-amber-50 px-6 py-10 text-center" data-testid="work-start">
                 <div className="mosaic-mark mx-auto mb-3 h-10 w-10 rounded-xl" aria-hidden />

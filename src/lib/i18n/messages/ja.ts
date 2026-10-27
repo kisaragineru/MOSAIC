@@ -1726,6 +1726,12 @@ export const ja: Dict = {
     beginOwn: "自分の物語を始める",
   },
   work: {
+    writtenIn: (lang: string) => `この物語は${lang}で書かれています。`,
+    readIn: (lang: string) => `${lang}で読む`,
+    translated: (lang: string) => `AIが${lang}に訳しました`,
+    readOriginal: (lang: string) => `原文（${lang}）で読む`,
+    translating: "訳しています…（30秒ほど）",
+    translateFailed: "いまは訳せませんでした。少し時間をおいて、もう一度お試しください。",
     shareTitle: "物語を渡すURLをつくる",
     shareLead: "知ってほしい人ができたら、いつでもここから。相手ごとに専用のURLができます。",
     shareNoWork: "まだ作品になっていません。物語を読んで、作品にするところから始めましょう。",

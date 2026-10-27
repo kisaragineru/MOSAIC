@@ -1726,6 +1726,12 @@ export const vi: Dict = {
     beginOwn: "Bắt đầu câu chuyện của bạn",
   },
   work: {
+    writtenIn: (lang: string) => `Câu chuyện này được viết bằng ${lang}.`,
+    readIn: (lang: string) => `Đọc bằng ${lang}`,
+    translated: (lang: string) => `AI đã dịch sang ${lang}`,
+    readOriginal: (lang: string) => `Đọc bản gốc (${lang})`,
+    translating: "Đang dịch… (khoảng 30 giây)",
+    translateFailed: "Hiện chưa dịch được. Vui lòng thử lại sau ít phút.",
     shareTitle: "Tạo đường dẫn để trao câu chuyện",
     shareLead: "Khi có người bạn muốn họ hiểu mình, hãy bắt đầu từ đây. Mỗi người có một đường dẫn riêng.",
     shareNoWork: "Câu chuyện chưa thành tác phẩm. Hãy đọc và tạo tác phẩm trước.",

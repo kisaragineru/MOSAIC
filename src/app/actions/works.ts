@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getLocale } from "@/lib/i18n/server";
 import { currentUserId, requireUser } from "@/server/auth/session";
-import { acceptOffer, answerStart, dismissOffer, extendLink, handOver, makeWork, markStoryAsked, markWorkOpened, revokeLink } from "@/server/services/works";
+import { acceptOffer, answerStart, dismissOffer, extendLink, handOver, makeWork, markStoryAsked, markWorkOpened, revokeLink, translatedWork } from "@/server/services/works";
 import { attempt, safeNext, str, withParam } from "./util";
 
 const PAGE = "/me/work";
@@ -78,4 +78,12 @@ export async function storyAskAction(form: FormData) {
 /** The reader opened the envelope of a work they were handed (the writer is told, once). */
 export async function openEnvelopeAction(token: string) {
   await markWorkOpened(String(token), await currentUserId());
+}
+
+/** Read a work in your own language: translated once (by AI), then kept for this link. */
+export async function translateWorkAction(form: FormData) {
+  const token = str(form, "token");
+  if (!/^[A-Za-z0-9_-]{16,64}$/.test(token)) redirect("/");
+  const done = await translatedWork(token, await currentUserId(), await getLocale(), true).catch(() => null);
+  redirect(`/w/${token}?open=1${done ? "" : "&e=translate_failed"}`);
 }

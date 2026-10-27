@@ -8,7 +8,7 @@
 import { and, desc, eq, gt, isNull, isNotNull } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
-import type { Locale } from "@/lib/i18n/locales";
+import { LOCALE_NAMES, type Locale } from "@/lib/i18n/locales";
 import type { MainStarId } from "@/lib/tuvi/stars";
 import { uuid } from "@/lib/validation/common";
 import { randomToken, sha256 } from "../auth/crypto";
@@ -16,6 +16,7 @@ import { enforceRateLimit } from "../auth/rate-limit";
 import { profiles, workLinks, works } from "../db/schema";
 import { withAnon, withUser } from "../db/tx";
 import { mapDbError, notFound } from "../errors";
+import { generateStructured } from "../ai/claude";
 import { audit } from "./audit";
 import { buildManual, gatherManual } from "./manual";
 import { getManualRewrite } from "./manual-rewrite";
@@ -336,4 +337,47 @@ export async function writerNews(userId: string): Promise<{ connected: string[];
 
 export async function markWriterNewsSeen(userId: string) {
   await run(userId, (tx) => tx.execute(sql`select work_offer_seen()`));
+}
+
+/**
+ * A work in the reader's language, translated by AI the first time it's asked for on a link and
+ * kept (so it is translated once). The story is translated in parts, side by side, to stay quick.
+ * Null: no such open link, the same language, or no translation could be made (shown untranslated).
+ */
+export async function translatedWork(token: string, viewerId: string | null, locale: Locale, make: boolean): Promise<{ title: string; content: WorkContent; note: string | null } | null> {
+  const work = await openWork(token, viewerId);
+  if (!work || work.status !== "open" || work.locale === locale) return null;
+  const h = sha256(token);
+  const got = await as(viewerId)((tx) => tx.execute<{ t: { title: string; content: WorkContent; note: string | null } | null }>(sql`select work_translation_get(${h}, ${locale}) as t`));
+  const kept = got.rows[0]?.t;
+  if (kept) return kept;
+  if (!make) return null;
+  const lang = LOCALE_NAMES[locale];
+  const system = `You translate a short personal story into ${lang} (${locale}). Keep its warmth, rhythm and meaning; write natural ${lang}, not word for word. Keep people's names as they are. Return only the translation in the given shape.`;
+  const strings = z.array(z.string());
+  const one = <S extends z.ZodType>(schema: S, input: unknown) => generateStructured({ system, user: JSON.stringify(input), schema, effort: "low", timeoutMs: 25_000, maxTokens: 6000 });
+  const c = work.content;
+  const head = z.object({ title: z.string(), subtitle: z.string(), note: z.string(), summary: strings, answers: z.array(z.object({ q: z.string(), a: z.string() })) });
+  const ep = z.object({ title: z.string(), paragraphs: strings });
+  const [h1, ...eps] = await Promise.all([
+    one(head, { title: work.title, subtitle: c.subtitle, note: work.note ?? "", summary: c.backstage.summary, answers: c.backstage.answers }),
+    ...c.episodes.map((e) => one(ep, { title: e.title, paragraphs: e.paragraphs })),
+  ]);
+  if (!h1?.ok || eps.some((x) => !x.ok)) return null;
+  const hd = h1.data as z.infer<typeof head>;
+  const content: WorkContent = {
+    ...c,
+    subtitle: hd.subtitle,
+    episodes: c.episodes.map((e, i) => ({ key: e.key, ...((eps[i] as { ok: true; data: z.infer<typeof ep> }).data) })),
+    backstage: { summary: hd.summary, answers: hd.answers.slice(0, c.backstage.answers.length) },
+  };
+  const out = { title: hd.title || work.title, content, note: work.note ? hd.note : null };
+  await as(viewerId)(async (tx) => {
+    try {
+      await tx.execute(sql`select work_translation_put(${h}, ${locale}, ${out.title}, ${JSON.stringify(out.content)}::jsonb, ${out.note})`);
+    } catch (e) {
+      mapDbError(e);
+    }
+  });
+  return out;
 }

@@ -1724,6 +1724,12 @@ export const en = {
     beginOwn: "Start your own story",
   },
   work: {
+    writtenIn: (lang: string) => `This story was written in ${lang}.`,
+    readIn: (lang: string) => `Read it in ${lang}`,
+    translated: (lang: string) => `Translated into ${lang} by AI`,
+    readOriginal: (lang: string) => `Read the original (${lang})`,
+    translating: "Translating… (about 30 seconds)",
+    translateFailed: "It couldn't be translated just now. Please try again in a little while.",
     shareTitle: "Make a link to hand over your story",
     shareLead: "Whenever there's someone you'd like to know you, start here. Each person gets a link of their own.",
     shareNoWork: "It isn't a work yet. Read your story and make it one first.",

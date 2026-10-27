@@ -442,6 +442,13 @@
       "when": 1793095791669,
       "tag": "0062_admin_stats",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1793096124432,
+      "tag": "0063_work_translations",
+      "breakpoints": true
     }
   ]
 }
