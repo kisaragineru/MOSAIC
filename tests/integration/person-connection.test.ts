@@ -110,6 +110,8 @@ describe("bio between connected people", () => {
     const pool = new Pool({ connectionString: TEST_MIGRATION_DATABASE_URL });
     try {
       await pool.query("update comparison_consents set consent_text_version = 'consent-2026-10' where session_id = $1", [sessionId]);
+      // An account from before the calling card (not decided): the old consent rule still applies.
+      await pool.query("update profiles set card_items = null where user_id = $1", [a.userId]);
     } finally {
       await pool.end();
     }
