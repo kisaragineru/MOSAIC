@@ -25,7 +25,7 @@ export default async function QuestionPage({ params, searchParams }: { params: P
       <Card>
         {r.latest?.status === "answered" && (
           <p className="mb-2 text-xs text-stone-500">
-            {t.discover.lastAnswer(answerLabel(r.question.options, r.latest.answer as Answer, locale), r.latest.answeredAt.toISOString().slice(0, 10))}
+            {t.discover.lastAnswer(answerLabel(r.question, r.latest.answer as Answer, locale), r.latest.answeredAt.toISOString().slice(0, 10))}
           </p>
         )}
         <QuestionForm q={r.question} t={t} locale={locale} back={`/discover/q/${encodeURIComponent(r.question.id)}`} />

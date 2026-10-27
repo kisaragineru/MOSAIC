@@ -1,3 +1,4 @@
+import { scaleWords } from "@/lib/discovery/format";
 import { answerAction, skipAction } from "@/app/actions/discovery";
 import { SubmitButton } from "./submit-button";
 import { AXIS_LABEL, CHAPTER_INFO, chapterOf } from "@/content/axes";
@@ -57,19 +58,17 @@ export function QuestionForm({ q, t, locale, back, allowSkip = true }: { q: Ques
           </>
         )}
         {q.format === "scale" && q.scale && (
-          <div>
-            <div className="flex justify-between gap-1.5">
-              {Array.from({ length: q.scale.max - q.scale.min + 1 }, (_, i) => q.scale!.min + i).map((v) => (
-                <label key={v} className={`${optionCls} flex-1 flex-col justify-center px-0`}>
-                  <input type="radio" name="scale" value={v} required className="accent-teal-700" />
-                  <span className="text-sm font-semibold">{v}</span>
-                </label>
-              ))}
-            </div>
-            <div className="mt-1 flex justify-between gap-4 text-xs text-stone-500">
-              <span>{q.scale.minLabel[locale]}</span>
-              <span className="text-right">{q.scale.maxLabel[locale]}</span>
-            </div>
+          // Five words, from one end to the other (stored as 1–5).
+          <div className="space-y-2" data-testid="scale-words">
+            {scaleWords(q.scale).map((w, i) => (
+              <label key={i} className={optionCls}>
+                <input type="radio" name="scale" value={q.scale!.min + i} required className="accent-teal-700" />
+                <span className="flex items-center gap-2">
+                  <span aria-hidden className="flex gap-0.5">{[1, 2, 3, 4, 5].map((n) => <span key={n} className={`h-1.5 w-1.5 rounded-full ${n <= i + 1 ? "bg-teal-600" : "bg-stone-200"}`} />)}</span>
+                  {w[locale]}
+                </span>
+              </label>
+            ))}
           </div>
         )}
         {q.format === "short" && <Input name="text" required maxLength={280} aria-label={q.prompt[locale]} />}

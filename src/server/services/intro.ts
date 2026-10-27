@@ -75,7 +75,7 @@ export async function introFacts(userId: string): Promise<IntroFacts> {
       const r = h.responses.find((x) => x.status === "answered" && x.answer);
       if (!r) return [];
       const q = meta.get(h.question.id);
-      return [{ questionId: h.question.id, label: each((l) => answerLabel(q?.options ?? null, r.answer as Answer, l)) }];
+      return [{ questionId: h.question.id, label: each((l) => answerLabel(q, r.answer as Answer, l)) }];
     });
   const { favourites, chart } = await withUser(userId, async (tx) => {
     const items = await tx

@@ -133,7 +133,7 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
                       <li key={a.questionId} className="rounded-xl border border-stone-200 p-2">
                         <p className="text-stone-800">{q ? q.prompt[locale] : a.questionId}</p>
                         <p className="text-[11px] text-stone-600">
-                          {p.displayName}: <b className="text-stone-900">{answerLabel(q?.options ?? null, a.answer, locale)}</b> · {t.preview.phoneTheirAnswer}
+                          {p.displayName}: <b className="text-stone-900">{answerLabel(q, a.answer, locale)}</b> · {t.preview.phoneTheirAnswer}
                         </p>
                       </li>
                     );
@@ -235,7 +235,7 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
                       <li key={a.questionId} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${a.shared ? "border-teal-200 bg-teal-50/50" : "border-stone-200 bg-white/60"}`}>
                         <div className="min-w-0 flex-1">
                           <p className="text-stone-600">{q ? q.prompt[locale] : a.questionId}</p>
-                          <p className="font-medium text-stone-900">{answerLabel(q?.options ?? null, a.answer, locale)}</p>
+                          <p className="font-medium text-stone-900">{answerLabel(q, a.answer, locale)}</p>
                         </div>
                         <form action={privacyAction} className="shrink-0">
                           <input type="hidden" name="responseId" value={a.responseId} />

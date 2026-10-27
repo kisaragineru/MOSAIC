@@ -130,7 +130,7 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
   const other = (await listComparisons(uid)).find((c) => c.id === v.id)?.otherId ?? null;
   const pics = await avatarUrls(uid, [uid, other]);
   // Conversation starters: from what the two of you share, each one action away.
-  const label = (q: string, a: unknown) => answerLabel((QMETA.get(q) ?? pref?.questions[q])?.options ?? null, a as never, locale);
+  const label = (q: string, a: unknown) => answerLabel(QMETA.get(q) ?? pref?.questions[q], a as never, locale);
   const prompt = (q: string) => tr((QMETA.get(q) ?? pref?.questions[q])?.prompt);
   const same = items.find((i) => i.kind === "same");
   const diff = items.find((i) => i.kind === "different");
@@ -332,11 +332,11 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                           <dl className="grid grid-cols-2 divide-x divide-stone-100 border-t border-stone-100 bg-stone-50/60 text-sm">
                             <div className="px-3 py-2">
                               <dt className="mb-0.5 flex items-center gap-1 text-[11px] font-semibold text-teal-800"><span aria-hidden className="flex h-4 w-4 items-center justify-center rounded-full bg-teal-100 text-[9px]">{initial(myName)}</span>{cc.you}</dt>
-                              <dd className="leading-5 text-stone-900">{answerLabel(q?.options ?? null, i.mine, locale)}</dd>
+                              <dd className="leading-5 text-stone-900">{answerLabel(q, i.mine, locale)}</dd>
                             </div>
                             <div className="px-3 py-2">
                               <dt className="mb-0.5 flex items-center gap-1 text-[11px] font-semibold text-rose-800"><span aria-hidden className="flex h-4 w-4 items-center justify-center rounded-full bg-rose-100 text-[9px]">{initial(v.otherName)}</span>{v.otherName}</dt>
-                              <dd className="leading-5 text-stone-900">{answerLabel(q?.options ?? null, i.theirs, locale)}</dd>
+                              <dd className="leading-5 text-stone-900">{answerLabel(q, i.theirs, locale)}</dd>
                             </div>
                           </dl>
                         </li>

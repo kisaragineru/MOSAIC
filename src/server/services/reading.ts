@@ -91,7 +91,7 @@ export function composeReading(claims: ReadingClaim[], answered: Set<string>, an
     const m = MANUAL[c.key]!;
     const quotes = c.evidence.slice(0, 3).map((e) => {
       const q = QMETA.get(e.questionId);
-      return L(R.quote(q?.prompt[locale] ?? e.questionId, answerLabel(q?.options ?? null, e.answer, locale)));
+      return L(R.quote(q?.prompt[locale] ?? e.questionId, answerLabel(q, e.answer, locale)));
     });
     const base = { key: c.key, claimId: c.id, chapter: AXIS_CHAPTER[c.key], name: L(AXIS_LABEL[c.key].name), quotes, nextQuestionId: nextFor(c.key) };
     if (c.state === "mixed") return { ...base, pole: `${L(AXIS_LABEL[c.key].pos)} / ${L(AXIS_LABEL[c.key].neg)}`, kind: "mixed", lead: null, body: L(m.mixed), need: 0 };

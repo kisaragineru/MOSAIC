@@ -114,7 +114,7 @@ export async function monthReport(userId: string, m: Month, locale: Locale, now 
 
   const label = (qid: string, a: Answer | null) => {
     const q = QMETA.get(qid);
-    return { prompt: q?.prompt[locale] ?? qid, answer: answerLabel(q?.options ?? null, a, locale) };
+    return { prompt: q?.prompt[locale] ?? qid, answer: answerLabel(q, a, locale) };
   };
   const answeredIds = new Set(answers.map((a) => a.question_id));
   const deepened = (await listTendencies(userId))
@@ -157,7 +157,7 @@ function answeredIn(rows: Awaited<ReturnType<typeof responsesIn>>, locale: Local
   const byQ = new Map<string, AnsweredInMonth>();
   for (const r of rows) {
     const q = QMETA.get(r.question_id);
-    const text = (a: Answer | null) => answerLabel(q?.options ?? null, a, locale);
+    const text = (a: Answer | null) => answerLabel(q, a, locale);
     const firstInMonth = byQ.get(r.question_id)?.how === "first" || r.first;
     const before = r.before && JSON.stringify(r.before) !== JSON.stringify(r.answer) ? text(r.before) : null;
     byQ.set(r.question_id, {

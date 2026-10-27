@@ -30,8 +30,8 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Pro
         changed = {
           id: sp.changed,
           prompt: h.question.prompt[locale],
-          before: answerLabel(h.question.options, prev?.answer ?? null, locale),
-          after: answerLabel(h.question.options, h.responses[i]!.answer, locale),
+          before: answerLabel(h.question, prev?.answer ?? null, locale),
+          after: answerLabel(h.question, h.responses[i]!.answer, locale),
         };
       }
     }
@@ -74,14 +74,14 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Pro
             </span>
             <p className="text-sm text-stone-500">Q. {s.question.prompt[locale]}</p>
             {s.latest?.status !== "skipped" && (
-              <p className="emoji-color text-base font-semibold text-stone-900">A. {answerLabel(s.question.options, s.latest?.answer ?? null, locale)}</p>
+              <p className="emoji-color text-base font-semibold text-stone-900">A. {answerLabel(s.question, s.latest?.answer ?? null, locale)}</p>
             )}
           </section>
         ) : (
           <Card key={s.slot} className="ring-2 ring-teal-200">
             <span className="mb-2 inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold text-amber-900">❓ {t.discover.toAnswer}</span>
             {s.latest?.status === "answered" && (
-              <p className="mb-2 text-xs text-stone-500">{t.discover.lastAnswer(answerLabel(s.question.options, s.latest.answer, locale), s.latest.answeredAt.toISOString().slice(0, 10))}</p>
+              <p className="mb-2 text-xs text-stone-500">{t.discover.lastAnswer(answerLabel(s.question, s.latest.answer, locale), s.latest.answeredAt.toISOString().slice(0, 10))}</p>
             )}
             <QuestionForm q={s.question} t={t} locale={locale} back="/discover" />
           </Card>

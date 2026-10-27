@@ -3,7 +3,7 @@ import { deleteResponseAction, privacyAction } from "@/app/actions/discovery";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
 import { Button, Empty, Page, Pill, SegmentedTabs } from "@/components/ui";
-import { answerLabel } from "@/lib/discovery/format";
+import { answerLabel, scaleWord } from "@/lib/discovery/format";
 import type { Answer } from "@/lib/discovery/answers";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
@@ -38,10 +38,10 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
       return (
         <span className="flex items-center gap-2">
           <span aria-hidden className="flex gap-1">{[1, 2, 3, 4, 5].map((n) => <span key={n} className={`h-2 w-2 rounded-full ${n <= a.scale ? "bg-teal-600" : "bg-stone-200"}`} />)}</span>
-          {h.scale(a.scale)}
+          {scaleWord(x.question.scale, a.scale, locale)}
         </span>
       );
-    return <span className="emoji-color">{answerLabel(x.question.options, a, locale)}</span>;
+    return <span className="emoji-color">{answerLabel(x.question, a, locale)}</span>;
   };
   return (
     <Page title={t.discover.title} actions={<AnswerPrivacyLink t={t} />}>
@@ -106,10 +106,10 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
                           <span aria-hidden className="flex gap-1">
                             {[1, 2, 3, 4, 5].map((n) => <span key={n} className={`h-2.5 w-2.5 rounded-full ${n <= answer.scale ? "bg-teal-600" : "bg-stone-200"}`} />)}
                           </span>
-                          <span>{h.scale(answer.scale)}</span>
+                          <span>{scaleWord(x.question.scale, answer.scale, locale)}</span>
                         </p>
                       ) : (
-                        <p className={`mt-1.5 text-stone-900 ${latest ? "text-base font-medium" : "text-sm"}`}>{answerLabel(x.question.options, answer, locale)}</p>
+                        <p className={`mt-1.5 text-stone-900 ${latest ? "text-base font-medium" : "text-sm"}`}>{answerLabel(x.question, answer, locale)}</p>
                       )}
                       {r.note && <p className="emoji-color mt-1.5 whitespace-pre-line rounded-xl bg-white/70 px-2 py-1 text-xs text-stone-600">🔒 {r.note}</p>}
                       {!latest && <p className="sr-only">{h.earlier}</p>}

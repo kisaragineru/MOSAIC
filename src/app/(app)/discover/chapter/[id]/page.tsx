@@ -123,7 +123,7 @@ export default async function ChapterPage({ params, searchParams }: { params: Pr
         <Card key={next.question.id} className="animate-[fadeUp_.35s_ease-out] motion-reduce:animate-none">
           {followUp && <p className="mb-2 inline-block rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-violet-900">↳ {d.followUpBadge}</p>}
           {next.latest?.status === "answered" && (
-            <p className="mb-2 text-xs text-stone-500">{d.lastAnswer(answerLabel(next.question.options, next.latest.answer as Answer, locale), next.latest.answeredAt.toISOString().slice(0, 10))}</p>
+            <p className="mb-2 text-xs text-stone-500">{d.lastAnswer(answerLabel(next.question, next.latest.answer as Answer, locale), next.latest.answeredAt.toISOString().slice(0, 10))}</p>
           )}
           <QuestionForm q={next.question} t={t} locale={locale} back={back} />
         </Card>

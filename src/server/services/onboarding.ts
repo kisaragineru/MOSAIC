@@ -69,7 +69,7 @@ export async function seedPieces(userId: string, locale: Locale): Promise<SeedPi
     );
     if (r?.status !== "answered" || !r.answer) continue;
     const chapter = chapterOf(q);
-    out.push({ chapter, chapterTitle: CHAPTER_INFO[chapter].title[locale], icon: CHAPTER_INFO[chapter].icon, prompt: q.prompt[locale], answer: answerLabel(q.options ?? null, r.answer as Answer, locale) });
+    out.push({ chapter, chapterTitle: CHAPTER_INFO[chapter].title[locale], icon: CHAPTER_INFO[chapter].icon, prompt: q.prompt[locale], answer: answerLabel(q, r.answer as Answer, locale) });
   }
   return out;
 }

@@ -512,14 +512,14 @@ export async function gatherManual(userId: string, locale: Locale): Promise<Manu
       prompt: q.prompt,
       chapter: chapterOf({ category: q.category as never, signals: q.signals ?? undefined }),
       category: q.category,
-      label: allLocales((l) => answerLabel(q.options, latest.answer as Answer, l)),
+      label: allLocales((l) => answerLabel(q, latest.answer as Answer, l)),
       values: (() => {
         const a = latest.answer as Answer;
         return "choice" in a ? [a.choice] : "choices" in a ? a.choices : [];
       })(),
       isText: q.format === "short" || q.format === "free",
       answeredAt: day(latest.answeredAt),
-      changedFrom: prev && JSON.stringify(prev.answer) !== JSON.stringify(latest.answer) ? allLocales((l) => answerLabel(q.options, prev.answer as Answer, l)) : null,
+      changedFrom: prev && JSON.stringify(prev.answer) !== JSON.stringify(latest.answer) ? allLocales((l) => answerLabel(q, prev.answer as Answer, l)) : null,
     });
   }
 

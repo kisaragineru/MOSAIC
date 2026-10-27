@@ -99,7 +99,7 @@ export function composeSharedManual(d: SharedManualData, locale: Locale): Shared
     .filter((l) => LIKES.has(l.question_id))
     .map((l) => {
       const q = QMETA.get(l.question_id);
-      return { k: q ? q.prompt[locale] : l.question_id, v: answerLabel(q?.options ?? null, l.answer, locale) };
+      return { k: q ? q.prompt[locale] : l.question_id, v: answerLabel(q, l.answer, locale) };
     });
   // A calling card that shows only some parts: the summary and/or the likes, no chapters.
   const part = (x: "summary" | "likes") => !d.parts || d.parts.includes(x);
