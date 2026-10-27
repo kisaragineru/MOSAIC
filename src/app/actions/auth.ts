@@ -13,9 +13,12 @@ export async function registerAction(form: FormData) {
   // Trying sign-up from settings (development): always a throwaway address, no invite code needed.
   const trial = !!(await trialReturnUser());
   const email = trial && !isTrialEmail(str(form, "email")) ? trialAccount().email : str(form, "email");
+  // A story or share link they came through stands in for the invite code (checked in register()).
+  const w = /^\/w\/([A-Za-z0-9_-]{16,64})/.exec(next)?.[1];
+  const invite = str(form, "invite") || (w ? `work:${w}` : "");
   const r = await attempt("register", async () =>
     register(
-      { email, password: str(form, "password"), displayName: str(form, "displayName"), locale: str(form, "locale") || "en", inviteCode: trial ? process.env.REGISTRATION_CODE : str(form, "inviteCode") },
+      { email, password: str(form, "password"), displayName: str(form, "displayName"), locale: str(form, "locale") || "en", inviteCode: trial ? process.env.REGISTRATION_CODE : str(form, "inviteCode"), invite },
       await clientKey(),
     ),
   );

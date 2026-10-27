@@ -17,7 +17,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ provider: s
   const jar = await cookies();
   const raw = jar.get(OAUTH_COOKIE)?.value;
   jar.delete({ name: OAUTH_COOKIE, path: "/api/auth" });
-  let saved: { p?: string; s?: string; v?: string; n?: string; i?: string; f?: string } = {};
+  let saved: { p?: string; s?: string; v?: string; n?: string; i?: string; w?: string; f?: string } = {};
   try {
     saved = raw ? JSON.parse(raw) : {};
   } catch {
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ provider: s
   if (!isProvider(provider) || saved.p !== provider || !saved.s || !state || state !== saved.s || !code || !saved.v) return back("oauth_failed");
   try {
     const profile = await fetchProfile(provider, code, saved.v, url.origin);
-    const r = await signInWithIdentity(profile, { inviteCode: saved.i, locale: await getLocale(), clientKey: await clientKey() });
+    const r = await signInWithIdentity(profile, { inviteCode: saved.i, invite: saved.w, locale: await getLocale(), clientKey: await clientKey() });
     await setSessionCookie(r.session);
     // A new account starts with the first-run guide, unless it came from somewhere (e.g. a QR link).
     return NextResponse.redirect(new URL(r.created && next === "/home" ? "/welcome" : next, url.origin), 303);

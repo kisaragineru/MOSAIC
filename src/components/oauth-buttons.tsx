@@ -15,7 +15,9 @@ export function OAuthButtons({ providers, next, from, labels }: { providers: ("g
       invite.focus();
       return;
     }
-    if (invite) e.currentTarget.href = `${href(p)}&invite=${encodeURIComponent(invite.value.trim())}`;
+    // Came through a story or share link: that link is the invitation.
+    const via = document.querySelector<HTMLInputElement>('input[name="invite"]')?.value;
+    e.currentTarget.href = `${href(p)}${invite ? `&invite=${encodeURIComponent(invite.value.trim())}` : ""}${via ? `&via=${encodeURIComponent(via)}` : ""}`;
   };
   const href = (p: string) => `/api/auth/${p}/start?from=${from}&next=${encodeURIComponent(next)}`;
   return (

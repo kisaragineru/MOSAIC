@@ -166,6 +166,7 @@ export const vi: Dict = {
     haveAccount: "Đã có tài khoản? Đăng nhập",
     inviteCode: "Mã mời",
     inviteHint: "Trang thử nghiệm này chỉ dành cho người được mời. Hãy hỏi người đã chia sẻ trang.",
+    invited: "Bạn đến từ đường dẫn mà ai đó đã gửi, nên không cần mã mời.",
     noAccount: "Lần đầu đến đây? Tạo tài khoản",
     privacyNote:
       "Mọi ghi chép mặc định là riêng tư. Không có gì được chia sẻ trừ khi bạn tự tạo liên kết chia sẻ và cả hai người cùng đồng ý.",

@@ -16,7 +16,8 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ provider: s
   const a = authorizationUrl(provider, url.origin);
   if (!a) return back("oauth_unavailable");
   const invite = (url.searchParams.get("invite") ?? "").slice(0, 200);
-  (await cookies()).set(OAUTH_COOKIE, JSON.stringify({ p: provider, s: a.state, v: a.verifier, n: next, i: invite, f: from }), {
+  const via = (url.searchParams.get("via") ?? "").slice(0, 200);
+  (await cookies()).set(OAUTH_COOKIE, JSON.stringify({ p: provider, s: a.state, v: a.verifier, n: next, i: invite, w: via, f: from }), {
     httpOnly: true,
     secure: url.protocol === "https:",
     // "lax" so the cookie comes back on the provider's top-level redirect to the callback.

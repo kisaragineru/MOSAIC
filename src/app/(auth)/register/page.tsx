@@ -8,7 +8,8 @@ import { Button, Card, Field, Input, Notice, Select } from "@/components/ui";
 import { LOCALE_NAMES, SUPPORTED_LOCALES } from "@/lib/i18n/locales";
 import { getT } from "@/lib/i18n/server";
 import { currentUserId } from "@/server/auth/session";
-import { registrationCodeRequired } from "@/server/services/account";
+import { invitedThrough, registrationCodeRequired } from "@/server/services/account";
+import { InviteField } from "@/components/invite-field";
 import { enabledProviders } from "@/server/auth/oauth";
 import { OAuthButtons } from "@/components/oauth-buttons";
 import { trialAccount, trialReturnUser } from "@/server/services/dev-trial";
@@ -20,6 +21,9 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
   const { t, locale } = await getT();
   // Development: trying sign-up from settings, with a throwaway account filled in.
   const trial = (await trialReturnUser()) ? trialAccount(locale) : null;
+  // Came from a story link someone gave them (and it's still open): that link is the invitation.
+  const w = /^\/w\/([A-Za-z0-9_-]{16,64})/.exec(next)?.[1];
+  const work = w && (await invitedThrough(`work:${w}`)) ? `work:${w}` : null;
   return (
     <AuthShell t={t} locale={locale} back={`/register?next=${encodeURIComponent(next)}`} trial={!!trial}>
       <Card title={t.auth.registerTitle}>
@@ -27,10 +31,14 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
           <Flash t={t} sp={sp} />
           <input type="hidden" name="next" value={next} />
           {trial && <Notice>{t.trial.registerNote}</Notice>}
-          {registrationCodeRequired() && !trial && (
-            <Field label={t.auth.inviteCode} hint={t.auth.inviteHint}>
-              <Input name="inviteCode" autoComplete="off" required maxLength={200} />
-            </Field>
+          {!trial && (
+            <InviteField
+              work={work}
+              codeRequired={registrationCodeRequired()}
+              fromShare={next === "/s"}
+              forceCode={sp.e === "invite_required"}
+              text={{ label: t.auth.inviteCode, hint: t.auth.inviteHint, invited: t.auth.invited }}
+            />
           )}
           {/* Google / Facebook first: the quickest way in. The invite code above applies to them too. */}
           <OAuthButtons providers={trial ? [] : enabledProviders()} next={next} from="register" labels={{ google: t.auth.continueGoogle, facebook: t.auth.continueFacebook, or: t.auth.orEmail }} />

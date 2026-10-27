@@ -20,7 +20,25 @@ export const registerSchema = z.object({
   displayName: z.string().trim().min(1).max(80),
   locale: z.enum(SUPPORTED_LOCALES).default("en"),
   inviteCode: z.string().max(200).optional(),
+  /** Arrived through a story or share link ("work:<token>" / "share:<token>"): no code needed. */
+  invite: z.string().max(200).optional(),
 });
+
+/** "work:<token>" / "share:<token>": a story or share link someone was given, still open. */
+export async function invitedThrough(invite: string | undefined): Promise<boolean> {
+  const m = /^(work|share):([A-Za-z0-9_-]{16,100})$/.exec(invite ?? "");
+  if (!m) return false;
+  const r = await withAnon((tx) => tx.execute<{ ok: boolean }>(sql`select invite_valid(${m[1]}, ${sha256(m[2]!)}) as ok`));
+  return r.rows[0]?.ok === true;
+}
+
+/** Sign-up needs the code (when REGISTRATION_CODE is set), unless they came through a link someone gave them. */
+async function mayRegister(code: string | undefined, invite: string | undefined): Promise<boolean> {
+  const expected = process.env.REGISTRATION_CODE;
+  // Compare digests so the comparison is constant-time regardless of input length.
+  if (!expected || safeEqual(sha256(code?.trim() ?? ""), sha256(expected))) return true;
+  return invitedThrough(invite);
+}
 
 /** When REGISTRATION_CODE is set (e.g. a public test deployment), sign-up requires that code. */
 export function registrationCodeRequired(): boolean {
@@ -54,11 +72,7 @@ export async function issueSession(userId: string): Promise<NewSession> {
 export async function register(input: unknown, clientKey: string | null): Promise<NewSession> {
   const data = registerSchema.parse(input);
   await enforceRateLimit("register", clientKey ?? "unknown-client");
-  const expected = process.env.REGISTRATION_CODE;
-  // Compare digests so the comparison is constant-time regardless of input length.
-  if (expected && !safeEqual(sha256(data.inviteCode?.trim() ?? ""), sha256(expected))) {
-    throw new AppError("invite_required", 403);
-  }
+  if (!(await mayRegister(data.inviteCode, data.invite))) throw new AppError("invite_required", 403);
   const taken = await withAnon(async (tx) => {
     const r = await tx.execute<{ taken: boolean }>(sql`select auth_email_taken(${data.email}) as taken`);
     return r.rows[0]?.taken === true;
@@ -114,7 +128,7 @@ export async function login(input: unknown, clientKey: string | null): Promise<N
  */
 export async function signInWithIdentity(
   p: OAuthProfile,
-  opts: { inviteCode?: string; locale: (typeof SUPPORTED_LOCALES)[number]; clientKey: string | null },
+  opts: { inviteCode?: string; invite?: string; locale: (typeof SUPPORTED_LOCALES)[number]; clientKey: string | null },
 ): Promise<{ session: NewSession; created: boolean }> {
   if (opts.clientKey) await enforceRateLimit("login", opts.clientKey);
   const known = await withAnon(async (tx) => {
@@ -146,8 +160,7 @@ export async function signInWithIdentity(
     }
   }
   await enforceRateLimit("register", opts.clientKey ?? "unknown-client");
-  const expected = process.env.REGISTRATION_CODE;
-  if (expected && !safeEqual(sha256(opts.inviteCode?.trim() ?? ""), sha256(expected))) throw new AppError("invite_required", 403);
+  if (!(await mayRegister(opts.inviteCode, opts.invite))) throw new AppError("invite_required", 403);
   const id = randomUUID();
   // Without an address from the provider, a placeholder that can never receive mail (.invalid).
   const userEmail = address ?? `${p.provider}-${p.subject}@users.mosaic.invalid`;

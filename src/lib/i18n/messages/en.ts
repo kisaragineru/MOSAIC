@@ -164,6 +164,7 @@ export const en = {
     haveAccount: "Already have an account? Sign in",
     inviteCode: "Invite code",
     inviteHint: "This test site is invite-only. Ask the person who shared it.",
+    invited: "You came through a link someone gave you, so no invite code is needed.",
     noAccount: "New here? Create an account",
     privacyNote:
       "Your records are private by default. Nothing is shared with anyone unless you explicitly create a share link and both people consent.",
