@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { confirm } from "./confirm";
+import { setDate } from "./date";
 
 async function user(browser: Browser, name: string) {
   const ctx = await browser.newContext({ locale: "ja-JP", timezoneId: "Asia/Tokyo", viewport: { width: 412, height: 860 }, extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.6.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
@@ -60,7 +62,7 @@ test("records on a timeline, and a record shared with a connection", async ({ br
   await expect(hana.getByLabel("手紙を開く日")).toBeVisible();
   await expect(hana.getByRole("radio", { name: /つながっている全員/ })).toHaveCount(0);
   await hana.locator('textarea[name="body"]').fill("5年後の私へ。元気にしてる？");
-  await hana.getByLabel("手紙を開く日").fill("2031-01-01");
+  await setDate(hana, "手紙を開く日", "2031-01-01");
   await hana.getByRole("button", { name: "手紙に封をする" }).click();
   await hana.waitForURL(/\/memories\/[0-9a-f-]+\?ok=saved/);
   // Still sealed: a sealed envelope on the timeline, and on its own shelf with only its dates.
@@ -131,8 +133,8 @@ test("write in place from the floating button, or close it with ✕", async ({ b
   // ✕ asks before throwing away what was written.
   await page.getByTestId("compose-fab").click();
   await page.getByRole("dialog").getByLabel("あったこと・考えていること").fill("下書き");
-  page.once("dialog", (d) => d.accept());
   await page.getByRole("dialog").getByRole("button", { name: "閉じる" }).last().click();
+  await confirm(page);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByText("下書き")).toHaveCount(0);
 });
@@ -189,8 +191,8 @@ test("share by relationship, and a test companion from settings (development)", 
   await hana.waitForURL(/\/messages\/[0-9a-f-]+$/);
   await expect(hana.getByText("家族だけに伝えたいこと。")).toBeVisible();
   await hana.goto("/settings");
-  hana.once("dialog", (d) => d.accept());
   await hana.getByRole("button", { name: "削除" }).last().click();
+  await confirm(hana);
   await hana.waitForURL(/ok=deleted/);
   await expect(hana.getByText("ミナ（テスト）")).toHaveCount(0);
 });
@@ -297,13 +299,13 @@ test("replies under a record: one thread for everyone who can see it", async ({ 
 
   // As the record's owner, Hana can remove Ren's reply; Sora can remove only her own.
   await hana.goto(record);
-  hana.once("dialog", (d) => d.accept());
   await thread(hana).locator("li", { hasText: "レシピ知りたい" }).getByRole("button", { name: "削除" }).click();
+  await confirm(hana);
   await expect(thread(hana)).not.toContainText("レシピ知りたい");
   await sora.goto(shared);
   await expect(thread(sora).locator("li", { hasText: "2回目はふっくら焼けた" }).getByRole("button", { name: "削除" })).toHaveCount(0);
-  sora.once("dialog", (d) => d.accept());
   await thread(sora).locator("li", { hasText: "おいしそう！" }).getByRole("button", { name: "削除" }).click();
+  await confirm(sora);
   await expect(thread(sora)).not.toContainText("おいしそう！");
 
   // Sora answers Hana privately: their conversation opens with the record attached; it goes as one message.

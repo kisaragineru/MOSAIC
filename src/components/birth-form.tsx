@@ -1,3 +1,5 @@
+import { DateSelect } from "@/components/date-select";
+import { dateText } from "@/lib/i18n/date-text";
 import { saveBirthAction } from "@/app/actions/tuvi";
 import { Button, Checkbox, Field, Input, Notice, Select } from "@/components/ui";
 import type { Dict } from "@/lib/i18n/messages/en";
@@ -26,9 +28,7 @@ export function BirthForm({ t, p, needs, back, simple = false }: { t: Dict; p: T
     </fieldset>
   );
   const date = (
-    <Field label={`${t.tuvi.solarDate} (${t.tuvi.solar})`}>
-      <Input type="date" name="solarDate" defaultValue={p?.solarDate ?? ""} min="1900-01-01" max="2100-12-31" required={simple} />
-    </Field>
+    <DateSelect label={`${t.tuvi.solarDate} (${t.tuvi.solar})`} name="solarDate" text={dateText(t)} defaultValue={p?.solarDate ?? ""} min="1900-01-01" max={`${new Date().getUTCFullYear()}-12-31`} required={simple} />
   );
   const lunar = (
     <>

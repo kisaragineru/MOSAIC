@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { confirm } from "./confirm";
 
 async function user(browser: Browser, name: string) {
   const ctx = await browser.newContext({ locale: "ja-JP", timezoneId: "Asia/Tokyo", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.8.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
@@ -103,8 +104,8 @@ test("direct messages: send, read, reply, react, edit, unsend, photos", async ({
   await hana.getByRole("button", { name: "保存" }).click();
   await expect(sora.getByText("こんにちは、ソラ！").first()).toBeVisible({ timeout: 15_000 });
   await expect(sora.getByText(/編集済み/)).toBeVisible();
-  sora.once("dialog", (d) => d.accept());
   await (await actionsFor(sora, "元気だよ")).getByRole("button", { name: /送信を取り消す/ }).click();
+  await confirm(sora);
   await expect(hana.getByText("メッセージの送信が取り消されました")).toBeVisible({ timeout: 15_000 });
 
   // A photo: only members can load it.
@@ -153,8 +154,8 @@ test("group messages: create, notices, who wrote, read counts, leave", async ({ 
   // Ren leaves: the others see a notice, Ren can't write any more.
   await ren.goto(`${group}/info`);
   await expect(ren.getByText("メンバー（3人）")).toBeVisible();
-  ren.once("dialog", (d) => d.accept());
   await ren.getByRole("button", { name: "グループを退出" }).click();
+  await confirm(ren);
   await ren.waitForURL("/messages");
   await expect(hana.getByText("レンが退出しました")).toBeVisible({ timeout: 15_000 });
 });

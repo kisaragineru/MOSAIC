@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Browser } from "@playwright/test";
+import { setDate } from "./date";
 import { setBirthTime } from "./birth-time";
 
 async function user(browser: Browser, name: string, birth: { date: string; time: string; sex: "male" | "female" }) {
@@ -15,7 +16,7 @@ async function user(browser: Browser, name: string, birth: { date: string; time:
   await page.goto("/home");
   await expect(page.getByRole("heading", { name: `こんにちは、${name}さん` })).toBeVisible();
   await page.goto("/tuvi");
-  await page.getByLabel("生年月日 (新暦（グレゴリオ暦）)").fill(birth.date);
+  await setDate(page, "生年月日 (新暦（グレゴリオ暦）)", birth.date);
   await setBirthTime(page, birth.time);
   await page.getByLabel("伝統的な計算で使う性別").selectOption(birth.sex);
   await page.getByRole("button", { name: "保存して計算" }).click();

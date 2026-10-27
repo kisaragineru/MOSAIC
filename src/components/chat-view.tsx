@@ -1,4 +1,5 @@
 "use client";
+import { askConfirm } from "@/lib/confirm";
 import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { dmEdit, dmReact, dmTranslate, dmUnsend } from "@/app/actions/dm";
@@ -581,7 +582,7 @@ export function ChatView({
   };
   const unsend = async (m: Msg) => {
     setMenu(null);
-    if (!window.confirm(tx.unsendConfirm)) return;
+    if (!(await askConfirm(tx.unsendConfirm))) return;
     setMsgs((cur) => cur.map((x) => (x.id === m.id ? { ...x, deleted: true, body: null, attachments: [], record: null, reactions: [] } : x)));
     await dmUnsend(m.id);
     void sync();

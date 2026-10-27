@@ -1,3 +1,5 @@
+import { DateSelect } from "@/components/date-select";
+import { dateText } from "@/lib/i18n/date-text";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -228,7 +230,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
             </Select>
           </div>
           <Textarea name="body" required rows={2} maxLength={5000} aria-label={t.people.note} />
-          <Input type="date" name="occurredOn" aria-label={t.common.date} />
+          <DateSelect label={t.common.date} hideLabel name="occurredOn" text={dateText(t)} />
           <Button type="submit">{t.common.add}</Button>
         </form>
         <ul className="mt-3 space-y-2">
@@ -245,7 +247,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
                     </Select>
                   </div>
                   <Textarea name="body" required rows={3} maxLength={5000} defaultValue={e.body} aria-label={t.people.note} />
-                  <Input type="date" name="occurredOn" defaultValue={e.occurredOn ?? ""} aria-label={t.common.date} />
+                  <DateSelect label={t.common.date} hideLabel name="occurredOn" text={dateText(t)} defaultValue={e.occurredOn ?? ""} />
                 </EditForm>
               ) : (
                 <>
@@ -273,7 +275,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           <Field label={t.people.eventTitle}><Input name="title" required maxLength={200} /></Field>
           <div className="grid grid-cols-2 gap-2">
             <Field label={t.people.place}><Input name="place" maxLength={200} /></Field>
-            <Field label={t.common.date}><Input type="date" name="occurredOn" /></Field>
+            <div className="col-span-2"><DateSelect label={t.common.date} name="occurredOn" text={dateText(t)} /></div>
           </div>
           <Textarea name="description" rows={2} maxLength={5000} aria-label={t.people.note} />
           <Button type="submit">{t.common.add}</Button>
@@ -286,7 +288,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
                   <Field label={t.people.eventTitle}><Input name="title" required maxLength={200} defaultValue={e.title} /></Field>
                   <div className="grid grid-cols-2 gap-2">
                     <Field label={t.people.place}><Input name="place" maxLength={200} defaultValue={e.place ?? ""} /></Field>
-                    <Field label={t.common.date}><Input type="date" name="occurredOn" defaultValue={e.occurredOn ?? ""} /></Field>
+                    <div className="col-span-2"><DateSelect label={t.common.date} name="occurredOn" text={dateText(t)} defaultValue={e.occurredOn ?? ""} /></div>
                   </div>
                   <Textarea name="description" rows={3} maxLength={5000} defaultValue={e.description ?? ""} aria-label={t.people.note} />
                 </EditForm>
@@ -307,7 +309,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           <input type="hidden" name="personId" value={person.id} />
           <div className="col-span-2"><Field label={t.people.giftItem}><Input name="item" required maxLength={200} /></Field></div>
           <Field label={t.people.occasion}><Input name="occasion" maxLength={120} /></Field>
-          <Field label={t.people.givenOn}><Input type="date" name="givenOn" /></Field>
+          <div className="col-span-2"><DateSelect label={t.people.givenOn} name="givenOn" text={dateText(t)} /></div>
           <Field label={t.people.price}><Input type="number" name="priceAmount" min={0} /></Field>
           <Field label={t.people.currency}><Input name="priceCurrency" maxLength={3} /></Field>
           <div className="col-span-2">
@@ -327,7 +329,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
                   <Field label={t.people.giftItem}><Input name="item" required maxLength={200} defaultValue={g.item} /></Field>
                   <div className="grid grid-cols-2 gap-2">
                     <Field label={t.people.occasion}><Input name="occasion" maxLength={120} defaultValue={g.occasion ?? ""} /></Field>
-                    <Field label={t.people.givenOn}><Input type="date" name="givenOn" defaultValue={g.givenOn ?? ""} /></Field>
+                    <div className="col-span-2"><DateSelect label={t.people.givenOn} name="givenOn" text={dateText(t)} defaultValue={g.givenOn ?? ""} /></div>
                     <Field label={t.people.price}><Input type="number" name="priceAmount" min={0} defaultValue={g.priceAmount ?? ""} /></Field>
                     <Field label={t.people.currency}><Input name="priceCurrency" maxLength={3} defaultValue={g.priceCurrency ?? ""} /></Field>
                   </div>

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Browser } from "@playwright/test";
+import { confirm } from "./confirm";
 
 async function user(browser: Browser, name: string) {
   const ctx = await browser.newContext({ locale: "ja-JP", timezoneId: "Asia/Tokyo", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.9.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
@@ -70,8 +71,8 @@ test("profile photo: choose, place by dragging and zooming, save, shown to conne
 
   // Changing it gives a new link; removing it brings back the initial.
   await hana.goto("/me/photo");
-  hana.once("dialog", (d) => d.accept());
   await hana.getByRole("button", { name: "写真を削除" }).click();
+  await confirm(hana);
   await hana.waitForURL(/ok=deleted/);
   await expect(hana.locator('header a[href="/me"] img')).toHaveCount(0);
 });

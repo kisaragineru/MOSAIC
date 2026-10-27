@@ -1,3 +1,5 @@
+import { DateSelect } from "@/components/date-select";
+import { dateText } from "@/lib/i18n/date-text";
 import Link from "next/link";
 import { createGiftBoxAction, joinGiftBoxAction, receiveGiftAction } from "@/app/actions/gift-boxes";
 import { Flash } from "@/components/flash";
@@ -67,8 +69,8 @@ export default async function GiftsPage({ searchParams }: { searchParams: Promis
         <form action={createGiftBoxAction} className="space-y-3">
           <Field label={g.childName}><Input name="childName" required maxLength={60} /></Field>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label={g.childBirthday}><Input type="date" name="childBirthday" max={today()} /></Field>
-            <Field label={g.deliverOn} hint={g.deliverHelp}><Input type="date" name="deliverOn" required min={today()} /></Field>
+            <DateSelect label={g.childBirthday} name="childBirthday" text={dateText(t)} max={today()} />
+            <DateSelect label={g.deliverOn} hint={g.deliverHelp} name="deliverOn" text={dateText(t)} required min={today()} />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label={g.myRole}>

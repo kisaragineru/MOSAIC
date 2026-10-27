@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
+import { setDate } from "./date";
 import { setBirthTime } from "./birth-time";
 
 test("birth details can be entered from the profile, the Tử Vi chart follows, and the privacy overview reflects it", async ({ browser }) => {
@@ -16,7 +17,7 @@ test("birth details can be entered from the profile, the Tử Vi chart follows, 
   const birth = page.locator("#birth");
   await expect(birth.getByRole("heading", { name: "⭐ 生年月日（Tử Vi用）" })).toBeVisible();
   // Nothing entered yet: the form is open.
-  await birth.getByLabel("生年月日 (新暦（グレゴリオ暦）)").fill("1990-06-07");
+  await setDate(birth, "生年月日 (新暦（グレゴリオ暦）)", "1990-06-07");
   await setBirthTime(birth, "06:30");
   await birth.getByRole("button", { name: "保存して計算" }).click();
   await page.waitForURL(/\/me\?ok=saved#birth$/);
@@ -26,7 +27,7 @@ test("birth details can be entered from the profile, the Tử Vi chart follows, 
   await birth.getByRole("link", { name: "Tử Viを見る →" }).click();
   await page.waitForURL(/\/tuvi$/);
   await expect(page.getByTestId("tuvi-chart")).toBeVisible();
-  await expect(page.getByLabel("生年月日 (新暦（グレゴリオ暦）)")).toHaveValue("1990-06-07");
+  await expect(page.locator('input[name="solarDate"]')).toHaveValue("1990-06-07");
 
   // Edited from the profile again, the chart changes with it.
   await page.goto("/me");

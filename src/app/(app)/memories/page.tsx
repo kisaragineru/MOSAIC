@@ -1,3 +1,5 @@
+import { DateSelect } from "@/components/date-select";
+import { dateText } from "@/lib/i18n/date-text";
 import Link from "next/link";
 import { Flash } from "@/components/flash";
 import { QuickComposer } from "@/components/quick-composer";
@@ -120,9 +122,8 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
                 <option value="">{t.memories.fields.people}</option>
                 {people.map((p) => <option key={p.id} value={p.id}>{p.nickname}</option>)}
               </Select>
-              <div />
-              <Input type="date" name="from" defaultValue={filters.from} aria-label={t.memories.from} />
-              <Input type="date" name="to" defaultValue={filters.to} aria-label={t.memories.to} />
+              <div className="col-span-2"><DateSelect label={t.memories.from} name="from" text={dateText(t)} defaultValue={filters.from} /></div>
+              <div className="col-span-2"><DateSelect label={t.memories.to} name="to" text={dateText(t)} defaultValue={filters.to} /></div>
             </div>
           </details>
           <div className="flex gap-2">

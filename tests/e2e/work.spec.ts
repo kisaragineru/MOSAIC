@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Browser } from "@playwright/test";
+import { confirm } from "./confirm";
+import { setDate } from "./date";
 import { setBirthTime } from "./birth-time";
 
 async function user(browser: Browser, name: string) {
@@ -17,7 +19,7 @@ async function user(browser: Browser, name: string) {
 test("hand the story over as a work: read it first, fix it, a link of their own, read without signing up", async ({ browser }) => {
   const hana = await user(browser, "ハナ");
   await hana.goto("/tuvi");
-  await hana.getByLabel(/^生年月日/).fill("1990-06-07");
+  await setDate(hana, /^生年月日/, "1990-06-07");
   await setBirthTime(hana, "06:30");
   await hana.getByRole("button", { name: "保存して計算" }).click();
   await expect(hana.getByTestId("essence")).toBeVisible();
@@ -66,7 +68,7 @@ test("hand the story over as a work: read it first, fix it, a link of their own,
 
   // Once the reader has a chart, they're asked whether to tell Hana; they do.
   await guest.goto("/tuvi");
-  await guest.getByLabel(/^生年月日/).fill("1995-03-03");
+  await setDate(guest, /^生年月日/, "1995-03-03");
   await setBirthTime(guest, "10:00");
   await guest.getByRole("button", { name: "保存して計算" }).click();
   await expect(guest.getByTestId("essence")).toBeVisible();
@@ -87,8 +89,8 @@ test("hand the story over as a work: read it first, fix it, a link of their own,
   await expect(hana.getByTestId("work-links")).toContainText("✓ 開いてくれました");
 
   // Taken back: the page says so and shows nothing of the work.
-  hana.once("dialog", (d) => d.accept());
   await hana.getByTestId("work-links").getByRole("button", { name: "取り消す" }).click();
+  await confirm(hana);
   await hana.waitForURL(/ok=saved/);
   // (even for a reader who connected: the writer took it back)
   await guest.goto(url);
@@ -99,7 +101,7 @@ test("hand the story over as a work: read it first, fix it, a link of their own,
 test("the story grows: new pages are mentioned once, then one question about handing it to someone", async ({ browser }) => {
   const sora = await user(browser, "ソラ");
   await sora.goto("/tuvi");
-  await sora.getByLabel(/^生年月日/).fill("1992-03-14");
+  await setDate(sora, /^生年月日/, "1992-03-14");
   await setBirthTime(sora, "08:00");
   await sora.getByRole("button", { name: "保存して計算" }).click();
   await expect(sora.getByTestId("essence")).toBeVisible();

@@ -1,6 +1,8 @@
 import { execSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
+import { confirm } from "./confirm";
+import { setDate } from "./date";
 import { setBirthTime } from "./birth-time";
 
 const E2E_OWNER_DB = process.env.E2E_MIGRATION_DATABASE_URL ?? "postgres://mosaic_owner:owner_dev_pw@localhost:5432/mosaic_e2e";
@@ -37,7 +39,7 @@ test("a new account is guided: the chart (not skippable) and its tour, three que
   await expect(page.getByText(/生年月日と時刻は、あなたにしか見えません/)).toBeVisible();
   // The fourteen types, as a reason to enter the chart (and the time).
   await expect(page.getByTestId("type-gallery").locator("li")).toHaveCount(14);
-  await page.getByLabel("生年月日 (新暦（グレゴリオ暦）)").fill("1990-06-07");
+  await setDate(page, "生年月日 (新暦（グレゴリオ暦）)", "1990-06-07");
   await setBirthTime(page, "06:30");
   await page.getByLabel("伝統的な計算で使う性別").selectOption("male");
   await page.getByRole("button", { name: "命盤をつくる" }).click();
@@ -98,8 +100,8 @@ test("a new account is guided: the chart (not skippable) and its tour, three que
   await expect(list).not.toContainText("つながる");
   await expect(page.getByText("はじめてガイドの続き")).toHaveCount(0);
   // After the guide the checklist can be closed for good; the rest stays doable from each page.
-  page.once("dialog", (d) => void d.accept());
   await list.getByRole("button", { name: "チェックリストを終了" }).click();
+  await confirm(page);
   await expect(page.getByTestId("starter-checklist")).toHaveCount(0);
   await page.reload();
   await expect(page.getByTestId("starter-checklist")).toHaveCount(0);
@@ -139,7 +141,7 @@ test("while the guide isn't finished every page says so, with the way back; it c
   await page.waitForURL(/\/welcome\?step=2$/);
   await expect(page.getByTestId("guide-bar")).toHaveCount(0);
   // Only the birth date is needed: the time left empty, no sex.
-  await page.getByLabel("Date of birth (Solar (Gregorian))").fill("1990-06-07");
+  await setDate(page, "Date of birth (Solar (Gregorian))", "1990-06-07");
   await page.getByRole("button", { name: "Make my chart" }).click();
   await page.waitForURL(/step=3/);
   await expect(page.getByTestId("chart-result")).toContainText("Your chart is ready");
@@ -178,8 +180,8 @@ test("while the guide isn't finished every page says so, with the way back; it c
   await page.goto("/home");
   await expect(page.getByTestId("guide-bar")).toContainText("Welcome guide (4/6)");
   // Ending it (after a confirmation) keeps you where you are; Home's checklist keeps what is left.
-  page.once("dialog", (d) => void d.accept());
   await page.getByTestId("guide-bar").getByRole("button", { name: "End guide" }).click();
+  await confirm(page);
   await expect(page.getByTestId("guide-bar")).toHaveCount(0);
   // The quiz's answers already count toward the questions; the bio is still left.
   await expect(page.getByTestId("starter-checklist").getByRole("link", { name: /Write your bio/ })).toBeVisible();

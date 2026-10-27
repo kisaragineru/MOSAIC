@@ -1,5 +1,6 @@
 "use client";
 import type { ComponentProps } from "react";
+import { askConfirm } from "@/lib/confirm";
 
 /** Submit button that asks for confirmation before destructive actions. */
 export function ConfirmButton({ message, className = "", quiet = false, bare = false, ...props }: ComponentProps<"button"> & { message: string; quiet?: boolean; bare?: boolean }) {
@@ -11,7 +12,19 @@ export function ConfirmButton({ message, className = "", quiet = false, bare = f
       // bare: only the given classes (e.g. a small text link).
       className={bare ? className : `inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2 text-sm font-medium ${look} ${className}`}
       onClick={(e) => {
-        if (!window.confirm(message)) e.preventDefault();
+        // Asked once; when the answer is yes the same button is pressed again, so the form gets
+        // exactly what it would have (including this button's name and value).
+        const b = e.currentTarget;
+        if (b.dataset.confirmed) {
+          delete b.dataset.confirmed;
+          return;
+        }
+        e.preventDefault();
+        void askConfirm(message).then((yes) => {
+          if (!yes) return;
+          b.dataset.confirmed = "1";
+          b.click();
+        });
       }}
     />
   );

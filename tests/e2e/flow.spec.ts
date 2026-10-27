@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Browser } from "@playwright/test";
+import { setDate } from "./date";
 import { setBirthTime } from "./birth-time";
 
 async function newUser(browser: Browser) {
@@ -83,7 +84,7 @@ test("preview: the other person's phone, and switching what is shared", async ({
 test("Tử Vi: plain words first, and a guide for beginners", async ({ browser }) => {
   const { ctx, page } = await newUser(browser);
   await page.goto("/tuvi");
-  await page.getByLabel(/^生年月日/).fill("1990-06-07");
+  await setDate(page, /^生年月日/, "1990-06-07");
   await setBirthTime(page, "06:30");
   await page.getByRole("button", { name: "保存して計算" }).click();
   await expect(page.getByTestId("essence")).toContainText("タイプ");

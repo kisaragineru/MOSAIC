@@ -1,4 +1,5 @@
 "use client";
+import { askConfirm, confirming } from "@/lib/confirm";
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { quickMemoryAction, type QuickState } from "@/app/actions/memories";
@@ -95,13 +96,13 @@ export function QuickComposer({ tx, canShare, giftBoxes = [], trigger = "fab" }:
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !confirming() && void close();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  function close() {
-    if ((text.trim() || photos > 0) && !window.confirm(tx.discard)) return;
+  async function close() {
+    if ((text.trim() || photos > 0) && !(await askConfirm(tx.discard))) return;
     setText("");
     setOpen(false);
   }

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { confirm } from "./confirm";
 
 async function user(browser: Browser, name: string) {
   const ctx = await browser.newContext({ locale: "ja-JP", viewport: { width: 412, height: 860 }, extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.5.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
@@ -67,8 +68,8 @@ test("ask a connection how they see you; they answer with their name; you see th
   await expect(hana.getByText("— ソラ")).toBeVisible();
 
   // Sora can take it back.
-  sora.once("dialog", (d) => d.accept());
   await sora.getByRole("button", { name: "回答を取り下げる" }).click();
+  await confirm(sora);
   await expect(sora.getByText("この依頼は終了しています。")).toBeVisible();
   await hana.goto("/me/others");
   await expect(hana.getByText("取り下げ")).toBeVisible();

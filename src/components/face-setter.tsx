@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { askConfirm } from "@/lib/confirm";
 import { faceRect, type FaceCrop, type FaceWho } from "@/lib/tuvi/faces";
 
 type Crops = Record<string, Partial<Record<FaceWho, FaceCrop>>>;
@@ -173,8 +174,8 @@ export function FaceSetter({ types, initial }: { types: { id: string; label: str
         </button>
         <button
           type="button"
-          onClick={() => {
-            if (!window.confirm("このブラウザで動かした位置を消して、アプリに入っている設定に戻しますか？")) return;
+          onClick={async () => {
+            if (!(await askConfirm("このブラウザで動かした位置を消して、アプリに入っている設定に戻しますか？"))) return;
             try {
               localStorage.removeItem(KEY);
             } catch {}

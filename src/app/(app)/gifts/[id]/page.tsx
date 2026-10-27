@@ -1,3 +1,5 @@
+import { DateSelect } from "@/components/date-select";
+import { dateText } from "@/lib/i18n/date-text";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
@@ -111,8 +113,8 @@ export default async function GiftBoxPage({ params, searchParams }: { params: Pr
                   <input type="hidden" name="boxId" value={box.id} />
                   <Field label={g.childName}><Input name="childName" required maxLength={60} defaultValue={box.child_name} /></Field>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <Field label={g.childBirthday}><Input type="date" name="childBirthday" defaultValue={box.child_birthday ?? ""} max={todayIso()} /></Field>
-                    <Field label={g.deliverOn} hint={g.deliverHelp}><Input type="date" name="deliverOn" required defaultValue={box.deliver_on} /></Field>
+                    <DateSelect label={g.childBirthday} name="childBirthday" text={dateText(t)} defaultValue={box.child_birthday ?? ""} max={todayIso()} />
+                    <DateSelect label={g.deliverOn} hint={g.deliverHelp} name="deliverOn" text={dateText(t)} required defaultValue={box.deliver_on} />
                   </div>
                   <Button type="submit" variant="secondary">{g.save}</Button>
                 </form>
@@ -186,7 +188,7 @@ function Entries({ box, kind, help, nameOf, t, draft }: { box: GiftBox; kind: Gi
           <input type="hidden" name="boxId" value={box.id} />
           <input type="hidden" name="kind" value={kind} />
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label={g.occurredOn}><Input type="date" name="occurredOn" max={kind === "growth" ? todayIso() : undefined} /></Field>
+            <DateSelect label={g.occurredOn} name="occurredOn" text={dateText(t)} max={kind === "growth" ? todayIso() : undefined} />
             <Field label={g.entryTitle}><Input name="title" maxLength={120} /></Field>
           </div>
           <Field label={g.body}><Textarea name="body" required rows={kind === "letter" ? 8 : 4} maxLength={5000} defaultValue={draft} autoFocus={!!draft} /></Field>
@@ -214,7 +216,7 @@ function Entries({ box, kind, help, nameOf, t, draft }: { box: GiftBox; kind: Gi
                     <input type="hidden" name="boxId" value={box.id} />
                     <input type="hidden" name="kind" value={kind} />
                     <input type="hidden" name="entryId" value={e.id} />
-                    <Input type="date" name="occurredOn" defaultValue={e.occurred_on ?? ""} aria-label={g.occurredOn} />
+                    <DateSelect label={g.occurredOn} hideLabel name="occurredOn" text={dateText(t)} defaultValue={e.occurred_on ?? ""} />
                     <Input name="title" defaultValue={e.title ?? ""} maxLength={120} aria-label={g.entryTitle} />
                     <Textarea name="body" required defaultValue={e.body} rows={4} maxLength={5000} aria-label={g.body} />
                     <Button type="submit" variant="secondary">{g.save}</Button>

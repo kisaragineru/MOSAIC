@@ -1,3 +1,5 @@
+import { DateSelect } from "@/components/date-select";
+import { dateText } from "@/lib/i18n/date-text";
 import Link from "next/link";
 import type { Dict } from "@/lib/i18n/messages/en";
 import type { MediaItem } from "@/server/services/media";
@@ -129,9 +131,7 @@ export function MemoryForm({
       {isLetter ? (
         <>
           <input type="hidden" name="kind" value="letter_to_future" />
-          <Field label={t.memories.fields.revealOn}>
-            <Input type="date" name="revealOn" required defaultValue={d.revealOn ?? ""} />
-          </Field>
+          <DateSelect label={t.memories.fields.revealOn} name="revealOn" text={dateText(t)} required defaultValue={d.revealOn ?? ""} />
           <p className="rounded-xl bg-violet-50 px-3 py-2 text-xs leading-5 text-violet-900">🔒 {t.memories.audience.letterPrivate}</p>
           <Button type="submit" className="w-full">{submitLabel ?? p.letterSubmit}</Button>
         </>
@@ -141,9 +141,7 @@ export function MemoryForm({
           <details className="rounded-xl border border-stone-200 p-3" open={!!(d.occurredOn || d.tags?.length || d.personIds?.length)}>
             <summary className="cursor-pointer text-sm text-stone-600">{p.more}</summary>
             <div className="mt-3 space-y-3">
-              <Field label={t.memories.fields.occurredOn}>
-                <Input type="date" name="occurredOn" defaultValue={d.occurredOn ?? ""} />
-              </Field>
+              <DateSelect label={t.memories.fields.occurredOn} name="occurredOn" text={dateText(t)} defaultValue={d.occurredOn ?? ""} />
               <Field label={t.memories.fields.tags}>
                 <Input name="tags" defaultValue={(d.tags ?? []).join(", ")} />
               </Field>

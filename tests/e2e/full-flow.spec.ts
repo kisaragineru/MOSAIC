@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { confirm } from "./confirm";
+import { setDate } from "./date";
 import { setBirthTime } from "./birth-time";
 
 const PASSWORD = "e2e correct horse battery";
@@ -82,7 +84,7 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
 
   // Tử Vi
   await pa.goto("/tuvi");
-  await pa.getByLabel("Date of birth (Solar (Gregorian))").fill("1990-06-07");
+  await setDate(pa, "Date of birth (Solar (Gregorian))", "1990-06-07");
   await setBirthTime(pa, "06:30");
   await pa.getByLabel("Sex used by the traditional method").selectOption("male");
   await pa.getByRole("button", { name: "Save & calculate" }).click();
@@ -240,17 +242,17 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   expect(r2?.status()).toBe(404);
 
   // --- Revoke: B ends the comparison, A loses access to the result ---
-  pb.on("dialog", (d) => d.accept());
   await pb.getByRole("button", { name: "End this connection" }).click();
+  await confirm(pb);
   await expect(pb.getByText(/This connection has ended/)).toBeVisible();
   await pa.goto(compareUrl);
   await expect(pa.getByText(/This connection has ended/)).toBeVisible();
   await expect(pa.getByText("The two of you, side by side")).toHaveCount(0);
 
   // A revokes the share link → a new visitor gets "unavailable"
-  pa.on("dialog", (d) => d.accept());
   await pa.goto("/share");
   await pa.getByRole("button", { name: "Revoke" }).first().click();
+  await confirm(pa);
   await expect(pa.getByText("Revoked")).toBeVisible();
   await c.page.goto(shareUrl);
   await expect(c.page.getByText(/invalid, expired, or has been revoked/)).toBeVisible();
@@ -270,11 +272,11 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   expect(forged.status()).toBe(403);
 
   // --- Account deletion (C) ---
-  c.page.on("dialog", (d) => d.accept());
   await c.page.goto("/settings");
   await c.page.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await c.page.getByLabel("Type DELETE to confirm").fill("DELETE");
   await c.page.getByRole("button", { name: "Delete my account forever" }).click();
+  await confirm(c.page);
   await expect(c.page).toHaveURL(/\/login/);
   await c.page.goto("/login");
   await c.page.getByLabel("Email").fill(c.email);

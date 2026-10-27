@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { M_PLUS_Rounded_1c, Noto_Emoji } from "next/font/google";
 import { Suspense } from "react";
+import { ConfirmHost } from "@/components/confirm-host";
 import { FormMessages } from "@/components/form-messages";
 import { NavProgress } from "@/components/nav-progress";
 import { getLocale, dictFor } from "@/lib/i18n/server";
@@ -42,6 +43,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </Suspense>
         {/* The browser's form bubbles in the app's language, not the device's. */}
         <FormMessages text={dictFor(locale).form} />
+        <ConfirmHost ok={dictFor(locale).common.confirmOk} cancel={dictFor(locale).common.confirmCancel} />
         {children}
       </body>
     </html>

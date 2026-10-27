@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
+import { setDate } from "./date";
 import { setBirthTime } from "./birth-time";
 
 test("Japanese UI end to end: auto-detected, registration, question, Tử Vi, gifts", async ({ browser }) => {
@@ -28,7 +29,7 @@ test("Japanese UI end to end: auto-detected, registration, question, Tử Vi, gi
   await expect(page.getByTestId("history-list").locator("summary").getByText("お茶", { exact: true })).toBeVisible();
 
   await page.goto("/tuvi");
-  await page.getByLabel("生年月日 (新暦（グレゴリオ暦）)").fill("1990-06-07");
+  await setDate(page, "生年月日 (新暦（グレゴリオ暦）)", "1990-06-07");
   await setBirthTime(page, "06:30");
   await page.getByLabel("伝統的な計算で使う性別").selectOption("male");
   await page.getByRole("button", { name: "保存して計算" }).click();

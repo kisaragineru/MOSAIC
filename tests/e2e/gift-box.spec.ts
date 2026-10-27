@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Browser } from "@playwright/test";
+import { setDate } from "./date";
 
 async function user(browser: Browser, name: string) {
   const ctx = await browser.newContext({ locale: "ja-JP", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.3.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
@@ -22,8 +23,8 @@ test("a gift box: parents write, letters stay private, the child receives it as 
   await mom.getByRole("link", { name: /ギフトボックス/ }).click();
   await mom.waitForURL("/gifts");
   await mom.getByLabel("子どもの名前（呼び名）").fill("ハナ");
-  await mom.getByLabel("子どもの誕生日（任意）").fill("2018-05-05");
-  await mom.getByLabel("渡す日").fill(today);
+  await setDate(mom, "子どもの誕生日（任意）", "2018-05-05");
+  await setDate(mom, "渡す日", today);
   await mom.getByLabel("あなたとの関係").selectOption("mother");
   await mom.getByLabel(/子どもからの呼ばれ方/).first().fill("ママ");
   await mom.getByRole("button", { name: "新しくつくる" }).click();
@@ -32,7 +33,7 @@ test("a gift box: parents write, letters stay private, the child receives it as 
   await expect(mom.getByRole("heading", { name: "ハナへのギフトボックス" })).toBeVisible();
 
   // A growth record, shared with every writer, and a letter only Mom can see.
-  await mom.getByLabel("日付（任意）").fill("2019-06-01");
+  await setDate(mom, "日付（任意）", "2019-06-01");
   await mom.getByLabel("見出し（任意）").fill("初めて歩いた");
   await mom.getByLabel("本文").fill("リビングで3歩。みんなで拍手した。");
   await mom.getByRole("button", { name: "追加" }).click();

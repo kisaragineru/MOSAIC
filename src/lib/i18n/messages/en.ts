@@ -11,6 +11,12 @@ export const en = {
     bad: "Please check what you entered.",
   },
   common: {
+    confirmOk: "Yes",
+    confirmCancel: "Cancel",
+    dateYear: "Year",
+    dateMonth: "Month",
+    dateDay: "Day",
+    months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] as string[],
     colon: ": ",
     quoteOpen: "“",
     quoteClose: "”",

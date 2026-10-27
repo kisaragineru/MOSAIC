@@ -13,6 +13,12 @@ export const ja: Dict = {
     bad: "入力の形が正しくありません。",
   },
   common: {
+    confirmOk: "はい",
+    confirmCancel: "やめる",
+    dateYear: "年",
+    dateMonth: "月",
+    dateDay: "日",
+    months: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"] as string[],
     colon: "：",
     quoteOpen: "「",
     quoteClose: "」",
