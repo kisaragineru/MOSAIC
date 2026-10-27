@@ -69,7 +69,7 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
         <section className="space-y-5">
           {/* MOSAIC as a short film, the greeting inside its first scene; its last scene leads on. */}
           <h1 className="sr-only">{w.hello(acc.profile.displayName)}</h1>
-          <IntroFilm tx={t.film} start={st.hasChart ? "/welcome?step=3" : "/welcome?step=2"} embedded greeting={w.hello(acc.profile.displayName)} />
+          <IntroFilm tx={t.film} types={allTypes(locale).map(({ id, name, persona, lines }) => ({ id, name, persona, lines }))} start={st.hasChart ? "/welcome?step=3" : "/welcome?step=2"} embedded greeting={w.hello(acc.profile.displayName)} />
         </section>
       )}
 

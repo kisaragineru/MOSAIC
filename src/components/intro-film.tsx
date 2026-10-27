@@ -8,7 +8,7 @@ export interface FilmText {
   typesEyebrow: string;
   typesTitle: string;
   typesBody: string;
-  /** The sample person's type, said over her card. */
+  /** The sample person's type: "{persona}" is replaced with its name. */
   typesMio: string;
   pieceQ: string;
   pieceA: string[];
@@ -26,6 +26,8 @@ export interface FilmText {
   recordsBody: string;
   recordItems: string[];
   recordDates: string[];
+  /** The scene's one line: that these small notes become your story. */
+  recordsLine: string;
   connectEyebrow: string;
   connectTitle: string;
   connectBody: string;
@@ -91,7 +93,6 @@ function Scene({ children, tone = "paper", tall, id }: { children: (shown: boole
   );
 }
 
-const TYPES = ["tu_vi", "thien_co", "thai_duong", "vu_khuc", "thien_dong", "liem_trinh", "thien_phu", "thai_am", "tham_lang", "cu_mon", "thien_tuong", "thien_luong", "that_sat", "pha_quan"];
 const TILE_DELAY = ["delay-[1395ms]", "delay-[1080ms]", "delay-[450ms]", "delay-[225ms]", "delay-[1305ms]", "delay-[1215ms]", "delay-[360ms]", "delay-[1035ms]", "delay-[630ms]", "delay-[540ms]", "delay-[1260ms]", "delay-[990ms]", "delay-[1530ms]", "delay-[675ms]", "delay-[0ms]", "delay-[855ms]", "delay-[1350ms]", "delay-[315ms]", "delay-[945ms]", "delay-[1575ms]", "delay-[585ms]", "delay-[90ms]", "delay-[1485ms]", "delay-[270ms]", "delay-[720ms]", "delay-[45ms]", "delay-[810ms]", "delay-[495ms]", "delay-[1440ms]", "delay-[765ms]", "delay-[1170ms]", "delay-[180ms]", "delay-[135ms]", "delay-[1125ms]", "delay-[405ms]", "delay-[900ms]"];
 const TILE_COLOR = ["bg-teal-300", "bg-rose-400", "bg-rose-300", "bg-sky-200", "bg-sky-300", "bg-fuchsia-300", "bg-sky-200", "bg-sky-300", "bg-fuchsia-300", "bg-violet-500", "bg-violet-300", "bg-amber-300", "bg-violet-500", "bg-violet-300", "bg-amber-300", "bg-amber-200", "bg-emerald-300", "bg-teal-500", "bg-amber-200", "bg-emerald-300", "bg-teal-500", "bg-teal-300", "bg-rose-400", "bg-rose-300", "bg-teal-300", "bg-rose-400", "bg-rose-300", "bg-sky-200", "bg-sky-300", "bg-fuchsia-300", "bg-sky-200", "bg-sky-300", "bg-fuchsia-300", "bg-violet-500", "bg-violet-300", "bg-amber-300"];
 const OPEN_DELAY = ["delay-[1500ms]", "delay-[2200ms]", "delay-[2900ms]"];
@@ -128,7 +129,18 @@ const STORY_DELAY = ["delay-[200ms]", "delay-[700ms]", "delay-[1200ms]", "delay-
  * at a time, become a story; when you want someone to know you, you hand it to them, and connected
  * you talk and read each other. Ends with where to begin. Light, gentle colours throughout.
  */
-export function IntroFilm({ tx, start, after, embedded = false, greeting }: { tx: FilmText; start: string; after?: React.ReactNode; embedded?: boolean; greeting?: string }) {
+/** A type as the reel shows it (plain data, from the server in the reader's language). */
+export interface FilmType {
+  id: string;
+  name: string;
+  persona: string;
+  lines: string[];
+}
+
+const MIO = "thai_am";
+
+export function IntroFilm({ tx, types, start, after, embedded = false, greeting }: { tx: FilmText; types: FilmType[]; start: string; after?: React.ReactNode; embedded?: boolean; greeting?: string }) {
+  const mio = types.find((x) => x.id === MIO);
   // Embedded (the guide's first page): edge to edge under the app's header, each scene a screen tall
   // between the header and the tab bar.
   const tall = embedded ? "min-h-[calc(100dvh-8.5rem)]" : "min-h-dvh";
@@ -164,23 +176,30 @@ export function IntroFilm({ tx, start, after, embedded = false, greeting }: { tx
             </div>
             <p className={`relative text-xs font-bold tracking-[0.25em] text-violet-700 ${fade(s)}`}>{tx.typesEyebrow}</p>
             <h2 className={`relative mt-2 text-2xl font-black text-stone-900 ${fade(s, "delay-150")}`}>{tx.typesTitle}</h2>
-            <div className="relative mt-12 w-full max-w-md" aria-hidden>
-              <div className={`overflow-hidden transition-opacity duration-1000 ${s ? "opacity-35" : "opacity-0"}`}>
-                <div className="flex w-max gap-2 blur-[1px] motion-safe:animate-[filmReel_40s_linear_infinite]">
-                  {[...TYPES, ...TYPES].map((id, i) => (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img key={i} src={`/tuvi-types/${id}-sm.webp`} alt="" width={300} height={594} className="h-44 w-auto shrink-0 rounded-xl" />
-                  ))}
-                </div>
-              </div>
-              <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-[#fbf8f2] to-transparent" />
-              <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#fbf8f2] to-transparent" />
-              <div className={`absolute left-1/2 top-1/2 w-24 -translate-x-1/2 -translate-y-1/2 transition duration-[1200ms] ease-out delay-700 motion-reduce:transition-none ${s ? "scale-110 opacity-100" : "scale-75 opacity-0 motion-reduce:scale-110 motion-reduce:opacity-100"}`}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/tuvi-types/thai_am-sm.webp" alt="" width={300} height={594} className="block h-auto w-full rounded-2xl shadow-[0_0_40px_rgba(129,140,248,0.55)] ring-2 ring-white" />
-              </div>
+            {/* The fourteen pass by, each with its name; Mio's is the one with the light. */}
+            <div className={`relative mt-8 w-full max-w-md overflow-hidden ${fade(s, "delay-300")}`}>
+              <ul className="flex w-max gap-2.5 motion-safe:animate-[filmReel_48s_linear_infinite]">
+                {[...types, ...types].map((x, i) => (
+                  <li key={i} aria-hidden={i >= types.length} className="w-24 shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`/tuvi-types/${x.id}-sm.webp`} alt="" width={300} height={594} className={`block h-auto w-full rounded-xl ${x.id === MIO ? "shadow-[0_0_24px_rgba(129,140,248,0.6)] ring-2 ring-indigo-300" : "ring-1 ring-stone-200"}`} />
+                    <p className="mt-1.5 text-center text-[11px] font-bold leading-tight text-stone-800">
+                      {x.lines.map((l, j) => <span key={j} className="block">{l}</span>)}
+                    </p>
+                    <p className="text-center text-[10px] text-stone-500">{x.name}</p>
+                  </li>
+                ))}
+              </ul>
+              <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[#fbf8f2] to-transparent" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#fbf8f2] to-transparent" />
             </div>
-            <p className={`relative mt-14 font-serif text-base text-indigo-900 ${fade(s, "delay-[1500ms]")}`}>{tx.typesMio}</p>
+            {mio && (
+              <div className={`relative mt-8 flex items-center gap-3 rounded-2xl bg-white/80 py-2 pl-2 pr-4 text-left shadow-sm ring-1 ring-indigo-100 ${fade(s, "delay-[1200ms]")}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`/tuvi-types/${MIO}-sm.webp`} alt="" width={300} height={594} className="h-14 w-auto rounded-lg object-cover object-top shadow-[0_0_16px_rgba(129,140,248,0.5)]" />
+                <p className="font-serif text-base text-indigo-900">{tx.typesMio.replace("{persona}", mio.persona)}</p>
+              </div>
+            )}
             <p className={`relative mt-4 max-w-sm text-sm leading-7 text-stone-600 ${fade(s, "delay-[1900ms]")}`}>{tx.typesBody}</p>
           </>
         )}
@@ -247,6 +266,7 @@ export function IntroFilm({ tx, start, after, embedded = false, greeting }: { tx
               ))}
             </ol>
             <p className={`mt-8 max-w-sm text-sm leading-7 text-stone-600 ${fade(s, "delay-[1500ms]")}`}>{tx.recordsBody}</p>
+            <p className={`mt-5 max-w-sm font-serif text-lg leading-8 text-rose-900 [text-wrap:balance] ${fade(s, "delay-[2200ms]")}`}>{tx.recordsLine}</p>
           </>
         )}
       </Scene>
