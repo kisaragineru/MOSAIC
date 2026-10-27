@@ -67,7 +67,7 @@ test("a new account is guided: the chart (not skippable) and its tour, three que
   for (const x of ["好きなもの", "「海」", "考え方・決め方", "「自分の直感」", "これまでとこれから", "「富士山に登る」"]) await expect(seeded).toContainText(x);
   await page.getByRole("link", { name: "次へ" }).click();
 
-  await expect(page.getByRole("heading", { name: "大切な人に伝える、ひとこと" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "あなたのことを、ひとことで" })).toBeVisible();
   await page.getByRole("textbox").fill("週末は山とパン屋めぐり。");
   await page.getByRole("button", { name: "保存して次へ" }).click();
   await page.waitForURL(/step=6/);
