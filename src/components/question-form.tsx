@@ -60,7 +60,7 @@ export function QuestionForm({ q, t, locale, back, allowSkip = true }: { q: Ques
         {q.format === "scale" && q.scale && (
           // Five words, from one end to the other (stored as 1–5).
           <div className="space-y-2" data-testid="scale-words">
-            {scaleWords(q.scale).map((w, i) => (
+            {scaleWords(q).map((w, i) => (
               <label key={i} className={optionCls}>
                 <input type="radio" name="scale" value={q.scale!.min + i} required className="accent-teal-700" />
                 <span className="flex items-center gap-2">

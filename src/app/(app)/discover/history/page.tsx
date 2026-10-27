@@ -38,7 +38,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
       return (
         <span className="flex items-center gap-2">
           <span aria-hidden className="flex gap-1">{[1, 2, 3, 4, 5].map((n) => <span key={n} className={`h-2 w-2 rounded-full ${n <= a.scale ? "bg-teal-600" : "bg-stone-200"}`} />)}</span>
-          {scaleWord(x.question.scale, a.scale, locale)}
+          {scaleWord(x.question, a.scale, locale)}
         </span>
       );
     return <span className="emoji-color">{answerLabel(x.question, a, locale)}</span>;
@@ -106,7 +106,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
                           <span aria-hidden className="flex gap-1">
                             {[1, 2, 3, 4, 5].map((n) => <span key={n} className={`h-2.5 w-2.5 rounded-full ${n <= answer.scale ? "bg-teal-600" : "bg-stone-200"}`} />)}
                           </span>
-                          <span>{scaleWord(x.question.scale, answer.scale, locale)}</span>
+                          <span>{scaleWord(x.question, answer.scale, locale)}</span>
                         </p>
                       ) : (
                         <p className={`mt-1.5 text-stone-900 ${latest ? "text-base font-medium" : "text-sm"}`}>{answerLabel(x.question, answer, locale)}</p>
