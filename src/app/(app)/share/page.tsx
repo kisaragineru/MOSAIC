@@ -18,43 +18,77 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
   const comps = await listComparisons(uid);
   const work = await latestWork(uid);
   const w = t.work;
+  const s = t.share;
   return (
-    <Page title={t.share.title}>
+    <Page title={s.title}>
       <Flash t={t} sp={sp} />
-      {/* Handing over the story: always here, from the header's QR button. */}
-      <section className="rounded-3xl bg-gradient-to-br from-violet-50 to-amber-50 p-5 shadow-sm ring-1 ring-violet-100" data-testid="share-work">
-        <h2 className="font-bold text-stone-900">✉️ {w.shareTitle}</h2>
+      {/* Two ways, two kinds of people: pick by whether they use MOSAIC. */}
+      <p className="text-sm text-stone-600">{s.pick}</p>
+      <nav className="grid grid-cols-2 gap-2" aria-label={s.title} data-testid="share-pick">
+        <a href="#story" className="rounded-2xl bg-violet-50 p-3 ring-1 ring-violet-100 hover:ring-violet-300">
+          <span aria-hidden className="text-xl">✉️</span>
+          <span className="mt-1 block text-[11px] font-semibold text-violet-700">{s.storyFor}</span>
+          <span className="block text-sm font-bold text-stone-900">{s.storyTitle} ↓</span>
+        </a>
+        <a href="#connect" className="rounded-2xl bg-teal-50 p-3 ring-1 ring-teal-100 hover:ring-teal-300">
+          <span aria-hidden className="text-xl">🔗</span>
+          <span className="mt-1 block text-[11px] font-semibold text-teal-700">{s.connectFor}</span>
+          <span className="block text-sm font-bold text-stone-900">{s.connectTitle} ↓</span>
+        </a>
+      </nav>
+
+      {/* Handing over the story: for anyone, MOSAIC or not. */}
+      <section id="story" className="scroll-mt-20 rounded-3xl bg-gradient-to-br from-violet-50 to-amber-50 p-5 shadow-sm ring-1 ring-violet-100" data-testid="share-work">
+        <span className="inline-block rounded-full bg-violet-700 px-2.5 py-0.5 text-[11px] font-bold text-white">{s.storyTag}</span>
+        <h2 className="mt-2 text-lg font-bold text-stone-900">✉️ {s.storyTitle}</h2>
         <p className="mt-1 text-xs leading-5 text-stone-600">{w.shareLead}</p>
+        <ul className="mt-3 space-y-1">
+          {s.storyPoints.map((x) => (
+            <li key={x} className="flex gap-2 text-sm text-stone-700"><span aria-hidden className="text-violet-600">✓</span>{x}</li>
+          ))}
+        </ul>
         {work ? (
-          <form action={handOverAction} className="mt-3 flex flex-wrap gap-2">
+          <form action={handOverAction} className="mt-4 flex flex-wrap gap-2">
             <input type="hidden" name="workId" value={work.id} />
             <input type="hidden" name="days" value="14" />
             <input name="recipient" required maxLength={60} placeholder={w.recipientPh} aria-label={w.recipient} className="min-w-0 flex-1 rounded-full border border-violet-200 bg-white px-4 py-2 text-sm focus:border-violet-500 focus:outline-none" />
             <button type="submit" className="shrink-0 rounded-full bg-violet-700 px-4 py-2 text-sm font-bold text-white hover:bg-violet-800">{w.give}</button>
           </form>
         ) : (
-          <p className="mt-3 text-sm text-stone-600">{w.shareNoWork} <Link href="/me/work" className="font-semibold text-violet-800 underline underline-offset-4">{w.shareMake} →</Link></p>
+          <p className="mt-4 text-sm text-stone-600">{w.shareNoWork} <Link href="/me/work" className="font-semibold text-violet-800 underline underline-offset-4">{w.shareMake} →</Link></p>
         )}
         {work && <Link href="/me/work#links" className="mt-2 inline-block text-xs font-semibold text-violet-800 underline underline-offset-4">{w.links} →</Link>}
       </section>
-      <p className="text-sm text-stone-600">{t.share.intro}</p>
-      <Card>
-        <ShareCreator
-          tx={{
-            create: t.share.create,
-            advanced: t.share.advanced,
-            createCustom: t.share.createCustom,
-            label: t.share.label,
-            expires: t.share.expires,
-            maxUses: t.share.maxUses,
-            once: t.share.once,
-            qrAlt: t.share.qrAlt,
-            copy: t.share.copy,
-            copied: t.share.copied,
-            errors: t.errors,
-          }}
-        />
-      </Card>
+
+      {/* Connecting by QR: for people who already use MOSAIC. */}
+      <section id="connect" className="scroll-mt-20 rounded-3xl bg-gradient-to-br from-teal-50 to-sky-50 p-5 shadow-sm ring-1 ring-teal-100" data-testid="share-connect">
+        <span className="inline-block rounded-full bg-teal-700 px-2.5 py-0.5 text-[11px] font-bold text-white">{s.connectTag}</span>
+        <h2 className="mt-2 text-lg font-bold text-stone-900">🔗 {s.connectTitle}</h2>
+        <ul className="mt-3 space-y-1">
+          {s.connectPoints.map((x) => (
+            <li key={x} className="flex gap-2 text-sm text-stone-700"><span aria-hidden className="text-teal-600">✓</span>{x}</li>
+          ))}
+        </ul>
+        <div className="mt-4 rounded-2xl bg-white/80 p-4">
+          <ShareCreator
+            tx={{
+              create: s.create,
+              advanced: s.advanced,
+              createCustom: s.createCustom,
+              label: s.label,
+              expires: s.expires,
+              maxUses: s.maxUses,
+              once: s.once,
+              qrAlt: s.qrAlt,
+              copy: s.copy,
+              copied: s.copied,
+              errors: t.errors,
+            }}
+          />
+        </div>
+      </section>
+
+      <h2 className="pt-2 text-xs font-bold uppercase tracking-wider text-stone-500">{s.history}</h2>
       <Card title={t.share.comparisons}>
         {comps.length === 0 ? (
           <Empty>{t.share.noComparisons}</Empty>
