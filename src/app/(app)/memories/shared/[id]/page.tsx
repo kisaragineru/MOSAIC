@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Avatar } from "@/components/avatar";
 import { CommentThread } from "@/components/comment-thread";
+import { dmReplyToRecordAction } from "@/app/actions/dm";
 import { RecordReplies } from "@/components/record-replies";
 import { readReplies } from "@/server/services/replies";
 import { activeConnectionsWith } from "@/server/services/sharing";
@@ -47,9 +48,13 @@ export default async function SharedRecordPage({ params, searchParams }: { param
         {media.length > 0 && <div className={e.body ? "mt-3" : ""}><MediaGallery media={media} label={t.memories.media.label} /></div>}
       </article>
       <RecordReplies t={t} locale={locale} tz={tz} replies={replies} entryId={e.id} ownerId={e.ownerId} ownerName={e.ownerName} ownRecord={false} back={`/memories/shared/${e.id}`} avatars={await avatarUrls(uid, replies.map((x) => x.authorId))} connections={await activeConnectionsWith(uid, replies.map((x) => x.authorId))} note={t.replies.sharedNote} nameNote={t.replies.nameNote(e.ownerName)} />
-      <Link href={`/messages/new?record=${e.id}`} className="inline-flex min-h-10 items-center rounded-full bg-white px-4 text-sm font-semibold text-teal-800 ring-1 ring-stone-200 transition hover:ring-teal-300">
-        {t.messages.shareRecord}
-      </Link>
+      {/* Answer the owner privately: our one-to-one conversation opens with this record attached. */}
+      <form action={dmReplyToRecordAction}>
+        <input type="hidden" name="entryId" value={e.id} />
+        <button type="submit" className="inline-flex min-h-10 items-center rounded-full bg-white px-4 text-sm font-semibold text-teal-800 ring-1 ring-stone-200 transition hover:ring-teal-300">
+          💬 {t.messages.replyToOwner(e.ownerName)}
+        </button>
+      </form>
       {comments.length > 0 && (
         <section id="comments" className="scroll-mt-24">
           <Card title={`💬 ${t.replies.legacyTitle}`}>

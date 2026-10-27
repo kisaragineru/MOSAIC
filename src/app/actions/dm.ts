@@ -2,6 +2,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/server/auth/session";
+import { notFound } from "@/server/errors";
+import { sharedEntry } from "@/server/services/comments";
 import {
   addMembers,
   createGroup,
@@ -135,4 +137,16 @@ export async function dmHideAction(form: FormData) {
   const r = await attempt("dm.hide", () => hideConversation(uid, conv));
   revalidatePath("/messages");
   redirect(r.ok ? "/messages?ok=deleted" : withParam(`/messages/${conv}/info`, "e", r.error));
+}
+
+/** Answer someone's record in your one-to-one conversation with its owner (the record goes along). */
+export async function dmReplyToRecordAction(form: FormData) {
+  const uid = await requireUser();
+  const id = str(form, "entryId");
+  const r = await attempt("dm.replyRecord", async () => {
+    const e = await sharedEntry(uid, id);
+    if (!e) throw notFound();
+    return openDirectForConnection(uid, e.sessionId);
+  });
+  redirect(r.ok ? `/messages/${r.value}?record=${encodeURIComponent(id)}` : withParam(`/memories/shared/${encodeURIComponent(id)}`, "e", r.error));
 }

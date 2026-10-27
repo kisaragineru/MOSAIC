@@ -198,6 +198,12 @@ describe("direct messages", () => {
     // Sora can't send a record she can't read.
     const ownPrivate = await createMemory(ren.userId, { body: "Renの秘密" });
     await expect(sendMessage(sora.userId, c, { kind: "record", recordId: ownPrivate })).rejects.toMatchObject({ code: "not_found" });
+    // Sora answers Hana's record in their one-to-one conversation: the record and her words, as one message.
+    await sendMessage(sora.userId, c, { kind: "record", recordId: rec, body: "わかる、その話" });
+    expect((await dmMessages(hana.userId, c)).at(-1)).toMatchObject({ kind: "record", body: "わかる、その話", record: { mine: true } });
+    // But someone else's record is never passed on: not in a group, not to anyone but its owner.
+    const g = await createGroup(hana.userId, "三人", [sora.userId, ren.userId]);
+    await expect(sendMessage(sora.userId, g, { kind: "record", recordId: rec })).rejects.toMatchObject({ code: "record_to_owner_only" });
   });
 
   it("fast paths: a browser-named message is sent once however often it's retried; one call keeps a conversation current", async () => {

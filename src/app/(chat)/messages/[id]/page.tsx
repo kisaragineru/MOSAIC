@@ -2,16 +2,18 @@ import { notFound } from "next/navigation";
 import { ChatView, type ChatText, type ConvView } from "@/components/chat-view";
 import { DM_EDIT_MINUTES, DM_MAX_PHOTOS, DM_REACTIONS, dmConversation, dmMessages, markRead } from "@/server/services/dm";
 import { getT } from "@/lib/i18n/server";
+import { sharedEntry } from "@/server/services/comments";
 import { uuid } from "@/lib/validation/common";
 import { requireUser } from "@/server/auth/session";
 import { getAccount } from "@/server/services/account";
 import { avatarUrls } from "@/server/services/avatars";
 
 /** One conversation. Loads the newest messages; the client keeps it up to date. */
-export default async function ConversationPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ draft?: string }> }) {
+export default async function ConversationPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ draft?: string; record?: string }> }) {
   const uid = await requireUser();
   const { id } = await params;
-  const draft = ((await searchParams).draft ?? "").slice(0, 1000);
+  const sp = await searchParams;
+  const draft = (sp.draft ?? "").slice(0, 1000);
   if (!uuid.safeParse(id).success) notFound();
   const conv = await dmConversation(uid, id).catch(() => null);
   if (!conv) notFound();
@@ -38,6 +40,8 @@ export default async function ConversationPage({ params, searchParams }: { param
     removePhoto: tm.removePhoto,
     like: tm.like,
     replyingTo: tm.replyingTo(P),
+    recordReply: tm.recordReply(P),
+    recordReplyToYou: tm.recordReplyToYou,
     edit: tm.edit,
     editing: tm.editing,
     save: tm.save,
@@ -86,5 +90,11 @@ export default async function ConversationPage({ params, searchParams }: { param
     members: conv.members.map((m) => ({ id: m.id, name: m.name, left: m.left, lastReadAt: m.lastReadAt?.toISOString() ?? null, typing: m.typing })),
     avatars: Object.fromEntries(await avatarUrls(uid, conv.members.map((m) => m.id))),
   };
-  return <ChatView me={uid} conv={view} initial={initial} tz={tz} locale={locale} text={text} reactions={[...DM_REACTIONS]} editMinutes={DM_EDIT_MINUTES} maxPhotos={DM_MAX_PHOTOS} startDraft={draft} />;
+  // Opened to answer someone's record: only theirs, in our one-to-one conversation with them.
+  const shared = sp.record && uuid.safeParse(sp.record).success ? await sharedEntry(uid, sp.record) : null;
+  const startRecord =
+    shared && conv.kind === "direct" && conv.members.some((x) => x.id === shared.ownerId)
+      ? { id: shared.id, ownerName: shared.ownerName, kind: shared.kind, title: shared.title, body: shared.body }
+      : null;
+  return <ChatView me={uid} conv={view} initial={initial} tz={tz} locale={locale} text={text} reactions={[...DM_REACTIONS]} editMinutes={DM_EDIT_MINUTES} maxPhotos={DM_MAX_PHOTOS} startDraft={draft} startRecord={startRecord} />;
 }

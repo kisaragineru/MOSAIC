@@ -23,6 +23,10 @@ export interface ChatText {
   removePhoto: string;
   like: string;
   replyingTo: string;
+  /** "Replying to {name}'s record" (the composer chip, and the card it sends). */
+  recordReply: string;
+  /** "A reply to your record" (the owner's view of that card). */
+  recordReplyToYou: string;
   edit: string;
   editing: string;
   save: string;
@@ -77,7 +81,7 @@ export interface ConvView {
 type Msg = DmMessage & { pending?: boolean; failed?: string; localPhotos?: string[] };
 type Photo = { blob: Blob; w: number; h: number; url: string };
 /** A message waiting to go out (or that failed and can be sent again). */
-type Job = { id: string; body: string; replyTo: string | null; photos: Photo[]; uploads?: Promise<({ ok: true; value: string } | { ok: false; code: string; transient: boolean })[]>; transient: boolean };
+type Job = { id: string; body: string; replyTo: string | null; recordId?: string | null; photos: Photo[]; uploads?: Promise<({ ok: true; value: string } | { ok: false; code: string; transient: boolean })[]>; transient: boolean };
 
 const POLL_FAST_MS = 1500;
 const POLL_SLOW_MS = 4000;
@@ -129,6 +133,7 @@ export function ChatView({
   editMinutes,
   maxPhotos,
   startDraft = "",
+  startRecord = null,
 }: {
   me: string;
   conv: ConvView;
@@ -141,11 +146,14 @@ export function ChatView({
   maxPhotos: number;
   /** Text to start the box with (a conversation starter), not sent until the user sends it. */
   startDraft?: string;
+  /** Someone else's record this conversation was opened to answer (sent with the first message). */
+  startRecord?: { id: string; ownerName: string; kind: string; title: string | null; body: string | null } | null;
 }) {
   const [conv, setConv] = useState(initialConv);
   const [msgs, setMsgs] = useState<Msg[]>(initial);
   const [hasOlder, setHasOlder] = useState(initial.length >= 40);
   const [draft, setDraft] = useState(startDraft);
+  const [aboutRecord, setAboutRecord] = useState(startRecord);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [replyTo, setReplyTo] = useState<Msg | null>(null);
   const [editing, setEditing] = useState<Msg | null>(null);
@@ -173,11 +181,12 @@ export function ChatView({
   }, []);
   // A draft from a link is used once: drop it from the address so a reload doesn't bring it back.
   useEffect(() => {
-    if (!startDraft) return;
+    if (!startDraft && !startRecord) return;
     const u = new URL(window.location.href);
     u.searchParams.delete("draft");
+    u.searchParams.delete("record");
     window.history.replaceState(window.history.state, "", u);
-  }, [startDraft]);
+  }, [startDraft, startRecord]);
   const outbox = useRef(new Map<string, Job>());
   // The site's sign-in ran out (any request answers 401): stop polling, offer a reload.
   const [signedOut, setSignedOut] = useState(false);
@@ -369,7 +378,7 @@ export function ChatView({
     const attachmentIds = ups.map((u) => (u.ok ? u.value : ""));
     return post(
       `/api/dm/${conv.id}/send`,
-      { headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: job.id, kind: job.photos.length ? "image" : "text", body: job.body || undefined, replyTo: job.replyTo, attachmentIds }) },
+      { headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: job.id, kind: job.recordId ? "record" : job.photos.length ? "image" : "text", body: job.body || undefined, replyTo: job.replyTo, recordId: job.recordId ?? undefined, attachmentIds }) },
       (j) => j.id as string,
     );
   };
@@ -487,17 +496,38 @@ export function ChatView({
       void sync();
       return;
     }
-    if (!body && photos.length === 0) return;
-    // Shown at once as sent; it goes out in the background (the browser names it, so a retry can't duplicate it).
-    const job: Job = { id: crypto.randomUUID(), body, replyTo: replyTo?.id ?? null, photos, transient: false };
-    startUploads(job);
-    const reply = replyTo;
+    if (!body && photos.length === 0 && !aboutRecord) return;
     const at = new Date().toISOString();
     stickToBottom.current = true;
+    // Answering someone's record: the record and these words go as one message; photos follow on their own.
+    if (aboutRecord) {
+      const rec = aboutRecord;
+      const recJob: Job = { id: crypto.randomUUID(), body, replyTo: null, recordId: rec.id, photos: [], transient: false };
+      startUploads(recJob);
+      setMsgs((cur) => [
+        ...cur,
+        {
+          id: recJob.id, senderId: me, senderName: null, kind: "record", body: body || null, meta: null, createdAt: at, updatedAt: at,
+          edited: false, deleted: false, record: { ...rec, mine: false }, attachments: [], reactions: [], pending: true, reply: null,
+        },
+      ]);
+      setAboutRecord(null);
+      enqueue(recJob);
+      if (!photos.length) {
+        if (!override) setDraft("");
+        setReplyTo(null);
+        return;
+      }
+    }
+    // Shown at once as sent; it goes out in the background (the browser names it, so a retry can't duplicate it).
+    const text = aboutRecord ? "" : body;
+    const job: Job = { id: crypto.randomUUID(), body: text, replyTo: replyTo?.id ?? null, photos, transient: false };
+    startUploads(job);
+    const reply = replyTo;
     setMsgs((cur) => [
       ...cur,
       {
-        id: job.id, senderId: me, senderName: null, kind: photos.length ? "image" : "text", body: body || null, meta: null, createdAt: at, updatedAt: at,
+        id: job.id, senderId: me, senderName: null, kind: photos.length ? "image" : "text", body: text || null, meta: null, createdAt: at, updatedAt: at,
         edited: false, deleted: false, record: null, attachments: [], reactions: [], pending: true, localPhotos: photos.map((p) => p.url),
         reply: reply ? { id: reply.id, senderName: names.get(reply.senderId ?? "") ?? null, kind: reply.kind, body: reply.body, deleted: reply.deleted } : null,
       },
@@ -702,7 +732,9 @@ export function ChatView({
                       onClick={(e) => e.stopPropagation()}
                       className="block w-64 max-w-full rounded-3xl bg-white p-3 text-stone-900 shadow-sm ring-1 ring-stone-200 transition hover:ring-teal-300"
                     >
-                      <span className="block text-[11px] font-semibold text-rose-800">📄 {m.record.mine ? tx.yourRecord : fill(tx.recordOf, { name: m.record.ownerName })}</span>
+                      <span className="block text-[11px] font-semibold text-rose-800">
+                        📄 {m.record.mine ? (m.senderId === me ? tx.yourRecord : tx.recordReplyToYou) : fill(tx.recordReply, { name: m.record.ownerName })}
+                      </span>
                       {m.record.title && <span className="emoji-color block font-semibold">{m.record.title}</span>}
                       <span className="line-clamp-4 block whitespace-pre-line text-sm text-stone-700">{m.record.body}</span>
                       <span className="mt-1 block text-right text-xs font-semibold text-teal-700">{tx.openRecord} →</span>
@@ -841,6 +873,17 @@ export function ChatView({
                 </button>
               </div>
             )}
+            {aboutRecord && !editing && (
+              <div className="mb-2 flex items-start gap-2 rounded-2xl bg-rose-50 px-3 py-2 text-xs text-stone-600 ring-1 ring-rose-100" data-testid="record-reply-chip">
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold text-rose-900">📄 {fill(tx.recordReply, { name: aboutRecord.ownerName })}</span>
+                  <span className="line-clamp-2">{aboutRecord.title ?? aboutRecord.body}</span>
+                </span>
+                <button type="button" aria-label={tx.cancel} onClick={() => setAboutRecord(null)} className="h-6 w-6 shrink-0 rounded-full text-base leading-none text-stone-500 hover:bg-rose-100">
+                  ✕
+                </button>
+              </div>
+            )}
             {photos.length > 0 && (
               <div className="mb-2 flex gap-2">
                 {photos.map((p, i) => (
@@ -885,7 +928,7 @@ export function ChatView({
                 placeholder={tx.placeholder}
                 className="field-sizing-content max-h-36 min-h-11 flex-1 resize-none rounded-3xl border border-stone-200 bg-white px-4 py-2.5 text-base leading-snug text-stone-900 placeholder:text-stone-400 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20"
               />
-              {draft.trim() || photos.length || editing ? (
+              {draft.trim() || photos.length || editing || aboutRecord ? (
                 <button
                   type="button"
                   onClick={() => void send()}

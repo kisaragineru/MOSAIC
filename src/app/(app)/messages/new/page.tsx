@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { dmShareRecordAction, dmStartAction } from "@/app/actions/dm";
 import { DmAvatar } from "@/components/dm-avatar";
 import { Flash } from "@/components/flash";
@@ -19,13 +20,14 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
   const tm = t.messages;
   const contacts = await dmContacts(uid);
   const recordId = sp.record && uuid.safeParse(sp.record).success ? sp.record : null;
-  // The record being shared: mine, or someone else's that I may read.
+  // The record being shared: only my own. Someone else's goes back to its page, where it can be
+  // answered to its owner (it is never passed on to others).
   const record = recordId
     ? await getMemory(uid, recordId)
         .then((m) => ({ title: m.title, body: m.body, owner: tm.yourRecord }))
         .catch(async () => {
-          const e = await sharedEntry(uid, recordId);
-          return e ? { title: e.title, body: e.body, owner: tm.recordOf(e.ownerName) } : null;
+          if (await sharedEntry(uid, recordId)) redirect(`/memories/shared/${recordId}`);
+          return null;
         })
     : null;
   const recent = recordId ? (await dmInbox(uid)).filter((c) => c.canSend).slice(0, 6) : [];

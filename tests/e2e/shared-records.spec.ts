@@ -294,6 +294,23 @@ test("replies under a record: one thread for everyone who can see it", async ({ 
   await thread(sora).locator("li", { hasText: "おいしそう！" }).getByRole("button", { name: "削除" }).click();
   await expect(thread(sora)).not.toContainText("おいしそう！");
 
+  // Sora answers Hana privately: their conversation opens with the record attached; it goes as one message.
+  await sora.goto(shared);
+  await sora.getByRole("button", { name: "💬 ハナさんにメッセージで返信" }).click();
+  await sora.waitForURL(/\/messages\/[0-9a-f-]+/);
+  await expect(sora.getByTestId("record-reply-chip")).toContainText("ハナさんの記録への返信");
+  await sora.getByRole("textbox").last().fill("こっそり聞きたいんだけど");
+  await sora.getByRole("button", { name: "送信" }).click();
+  await expect(sora.getByTestId("record-reply-chip")).toHaveCount(0);
+  await expect(sora.getByText("こっそり聞きたいんだけど")).toBeVisible();
+  const dm = new URL(sora.url()).pathname;
+  await hana.goto(dm);
+  await expect(hana.getByText("あなたの記録への返信")).toBeVisible();
+  await expect(hana.getByText("こっそり聞きたいんだけど")).toBeVisible();
+  // Someone else's record can't be passed on from the "share" page: it goes back to the record.
+  await sora.goto(`/messages/new?record=${record.split("/").pop()}`);
+  await sora.waitForURL(new RegExp(`/memories/shared/`));
+
   // Someone not connected can't open the shared page at all.
   const stranger = await user(browser, "X");
   expect((await stranger.goto(shared))?.status()).toBe(404);
