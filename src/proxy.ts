@@ -45,8 +45,30 @@ const PROBE = [
 ];
 export const isProbe = (path: string) => PROBE.some((r) => r.test(path));
 
+/**
+ * The site's own address is APP_ORIGIN. Its default netlify.app address (not a branch or preview
+ * deploy's, which carry "--") sends people there, keeping the path: old links and the installed
+ * app keep working. Done here because this runs before the host's own redirect rules.
+ */
+function canonical(request: NextRequest): NextResponse | null {
+  const origin = process.env.APP_ORIGIN;
+  if (!origin) return null;
+  const host = request.headers.get("host") ?? request.nextUrl.host;
+  let target: URL;
+  try {
+    target = new URL(origin);
+  } catch {
+    return null;
+  }
+  if (host === target.host || !host.endsWith(".netlify.app") || host.includes("--")) return null;
+  const to = new URL(request.nextUrl.pathname + request.nextUrl.search, target);
+  return NextResponse.redirect(to, request.method === "GET" || request.method === "HEAD" ? 301 : 308);
+}
+
 /** Per-request CSP nonce + security headers (see docs/SECURITY.md). */
 export function proxy(request: NextRequest) {
+  const moved = canonical(request);
+  if (moved) return moved;
   if (isProbe(request.nextUrl.pathname)) return new NextResponse("Not found", { status: 404, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
   const open = OPEN.has(request.nextUrl.pathname);
   // Static files: as they are. The policy page goes on below, with its security headers.
