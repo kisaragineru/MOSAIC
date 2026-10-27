@@ -7,6 +7,8 @@ export interface FilmText {
   open: string[];
   /** Under "A lifetime, piece by piece." in the reader's language (empty in English). */
   tagline: string;
+  /** Under "Every piece of you matters." at the close, likewise (empty in English). */
+  closing: string;
   typesEyebrow: string;
   typesTitle: string;
   typesBody: string;
@@ -381,6 +383,10 @@ export function IntroFilm({ tx, types, start, after, embedded = false, greeting 
               <div className="absolute -bottom-1/4 left-1/2 h-[50vmax] w-[50vmax] -translate-x-1/2 rounded-full bg-amber-200/50 blur-3xl" />
             </div>
             <div className="mb-8"><Gather s={s} size="h-4 w-4" /></div>
+            {/* Answers the opening's "A lifetime, piece by piece." */}
+            <p className={`relative font-serif text-base italic tracking-wide text-stone-700 ${fade(s, "delay-500")}`}>Every piece of you matters.</p>
+            {tx.closing && <p className={`relative mt-1 mb-8 font-serif text-sm text-stone-600 ${fade(s, "delay-700")}`}>{tx.closing}</p>}
+            {!tx.closing && <div className="mb-8" />}
             <h2 className={`relative whitespace-pre-line font-serif text-xl font-bold leading-relaxed text-stone-900 [text-wrap:balance] ${fade(s)}`}>{tx.startTitle}</h2>
             <p className={`relative mt-3 text-sm text-stone-600 ${fade(s, "delay-150")}`}>{tx.startNote}</p>
             <Link href={start} className={`relative mt-8 inline-block rounded-full bg-violet-700 px-8 py-3.5 font-bold text-white shadow-lg hover:bg-violet-800 ${fade(s, "delay-300")}`}>{tx.start}</Link>

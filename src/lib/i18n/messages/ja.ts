@@ -1601,6 +1601,7 @@ export const ja: Dict = {
   film: {
     open: ["自分のことを、", "いちばん知らないのは、", "もしかしたら、自分かもしれない。"] as string[],
     tagline: "ひとかけらずつ、あなたになる。",
+    closing: "あなたのどのかけらも、大切。",
     typesEyebrow: "生まれた日の空に",
     typesTitle: "あなたは、どのタイプ？",
     typesBody: "ベトナムの伝統的な命術 Tử Vi が、生まれた日から、14のタイプのどれに近いかを読み解きます。",

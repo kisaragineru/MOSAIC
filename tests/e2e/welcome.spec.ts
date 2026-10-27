@@ -225,6 +225,8 @@ test("before signing up, the top page tells MOSAIC as a short film and leads to 
   await page.goto("/");
   const film = page.getByTestId("intro-film");
   await expect(film.getByText("もしかしたら、自分かもしれない。")).toBeVisible();
+  await expect(film.getByText("A lifetime, piece by piece.")).toBeAttached();
+  await expect(film.getByText("Every piece of you matters.")).toBeAttached();
   await expect(film.getByRole("link", { name: "はじめる（約3分）" })).toHaveAttribute("href", "/register");
   await film.getByRole("link", { name: /ログイン/ }).click();
   await page.waitForURL(/\/login/);
