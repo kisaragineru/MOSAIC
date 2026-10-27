@@ -1605,7 +1605,7 @@ export const vi: Dict = {
   film: {
     open: ["Người ít hiểu bạn nhất,", "có khi lại chính là bạn."] as string[],
     tagline: "Từng mảnh nhỏ, thành chính bạn.",
-    closing: "Mỗi mảnh của bạn đều quý giá.",
+    closing: "Mỗi mảnh của bạn, đều được nâng niu.",
     typesEyebrow: "Trên bầu trời ngày bạn sinh ra",
     typesTitle: "Bạn thuộc kiểu người nào?",
     typesBody: "Tử Vi, môn luận mệnh truyền thống của Việt Nam, đọc từ ngày sinh xem bạn gần với kiểu nào trong 14 kiểu.",

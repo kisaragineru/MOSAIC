@@ -7,7 +7,7 @@ export interface FilmText {
   open: string[];
   /** Under "A lifetime, piece by piece." in the reader's language (empty in English). */
   tagline: string;
-  /** Under "Every piece of you matters." at the close, likewise (empty in English). */
+  /** Under "Every piece of you, cherished." at the close, likewise (empty in English). */
   closing: string;
   typesEyebrow: string;
   typesTitle: string;
@@ -384,7 +384,7 @@ export function IntroFilm({ tx, types, start, after, embedded = false, greeting 
             </div>
             <div className="mb-8"><Gather s={s} size="h-4 w-4" /></div>
             {/* Answers the opening's "A lifetime, piece by piece." */}
-            <p className={`relative font-serif text-base italic tracking-wide text-stone-700 ${fade(s, "delay-500")}`}>Every piece of you matters.</p>
+            <p className={`relative font-serif text-base italic tracking-wide text-stone-700 ${fade(s, "delay-500")}`}>Every piece of you, cherished.</p>
             {tx.closing && <p className={`relative mt-1 mb-8 font-serif text-sm text-stone-600 ${fade(s, "delay-700")}`}>{tx.closing}</p>}
             {!tx.closing && <div className="mb-8" />}
             <h2 className={`relative whitespace-pre-line font-serif text-xl font-bold leading-relaxed text-stone-900 [text-wrap:balance] ${fade(s)}`}>{tx.startTitle}</h2>

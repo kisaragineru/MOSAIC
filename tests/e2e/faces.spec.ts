@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 
+test.use({ locale: "ja-JP", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.11.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
+
 test("development: set where the faces are in the type illustrations, then write the settings out", async ({ page }) => {
   await page.goto("/register");
   await page.getByLabel("なんと呼べばいいですか？").fill("ミオ");
