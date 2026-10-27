@@ -2,6 +2,8 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { uploadAvatarAction } from "@/app/actions/avatar";
+import { faceRect, TYPE_FACES, type FaceCrop, type FaceWho } from "@/lib/tuvi/faces";
+import type { MainStarId } from "@/lib/tuvi/stars";
 
 export interface AvatarEditorText {
   choose: string;
@@ -119,12 +121,18 @@ export function AvatarEditor({ text: tx, hasPhoto, mine = [], all = [] }: { text
 
   // A type illustration, opened in the same editor: it starts on the upper face, and the owner moves
   // and zooms it to the part they like.
-  const pickType = async (id: string) => {
+  // With a face set for it, it opens framed on that face (still movable).
+  const pickType = async (id: string, face?: FaceCrop) => {
     setError(null);
     try {
       const res = await fetch(`/tuvi-types/${id}.webp`);
       const img = await createImageBitmap(await res.blob());
-      setShot(clamp({ img, rot: 0, zoom: 1.8, x: 0, y: 9999 }));
+      if (face) {
+        const { w, h } = { w: img.width, h: img.height };
+        const zoom = Math.min(MAX_ZOOM, 1 / (2 * face.r));
+        const k = Math.max(VIEW / w, VIEW / h) * zoom;
+        setShot(clamp({ img, rot: 0, zoom, x: (w / 2 - face.cx * w) * k, y: (h / 2 - face.cy * h) * k }));
+      } else setShot(clamp({ img, rot: 0, zoom: 1.8, x: 0, y: 9999 }));
     } catch {
       setError(tx.failed);
     }
@@ -287,12 +295,12 @@ export function AvatarEditor({ text: tx, hasPhoto, mine = [], all = [] }: { text
               {mine.length > 0 && (
                 <>
                   <p className="mt-3 text-[11px] font-semibold text-stone-500">{tx.yourType}</p>
-                  <TypeChoices list={mine} onPick={(id) => void pickType(id)} />
+                  <TypeChoices list={mine} onPick={(id, face) => void pickType(id, face)} />
                 </>
               )}
               <details className="mt-2" open={mine.length === 0}>
                 <summary className="cursor-pointer text-xs font-semibold text-violet-800">{tx.otherTypes}</summary>
-                <TypeChoices list={all.filter((x) => !mine.some((m) => m.id === x.id))} onPick={(id) => void pickType(id)} />
+                <TypeChoices list={all.filter((x) => !mine.some((m) => m.id === x.id))} onPick={(id, face) => void pickType(id, face)} />
               </details>
             </div>
           )}
@@ -302,18 +310,54 @@ export function AvatarEditor({ text: tx, hasPhoto, mine = [], all = [] }: { text
   );
 }
 
-function TypeChoices({ list, onPick }: { list: AvatarType[]; onPick: (id: string) => void }) {
+/** Each type's faces when they've been set (a round tile each), or else its whole picture. */
+function TypeChoices({ list, onPick }: { list: AvatarType[]; onPick: (id: string, face?: FaceCrop) => void }) {
   return (
     <ul className="mt-1.5 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
-      {list.map((x) => (
-        <li key={x.id} className="w-16 shrink-0">
-          <button type="button" onClick={() => onPick(x.id)} aria-label={x.label} className="block w-full overflow-hidden rounded-xl ring-1 ring-stone-200 transition hover:ring-violet-400 active:scale-95">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`/tuvi-types/${x.id}-sm.webp`} alt="" width={300} height={594} loading="lazy" className="block aspect-[3/4] w-full object-cover object-top" />
-          </button>
-          <p className="mt-0.5 line-clamp-2 text-center text-[10px] leading-tight text-stone-600">{x.label}</p>
-        </li>
-      ))}
+      {list.flatMap((x) => {
+        const faces = TYPE_FACES[x.id as MainStarId];
+        const set = (["m", "f"] as FaceWho[]).filter((w) => faces?.[w]);
+        if (!set.length)
+          return [
+            <li key={x.id} className="w-16 shrink-0">
+              <button type="button" onClick={() => onPick(x.id)} aria-label={x.label} className="block w-full overflow-hidden rounded-xl ring-1 ring-stone-200 transition hover:ring-violet-400 active:scale-95">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`/tuvi-types/${x.id}-sm.webp`} alt="" width={300} height={594} loading="lazy" className="block aspect-[3/4] w-full object-cover object-top" />
+              </button>
+              <p className="mt-0.5 line-clamp-2 text-center text-[10px] leading-tight text-stone-600">{x.label}</p>
+            </li>,
+          ];
+        return set.map((w, j) => (
+          <li key={`${x.id}-${w}`} className="w-16 shrink-0">
+            <button type="button" onClick={() => onPick(x.id, faces![w])} aria-label={`${x.label} ${j + 1}`} className="block rounded-full ring-1 ring-stone-200 transition hover:ring-violet-400 active:scale-95">
+              <FaceTile id={x.id} face={faces![w]!} />
+            </button>
+            {j === 0 && <p className="mt-0.5 line-clamp-2 text-center text-[10px] leading-tight text-stone-600">{x.label}</p>}
+          </li>
+        ));
+      })}
     </ul>
   );
+}
+
+/** One face, cut from the illustration onto a small round canvas. */
+function FaceTile({ id, face }: { id: string; face: FaceCrop }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const im = new Image();
+    im.onload = () => {
+      const c = ref.current;
+      if (!c) return;
+      c.width = 128;
+      c.height = 128;
+      const ctx = c.getContext("2d")!;
+      const { sx, sy, size } = faceRect(face, im.width, im.height);
+      ctx.beginPath();
+      ctx.arc(64, 64, 64, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(im, sx, sy, size, size, 0, 0, 128, 128);
+    };
+    im.src = `/tuvi-types/${id}.webp`;
+  }, [id, face]);
+  return <canvas ref={ref} className="block h-16 w-16 rounded-full bg-stone-100" />;
 }

@@ -94,6 +94,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <Button type="submit" className="min-h-9 px-4 py-1.5 text-sm">{t.trial.start} →</Button>
             </form>
           </div>
+          <Link href="/settings/faces" className="block rounded-2xl bg-white p-4 text-sm font-semibold text-amber-950 hover:ring-1 hover:ring-amber-300">🎭 タイプの顔の切り抜きを設定する →</Link>
           <h2 className="font-semibold text-amber-950">🧪 {td.title}</h2>
           <p className="text-xs leading-5 text-amber-900">{td.help}</p>
           {companions.length > 0 && (
