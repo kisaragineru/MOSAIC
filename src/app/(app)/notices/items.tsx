@@ -140,7 +140,7 @@ export async function noticeItems(uid: string, t: Dict, locale: Locale): Promise
         <PushNudgeButton publicKey={pushKey} label={t.notices.pushAskOn} working={t.settings.push.working} failed={t.settings.push.failed} denied={t.settings.push.denied} />
       </div>
     ) }] : []),
-    ...(questionReminder ? [{ ref: { key: `question:${daily.day}`, kind: "habit" as const }, icon: "🔔", body: <Link href="/discover" className="block font-semibold underline-offset-4 hover:underline">{t.home.todayQuestion}</Link> }] : []),
+    ...(questionReminder ? [{ ref: { key: `question:${daily.day}`, kind: "habit" as const }, icon: "❔", body: <Link href="/discover" className="block font-semibold underline-offset-4 hover:underline">{t.home.todayQuestion}</Link> }] : []),
     // A week of closing today's question: keep the reminder, or stop it (asked, not decided for them).
     ...(np.dailyQuestion && (await questionClosedStreak(uid)) ? [{ ref: { key: `question-ask:${daily.day}`, kind: "once" as const }, icon: "🔕", body: (
       <div data-testid="question-ask">
