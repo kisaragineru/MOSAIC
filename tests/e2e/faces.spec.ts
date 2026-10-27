@@ -25,6 +25,6 @@ test("development: set where the faces are in the type illustrations, then write
   await page.mouse.up();
   await page.getByRole("button", { name: "設定を書き出す" }).click();
   const out = JSON.parse(await page.locator("textarea").inputValue());
-  expect(out.tu_vi.m.r).toBe(0.19);
-  expect(out.tu_vi.m.cx).not.toBe(0.38);
+  expect(out.tu_vi.m.r).toBe(0.355);
+  expect(out.tu_vi.m.cx).not.toBe(0.361);
 });

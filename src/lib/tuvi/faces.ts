@@ -12,22 +12,22 @@ export interface FaceCrop {
 }
 export type FaceWho = "m" | "f";
 
-// A first pass, placed from the pictures; refine on /settings/faces and paste the result here.
+// Set by hand on /settings/faces.
 export const TYPE_FACES: Partial<Record<MainStarId, Partial<Record<FaceWho, FaceCrop>>>> = {
-  tu_vi: { m: { cx: 0.38, cy: 0.096, r: 0.19 }, f: { cx: 0.45, cy: 0.63, r: 0.19 } },
-  thien_co: { m: { cx: 0.51, cy: 0.121, r: 0.19 }, f: { cx: 0.58, cy: 0.671, r: 0.19 } },
-  thai_duong: { m: { cx: 0.46, cy: 0.096, r: 0.19 }, f: { cx: 0.48, cy: 0.661, r: 0.19 } },
-  vu_khuc: { m: { cx: 0.38, cy: 0.096, r: 0.19 }, f: { cx: 0.46, cy: 0.661, r: 0.19 } },
-  thien_dong: { m: { cx: 0.51, cy: 0.096, r: 0.19 }, f: { cx: 0.46, cy: 0.635, r: 0.19 } },
-  liem_trinh: { m: { cx: 0.46, cy: 0.096, r: 0.19 }, f: { cx: 0.49, cy: 0.641, r: 0.19 } },
-  thien_phu: { m: { cx: 0.45, cy: 0.121, r: 0.19 }, f: { cx: 0.45, cy: 0.651, r: 0.19 } },
-  thai_am: { m: { cx: 0.44, cy: 0.14, r: 0.19 }, f: { cx: 0.38, cy: 0.54, r: 0.19 } },
-  tham_lang: { m: { cx: 0.5, cy: 0.121, r: 0.19 }, f: { cx: 0.45, cy: 0.555, r: 0.19 } },
-  cu_mon: { m: { cx: 0.43, cy: 0.121, r: 0.19 }, f: { cx: 0.52, cy: 0.535, r: 0.19 } },
-  thien_tuong: { m: { cx: 0.41, cy: 0.115, r: 0.19 }, f: { cx: 0.53, cy: 0.52, r: 0.19 } },
-  thien_luong: { m: { cx: 0.44, cy: 0.131, r: 0.19 }, f: { cx: 0.52, cy: 0.525, r: 0.19 } },
-  that_sat: { m: { cx: 0.28, cy: 0.108, r: 0.19 }, f: { cx: 0.62, cy: 0.515, r: 0.19 } },
-  pha_quan: { m: { cx: 0.49, cy: 0.137, r: 0.19 }, f: { cx: 0.46, cy: 0.52, r: 0.19 } },
+  tu_vi: { m: { cx: 0.361, cy: 0.182, r: 0.355 }, f: { cx: 0.502, cy: 0.704, r: 0.46 } },
+  thien_co: { m: { cx: 0.533, cy: 0.201, r: 0.4 }, f: { cx: 0.574, cy: 0.679, r: 0.425 } },
+  thai_duong: { m: { cx: 0.486, cy: 0.209, r: 0.415 }, f: { cx: 0.515, cy: 0.712, r: 0.47 } },
+  vu_khuc: { m: { cx: 0.487, cy: 0.191, r: 0.38 }, f: { cx: 0.566, cy: 0.693, r: 0.435 } },
+  thien_dong: { m: { cx: 0.554, cy: 0.21, r: 0.415 }, f: { cx: 0.5, cy: 0.717, r: 0.415 } },
+  liem_trinh: { m: { cx: 0.433, cy: 0.176, r: 0.345 }, f: { cx: 0.51, cy: 0.706, r: 0.45 } },
+  thien_phu: { m: { cx: 0.497, cy: 0.218, r: 0.43 }, f: { cx: 0.503, cy: 0.713, r: 0.43 } },
+  thai_am: { m: { cx: 0.349, cy: 0.177, r: 0.345 }, f: { cx: 0.518, cy: 0.58, r: 0.43 } },
+  tham_lang: { m: { cx: 0.54, cy: 0.211, r: 0.415 }, f: { cx: 0.538, cy: 0.621, r: 0.45 } },
+  cu_mon: { m: { cx: 0.454, cy: 0.207, r: 0.405 }, f: { cx: 0.507, cy: 0.598, r: 0.475 } },
+  thien_tuong: { m: { cx: 0.391, cy: 0.19, r: 0.37 }, f: { cx: 0.564, cy: 0.563, r: 0.43 } },
+  thien_luong: { m: { cx: 0.44, cy: 0.219, r: 0.435 }, f: { cx: 0.505, cy: 0.567, r: 0.48 } },
+  that_sat: { m: { cx: 0.342, cy: 0.177, r: 0.335 }, f: { cx: 0.604, cy: 0.581, r: 0.39 } },
+  pha_quan: { m: { cx: 0.516, cy: 0.184, r: 0.355 }, f: { cx: 0.486, cy: 0.568, r: 0.375 } },
 };
 
 /** The full-size illustration's size (px). */
