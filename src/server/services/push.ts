@@ -132,3 +132,31 @@ export async function notifyMessageLater(senderId: string, messageId: string) {
     await notifyMessage(senderId, messageId);
   }
 }
+
+export interface PushTestResult {
+  /** The push service (its host), e.g. fcm.googleapis.com, web.push.apple.com. */
+  service: string;
+  ok: boolean;
+  status: number | null;
+  message: string | null;
+}
+
+/** A test notification to my own browsers, with what each push service answered (Settings' check). */
+export async function sendTestPush(userId: string, text: { title: string; body: string }): Promise<PushTestResult[]> {
+  if (!pushConfigured()) return [];
+  const subs = await withUser(userId, (tx) => tx.select({ endpoint: pushSubscriptions.endpoint, p256dh: pushSubscriptions.p256dh, auth: pushSubscriptions.auth }).from(pushSubscriptions));
+  vapid();
+  return Promise.all(
+    subs.map(async (s) => {
+      const service = new URL(s.endpoint).host;
+      try {
+        const r = await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify({ title: text.title, body: text.body, url: "/settings#push", tag: "test" }), { TTL: 60, urgency: "high", timeout: 8000 });
+        return { service, ok: true, status: r.statusCode, message: null };
+      } catch (e) {
+        const err = e as { statusCode?: number; body?: string; message?: string };
+        if (err.statusCode === 404 || err.statusCode === 410) await withUser(userId, (tx) => tx.execute(sql`select push_forget(${s.endpoint})`));
+        return { service, ok: false, status: err.statusCode ?? null, message: (err.body || err.message || "").slice(0, 200) };
+      }
+    }),
+  );
+}

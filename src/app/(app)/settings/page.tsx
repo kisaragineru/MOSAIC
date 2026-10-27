@@ -14,6 +14,7 @@ import { aiConfigured } from "@/server/ai/claude";
 import { getAccount, getNotificationPrefs } from "@/server/services/account";
 import { devToolsFor, isAdmin } from "@/server/services/admin";
 import { PushToggle } from "@/components/push-toggle";
+import { PushCheck } from "@/components/push-check";
 import { pushDevices, pushPublicKey } from "@/server/services/push";
 
 
@@ -63,6 +64,14 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <Button type="submit" variant="secondary">{t.common.save}</Button>
             </form>
             <p className="mt-3 text-xs text-stone-400">{tp.devices(await pushDevices(uid))}</p>
+            <PushCheck
+              text={{
+                ...tp.diag,
+                units: tp.diag.units(9999).replace("9999", "{n}"),
+                sent: tp.diag.sent("{service}", 9999).replace("9999", "{status}"),
+                failedSend: tp.diag.failedSend("{service}", 9999, "{message}").replace("9999", "{status}"),
+              }}
+            />
           </Card>
         </section>
       )}

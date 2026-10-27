@@ -33,6 +33,15 @@ test("notifications are offered in Settings, off until turned on; the app can go
   await page.waitForURL(/settings\?ok=saved/);
   await expect(page.locator("#push").getByLabel("通知にメッセージの文面も表示する")).toBeChecked();
 
+  // The check: each step, and a test send that says there's no device yet.
+  const check = page.locator("#push").getByTestId("push-check");
+  await check.getByText("うまく届かないとき（診断）").click();
+  await expect(check.getByText("このブラウザは通知に対応")).toBeVisible();
+  await expect(check.getByText("通知の許可")).toBeVisible();
+  await expect(check.getByText("サーバーに登録された端末")).toBeVisible();
+  await check.getByRole("button", { name: /自分にテスト通知を送る/ }).click();
+  await expect(check.getByTestId("push-test-results")).toContainText("通知をオンにした端末が登録されていません");
+
   // The service worker and the manifest are served.
   const sw = await page.request.get("/sw.js");
   expect(sw.status()).toBe(200);
