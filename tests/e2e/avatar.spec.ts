@@ -81,8 +81,8 @@ test("a picture made from a type illustration, cropped by its owner", async ({ b
   await mio.goto("/me/photo");
   const types = mio.getByTestId("avatar-types");
   await expect(types).toContainText("タイプのイラストから作る");
-  // No type yet: all fourteen are offered.
-  await types.getByRole("button", { name: "静かに見守る月タイプ" }).click();
+  // No type yet: all fourteen are offered, each face as a round tile.
+  await types.getByRole("button", { name: "静かに見守る月タイプ 2" }).click();
   const area = mio.getByRole("img", { name: /写真の位置と大きさ/ });
   await expect(area).toBeVisible();
   await mio.getByRole("slider", { name: "拡大・縮小" }).fill("2.5");

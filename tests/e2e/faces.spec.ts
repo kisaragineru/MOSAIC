@@ -13,7 +13,8 @@ test("development: set where the faces are in the type illustrations, then write
   await page.goto("/settings#dev");
   await page.getByRole("link", { name: /タイプの顔の切り抜き/ }).click();
   await page.waitForURL(/\/settings\/faces$/);
-  await expect(page.getByText("0 / 28 設定済み")).toBeVisible();
+  // A first pass is already set for all 28.
+  await expect(page.getByText("28 / 28 設定済み")).toBeVisible();
   // Drag the circle onto the face.
   const area = page.getByLabel(/の顔の位置/);
   await area.scrollIntoViewIfNeeded();
@@ -22,7 +23,8 @@ test("development: set where the faces are in the type illustrations, then write
   await page.mouse.down();
   await page.mouse.move(b.x + 160, b.y + 60, { steps: 4 });
   await page.mouse.up();
-  await expect(page.getByText("1 / 28 設定済み")).toBeVisible();
   await page.getByRole("button", { name: "設定を書き出す" }).click();
-  expect(JSON.parse(await page.locator("textarea").inputValue())).toMatchObject({ tu_vi: { m: { r: 0.17 } } });
+  const out = JSON.parse(await page.locator("textarea").inputValue());
+  expect(out.tu_vi.m.r).toBe(0.19);
+  expect(out.tu_vi.m.cx).not.toBe(0.38);
 });

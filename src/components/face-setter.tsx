@@ -19,7 +19,8 @@ export function FaceSetter({ types, initial }: { types: { id: string; label: str
   const [i, setI] = useState(0);
   const [who, setWho] = useState<FaceWho>("m");
   const [out, setOut] = useState<string | null>(null);
-  const [img, setImg] = useState<HTMLImageElement | null>(null);
+  // The picture together with the type it belongs to, so a slow load never shows under another type.
+  const [loaded, setLoaded] = useState<{ id: string; img: HTMLImageElement } | null>(null);
   const big = useRef<HTMLCanvasElement>(null);
   const small = useRef<HTMLCanvasElement>(null);
   const drag = useRef<{ x: number; y: number } | null>(null);
@@ -47,14 +48,24 @@ export function FaceSetter({ types, initial }: { types: { id: string; label: str
   const set = (c: FaceCrop) => save({ ...crops, [t.id]: { ...crops[t.id], [who]: { cx: round(c.cx), cy: round(c.cy), r: round(c.r) } } });
 
   useEffect(() => {
+    let live = true;
     const im = new Image();
-    im.onload = () => setImg(im);
+    im.onload = () => live && setLoaded({ id: t.id, img: im });
     im.src = `/tuvi-types/${t.id}.webp`;
+    return () => {
+      live = false;
+    };
   }, [t.id]);
+  const img = loaded?.id === t.id ? loaded.img : null;
 
   // Draw: the picture, dimmed outside the circle; and the circle as the picture will look.
   useEffect(() => {
-    if (!img || !big.current || !small.current) return;
+    if (!big.current || !small.current) return;
+    if (!img) {
+      big.current.getContext("2d")?.clearRect(0, 0, big.current.width, big.current.height);
+      small.current.getContext("2d")?.clearRect(0, 0, small.current.width, small.current.height);
+      return;
+    }
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const W = VIEW_W * dpr;
     const H = Math.round((W * img.height) / img.width);
@@ -159,6 +170,20 @@ export function FaceSetter({ types, initial }: { types: { id: string; label: str
       <div className="space-y-2 rounded-2xl bg-white p-4 ring-1 ring-stone-200">
         <button type="button" onClick={() => setOut(JSON.stringify(crops))} className="rounded-full bg-violet-700 px-4 py-2 text-sm font-bold text-white">
           設定を書き出す
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (!window.confirm("このブラウザで動かした位置を消して、アプリに入っている設定に戻しますか？")) return;
+            try {
+              localStorage.removeItem(KEY);
+            } catch {}
+            setCrops(initial);
+            setOut(null);
+          }}
+          className="ml-2 text-xs text-stone-500 underline underline-offset-4"
+        >
+          アプリの設定に戻す
         </button>
         {out && (
           <>
