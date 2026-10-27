@@ -7,6 +7,7 @@ import { uuid } from "@/lib/validation/common";
 import { requireUser } from "@/server/auth/session";
 import { getAccount } from "@/server/services/account";
 import { avatarUrls } from "@/server/services/avatars";
+import { groupPhotoUrls } from "@/server/services/group-photo";
 import { myTint, typeTints } from "@/server/services/card";
 
 /** One conversation. Loads the newest messages; the client keeps it up to date. */
@@ -78,6 +79,8 @@ export default async function ConversationPage({ params, searchParams }: { param
     sysLeft: tm.system.left(P),
     sysRenamed: tm.system.renamed(P, "{title}"),
     sysUnnamed: tm.system.renamed(P, null),
+    sysPhoto: tm.system.photo(P),
+    sysPhotoRemoved: tm.system.photoRemoved(P),
     listSeparator: t.common.listSeparator,
     today: t.memories.timeline.today,
     yesterday: t.memories.timeline.yesterday,
@@ -91,6 +94,7 @@ export default async function ConversationPage({ params, searchParams }: { param
     left: conv.me.left,
     members: conv.members.map((m) => ({ id: m.id, name: m.name, left: m.left, lastReadAt: m.lastReadAt?.toISOString() ?? null, typing: m.typing })),
     avatars: Object.fromEntries(await avatarUrls(uid, conv.members.map((m) => m.id))),
+    photo: conv.kind === "group" ? ((await groupPhotoUrls(uid, [conv.id])).get(conv.id) ?? null) : null,
     tints: Object.fromEntries(await typeTints(uid, conv.members.map((m) => m.id))),
   };
   // Opened to answer someone's record: only theirs, in our one-to-one conversation with them.

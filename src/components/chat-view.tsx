@@ -65,6 +65,8 @@ export interface ChatText {
   sysLeft: string;
   sysRenamed: string;
   sysUnnamed: string;
+  sysPhoto: string;
+  sysPhotoRemoved: string;
   listSeparator: string;
   today: string;
   yesterday: string;
@@ -80,6 +82,8 @@ export interface ConvView {
   members: { id: string; name: string; left: boolean; lastReadAt: string | null; typing: boolean }[];
   /** Photo links of members whose photo I may see. */
   avatars: Record<string, string>;
+  /** The group's own photo. */
+  photo?: string | null;
   /** Members' types (connections whose card shows it), for the colour behind an initial. */
   tints?: Record<string, MainStarId>;
 }
@@ -640,6 +644,7 @@ export function ChatView({
     if (meta.event === "created") return fill(tx.sysCreated, { name: by });
     if (meta.event === "added") return fill(tx.sysAdded, { name: by, names: (meta.users ?? []).map((u) => names.get(u) ?? "?").join(tx.listSeparator) });
     if (meta.event === "left") return fill(tx.sysLeft, { name: by });
+    if (meta.event === "photo") return fill(meta.removed ? tx.sysPhotoRemoved : tx.sysPhoto, { name: by });
     return meta.title ? fill(tx.sysRenamed, { name: by, title: meta.title }) : fill(tx.sysUnnamed, { name: by });
   };
   const preview = (m: { kind: string; body: string | null; deleted: boolean }) => (m.deleted ? tx.unsent : m.kind === "image" ? (m.body ?? tx.photo) : m.kind === "record" ? "📄" : (m.body ?? ""));
@@ -819,7 +824,7 @@ export function ChatView({
         <Link href="/messages" aria-label={tx.back} className="flex h-10 w-10 items-center justify-center rounded-full text-xl text-stone-600 hover:bg-stone-100">
           ←
         </Link>
-        <DmAvatar names={(conv.kind === "group" ? activeOthers : others).map((m) => m.name)} srcs={(conv.kind === "group" ? activeOthers : others).map((m) => conv.avatars[m.id])} types={(conv.kind === "group" ? activeOthers : others).map((m) => conv.tints?.[m.id])} size="sm" />
+        <DmAvatar names={(conv.kind === "group" ? activeOthers : others).map((m) => m.name)} srcs={(conv.kind === "group" ? activeOthers : others).map((m) => conv.avatars[m.id])} types={(conv.kind === "group" ? activeOthers : others).map((m) => conv.tints?.[m.id])} size="sm" photo={conv.photo} />
         <div className="min-w-0 flex-1">
           <h1 className="truncate font-semibold text-stone-900">{title}</h1>
           {subtitle && <p className={`truncate text-xs ${typing.length ? "text-teal-700" : "text-stone-500"}`}>{subtitle}</p>}

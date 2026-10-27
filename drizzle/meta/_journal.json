@@ -470,6 +470,20 @@
       "when": 1793104846695,
       "tag": "0066_beta_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1793107536352,
+      "tag": "0067_group_photos",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1793107537685,
+      "tag": "0068_group_photo_functions",
+      "breakpoints": true
     }
   ]
 }

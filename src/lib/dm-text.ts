@@ -15,6 +15,7 @@ export function dmSystemText(meta: DmSystemMeta | null, nameOf: (id: string) => 
   if (meta.event === "created") return m.created(by);
   if (meta.event === "added") return m.added(by, (meta.users ?? []).map(nameOf).join(t.common.listSeparator));
   if (meta.event === "left") return m.left(by);
+  if (meta.event === "photo") return meta.removed ? m.photoRemoved(by) : m.photo(by);
   return m.renamed(by, meta.title ?? null);
 }
 

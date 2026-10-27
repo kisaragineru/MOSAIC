@@ -1512,3 +1512,19 @@ export const betaTesters = pgTable("beta_testers", {
   addedBy: uuid("added_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: createdAt(),
 });
+
+/** A group's own photo, set by any member (by the admins for a group MOSAIC runs); without one, the members' photos stand in. */
+export const dmGroupPhotos = pgTable(
+  "dm_group_photos",
+  {
+    conversationId: uuid("conversation_id")
+      .primaryKey()
+      .references(() => dmConversations.id, { onDelete: "cascade" }),
+    mime: text("mime").notNull(),
+    bytes: bytea("bytes").notNull(),
+    size: integer("size").notNull(),
+    version: integer("version").notNull().default(1),
+    updatedAt: updatedAt(),
+  },
+  (t) => [check("dm_group_photos_mime_ck", sql`${t.mime} in ('image/jpeg','image/png','image/webp')`), check("dm_group_photos_size_ck", sql`${t.size} between 1 and 1000000`)],
+);

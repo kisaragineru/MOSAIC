@@ -53,7 +53,7 @@ export interface DmConversation {
   members: DmMember[];
 }
 
-export type DmSystemMeta = { event: "created" | "added" | "left" | "renamed"; by: string; users?: string[]; title?: string | null };
+export type DmSystemMeta = { event: "created" | "added" | "left" | "renamed" | "photo"; by: string; users?: string[]; title?: string | null; removed?: boolean };
 
 export interface DmMessage {
   id: string;

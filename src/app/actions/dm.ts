@@ -25,6 +25,7 @@ import {
 } from "@/server/services/dm";
 import { getLocale } from "@/lib/i18n/server";
 import { translateMessage } from "@/server/services/translate";
+import { removeGroupPhoto, setGroupPhoto } from "@/server/services/group-photo";
 import { attempt, safeNext, str, withParam } from "./util";
 
 // ── Called from the chat screen (return a result, no redirect) ──────────
@@ -142,6 +143,24 @@ export async function dmRenameAction(form: FormData) {
   const uid = await requireUser();
   const conv = str(form, "conversationId");
   back(conv, await attempt("dm.rename", () => renameGroup(uid, conv, str(form, "title"))));
+}
+
+/** A group's cropped photo, from the editor (returns a result; the editor moves on). */
+export async function uploadGroupPhotoAction(form: FormData) {
+  const uid = await requireUser();
+  const file = form.get("photo");
+  if (!(file instanceof File)) return { ok: false as const, error: "invalid_image" };
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const conv = str(form, "conversationId");
+  const r = await attempt("dm.group_photo", () => setGroupPhoto(uid, conv, bytes));
+  if (r.ok) revalidatePath("/messages");
+  return r;
+}
+
+export async function removeGroupPhotoAction(form: FormData) {
+  const uid = await requireUser();
+  const conv = str(form, "conversationId");
+  back(conv, await attempt("dm.group_photo_remove", () => removeGroupPhoto(uid, conv)), "deleted");
 }
 
 export async function dmMuteAction(form: FormData) {

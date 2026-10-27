@@ -10,6 +10,8 @@ export interface InboxRow {
   title: string;
   names: string[];
   srcs: (string | null)[];
+  /** A group's own photo. */
+  photo?: string | null;
   types?: (MainStarId | null)[];
   preview: string;
   when: string;
@@ -43,7 +45,7 @@ export function DmInbox({ rows, searchLabel, mutedLabel }: { rows: InboxRow[]; s
         {shown.map((r) => (
           <li key={r.id}>
             <Link href={`/messages/${r.id}`} className="flex items-center gap-3 px-4 py-3 transition hover:bg-stone-50 active:bg-stone-100">
-              <DmAvatar names={r.names} srcs={r.srcs} types={r.types} />
+              <DmAvatar names={r.names} srcs={r.srcs} types={r.types} photo={r.photo} />
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2">
                   <span className={`truncate ${r.unread ? "font-bold text-stone-900" : "font-medium text-stone-800"} ${r.inactive ? "opacity-60" : ""}`}>{r.title}</span>

@@ -10,6 +10,7 @@ import { requireUser } from "@/server/auth/session";
 import { sharedEntry } from "@/server/services/comments";
 import { dmContacts, dmConversation, dmInbox, recordUnseenBy } from "@/server/services/dm";
 import { avatarUrls } from "@/server/services/avatars";
+import { groupPhotoUrls } from "@/server/services/group-photo";
 import { getMemory } from "@/server/services/memories";
 import { myTint, typeTints } from "@/server/services/card";
 
@@ -38,6 +39,7 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
   const askMembers = askConv ? await dmConversation(uid, askConv).then((c) => c.members.filter((m) => !m.left).map((m) => m.id)).catch(() => []) : askTo;
   const unseen = record && askMembers.length ? await recordUnseenBy(uid, recordId!, askMembers).catch(() => []) : [];
   const pics = await avatarUrls(uid, [...contacts.map((c) => c.id), ...recent.flatMap((c) => c.others.map((o) => o.id))]);
+  const groupPics = await groupPhotoUrls(uid, recent.filter((c) => c.kind === "group").map((c) => c.id));
   const tints = await typeTints(uid, [...contacts.map((c) => c.id), ...recent.flatMap((c) => c.others.map((o) => o.id))]);
   return (
     <Page title={record ? tm.shareTitle : tm.newMessage} back={record ? undefined : "/messages"}>
@@ -75,7 +77,7 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
                   <input type="hidden" name="conversationId" value={c.id} />
                   <input type="hidden" name="record" value={recordId!} />
                   <button type="submit" className="flex w-full items-center gap-3 rounded-2xl px-2 py-2 text-left transition hover:bg-stone-50 active:scale-[0.99]">
-                    <DmAvatar names={c.others.map((o) => o.name)} srcs={c.others.map((o) => pics.get(o.id))} types={c.others.map((o) => tints.get(o.id))} size="sm" />
+                    <DmAvatar names={c.others.map((o) => o.name)} srcs={c.others.map((o) => pics.get(o.id))} types={c.others.map((o) => tints.get(o.id))} size="sm" photo={groupPics.get(c.id)} />
                     <span className="flex-1 truncate font-medium text-stone-800">{dmTitle(c, t)}</span>
                     <span className="rounded-full bg-teal-700 px-3 py-1 text-xs font-bold text-white">{tm.send}</span>
                   </button>

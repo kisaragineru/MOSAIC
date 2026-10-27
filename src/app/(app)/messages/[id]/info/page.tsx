@@ -1,5 +1,8 @@
 import { notFound } from "next/navigation";
-import { dmAddMembersAction, dmHideAction, dmLeaveAction, dmMuteAction, dmRenameAction } from "@/app/actions/dm";
+import { dmAddMembersAction, dmHideAction, dmLeaveAction, dmMuteAction, dmRenameAction, removeGroupPhotoAction } from "@/app/actions/dm";
+import { AvatarEditor } from "@/components/avatar-editor";
+import { groupPhotoUrls } from "@/server/services/group-photo";
+import { isAdmin } from "@/server/services/admin";
 import { ConfirmButton } from "@/components/confirm-button";
 import { DmAvatar } from "@/components/dm-avatar";
 import { Flash } from "@/components/flash";
@@ -31,11 +34,43 @@ export default async function ConversationInfoPage({ params, searchParams }: { p
   const pics = await avatarUrls(uid, [...active.map((m) => m.id), ...addable.map((c) => c.id)]);
   const tints = await typeTints(uid, [...active.map((m) => m.id), ...addable.map((c) => c.id)]);
   const hidden = <input type="hidden" name="conversationId" value={conv.id} />;
+  const photo = group ? ((await groupPhotoUrls(uid, [conv.id])).get(conv.id) ?? null) : null;
+  // Any member may change the group's photo; a group MOSAIC runs, only an admin.
+  const canPhoto = group && !conv.me.left && (!managed || (await isAdmin(uid)));
+  const ta = t.avatar;
   // Development only (empty otherwise): test companions in this group can be made to reply.
   const testers = group && !conv.me.left ? (await listCompanions(uid)).filter((c) => active.some((m) => m.id === c.id)) : [];
   return (
     <Page title={tm.info} back={`/messages/${conv.id}`}>
       <Flash t={t} sp={sp} />
+      {group && (
+        <Card title={tm.groupPhoto}>
+          <div className="mb-4 flex justify-center" data-testid="group-photo">
+            <span className="scale-[1.6] py-4">
+              <DmAvatar names={active.filter((m) => m.id !== uid).map((m) => m.name)} srcs={active.filter((m) => m.id !== uid).map((m) => pics.get(m.id))} types={active.filter((m) => m.id !== uid).map((m) => tints.get(m.id))} size="lg" photo={photo} />
+            </span>
+          </div>
+          {canPhoto ? (
+            <>
+              <AvatarEditor
+                hasPhoto={!!photo}
+                conversationId={conv.id}
+                done={`/messages/${conv.id}/info?ok=saved`}
+                text={{ choose: ta.choose, change: ta.change, help: ta.help, zoom: ta.zoom, rotate: ta.rotate, save: ta.save, saving: ta.saving, cancel: ta.cancel, area: ta.area, failed: ta.failed, fromType: ta.fromType, fromTypeHelp: ta.fromTypeHelp, yourType: ta.yourType, otherTypes: ta.otherTypes, errors: t.errors as Record<string, string> }}
+              />
+              {photo && (
+                <form action={removeGroupPhotoAction} className="mt-3">
+                  {hidden}
+                  <ConfirmButton quiet message={tm.groupPhotoRemoveConfirm} className="w-full">{tm.groupPhotoRemove}</ConfirmButton>
+                </form>
+              )}
+              <p className="mt-3 text-xs leading-5 text-stone-500">{tm.groupPhotoHelp}</p>
+            </>
+          ) : managed ? (
+            <p className="text-xs leading-5 text-stone-500">{tm.groupPhotoManaged}</p>
+          ) : null}
+        </Card>
+      )}
       {managed && <p className="rounded-2xl bg-violet-50 p-4 text-sm leading-6 text-violet-900 ring-1 ring-violet-100" data-testid="system-group">β {tm.systemGroup}</p>}
       {group && !managed && !conv.me.left && (
         <Card title={tm.rename}>

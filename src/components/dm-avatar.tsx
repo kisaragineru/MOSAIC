@@ -1,9 +1,10 @@
 import type { MainStarId } from "@/lib/tuvi/stars";
 import { Avatar } from "./avatar";
 
-/** A person's photo (or initial, on their type's colours when shown to you), or two overlapping ones for a group. */
-export function DmAvatar({ names, srcs = [], types = [], size = "md" }: { names: string[]; srcs?: (string | null | undefined)[]; types?: (MainStarId | null | undefined)[]; size?: "sm" | "md" | "lg" }) {
+/** A person's photo (or initial, on their type's colours when shown to you), or a group's: its own photo, else two overlapping ones. */
+export function DmAvatar({ names, srcs = [], types = [], size = "md", photo }: { names: string[]; srcs?: (string | null | undefined)[]; types?: (MainStarId | null | undefined)[]; size?: "sm" | "md" | "lg"; /** The group's own photo. */ photo?: string | null }) {
   const dim = size === "lg" ? "h-14 w-14 text-xl" : size === "sm" ? "h-7 w-7 text-xs" : "h-12 w-12 text-lg";
+  if (photo) return <Avatar name={names[0] ?? "?"} src={photo} className={dim} />;
   if (names.length <= 1) return <Avatar name={names[0] ?? "?"} src={srcs[0]} type={types[0]} className={dim} />;
   return (
     <span aria-hidden className={`relative shrink-0 ${dim}`}>

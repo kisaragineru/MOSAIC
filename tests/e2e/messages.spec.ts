@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { expect, test, type Browser, type Page } from "@playwright/test";
+import { expect, test, type Browser, type Locator, type Page } from "@playwright/test";
 import { confirm } from "./confirm";
 
 async function user(browser: Browser, name: string) {
@@ -323,4 +323,48 @@ test("development: sign in as a test companion (set their picture), then back to
   await expect(hana.getByText("ミナ（テスト）").first()).toBeVisible();
   await hana.goto("/people");
   await expect(hana.locator('img[src^="/api/avatar/"]').first()).toBeVisible();
+});
+
+test("a group gets its own photo from any member; removed, the members' pictures come back", async ({ browser }) => {
+  const hana = await user(browser, "ハナ");
+  for (let i = 0; i < 2; i++) {
+    await hana.goto("/admin");
+    await hana.getByRole("button", { name: /テスト相手をつくる/ }).click();
+    await hana.waitForURL(/admin\?ok=saved/);
+  }
+  await hana.goto("/messages/new");
+  await hana.getByLabel("ミナ（テスト）").check();
+  await hana.getByLabel("ソウ（テスト）").check();
+  await hana.getByRole("button", { name: "はじめる" }).click();
+  await hana.waitForURL(/\/messages\/[0-9a-f-]+$/);
+  const group = new URL(hana.url()).pathname;
+  const icon = `/api/dm/${group.split("/").pop()}/icon`;
+  const photoIn = (scope: Page | Locator) => scope.locator(`img[src*="${icon}"]`);
+
+  await hana.goto(`${group}/info`);
+  await expect(photoIn(hana.getByTestId("group-photo"))).toHaveCount(0);
+  await hana.locator('input[type="file"]').setInputFiles("tests/e2e/fixtures-photo.jpg");
+  await expect(hana.getByRole("img", { name: /写真の位置と大きさ/ })).toBeVisible();
+  await hana.getByRole("button", { name: "この写真にする" }).click();
+  await hana.waitForURL(new RegExp(`${group}/info\\?ok=saved`));
+  await expect(photoIn(hana.getByTestId("group-photo"))).toHaveCount(1);
+
+  // Everywhere the group is shown, and said in the conversation.
+  await hana.goto(group);
+  await expect(photoIn(hana.locator("header"))).toHaveCount(1);
+  await expect(hana.getByText("あなたがグループの写真を変更しました")).toBeVisible();
+  await hana.goto("/messages");
+  await expect(photoIn(hana.locator("main"))).toHaveCount(1);
+  const res = await hana.request.get((await photoIn(hana.locator("main")).first().getAttribute("src"))!);
+  expect(res.headers()["content-type"]).toBe("image/jpeg");
+
+  // Someone outside the group can't fetch it.
+  const x = await user(browser, "X");
+  expect((await x.request.get(icon)).status()).toBe(404);
+
+  await hana.goto(`${group}/info`);
+  await hana.getByRole("button", { name: "写真を外す" }).click();
+  await confirm(hana);
+  await hana.waitForURL(new RegExp(`${group}/info\\?ok=deleted`));
+  await expect(photoIn(hana.getByTestId("group-photo"))).toHaveCount(0);
 });

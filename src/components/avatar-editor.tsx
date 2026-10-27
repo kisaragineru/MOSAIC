@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { uploadAvatarAction } from "@/app/actions/avatar";
+import { uploadGroupPhotoAction } from "@/app/actions/dm";
 import { faceRect, personImage, TYPE_FACES, type FaceCrop, type FaceWho } from "@/lib/tuvi/faces";
 import type { MainStarId } from "@/lib/tuvi/stars";
 
@@ -71,7 +72,7 @@ function paint(ctx: CanvasRenderingContext2D, s: Shot, size: number) {
  * turns. The circle shows what will be used; the saved photo is a 512px square (re-encoded, so
  * camera metadata such as location is not kept).
  */
-export function AvatarEditor({ text: tx, hasPhoto, mine = [], all = [] }: { text: AvatarEditorText; hasPhoto: boolean; /** My type(s), offered first. */ mine?: AvatarType[]; all?: AvatarType[] }) {
+export function AvatarEditor({ text: tx, hasPhoto, mine = [], all = [], conversationId, done = "/me/photo?ok=saved" }: { text: AvatarEditorText; hasPhoto: boolean; /** My type(s), offered first. */ mine?: AvatarType[]; all?: AvatarType[]; /** A group's photo instead of mine. */ conversationId?: string; /** Where to go once saved. */ done?: string }) {
   const router = useRouter();
   const [shot, setShot] = useState<Shot | null>(null);
   const [busy, setBusy] = useState(false);
@@ -213,7 +214,8 @@ export function AvatarEditor({ text: tx, hasPhoto, mine = [], all = [] }: { text
     }
     const fd = new FormData();
     fd.set("photo", new File([blob], "avatar.jpg", { type: "image/jpeg" }));
-    const r = await uploadAvatarAction(fd);
+    if (conversationId) fd.set("conversationId", conversationId);
+    const r = conversationId ? await uploadGroupPhotoAction(fd) : await uploadAvatarAction(fd);
     setBusy(false);
     if (!r.ok) {
       setError(tx.errors[r.error] ?? tx.failed);
@@ -221,7 +223,7 @@ export function AvatarEditor({ text: tx, hasPhoto, mine = [], all = [] }: { text
     }
     shot.img.close();
     setShot(null);
-    router.push("/me/photo?ok=saved");
+    router.push(done);
     router.refresh();
   };
 

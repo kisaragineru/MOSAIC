@@ -8,6 +8,7 @@ import { requireUser } from "@/server/auth/session";
 import { getAccount } from "@/server/services/account";
 import { dmInbox } from "@/server/services/dm";
 import { avatarUrls } from "@/server/services/avatars";
+import { groupPhotoUrls } from "@/server/services/group-photo";
 import { myTint, typeTints } from "@/server/services/card";
 
 const nowMs = () => Date.now();
@@ -21,6 +22,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
   const inbox = await dmInbox(uid);
   const pics = await avatarUrls(uid, inbox.flatMap((c) => c.others.map((o) => o.id)));
   const tints = await typeTints(uid, inbox.flatMap((c) => c.others.map((o) => o.id)));
+  const groupPics = await groupPhotoUrls(uid, inbox.filter((c) => c.kind === "group").map((c) => c.id));
   const now = nowMs();
   const when = (d: Date) => {
     const mins = (now - d.getTime()) / 60_000;
@@ -51,6 +53,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
             names: c.others.map((o) => o.name),
             srcs: c.others.map((o) => pics.get(o.id) ?? null),
             types: c.others.map((o) => tints.get(o.id) ?? null),
+            photo: groupPics.get(c.id) ?? null,
             preview: dmPreview(c, t, uid),
             when: when(c.last.at),
             unread: c.unread,
