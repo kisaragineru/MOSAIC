@@ -1,6 +1,8 @@
 /** English UI strings. `vi.ts` must have exactly the same shape (enforced by the type). */
 export const en = {
   notices: {
+    empty: "No notices right now.",
+    closedTitle: "Closed (you can still act on them)",
     title: "Notices",
     closeAll: "Close all",
     close: "Close",

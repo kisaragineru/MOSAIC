@@ -3,6 +3,8 @@ import type { Dict } from "./en";
 /** Japanese UI strings. Tử Vi terms keep their Vietnamese names, with kanji where helpful. */
 export const ja: Dict = {
   notices: {
+    empty: "いまお知らせはありません。",
+    closedTitle: "閉じたお知らせ（まだ対応できます）",
     title: "お知らせ",
     closeAll: "すべて閉じる",
     close: "閉じる",

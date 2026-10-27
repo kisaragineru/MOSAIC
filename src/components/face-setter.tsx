@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { askConfirm } from "@/lib/confirm";
-import { faceRect, TYPE_IMAGE, type FaceCrop, type FaceWho } from "@/lib/tuvi/faces";
+import { faceRect, personImage, type FaceCrop, type FaceWho } from "@/lib/tuvi/faces";
 
 type Crops = Record<string, Partial<Record<FaceWho, FaceCrop>>>;
-const KEY = "mosaic.faces.v1";
+// v2: each person in a picture of their own (the v1 positions were on the pair pictures).
+const KEY = "mosaic.faces.v2";
 const VIEW_W = 300;
 const DEFAULT: Record<FaceWho, FaceCrop> = { m: { cx: 0.5, cy: 0.13, r: 0.17 }, f: { cx: 0.5, cy: 0.6, r: 0.17 } };
 const round = (n: number) => Math.round(n * 1000) / 1000;
@@ -49,7 +50,7 @@ export function FaceSetter({ types, initial }: { types: { id: string; label: str
   // The circle stays inside the picture: it stops at the edges (and shrinks to fit at most).
   const set = (c: FaceCrop) => {
     const r = Math.min(round(c.r), 0.5);
-    const ry = (r * TYPE_IMAGE.w) / TYPE_IMAGE.h;
+    const ry = img ? (r * img.width) / img.height : r / 2;
     const within = (v: number, lo: number, hi: number) => Math.min(Math.floor(hi * 1000) / 1000, Math.max(Math.ceil(lo * 1000) / 1000, round(v)));
     save({ ...crops, [t.id]: { ...crops[t.id], [who]: { cx: within(c.cx, r, 1 - r), cy: within(c.cy, ry, 1 - ry), r } } });
   };
@@ -57,13 +58,13 @@ export function FaceSetter({ types, initial }: { types: { id: string; label: str
   useEffect(() => {
     let live = true;
     const im = new Image();
-    im.onload = () => live && setLoaded({ id: t.id, img: im });
-    im.src = `/tuvi-types/${t.id}.webp`;
+    im.onload = () => live && setLoaded({ id: `${t.id}-${who}`, img: im });
+    im.src = personImage(t.id, who);
     return () => {
       live = false;
     };
-  }, [t.id]);
-  const img = loaded?.id === t.id ? loaded.img : null;
+  }, [t.id, who]);
+  const img = loaded?.id === `${t.id}-${who}` ? loaded.img : null;
 
   // Draw: the picture, dimmed outside the circle; and the circle as the picture will look.
   useEffect(() => {

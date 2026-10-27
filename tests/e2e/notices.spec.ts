@@ -32,6 +32,11 @@ test("notices sit in one tray at the top of Home; closed ones stay away, the bel
   await page.waitForURL(/\/home$/);
   await expect(page.getByTestId("notice").filter({ hasText: "知りたがっています" })).toHaveCount(0);
   await expect(page.getByTestId("bell-dot")).toHaveCount(0);
+  // Closed isn't lost: the bell's page lists it, still there to answer.
+  await page.getByTestId("bell").click();
+  await page.waitForURL(/\/notices$/);
+  await expect(page.getByTestId("notices-closed")).toContainText("知りたがっています");
+  await page.goto("/home");
 
   // Close all: whatever is left goes too.
   if (await page.getByTestId("notice-tray").count()) {

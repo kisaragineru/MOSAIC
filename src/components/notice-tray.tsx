@@ -26,8 +26,9 @@ function Refs({ refs }: { refs: NoticeRef[] }) {
  * away. Each can be closed (×), or all at once; what still needs you comes back later by itself
  * (see notices.ts). Nothing showing: no tray.
  */
-export function NoticeTray({ items, labels }: { items: TrayItem[]; labels: { title: string; closeAll: string; close: string; more: (n: number) => string } }) {
+export function NoticeTray({ items, labels, all = false, quiet = false, back = "/home" }: { items: TrayItem[]; /** Where closing returns to. */ back?: string; labels: { title: string; closeAll: string; close: string; more: (n: number) => string }; /** Every item shown (the notices page). */ all?: boolean; /** Closed ones: no header, softer. */ quiet?: boolean }) {
   if (!items.length) return null;
+  const shown = all ? items.length : SHOWN;
   const row = (x: TrayItem) => (
     <li key={x.ref.key} className="flex items-start gap-3 py-3 first:pt-1 last:pb-1" data-testid="notice">
       <span aria-hidden className="mt-0.5 text-lg">{x.icon}</span>
@@ -35,6 +36,7 @@ export function NoticeTray({ items, labels }: { items: TrayItem[]; labels: { tit
       {x.close ?? (
         <form action={dismissNoticesAction} className="shrink-0">
           <Refs refs={[x.ref]} />
+          <input type="hidden" name="back" value={back} />
           <button type="submit" aria-label={labels.close} title={labels.close} className="flex h-7 w-7 items-center justify-center rounded-full text-stone-400 hover:bg-stone-100 hover:text-stone-700">
             ✕
           </button>
@@ -43,19 +45,20 @@ export function NoticeTray({ items, labels }: { items: TrayItem[]; labels: { tit
     </li>
   );
   return (
-    <section id="notices" className="scroll-mt-20 rounded-3xl bg-white/90 px-4 pb-2 pt-3 shadow-sm ring-1 ring-amber-100" data-testid="notice-tray">
-      <div className="flex items-center justify-between gap-2">
+    <section id="notices" className={`scroll-mt-20 rounded-3xl px-4 pb-2 pt-3 ${quiet ? "bg-white/60 opacity-80 ring-1 ring-stone-200/60" : "bg-white/90 shadow-sm ring-1 ring-amber-100"}`} data-testid={quiet ? "notice-closed-list" : "notice-tray"}>
+      {!quiet && <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-bold text-stone-900">🔔 {labels.title}</h2>
         <form action={dismissNoticesAction}>
           <Refs refs={items.map((x) => x.ref)} />
+          <input type="hidden" name="back" value={back} />
           <button type="submit" className="text-xs text-stone-500 underline underline-offset-4 hover:text-stone-800">{labels.closeAll}</button>
         </form>
-      </div>
-      <ul className="divide-y divide-stone-100">{items.slice(0, SHOWN).map(row)}</ul>
-      {items.length > SHOWN && (
+      </div>}
+      <ul className="divide-y divide-stone-100">{items.slice(0, shown).map(row)}</ul>
+      {items.length > shown && (
         <details className="group">
-          <summary className="cursor-pointer list-none py-2 text-center text-xs font-semibold text-teal-800 group-open:hidden">{labels.more(items.length - SHOWN)} ▾</summary>
-          <ul className="divide-y divide-stone-100 border-t border-stone-100">{items.slice(SHOWN).map(row)}</ul>
+          <summary className="cursor-pointer list-none py-2 text-center text-xs font-semibold text-teal-800 group-open:hidden">{labels.more(items.length - shown)} ▾</summary>
+          <ul className="divide-y divide-stone-100 border-t border-stone-100">{items.slice(shown).map(row)}</ul>
         </details>
       )}
     </section>

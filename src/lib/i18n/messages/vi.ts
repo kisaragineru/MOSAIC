@@ -3,6 +3,8 @@ import type { Dict } from "./en";
 /** Vietnamese UI strings. */
 export const vi: Dict = {
   notices: {
+    empty: "Hiện chưa có thông báo nào.",
+    closedTitle: "Đã đóng (vẫn có thể xử lý)",
     title: "Thông báo",
     closeAll: "Đóng tất cả",
     close: "Đóng",

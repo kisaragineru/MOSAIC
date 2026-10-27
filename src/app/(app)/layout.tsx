@@ -45,7 +45,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </Suspense>
           <div className="ml-auto flex items-center gap-1">
             <Link
-              href="/home#notices"
+              href="/notices"
               aria-label={t.notices.bell}
               title={t.notices.bell}
               className="relative flex h-9 w-9 items-center justify-center rounded-full text-stone-600 transition-colors hover:bg-stone-200 hover:text-stone-900"

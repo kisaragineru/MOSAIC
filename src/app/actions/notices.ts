@@ -5,7 +5,7 @@ import { requireUser } from "@/server/auth/session";
 import { updateNotificationPrefs, getNotificationPrefs } from "@/server/services/account";
 import { getDaily } from "@/server/services/discovery";
 import { dismissNotices } from "@/server/services/notices";
-import { attempt, str } from "./util";
+import { attempt, safeNext, str } from "./util";
 
 /** The notices posted with the form: key, kind and (dated) day, one triple per notice. */
 function refs(form: FormData) {
@@ -21,7 +21,7 @@ export async function dismissNoticesAction(form: FormData) {
   const today = (await getDaily(uid)).day;
   await attempt("notice.dismiss", () => dismissNotices(uid, refs(form), today));
   revalidatePath("/", "layout");
-  redirect("/home");
+  redirect(safeNext(str(form, "back")));
 }
 
 /** After a week of closing today's question: keep the reminder, or stop it. */
