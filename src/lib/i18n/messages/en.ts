@@ -87,6 +87,7 @@ export const en = {
     bad: "Please check what you entered.",
   },
   common: {
+    privacyPolicy: "Privacy Policy",
     confirmOk: "Yes",
     confirmCancel: "Cancel",
     dateYear: "Year",

@@ -29,14 +29,17 @@ function gate(request: NextRequest): NextResponse | null {
 
 /**
  * Fetched by the browser itself, often without the password it remembers (the app manifest, its
- * icons, the service worker that shows notifications): open, as they say nothing about anyone.
+ * icons, the service worker that shows notifications), or needed by anyone before signing in
+ * (the privacy policy, which sign-in providers check): open, as they say nothing about anyone.
  */
-const OPEN = new Set(["/manifest.webmanifest", "/sw.js", "/icon.png", "/apple-icon.png"]);
+const OPEN = new Set(["/manifest.webmanifest", "/sw.js", "/icon.png", "/apple-icon.png", "/privacy"]);
 
 /** Per-request CSP nonce + security headers (see docs/SECURITY.md). */
 export function proxy(request: NextRequest) {
-  if (OPEN.has(request.nextUrl.pathname)) return NextResponse.next();
-  const denied = gate(request);
+  const open = OPEN.has(request.nextUrl.pathname);
+  // Static files: as they are. The policy page goes on below, with its security headers.
+  if (open && request.nextUrl.pathname !== "/privacy") return NextResponse.next();
+  const denied = open ? null : gate(request);
   if (denied) return denied;
   // Prefetches pass through the gate above, then go on as they always did (no nonce of their own).
   if (request.headers.get("next-router-prefetch") || request.headers.get("purpose") === "prefetch") return NextResponse.next();

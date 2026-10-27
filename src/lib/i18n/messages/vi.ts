@@ -89,6 +89,7 @@ export const vi: Dict = {
     bad: "Vui lòng kiểm tra lại nội dung đã nhập.",
   },
   common: {
+    privacyPolicy: "Chính sách quyền riêng tư",
     confirmOk: "Đồng ý",
     confirmCancel: "Hủy",
     dateYear: "Năm",

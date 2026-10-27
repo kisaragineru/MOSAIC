@@ -89,6 +89,7 @@ export const ja: Dict = {
     bad: "入力の形が正しくありません。",
   },
   common: {
+    privacyPolicy: "プライバシーポリシー",
     confirmOk: "はい",
     confirmCancel: "やめる",
     dateYear: "年",

@@ -86,6 +86,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <Button type="submit" variant="secondary">{t.common.save}</Button>
         </form>
         <p className="mt-3 text-xs text-stone-500">{t.settings.comparableHelp}</p>
+        <Link href="/privacy" className="mt-3 inline-block text-xs font-semibold text-teal-700 underline underline-offset-4">{t.common.privacyPolicy} →</Link>
       </Card>
       <Card title={t.settings.security}>
         <form action={changePasswordAction} className="space-y-2">

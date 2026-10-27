@@ -37,6 +37,11 @@ describe("the site's shared ID and password (while trying it out)", () => {
     process.env.BASIC_AUTH_PASSWORD = "secret";
     for (const p of ["/manifest.webmanifest", "/sw.js", "/icon.png", "/apple-icon.png"]) expect(proxy(new NextRequest(`http://localhost${p}`)).status).toBe(200);
     for (const p of ["/sw.js/x", "/home", "/api/dm/x/icon", "/icon.png.txt"]) expect(proxy(new NextRequest(`http://localhost${p}`)).status).toBe(401);
+    // The privacy policy is open to anyone (sign-in providers check it), with its security headers.
+    const policy = proxy(new NextRequest("http://localhost/privacy"));
+    expect(policy.status).toBe(200);
+    expect(policy.headers.get("content-security-policy")).toContain("default-src 'self'");
+    expect(proxy(new NextRequest("http://localhost/privacy/x")).status).toBe(401);
     const csp = proxy(req({ authorization: basic("tester", "secret") })).headers.get("content-security-policy")!;
     expect(csp).toContain("worker-src 'self'");
   });

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { BrandLockup } from "@/components/brand";
 import { setLocaleCookieAction } from "@/app/actions/auth";
@@ -23,6 +24,9 @@ export function AuthShell({ t, locale, back, trial = false, children }: { t: Dic
           </button>
         ))}
       </form>
+      <p className="mt-3 text-center text-xs">
+        <Link href="/privacy" className="text-stone-500 underline underline-offset-4 hover:text-stone-800">{t.common.privacyPolicy}</Link>
+      </p>
     </main>
     </>
   );
