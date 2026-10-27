@@ -4,6 +4,8 @@
  * - "action" (someone is waiting on you): comes back once, three days later; closed again, it's gone.
  * - "dated" (a day that's coming): comes back on the day itself; closed then, it's gone.
  * - "once" (news) and "habit" (today's question; its key carries the day): gone when closed.
+ * - "nudge" (a suggestion, e.g. turning on notifications): back after 14 days, then after 30;
+ *   closed a third time, it's gone for good.
  */
 import { and, eq, gt, inArray, like } from "drizzle-orm";
 import { z } from "zod";
@@ -15,7 +17,7 @@ import { replyInbox } from "./replies";
 import { listComparisons } from "./sharing";
 import { myOffers, newOpens, writerNews } from "./works";
 
-export type NoticeKind = "action" | "dated" | "once" | "habit";
+export type NoticeKind = "action" | "dated" | "once" | "habit" | "nudge";
 export interface NoticeRef {
   key: string;
   kind: NoticeKind;
@@ -24,6 +26,8 @@ export interface NoticeRef {
 }
 
 const AGAIN_DAYS = 3;
+/** A nudge comes back after these many days, closed the first and the second time. */
+const NUDGE_DAYS = [14, 30];
 /** Closing today's question this many days running asks whether to keep the reminder. */
 export const QUESTION_STREAK = 7;
 
@@ -37,7 +41,7 @@ export async function visibleNotices(userId: string, refs: NoticeRef[]): Promise
   return new Set(keys.filter((k) => !hidden.has(k)));
 }
 
-const refSchema = z.object({ key: z.string().min(1).max(200), kind: z.enum(["action", "dated", "once", "habit"]), on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() });
+const refSchema = z.object({ key: z.string().min(1).max(200), kind: z.enum(["action", "dated", "once", "habit", "nudge"]), on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() });
 
 /** Close notices (one, or all that are showing); `today` is the user's day (YYYY-MM-DD). */
 export async function dismissNotices(userId: string, input: unknown, today: string) {
@@ -48,6 +52,8 @@ export async function dismissNotices(userId: string, input: unknown, today: stri
       const times = (prev?.times ?? 0) + 1;
       let until: Date | null = null;
       if (r.kind === "action" && times === 1) until = new Date(Date.now() + AGAIN_DAYS * 86_400_000);
+      const back = r.kind === "nudge" ? NUDGE_DAYS[times - 1] : undefined;
+      if (back) until = new Date(Date.now() + back * 86_400_000);
       // Back on its day (from midnight UTC: the morning in Asia), unless that day has come.
       if (r.kind === "dated" && r.on && r.on > today) until = new Date(`${r.on}T00:00:00Z`);
       const values = { userId, key: r.key, times, until, dismissedAt: new Date() };

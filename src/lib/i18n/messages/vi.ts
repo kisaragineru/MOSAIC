@@ -67,6 +67,9 @@ export const vi: Dict = {
     devOff: "Công cụ phát triển đang tắt.",
   },
   notices: {
+    pushAsk: "Bạn có muốn nhận thông báo trên điện thoại khi có tin nhắn?",
+    pushAskSub: "Chỉ cho tin nhắn, không gì khác. Bạn có thể tắt trong Cài đặt bất cứ lúc nào.",
+    pushAskOn: "Bật thông báo",
     empty: "Hiện chưa có thông báo nào.",
     closedTitle: "Đã đóng (vẫn có thể xử lý)",
     title: "Thông báo",

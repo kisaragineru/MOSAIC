@@ -43,4 +43,23 @@ describe("Home's notices: closed ones stay away by their kind", () => {
     await dismissNotices(userId, [{ key: "question-ask:2026-10-27", kind: "once" }], "2026-10-27");
     expect(await questionClosedStreak(userId)).toBe(false);
   });
+
+  it("a suggestion comes back after 14 days, then after 30; closed a third time, it's gone", async () => {
+    const { userId } = await makeUser("Hana");
+    const ref = { key: "push-ask", kind: "nudge" as const };
+    expect((await visibleNotices(userId, [ref])).size).toBe(1);
+    await dismissNotices(userId, [ref], "2026-10-27");
+    await back(userId, "push-ask", 13);
+    expect((await visibleNotices(userId, [ref])).size).toBe(0);
+    await back(userId, "push-ask", 1);
+    expect((await visibleNotices(userId, [ref])).size).toBe(1);
+    await dismissNotices(userId, [ref], "2026-11-10");
+    await back(userId, "push-ask", 29);
+    expect((await visibleNotices(userId, [ref])).size).toBe(0);
+    await back(userId, "push-ask", 1);
+    expect((await visibleNotices(userId, [ref])).size).toBe(1);
+    await dismissNotices(userId, [ref], "2026-12-10");
+    await back(userId, "push-ask", 3650);
+    expect((await visibleNotices(userId, [ref])).size).toBe(0);
+  });
 });

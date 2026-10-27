@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { subscribePushAction, unsubscribePushAction } from "@/app/actions/push";
+import { enablePush, isIos, rememberPushState, standalone } from "@/lib/push-client";
 
 export interface PushToggleText {
   on: string;
@@ -17,15 +18,6 @@ export interface PushToggleText {
 
 type State = "checking" | "unsupported" | "ios" | "denied" | "off" | "on";
 
-/** The public key as the Push API wants it (bytes from base64url). */
-function keyBytes(b64: string) {
-  const s = (b64 + "=".repeat((4 - (b64.length % 4)) % 4)).replace(/-/g, "+").replace(/_/g, "/");
-  return Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
-}
-
-const isIos = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.userAgent.includes("Macintosh") && navigator.maxTouchPoints > 1);
-const standalone = () => window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
-
 /**
  * Push notifications for messages in this browser: turn on (asks the browser's permission), turn
  * off. On iPhone they work only once MOSAIC is on the home screen, so that's explained instead.
@@ -38,10 +30,12 @@ export function PushToggle({ publicKey, text: tx }: { publicKey: string; text: P
   useEffect(() => {
     void (async () => {
       if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+        rememberPushState("na");
         setState(isIos() && !standalone() ? "ios" : "unsupported");
         return;
       }
       if (Notification.permission === "denied") {
+        rememberPushState("na");
         setState("denied");
         return;
       }
@@ -51,8 +45,12 @@ export function PushToggle({ publicKey, text: tx }: { publicKey: string; text: P
         if (sub) {
           // Signed in as someone else since, or forgotten by the server: this browser is mine again.
           await subscribePushAction(sub.toJSON());
+          rememberPushState("on");
           setState("on");
-        } else setState("off");
+        } else {
+          rememberPushState("ready");
+          setState("off");
+        }
       } catch {
         setState("unsupported");
       }
@@ -62,27 +60,11 @@ export function PushToggle({ publicKey, text: tx }: { publicKey: string; text: P
   const turnOn = async () => {
     setBusy(true);
     setError(null);
-    try {
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        setState(permission === "denied" ? "denied" : "off");
-        return;
-      }
-      const reg = await navigator.serviceWorker.register("/sw.js");
-      await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(publicKey) });
-      const r = await subscribePushAction(sub.toJSON());
-      if (!r.ok) {
-        await sub.unsubscribe();
-        setError(tx.failed);
-        return;
-      }
-      setState("on");
-    } catch {
-      setError(tx.failed);
-    } finally {
-      setBusy(false);
-    }
+    const r = await enablePush(publicKey);
+    setBusy(false);
+    if (r === "on") setState("on");
+    else if (r === "denied") setState("denied");
+    else if (r === "failed") setError(tx.failed);
   };
 
   const turnOff = async () => {
@@ -95,6 +77,7 @@ export function PushToggle({ publicKey, text: tx }: { publicKey: string; text: P
         await unsubscribePushAction(sub.endpoint);
         await sub.unsubscribe();
       }
+      rememberPushState("ready");
       setState("off");
     } catch {
       setError(tx.failed);

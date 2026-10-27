@@ -65,6 +65,9 @@ export const en = {
     devOff: "Development tools are off here.",
   },
   notices: {
+    pushAsk: "Want a heads-up on your phone when a message arrives?",
+    pushAskSub: "Only for messages, nothing else. You can turn it off in Settings any time.",
+    pushAskOn: "Turn on notifications",
     empty: "No notices right now.",
     closedTitle: "Closed (you can still act on them)",
     title: "Notices",

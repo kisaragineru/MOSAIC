@@ -4,6 +4,10 @@ import { acceptOfferAction, answerStartAction, dismissOfferAction, storyAskActio
 import { dmOpenForConnectionAction } from "@/app/actions/dm";
 import { questionReminderAction } from "@/app/actions/notices";
 import type { TrayItem } from "@/components/notice-tray";
+import { cookies } from "next/headers";
+import { PushNudgeButton } from "@/components/push-nudge";
+import { dmInbox } from "@/server/services/dm";
+import { pushPublicKey } from "@/server/services/push";
 import { pairDate, pairEventText } from "@/components/pair-history";
 import type { Dict } from "@/lib/i18n/messages/en";
 import type { Locale } from "@/lib/i18n/locales";
@@ -34,7 +38,8 @@ export async function noticeItems(uid: string, t: Dict, locale: Locale): Promise
   const np = await getNotificationPrefs(uid);
   const questionReminder = np.dailyQuestion && !!first && !first.doneToday;
   const chart = (await getTuvi(uid, locale)).chart;
-  const waiting = (await listComparisons(uid)).filter((c) => c.waitingOn === "you");
+  const comparisons = await listComparisons(uid);
+  const waiting = comparisons.filter((c) => c.waitingOn === "you");
   const askedOfMe = (await myPeerRequests(uid)).filter((r) => r.role === "responder" && r.status === "pending");
   const lookBack = await lookBackDue(uid);
   const opens = await newOpens(uid);
@@ -52,6 +57,15 @@ export async function noticeItems(uid: string, t: Dict, locale: Locale): Promise
   const go = (href: string, label: string) => <Link href={href} className="mt-1 inline-block text-xs font-semibold text-teal-800 underline underline-offset-4">{label} →</Link>;
   const anniversaries = await recentAnniversaries(uid, account.profile.timeZone);
   const cardUndecided = (await myCard(uid)) === null;
+  // Notifications, suggested when they'd help: this device could turn them on now (its cookie,
+  // kept by PushReadiness), someone could write to you, and you've been here a day or have
+  // started talking. A nudge: closed, it comes back after 14 days, then 30, then never.
+  const pushKey = pushPublicKey();
+  const pushAsk =
+    !!pushKey &&
+    (await cookies()).get("mosaic_push")?.value === "ready" &&
+    comparisons.some((c) => c.status === "active") &&
+    (Date.now() - account.createdAt.getTime() > 86_400_000 || (await dmInbox(uid)).length > 0);
   // Everything Home has to tell, in one tray: what's waiting on you first, then days, news, habits.
   const all: TrayItem[] = [
     ...(pendingOffer ? [{ ref: { key: noticeKey.offer(pendingOffer.id), kind: "action" as const }, icon: "📖", body: (
@@ -119,6 +133,13 @@ export async function noticeItems(uid: string, t: Dict, locale: Locale): Promise
     ) }] : []),
     ...(!story.ask && story.added > 0 ? [{ ref: { key: `grew:${story.pages}`, kind: "once" as const }, icon: "📖", body: <Link href="/me/manual#sec-novel" className="block" data-testid="story-grew"><span className="block font-semibold">{t.work.storyGrew(story.pages)}</span><span className="block text-xs text-stone-500">{t.work.storyGrewSub}</span></Link> }] : []),
     ...(lookBack ? [{ ref: { key: `look:${monthKey(lookBack)}`, kind: "once" as const }, icon: "🗓", body: <Link href={`/reflection/${monthKey(lookBack)}`} className="block"><span className="block font-semibold">{t.monthly.homeCard(lookBack.month)}</span><span className="block text-xs text-stone-500">{t.monthly.homeCardSub}</span></Link> }] : []),
+    ...(pushAsk && pushKey ? [{ ref: { key: "push-ask", kind: "nudge" as const }, icon: "🔔", body: (
+      <div data-testid="push-ask">
+        <p className="font-semibold">{t.notices.pushAsk}</p>
+        <p className="text-xs text-stone-500">{t.notices.pushAskSub}</p>
+        <PushNudgeButton publicKey={pushKey} label={t.notices.pushAskOn} working={t.settings.push.working} failed={t.settings.push.failed} denied={t.settings.push.denied} />
+      </div>
+    ) }] : []),
     ...(questionReminder ? [{ ref: { key: `question:${daily.day}`, kind: "habit" as const }, icon: "🔔", body: <Link href="/discover" className="block font-semibold underline-offset-4 hover:underline">{t.home.todayQuestion}</Link> }] : []),
     // A week of closing today's question: keep the reminder, or stop it (asked, not decided for them).
     ...(np.dailyQuestion && (await questionClosedStreak(uid)) ? [{ ref: { key: `question-ask:${daily.day}`, kind: "once" as const }, icon: "🔕", body: (

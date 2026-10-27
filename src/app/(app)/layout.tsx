@@ -15,6 +15,8 @@ import { onboardingState, resumeStep } from "@/server/services/onboarding";
 import { trialReturnUser } from "@/server/services/dev-trial";
 import { hasWaitingNotices } from "@/server/services/notices";
 import { myTint } from "@/server/services/card";
+import { PushReadiness } from "@/components/push-nudge";
+import { pushConfigured } from "@/server/services/push";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const uid = await requireUser();
@@ -98,6 +100,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       </header>
       {children}
+      {/* This device's notification state, for Home's suggestion (only where notifications exist). */}
+      {pushConfigured() && <PushReadiness />}
       <BottomNav
         items={[
           { href: "/home", label: t.nav.tabs.home, icon: "home" },

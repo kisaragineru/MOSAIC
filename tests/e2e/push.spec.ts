@@ -61,3 +61,32 @@ test("on iPhone outside the home screen, it explains how to add MOSAIC there", a
   await expect(ios).toContainText("ホーム画面に追加すると通知を受け取れます");
   await expect(ios.getByRole("listitem")).toHaveCount(3);
 });
+
+test("Home suggests notifications once there's someone to hear from; closed, it stays away", async ({ browser }) => {
+  const page = await signUp(browser, { ...devices["Pixel 7"] });
+  // Nobody to hear from yet: no suggestion.
+  await page.goto("/home");
+  await expect(page.getByTestId("push-ask")).toHaveCount(0);
+
+  // A connection, and a conversation started with them.
+  await page.goto("/admin");
+  await page.getByRole("button", { name: /テスト相手をつくる/ }).click();
+  await page.waitForURL(/admin\?ok=saved/);
+  await page.goto("/messages/new");
+  await page.getByLabel("ミナ（テスト）").check();
+  await page.getByRole("button", { name: "はじめる" }).click();
+  await page.waitForURL(/\/messages\/[0-9a-f-]+$/);
+  await page.getByLabel("メッセージを入力…").fill("こんにちは");
+  await page.getByRole("button", { name: "送信", exact: true }).click();
+  await expect(page.getByText("こんにちは", { exact: true }).last()).toBeVisible();
+
+  // This device could turn them on (it says so in its cookie once a page has loaded): suggested.
+  await page.goto("/home");
+  await page.reload();
+  const ask = page.getByTestId("notice").filter({ has: page.getByTestId("push-ask") });
+  await expect(ask).toContainText("メッセージが届いたら、スマホに知らせましょうか？");
+  await expect(ask.getByRole("button", { name: /通知をオンにする/ })).toBeVisible();
+  await ask.getByRole("button", { name: "閉じる" }).click();
+  await page.waitForURL(/\/home$/);
+  await expect(page.getByTestId("push-ask")).toHaveCount(0);
+});
