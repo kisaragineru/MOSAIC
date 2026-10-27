@@ -25,7 +25,9 @@ export default async function ConversationInfoPage({ params, searchParams }: { p
   const tm = t.messages;
   const active = conv.members.filter((m) => !m.left);
   const group = conv.kind === "group";
-  const addable = group && !conv.me.left ? (await dmContacts(uid)).filter((c) => !active.some((m) => m.id === c.id)) : [];
+  // A group MOSAIC runs (the beta testers'): its name and members are the admins' to set.
+  const managed = group && !!conv.system;
+  const addable = group && !managed && !conv.me.left ? (await dmContacts(uid)).filter((c) => !active.some((m) => m.id === c.id)) : [];
   const pics = await avatarUrls(uid, [...active.map((m) => m.id), ...addable.map((c) => c.id)]);
   const tints = await typeTints(uid, [...active.map((m) => m.id), ...addable.map((c) => c.id)]);
   const hidden = <input type="hidden" name="conversationId" value={conv.id} />;
@@ -34,7 +36,8 @@ export default async function ConversationInfoPage({ params, searchParams }: { p
   return (
     <Page title={tm.info} back={`/messages/${conv.id}`}>
       <Flash t={t} sp={sp} />
-      {group && !conv.me.left && (
+      {managed && <p className="rounded-2xl bg-violet-50 p-4 text-sm leading-6 text-violet-900 ring-1 ring-violet-100" data-testid="system-group">β {tm.systemGroup}</p>}
+      {group && !managed && !conv.me.left && (
         <Card title={tm.rename}>
           <form action={dmRenameAction} className="flex gap-2">
             {hidden}
@@ -93,7 +96,7 @@ export default async function ConversationInfoPage({ params, searchParams }: { p
             <span className="text-sm text-stone-700">{conv.me.muted ? `🔕 ${tm.mutedNote}` : "🔔"}</span>
             <Button type="submit" variant="secondary">{conv.me.muted ? tm.unmute : tm.mute}</Button>
           </form>
-          {group && !conv.me.left && (
+          {group && !managed && !conv.me.left && (
             <form action={dmLeaveAction}>
               {hidden}
               <ConfirmButton quiet message={tm.leaveConfirm} className="w-full">{tm.leave}</ConfirmButton>

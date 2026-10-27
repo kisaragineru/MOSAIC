@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, Page } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
@@ -26,6 +27,15 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     <Page title={a.title} back="/settings">
       <Flash t={t} sp={sp} />
       {s && <p className="text-xs leading-5 text-stone-500">{a.lead}</p>}
+      {s && (
+        <Link href="/admin/users" className="flex items-center justify-between rounded-3xl bg-white/90 px-5 py-4 shadow-sm ring-1 ring-violet-100 hover:ring-violet-300">
+          <span>
+            <span className="block font-bold text-stone-900">👥 {a.usersLink}</span>
+            <span className="block text-xs text-stone-500">{a.usersLinkSub}</span>
+          </span>
+          <span aria-hidden className="text-violet-700">→</span>
+        </Link>
+      )}
       {groups.map((g) => (
         <Card key={g.title} title={g.title}>
           <dl className="divide-y divide-stone-100" data-testid="admin-stats">

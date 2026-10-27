@@ -46,6 +46,8 @@ export interface DmConversation {
   id: string;
   kind: "direct" | "group";
   title: string | null;
+  /** A group MOSAIC runs ("beta"): its members are set by the admins. */
+  system: string | null;
   canSend: boolean;
   me: { role: "owner" | "member"; left: boolean; muted: boolean; joinedAt: Date };
   members: DmMember[];
@@ -141,7 +143,7 @@ export const dmUnreadTotal = cache(unreadUncached);
 
 export async function dmConversation(userId: string, conversationId: string): Promise<DmConversation> {
   const id = uuid.parse(conversationId);
-  const r = await run(userId, (tx) => tx.execute<{ c: Record<string, unknown> }>(sql`select dm_conversation(${id}) as c`));
+  const r = await run(userId, (tx) => tx.execute<{ c: Record<string, unknown>; k: string | null }>(sql`select dm_conversation(${id}) as c, dm_system_key(${id}) as k`));
   const c = r.rows[0]!.c as {
     id: string; kind: "direct" | "group"; title: string | null; can_send: boolean;
     me: { role: "owner" | "member"; left: boolean; muted: boolean; joined_at: string };
@@ -151,6 +153,7 @@ export async function dmConversation(userId: string, conversationId: string): Pr
     id: c.id,
     kind: c.kind,
     title: c.title,
+    system: r.rows[0]!.k ?? null,
     canSend: c.can_send,
     me: { role: c.me.role, left: c.me.left, muted: c.me.muted, joinedAt: new Date(c.me.joined_at) },
     members: c.members.map((m) => ({ id: m.id, name: m.name, role: m.role, left: m.left, lastReadAt: m.last_read_at ? new Date(m.last_read_at) : null, typing: m.typing, connected: m.connected })),

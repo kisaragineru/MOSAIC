@@ -456,6 +456,20 @@
       "when": 1793096358624,
       "tag": "0064_year_stories",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1793104840334,
+      "tag": "0065_beta_testers",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1793104846695,
+      "tag": "0066_beta_functions",
+      "breakpoints": true
     }
   ]
 }

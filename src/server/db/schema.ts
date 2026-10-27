@@ -1117,9 +1117,12 @@ export const dmConversations = pgTable(
     createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
     createdAt: createdAt(),
     lastMessageAt: ts("last_message_at").notNull().defaultNow(),
+    /** A group MOSAIC runs ("beta": every beta tester): members are set by the admins, not by its members. */
+    systemKey: text("system_key"),
   },
   (t) => [
     uniqueIndex("dm_conversations_direct_uq").on(t.directKey),
+    uniqueIndex("dm_conversations_system_uq").on(t.systemKey),
     check("dm_conversations_kind_ck", sql`${t.kind} in ('direct','group')`),
     check("dm_conversations_title_ck", sql`${t.title} is null or char_length(${t.title}) between 1 and 60`),
   ],
@@ -1500,3 +1503,12 @@ export const yearStories = pgTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.year, t.locale] })],
 );
+
+/** Beta testers, chosen by the admins: each is in the beta testers' group (dm_conversations.system_key = 'beta'). */
+export const betaTesters = pgTable("beta_testers", {
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  addedBy: uuid("added_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: createdAt(),
+});
