@@ -2,6 +2,29 @@ import type { Dict } from "./en";
 
 /** Vietnamese UI strings. */
 export const vi: Dict = {
+  admin: {
+    title: "Trang quản trị",
+    lead: "Chỉ hiển thị con số: không xem được nội dung ghi chép hay câu trả lời của ai. Không tính tài khoản thử nghiệm.",
+    people: "Người dùng",
+    users: "Đã đăng ký",
+    users7: "Mới trong 7 ngày",
+    users30: "Mới trong 30 ngày",
+    active7: "Đăng nhập trong 7 ngày",
+    charts: "Đã lập lá số",
+    use: "Mức sử dụng (7 ngày)",
+    records7: "Ghi chép",
+    answers7: "Câu trả lời",
+    messages7: "Tin nhắn",
+    connections: "Kết nối (đang hoạt động)",
+    stories: "Câu chuyện",
+    works: "Tác phẩm",
+    links: "Đường dẫn đã trao",
+    opened: "Đường dẫn đã mở",
+    accepted: "Kết nối qua câu chuyện",
+    access: "Công cụ phát triển",
+    devOn: "Công cụ phát triển đang bật; chỉ quản trị viên dùng được (ADMIN_EMAILS trong cài đặt).",
+    devOff: "Công cụ phát triển đang tắt.",
+  },
   notices: {
     empty: "Hiện chưa có thông báo nào.",
     closedTitle: "Đã đóng (vẫn có thể xử lý)",

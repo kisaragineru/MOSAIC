@@ -2,6 +2,29 @@ import type { Dict } from "./en";
 
 /** Japanese UI strings. Tử Vi terms keep their Vietnamese names, with kanji where helpful. */
 export const ja: Dict = {
+  admin: {
+    title: "管理者ページ",
+    lead: "数字だけを表示しています。誰かの記録や回答の中身は見えません。テスト用のアカウントは含めていません。",
+    people: "利用者",
+    users: "登録している人",
+    users7: "この7日間の新規登録",
+    users30: "この30日間の新規登録",
+    active7: "この7日間にログインした人",
+    charts: "命盤をつくった人",
+    use: "使われ方（この7日間）",
+    records7: "記録",
+    answers7: "質問への回答",
+    messages7: "メッセージ",
+    connections: "つながり（いま有効）",
+    stories: "物語",
+    works: "作品",
+    links: "渡したリンク",
+    opened: "開かれたリンク",
+    accepted: "物語からつながった人",
+    access: "開発用ツール",
+    devOn: "この環境では開発用ツールがオンです。使えるのは管理者だけです（設定の ADMIN_EMAILS）。",
+    devOff: "この環境では開発用ツールはオフです。",
+  },
   notices: {
     empty: "いまお知らせはありません。",
     closedTitle: "閉じたお知らせ（まだ対応できます）",

@@ -13,6 +13,7 @@ import { hashPassword } from "../auth/password";
 import { COMPARISON_SCOPES, comparisonConsents, devCompanions, notificationPreferences, people, profiles, users } from "../db/schema";
 import { withUser } from "../db/tx";
 import { AppError, forbidden, notFound } from "../errors";
+import { devToolsFor } from "./admin";
 import { audit } from "./audit";
 import { answerQuestion } from "./discovery";
 import { setManualShare } from "./manual-share";
@@ -32,7 +33,7 @@ import { saveBirthProfile } from "./tuvi";
 import { QUESTION_BANK } from "@/content/questions";
 import { addPersonFromConnection, createShare, getComparison, giveConsent, linkPersonToConnection, listComparisons, openComparison } from "./sharing";
 
-export const devToolsEnabled = () => process.env.DEV_TOOLS === "on";
+export { devToolsEnabled } from "./admin";
 const MAX = 3;
 // Named in the owner's language (the sample answers and records themselves are Japanese).
 const NAMES = { ja: ["ミナ（テスト）", "ソウ（テスト）", "リコ（テスト）"], en: ["Mina (test)", "Sou (test)", "Riko (test)"], vi: ["Mina (thử)", "Sou (thử)", "Riko (thử)"] };
@@ -43,14 +44,14 @@ async function ownerLocale(ownerId: string): Promise<keyof typeof NAMES> {
 }
 const RELATIONSHIPS = ["partner", "family", "friend", "colleague", "other"] as const;
 
-function guard() {
-  if (!devToolsEnabled()) throw forbidden();
+async function guard(userId: string) {
+  if (!(await devToolsFor(userId))) throw forbidden();
 }
 
 const day = (back: number) => new Date(Date.now() - back * 86400_000).toISOString().slice(0, 10);
 
 export async function listCompanions(ownerId: string) {
-  if (!devToolsEnabled()) return [];
+  if (!(await devToolsFor(ownerId))) return [];
   const rows = await withUser(ownerId, (tx) => tx.select().from(devCompanions).where(eq(devCompanions.ownerId, ownerId)).orderBy(asc(devCompanions.createdAt)));
   const names = NAMES[await ownerLocale(ownerId)];
   return rows.map((r, i) => ({ id: r.companionId, name: names[i] ?? `${names[0]} ${i + 1}`, createdAt: r.createdAt }));
@@ -58,7 +59,7 @@ export async function listCompanions(ownerId: string) {
 
 /** Create a companion connected to the owner; `relationship` is how the owner files it in People. */
 export async function createCompanion(ownerId: string, relationship: unknown): Promise<string> {
-  guard();
+  await guard(ownerId);
   const rel = z.enum(RELATIONSHIPS).catch("friend").parse(relationship);
   const existing = await listCompanions(ownerId);
   if (existing.length >= MAX) throw new AppError("too_many_companions", 400);
@@ -92,7 +93,7 @@ export async function createCompanion(ownerId: string, relationship: unknown): P
 }
 
 export async function ownCompanion(ownerId: string, companionId: string) {
-  guard();
+  await guard(ownerId);
   const cid = z.string().uuid().parse(companionId);
   const [row] = await withUser(ownerId, (tx) => tx.select().from(devCompanions).where(and(eq(devCompanions.ownerId, ownerId), eq(devCompanions.companionId, cid))));
   if (!row) throw notFound();
@@ -314,7 +315,7 @@ const GROUP_LINES = [
  * many replied; companions who left the group or aren't in it stay out.
  */
 export async function companionsReplyInGroup(ownerId: string, conversationId: string): Promise<number> {
-  guard();
+  await guard(ownerId);
   const conv = await dmConversation(ownerId, conversationId);
   if (conv.kind !== "group") throw notFound();
   const mine = await listCompanions(ownerId);

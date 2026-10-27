@@ -1,5 +1,28 @@
 /** English UI strings. `vi.ts` must have exactly the same shape (enforced by the type). */
 export const en = {
+  admin: {
+    title: "Admin",
+    lead: "Numbers only: no one's records or answers are visible here. Test accounts are left out.",
+    people: "People",
+    users: "Signed up",
+    users7: "New in the last 7 days",
+    users30: "New in the last 30 days",
+    active7: "Signed in in the last 7 days",
+    charts: "Made a chart",
+    use: "Use (last 7 days)",
+    records7: "Records",
+    answers7: "Answers",
+    messages7: "Messages",
+    connections: "Connections (active)",
+    stories: "Stories",
+    works: "Works",
+    links: "Links handed over",
+    opened: "Links opened",
+    accepted: "Connected through a story",
+    access: "Development tools",
+    devOn: "Development tools are on here; only admins can use them (ADMIN_EMAILS in the settings).",
+    devOff: "Development tools are off here.",
+  },
   notices: {
     empty: "No notices right now.",
     closedTitle: "Closed (you can still act on them)",

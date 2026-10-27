@@ -11,7 +11,8 @@ import { DEFAULT_RULESET, ENGINE_VERSION } from "@/lib/tuvi/ruleset";
 import { requireUser } from "@/server/auth/session";
 import { aiConfigured } from "@/server/ai/claude";
 import { getAccount, getNotificationPrefs } from "@/server/services/account";
-import { companionAsks, companionConnected, companionPending, devToolsEnabled, listCompanions } from "@/server/services/dev-companion";
+import { companionAsks, companionConnected, companionPending, listCompanions } from "@/server/services/dev-companion";
+import { devToolsFor, isAdmin } from "@/server/services/admin";
 import { actAsCompanionAction, startTrialAction } from "@/app/actions/auth";
 import { companionAnswersAction, companionAsksOwnerAction, companionCommentsAction, companionGroupMessagesAction, companionMessagesAction, companionWritesAction, createCompanionAction, deleteCompanionAction, enrichCompanionAction, reconnectCompanionAction } from "@/app/actions/dev";
 
@@ -22,6 +23,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const { t } = await getT();
   const acc = await getAccount(uid);
   const np = await getNotificationPrefs(uid);
+  const dev = await devToolsFor(uid);
+  const admin = await isAdmin(uid);
   const companions = await Promise.all((await listCompanions(uid)).map(async (c) => ({ ...c, pending: await companionPending(c.id), connected: await companionConnected(c.id), asks: (await companionAsks(c.id)).length })));
   const td = t.settings.dev;
   return (
@@ -85,7 +88,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       <p className="text-center text-xs text-stone-500">
         MOSAIC · {t.tuvi.rulesetInfo(DEFAULT_RULESET.id, ENGINE_VERSION)}
       </p>
-      {devToolsEnabled() && (
+      {admin && (
+        <Link href="/admin" className="block rounded-3xl bg-stone-900 px-5 py-4 text-sm font-semibold text-white shadow-sm hover:bg-stone-800" data-testid="admin-link">🛠 {t.admin.title} →</Link>
+      )}
+      {dev && (
         <section id="dev" className="scroll-mt-20 space-y-3 rounded-3xl border-2 border-dashed border-amber-300 bg-amber-50/70 p-5">
           <div className="space-y-2 rounded-2xl bg-white p-4" data-testid="trial-start">
             <p className="text-sm font-semibold text-amber-950">🧭 {t.trial.title}</p>
