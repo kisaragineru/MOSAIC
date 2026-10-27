@@ -95,3 +95,31 @@ test("hand the story over as a work: read it first, fix it, a link of their own,
   await expect(guest.getByTestId("work-closed")).toContainText("この作品の公開は終わりました");
   await expect(guest.getByText("あなたに読んでほしくて")).toHaveCount(0);
 });
+
+test("the story grows: new pages are mentioned once, then one question about handing it to someone", async ({ browser }) => {
+  const sora = await user(browser, "ソラ");
+  await sora.goto("/tuvi");
+  await sora.getByLabel(/^生年月日/).fill("1992-03-14");
+  await setBirthTime(sora, "08:00");
+  await sora.getByRole("button", { name: "保存して計算" }).click();
+  await expect(sora.getByTestId("essence")).toBeVisible();
+
+  await sora.goto("/home");
+  // With a chart the story already has its first pages: either they're mentioned, or (grown enough) the question comes.
+  const grew = sora.getByTestId("story-grew");
+  const ask = sora.getByTestId("story-ask");
+  await expect(grew.or(ask)).toBeVisible();
+  if (await ask.count()) {
+    await expect(ask).toContainText("あなたの物語を、知ってほしい人はいますか？");
+    await ask.getByRole("button", { name: "いまはいない" }).click();
+    await sora.waitForURL(/\/home$/);
+    await expect(ask).toHaveCount(0);
+  } else {
+    await expect(grew).toContainText("あなたの物語に、新しいページが増えました");
+    await expect(grew).toHaveAttribute("href", "/me/manual#sec-novel");
+  }
+  // Said once.
+  await sora.reload();
+  await expect(grew).toHaveCount(0);
+  await expect(ask).toHaveCount(0);
+});

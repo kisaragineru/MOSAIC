@@ -2,7 +2,6 @@ import Link from "next/link";
 import { IntroFilm } from "@/components/intro-film";
 import { finishOnboardingAction } from "@/app/actions/onboarding";
 import { updateProfileAction } from "@/app/actions/settings";
-import { BrandMark } from "@/components/brand";
 import { KnowledgeCard } from "@/components/knowledge-card";
 import { QuestionForm } from "@/components/question-form";
 import { BirthForm } from "@/components/birth-form";
@@ -56,8 +55,8 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
 
   return (
     <main className="mx-auto w-full max-w-xl space-y-5 px-4 pb-28 pt-6">
-      {/* The step bar only while under way: the finish is a page of its own. */}
-      {step < STEPS && <div className="flex items-center gap-3">
+      {/* The step bar only while under way: not over the opening film, and the finish is a page of its own. */}
+      {step > 1 && step < STEPS && <div className="flex items-center gap-3">
         <ol className="flex min-w-0 flex-1 gap-1.5" aria-label={w.stepOf(step, STEPS)}>
           {Array.from({ length: STEPS }, (_, i) => (
             <li key={i} className={`h-1.5 max-w-8 flex-1 rounded-full ${i < step ? "bg-teal-600" : "bg-stone-200"}`} />
@@ -67,13 +66,10 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
       </div>}
 
       {step === 1 && (
-        <section className="space-y-5 motion-safe:animate-[fadeUp_.4s_ease-out]">
-          <div className="text-center">
-            <BrandMark className="mx-auto h-16 w-16" />
-            <h1 className="mt-4 text-2xl font-bold text-stone-900">{w.hello(acc.profile.displayName)}</h1>
-          </div>
-          {/* MOSAIC as a short film; its last scene leads to the next step. */}
-          <IntroFilm tx={t.film} start={st.hasChart ? "/welcome?step=3" : "/welcome?step=2"} embedded />
+        <section className="space-y-5">
+          {/* MOSAIC as a short film, the greeting inside its first scene; its last scene leads on. */}
+          <h1 className="sr-only">{w.hello(acc.profile.displayName)}</h1>
+          <IntroFilm tx={t.film} start={st.hasChart ? "/welcome?step=3" : "/welcome?step=2"} embedded greeting={w.hello(acc.profile.displayName)} />
         </section>
       )}
 
@@ -354,10 +350,10 @@ async function Finished({ uid, t, locale, answered }: { uid: string; t: Awaited<
       <KnowledgeCard k={await knowledge(uid)} t={t} locale={locale} />
 
       <Link href="/home" className="block rounded-full bg-teal-700 py-3 text-center font-semibold text-white shadow-sm hover:bg-teal-800">{w.goHome}</Link>
-      {/* Connecting is where MOSAIC leads, but it can wait: offered lightly, never in the way. */}
+      {/* Handing the story to someone comes later, when it has grown: mentioned lightly, never a task. */}
       <div className="rounded-2xl bg-white/70 px-4 py-3 text-center ring-1 ring-stone-200">
         <p className="text-xs leading-5 text-stone-600">{w.connectLater}</p>
-        <Link href="/share" className="mt-1 inline-block text-sm font-semibold text-teal-700 underline underline-offset-4">🤝 {w.connectNow}</Link>
+        <Link href="/me/work" className="mt-1 inline-block text-sm font-semibold text-violet-800 underline underline-offset-4">📖 {w.connectNow}</Link>
       </div>
     </section>
   );

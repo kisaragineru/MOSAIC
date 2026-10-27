@@ -13,7 +13,7 @@ import type { MainStarId } from "@/lib/tuvi/stars";
 import { uuid } from "@/lib/validation/common";
 import { randomToken, sha256 } from "../auth/crypto";
 import { enforceRateLimit } from "../auth/rate-limit";
-import { workLinks, works } from "../db/schema";
+import { profiles, workLinks, works } from "../db/schema";
 import { withAnon, withUser } from "../db/tx";
 import { mapDbError, notFound } from "../errors";
 import { audit } from "./audit";
@@ -180,6 +180,33 @@ export async function newOpens(userId: string): Promise<{ id: string; recipient:
 
 export async function markOpensSeen(userId: string) {
   await withUser(userId, (tx) => tx.update(workLinks).set({ openedSeenAt: new Date() }).where(and(eq(workLinks.ownerId, userId), isNotNull(workLinks.openedAt), isNull(workLinks.openedSeenAt))));
+}
+
+/** The story grows with the records. Home says so when it has new pages, and once it has grown
+ * (three pages or more, no work made yet) asks, once, whether there's someone to hand it to. */
+export const STORY_ASK_PAGES = 3;
+
+export async function storyGrowth(userId: string, locale: Locale): Promise<{ pages: number; added: number; ask: boolean }> {
+  const manual = await buildManual(userId, locale);
+  const pages = manual.sections.find((s) => s.id === "novel")?.blocks.filter((b) => b.t === "episode").length ?? 0;
+  const [p] = await withUser(userId, (tx) => tx.select({ seen: profiles.storyPagesSeen, asked: profiles.storyAskedAt }).from(profiles).where(eq(profiles.userId, userId)));
+  const seen = p?.seen ?? 0;
+  const ask = pages >= STORY_ASK_PAGES && !p?.asked && !(await latestWork(userId));
+  return { pages, added: Math.max(0, pages - seen), ask };
+}
+
+/** Remember how many pages the user has been told about (the number only: never the story). */
+export async function markStoryPagesSeen(userId: string, pages: number) {
+  const n = z.number().int().min(0).max(1000).parse(pages);
+  await withUser(userId, (tx) => tx.update(profiles).set({ storyPagesSeen: n }).where(eq(profiles.userId, userId)));
+}
+
+/** The one-time question has been answered (either way); it isn't asked again. */
+export async function markStoryAsked(userId: string) {
+  await withUser(userId, async (tx) => {
+    await tx.update(profiles).set({ storyAskedAt: new Date() }).where(and(eq(profiles.userId, userId), isNull(profiles.storyAskedAt)));
+    await audit(tx, userId, "work.story_asked");
+  });
 }
 
 export type OpenedWork =

@@ -8,12 +8,12 @@ export interface StarterState {
   answers: boolean;
   bio: boolean;
   record: boolean;
-  connect: boolean;
 }
 
 /**
- * Home's "getting started" card: what MOSAIC is for — know yourself, share it, know the people
- * who matter — as five first steps, ticked off as they're done. Gone once all are done, or once
+ * Home's "getting started" card: the first steps of knowing yourself, ticked off as they're done.
+ * Connecting isn't one of them: MOSAIC is whole on your own, and handing your story to someone is
+ * offered when it has grown, never as a task. Gone once all are done, or once
  * closed (only after the guide; while it runs, the guide bar ends both).
  */
 export function StarterChecklist({ t, done, resume }: { t: Dict; done: StarterState; resume: boolean }) {
@@ -23,7 +23,6 @@ export function StarterChecklist({ t, done, resume }: { t: Dict; done: StarterSt
     { key: "answers", href: resume ? "/welcome?step=4" : "/discover" },
     { key: "bio", href: "/me" },
     { key: "record", href: "/memories/new" },
-    { key: "connect", href: "/share" },
   ];
   const left = items.filter((x) => !done[x.key]).length;
   if (left === 0) return null;

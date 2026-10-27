@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { setCardAction } from "@/app/actions/sharing";
 import { myCard } from "@/server/services/card";
-import { acceptOfferAction, answerStartAction, dismissOfferAction } from "@/app/actions/works";
-import { markOpensSeen, markWriterNewsSeen, myOffers, newOpens, writerNews } from "@/server/services/works";
+import { acceptOfferAction, answerStartAction, dismissOfferAction, storyAskAction } from "@/app/actions/works";
+import { markOpensSeen, markStoryPagesSeen, markWriterNewsSeen, myOffers, newOpens, storyGrowth, writerNews } from "@/server/services/works";
 import { QuickComposer } from "@/components/quick-composer";
 import { composerText } from "@/components/memory-form";
 import { myGiftBoxes } from "@/server/services/gift-boxes";
@@ -70,6 +70,9 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // For the writer: who connected through a story, who started their own (said once).
   const news = await writerNews(uid);
   if (news.connected.length || news.started.length) await markWriterNewsSeen(uid);
+  // The story grows with the records: new pages are mentioned once; once grown, a single question.
+  const story = await storyGrowth(uid, locale);
+  if (story.added > 0) await markStoryPagesSeen(uid, story.pages);
   const inbox = await replyInbox(uid);
   const newReplies = inbox.filter((x) => x.unread > 0);
   const { previews, counts: replyTotals } = await replyPreviews(uid, recent.flatMap((d) => d.items.filter((x) => !x.entry.sealed).map((x) => x.entry.id)));
@@ -86,7 +89,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       {!account.profile.starterDismissedAt && <StarterChecklist
         t={t}
         resume={!account.profile.onboardedAt}
-        done={{ chart: !!chart, answers: know.parts.answers >= 3, bio: know.parts.bio, record: know.parts.records > 0, connect: comparisons.some((c) => c.status === "active") }}
+        done={{ chart: !!chart, answers: know.parts.answers >= 3, bio: know.parts.bio, record: know.parts.records > 0 }}
       />}
       {pendingOffer && (
         <section className="rounded-3xl bg-gradient-to-br from-violet-50 to-amber-50 p-5 shadow-sm ring-1 ring-violet-100" data-testid="offer-home">
@@ -123,6 +126,25 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           {news.connected.map((w, i) => <p key={`c${i}`} className="font-semibold text-teal-950">🤝 {t.offer.newsConnected(w)}</p>)}
           {news.started.map((w, i) => <p key={`s${i}`} className="font-semibold text-teal-950">🌱 {t.offer.newsStarted(w)}</p>)}
         </section>
+      )}
+      {story.ask ? (
+        <section className="rounded-3xl bg-gradient-to-br from-violet-50 via-white to-amber-50 p-5 shadow-sm ring-1 ring-violet-100" data-testid="story-ask">
+          <p className="font-bold text-stone-900">📖 {t.work.storyAskTitle}</p>
+          <p className="mt-1 text-sm leading-6 text-stone-600">{t.work.storyAskLead}</p>
+          <form action={storyAskAction} className="mt-3 flex flex-wrap items-center gap-2">
+            <button type="submit" name="go" value="work" className="rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-800">{t.work.storyAskYes}</button>
+            <button type="submit" name="go" value="home" className="px-2 text-sm text-stone-500 underline underline-offset-4">{t.work.storyAskNo}</button>
+          </form>
+        </section>
+      ) : story.added > 0 && (
+        <Link href="/me/manual#sec-novel" className="flex items-center gap-3 rounded-3xl bg-gradient-to-br from-amber-50 to-violet-50 p-4 ring-1 ring-amber-100 transition hover:ring-violet-200" data-testid="story-grew">
+          <span aria-hidden className="text-2xl">📖</span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold text-stone-900">{t.work.storyGrew(story.pages)}</span>
+            <span className="block text-xs text-stone-500">{t.work.storyGrewSub}</span>
+          </span>
+          <span className="shrink-0 text-sm font-semibold text-violet-800">{t.work.storyRead} →</span>
+        </Link>
       )}
       {/* Someone opened the story they were handed: said once. */}
       {opens.length > 0 && (

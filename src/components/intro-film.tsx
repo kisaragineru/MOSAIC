@@ -86,7 +86,19 @@ function Scene({ children, tone = "paper", tall, id }: { children: (shown: boole
 const TYPES = ["tu_vi", "thien_co", "thai_duong", "vu_khuc", "thien_dong", "liem_trinh", "thien_phu", "thai_am", "tham_lang", "cu_mon", "thien_tuong", "thien_luong", "that_sat", "pha_quan"];
 const TILE_DELAY = ["delay-[1395ms]", "delay-[1080ms]", "delay-[450ms]", "delay-[225ms]", "delay-[1305ms]", "delay-[1215ms]", "delay-[360ms]", "delay-[1035ms]", "delay-[630ms]", "delay-[540ms]", "delay-[1260ms]", "delay-[990ms]", "delay-[1530ms]", "delay-[675ms]", "delay-[0ms]", "delay-[855ms]", "delay-[1350ms]", "delay-[315ms]", "delay-[945ms]", "delay-[1575ms]", "delay-[585ms]", "delay-[90ms]", "delay-[1485ms]", "delay-[270ms]", "delay-[720ms]", "delay-[45ms]", "delay-[810ms]", "delay-[495ms]", "delay-[1440ms]", "delay-[765ms]", "delay-[1170ms]", "delay-[180ms]", "delay-[135ms]", "delay-[1125ms]", "delay-[405ms]", "delay-[900ms]"];
 const TILE_COLOR = ["bg-teal-300", "bg-rose-400", "bg-rose-300", "bg-sky-200", "bg-sky-300", "bg-fuchsia-300", "bg-sky-200", "bg-sky-300", "bg-fuchsia-300", "bg-violet-500", "bg-violet-300", "bg-amber-300", "bg-violet-500", "bg-violet-300", "bg-amber-300", "bg-amber-200", "bg-emerald-300", "bg-teal-500", "bg-amber-200", "bg-emerald-300", "bg-teal-500", "bg-teal-300", "bg-rose-400", "bg-rose-300", "bg-teal-300", "bg-rose-400", "bg-rose-300", "bg-sky-200", "bg-sky-300", "bg-fuchsia-300", "bg-sky-200", "bg-sky-300", "bg-fuchsia-300", "bg-violet-500", "bg-violet-300", "bg-amber-300"];
-const OPEN_DELAY = ["delay-0", "delay-[700ms]", "delay-[1400ms]"];
+const OPEN_DELAY = ["delay-[1500ms]", "delay-[2200ms]", "delay-[2900ms]"];
+/** The opening's nine tiles: each starts scattered and turned, then settles into one small mosaic. */
+const GATHER = [
+  { c: "bg-sky-300", from: "-translate-x-24 -translate-y-16 -rotate-45", d: "delay-[0ms]" },
+  { c: "bg-violet-300", from: "translate-x-6 -translate-y-28 rotate-12", d: "delay-[120ms]" },
+  { c: "bg-amber-200", from: "translate-x-28 -translate-y-12 rotate-45", d: "delay-[60ms]" },
+  { c: "bg-violet-400", from: "-translate-x-32 translate-y-2 rotate-[30deg]", d: "delay-[200ms]" },
+  { c: "bg-rose-300", from: "scale-50", d: "delay-[320ms]" },
+  { c: "bg-amber-300", from: "translate-x-32 translate-y-4 -rotate-[30deg]", d: "delay-[160ms]" },
+  { c: "bg-teal-300", from: "-translate-x-20 translate-y-24 rotate-45", d: "delay-[260ms]" },
+  { c: "bg-fuchsia-200", from: "translate-x-2 translate-y-28 -rotate-12", d: "delay-[100ms]" },
+  { c: "bg-rose-400", from: "translate-x-24 translate-y-20 -rotate-45", d: "delay-[220ms]" },
+];
 const RECORD_ICON = ["☕", "🍞", "🌙"];
 const STORY_DELAY = ["delay-[200ms]", "delay-[700ms]", "delay-[1200ms]", "delay-[1700ms]"];
 
@@ -96,10 +108,12 @@ const STORY_DELAY = ["delay-[200ms]", "delay-[700ms]", "delay-[1200ms]", "delay-
  * at a time, become a story; when you want someone to know you, you hand it to them, and connected
  * you talk and read each other. Ends with where to begin. Light, gentle colours throughout.
  */
-export function IntroFilm({ tx, start, after, embedded = false }: { tx: FilmText; start: string; after?: React.ReactNode; embedded?: boolean }) {
-  const tall = embedded ? "min-h-[78dvh]" : "min-h-dvh";
+export function IntroFilm({ tx, start, after, embedded = false, greeting }: { tx: FilmText; start: string; after?: React.ReactNode; embedded?: boolean; greeting?: string }) {
+  // Embedded (the guide's first page): edge to edge under the app's header, each scene a screen tall
+  // between the header and the tab bar.
+  const tall = embedded ? "min-h-[calc(100dvh-8.5rem)]" : "min-h-dvh";
   return (
-    <div className={`${embedded ? "-mx-4 overflow-hidden rounded-[2rem]" : ""} bg-[#fbf8f2]`} data-testid="intro-film">
+    <div className={`${embedded ? "-mx-4 -mt-6 overflow-hidden rounded-b-[2rem]" : ""} bg-[#fbf8f2]`} data-testid="intro-film">
       {/* 1. Quiet opening */}
       <Scene tone="dawn" tall={tall}>
         {(s) => (
@@ -108,13 +122,19 @@ export function IntroFilm({ tx, start, after, embedded = false }: { tx: FilmText
               <div className="absolute left-1/2 top-1/4 h-[55vmax] w-[55vmax] -translate-x-1/2 rounded-full bg-rose-200/40 blur-3xl motion-safe:animate-[drift_20s_ease-in-out_infinite_alternate]" />
               <div className="absolute -right-1/4 bottom-0 h-[45vmax] w-[45vmax] rounded-full bg-violet-200/40 blur-3xl motion-safe:animate-[drift_24s_ease-in-out_-5s_infinite_alternate-reverse]" />
             </div>
-            <div className="mosaic-mark relative mb-10 h-12 w-12 rounded-xl" aria-hidden />
+            {/* Scattered pieces come together into one small mosaic: the only mark on this screen. */}
+            <div aria-hidden className="relative mb-8 grid grid-cols-3 gap-1.5">
+              {GATHER.map((g, i) => (
+                <span key={i} className={`block h-5 w-5 rounded-md ${g.c} shadow-sm transition duration-[1400ms] ease-out motion-reduce:transition-none ${g.d} ${s ? "translate-x-0 translate-y-0 rotate-0 scale-100 opacity-90" : `${g.from} opacity-0 motion-reduce:translate-x-0 motion-reduce:translate-y-0 motion-reduce:rotate-0 motion-reduce:scale-100 motion-reduce:opacity-90`}`} />
+              ))}
+            </div>
+            {greeting && <p className={`relative mb-8 text-sm font-semibold tracking-[0.2em] text-violet-900/80 ${fade(s, "delay-[1000ms]")}`}>{greeting}</p>}
             <p className="relative font-serif text-xl leading-[2.2] tracking-wide text-stone-800">
               {tx.open.map((line, i) => (
                 <span key={i} className={`block ${fade(s, OPEN_DELAY[i])}`}>{line}</span>
               ))}
             </p>
-            <p aria-hidden className={`absolute bottom-8 text-[11px] tracking-[0.3em] text-stone-400 ${fade(s, "delay-[1800ms]")}`}>{tx.scroll} ↓</p>
+            <p aria-hidden className={`absolute bottom-8 text-[11px] tracking-[0.3em] text-stone-400 ${fade(s, "delay-[3400ms]")}`}>{tx.scroll} ↓</p>
           </>
         )}
       </Scene>

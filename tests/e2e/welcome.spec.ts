@@ -20,12 +20,15 @@ test("a new account is guided: the chart (not skippable) and its tour, three que
   for (const x of ["あなたは、どのタイプ？", "あなたのかけらが、増えていく", "かけらは、あなたの物語になる", "誰かに、知ってほしくなったら"]) await expect(film.getByRole("heading", { name: x })).toBeAttached();
   await expect(film.getByText("例", { exact: true })).toHaveCount(2); // the sample manual and story say they're examples
   await expect(film.getByText(/見せるのは、あなたが選んだ人だけ/)).toBeAttached();
-  // The guide can be ended at any step.
-  await expect(page.getByRole("button", { name: "ガイドを終了" })).toBeVisible();
+  // The film opens the guide on its own: one mark, the greeting inside it, no step bar yet.
+  await expect(film.getByText("ようこそ、リンさん")).toBeVisible();
+  await expect(page.getByRole("button", { name: "ガイドを終了" })).toHaveCount(0);
   await page.getByRole("link", { name: /はじめる/ }).click();
 
   // The chart: what it gives, why it matters for the people you love, and that it stays yours.
   await page.waitForURL(/step=2/);
+  // From here the guide shows its steps and can be ended at any one.
+  await expect(page.getByRole("button", { name: "ガイドを終了" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "まずは、あなたの命盤をつくりましょう" })).toBeVisible();
   await expect(page.getByTestId("tuvi-preview")).toContainText("あなたの本質");
   await expect(page.getByText(/つながった人との相性や、お互いの取扱説明書も/)).toBeVisible();
@@ -82,14 +85,15 @@ test("a new account is guided: the chart (not skippable) and its tour, three que
   await expect(done.getByTestId("seed-pieces")).toContainText("「富士山に登る」");
   await expect(done).toContainText(/文字・\d+章が書けました/);
   await expect(page.getByTestId("pieces")).toHaveText("16"); // 3 answers + bio + chart
-  // Connecting is offered lightly, for later; going home is the main way on.
-  await expect(done.getByRole("link", { name: /QRでつながる（あとでOK）/ })).toBeVisible();
+  // Handing the story to someone is mentioned lightly, for later; going home is the main way on.
+  await expect(done.getByRole("link", { name: /物語を渡すって？/ })).toHaveAttribute("href", "/me/work");
   await done.getByRole("link", { name: "ホームへ（MOSAICをはじめる）" }).click();
   await page.waitForURL(/\/home$/);
   const list = page.getByTestId("starter-checklist");
-  await expect(list).toContainText("あと2つ");
+  await expect(list).toContainText("あと1つ");
   await expect(list.getByRole("link", { name: /最初の記録を書く/ })).toBeVisible();
-  await expect(list.getByRole("link", { name: /大切な人とつながる/ })).toBeVisible();
+  // Connecting isn't a task to tick off.
+  await expect(list).not.toContainText("つながる");
   await expect(page.getByText("はじめてガイドの続き")).toHaveCount(0);
   // After the guide the checklist can be closed for good; the rest stays doable from each page.
   page.once("dialog", (d) => void d.accept());

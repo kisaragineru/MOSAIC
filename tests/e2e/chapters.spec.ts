@@ -23,7 +23,7 @@ test("answer by chapter: badges, private note, progress, feedback, note in histo
 
   // The form says what kind of question this is and which tiles it feeds.
   const form = page.locator("form:has(input[name=questionId])");
-  await expect(form.getByText("🔗 比較に使える")).toBeVisible();
+  await expect(form.getByText("🔗 見せ合える質問")).toBeVisible();
   await expect(form.getByText("この答えが手がかりになるタイル")).toBeVisible();
   const firstPrompt = await form.locator("legend").innerText();
   await form.locator('input[type="radio"]').first().check();

@@ -335,7 +335,7 @@ test("a connection's page offers things to do: message, gift, ask, and conversat
   for (const p of [hana, sora]) {
     await p.goto("/discover/q/l.season");
     await p.getByLabel("春", { exact: true }).check();
-    await p.getByLabel(/比較で見せる/).check();
+    await p.getByLabel(/つながった人と見せ合う/).check();
     await p.getByRole("button", { name: "回答を保存" }).click();
     await expect(p.getByText(/回答を保存しました|違う/).first()).toBeVisible();
   }

@@ -407,6 +407,13 @@
       "when": 1793078023991,
       "tag": "0057_work_offers_access",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1793080165556,
+      "tag": "0058_story_growth",
+      "breakpoints": true
     }
   ]
 }

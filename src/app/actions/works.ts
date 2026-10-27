@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getLocale } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
-import { acceptOffer, answerStart, dismissOffer, extendLink, handOver, makeWork, revokeLink } from "@/server/services/works";
+import { acceptOffer, answerStart, dismissOffer, extendLink, handOver, makeWork, markStoryAsked, revokeLink } from "@/server/services/works";
 import { attempt, safeNext, str, withParam } from "./util";
 
 const PAGE = "/me/work";
@@ -65,4 +65,12 @@ export async function answerStartAction(form: FormData) {
   const r = await attempt("work.offer_start", () => answerStart(uid, str(form, "offerId"), str(form, "tell") === "1"));
   revalidatePath("/home");
   redirect(r.ok ? "/home" : withParam("/home", "e", r.error));
+}
+
+/** Home's one-time question about handing the story to someone: answered either way, not asked again. */
+export async function storyAskAction(form: FormData) {
+  const uid = await requireUser();
+  await attempt("work.story_asked", () => markStoryAsked(uid));
+  revalidatePath("/home");
+  redirect(str(form, "go") === "work" ? PAGE : "/home");
 }

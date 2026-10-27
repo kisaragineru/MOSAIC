@@ -132,6 +132,10 @@ export const profiles = pgTable("profiles", {
   cardItems: text("card_items").array().default(sql`'{type,bio}'::text[]`),
   /** When the user closed Home's getting-started checklist (null: still shown until all done). */
   starterDismissedAt: ts("starter_dismissed_at"),
+  /** How many pages (episodes) of their story the user has been told about on Home. */
+  storyPagesSeen: integer("story_pages_seen").notNull().default(0),
+  /** When Home asked, once, whether there's someone they'd like to hand their story to. */
+  storyAskedAt: ts("story_asked_at"),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });

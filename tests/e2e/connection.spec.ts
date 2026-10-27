@@ -15,7 +15,7 @@ async function user(browser: Browser, name: string) {
   await expect(page.getByRole("heading", { name: `こんにちは、${name}さん` })).toBeVisible();
   await page.goto("/discover/q/f.drink");
   await page.getByLabel("お茶", { exact: true }).check();
-  await page.getByRole("checkbox", { name: /比較で見せる/ }).check();
+  await page.getByRole("checkbox", { name: /つながった人と見せ合う/ }).check();
   await page.getByRole("button", { name: "回答を保存" }).click();
   await expect(page.getByText(/回答を保存しました/)).toBeVisible();
   return page;
