@@ -1704,7 +1704,6 @@ export const vi: Dict = {
     tryHour: "Giờ sinh (áng chừng cũng được)",
     tryHourUnknown: "Không rõ",
     tryGo: "Xem kiểu của tôi",
-    tryTheirs: "{persona}",
     tryYours: "Có thể bạn là “{persona}”",
     tryNoTime: "Kiểu người được đọc từ giờ sinh. Nếu không rõ giờ, sau khi đăng ký bạn vẫn có thể tìm ra bằng vài câu hỏi.",
     tryNeeds: "Giờ này được các trường phái đọc khác nhau. Sau khi đăng ký, bạn có thể chọn cách đọc.",

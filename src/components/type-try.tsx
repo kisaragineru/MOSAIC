@@ -12,7 +12,6 @@ export interface TypeTryText {
   hour: string;
   hourUnknown: string;
   go: string;
-  theirs: string;
   yours: string;
   noTime: string;
   needs: string;
@@ -34,7 +33,7 @@ export function TypeTry({ text: tx, date: dt, theirs }: { text: TypeTryText; dat
       <p className="mt-1 text-center text-xs leading-5 text-stone-600">{tx.lead}</p>
       {mine ? (
         <div className="mt-5 grid grid-cols-2 gap-3 text-center" data-testid="type-try-result">
-          {theirs && <TypeCard id={theirs.id} label={tx.theirs.replace("{persona}", theirs.persona)} />}
+          {theirs && <TypeCard id={theirs.id} label={theirs.persona} />}
           <TypeCard id={mine.id} label={tx.yours.replace("{persona}", mine.persona)} glow className={theirs ? "" : "col-span-2 mx-auto w-1/2"} />
           <p className="col-span-2 text-xs leading-5 text-stone-600">{mine.plain}</p>
         </div>

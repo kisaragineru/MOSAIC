@@ -98,7 +98,7 @@ export default async function WorkLinkPage({ params, searchParams }: { params: P
                     <TypeTry
                       date={dateText(t)}
                       theirs={writerType ? { id: writerType.id, persona: `${work.content.name} · ${writerType.persona}` } : null}
-                      text={{ title: w.tryTitle, lead: w.tryLead, date: w.tryDate, hour: w.tryHour, hourUnknown: w.tryHourUnknown, go: w.tryGo, theirs: w.tryTheirs, yours: w.tryYours, noTime: w.tryNoTime, needs: w.tryNeeds, invalid: w.tryInvalid }}
+                      text={{ title: w.tryTitle, lead: w.tryLead, date: w.tryDate, hour: w.tryHour, hourUnknown: w.tryHourUnknown, go: w.tryGo, yours: w.tryYours, noTime: w.tryNoTime, needs: w.tryNeeds, invalid: w.tryInvalid }}
                     />
                   </div>
                 )}

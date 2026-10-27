@@ -1704,7 +1704,6 @@ export const ja: Dict = {
     tryHour: "生まれた時刻（だいたいでOK）",
     tryHourUnknown: "わからない",
     tryGo: "タイプを見る",
-    tryTheirs: "{persona}",
     tryYours: "あなたは「{persona}」かもしれません",
     tryNoTime: "タイプは、生まれた時刻から読みます。時刻がわからなくても、登録したあと質問に答えて、タイプを見つけられます。",
     tryNeeds: "この時刻は、流派によって読み方が分かれます。登録したあと、どちらで読むか選べます。",

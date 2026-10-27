@@ -1702,7 +1702,6 @@ export const en = {
     tryHour: "Time of birth (roughly is fine)",
     tryHourUnknown: "Don't know",
     tryGo: "See my type",
-    tryTheirs: "{persona}",
     tryYours: "You might be {persona}",
     tryNoTime: "Types are read from the time of birth. Without it, you can still find yours by answering a few questions after signing up.",
     tryNeeds: "Schools read this hour differently. After signing up you can choose which reading to use.",
