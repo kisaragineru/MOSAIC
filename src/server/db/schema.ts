@@ -1466,3 +1466,20 @@ export const workOffers = pgTable(
     check("work_offers_distinct_ck", sql`${t.ownerId} <> ${t.recipientId}`),
   ],
 );
+
+/**
+ * Home's notices the user closed: when each may come back. `until` null: never (closed for good);
+ * a time: hidden until then (a notice that still needs an answer comes back once, three days on;
+ * a dated one comes back on its day). `times` counts how often it was closed.
+ */
+export const noticeDismissals = pgTable(
+  "notice_dismissals",
+  {
+    userId: userRef(),
+    key: text("key").notNull(),
+    times: smallint("times").notNull().default(1),
+    until: ts("until"),
+    dismissedAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.key] }), check("notice_dismissals_key_ck", sql`char_length(${t.key}) between 1 and 200`)],
+);

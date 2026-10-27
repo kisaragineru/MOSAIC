@@ -2,6 +2,16 @@ import type { Dict } from "./en";
 
 /** Vietnamese UI strings. */
 export const vi: Dict = {
+  notices: {
+    title: "Thông báo",
+    closeAll: "Đóng tất cả",
+    close: "Đóng",
+    more: (n: number) => `Thêm ${n} mục`,
+    bell: "Thông báo",
+    questionAsk: "Cả tuần nay bạn đều đóng lời nhắc \"câu hỏi hôm nay\". Tiếp tục nhắc bạn chứ?",
+    questionKeep: "Tiếp tục",
+    questionStop: "Tắt lời nhắc",
+  },
   form: {
     required: "Vui lòng điền vào mục này.",
     email: "Vui lòng nhập địa chỉ email.",

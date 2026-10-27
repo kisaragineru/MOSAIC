@@ -4,6 +4,9 @@ import { myCard, typeTints } from "@/server/services/card";
 import { acceptOfferAction, answerStartAction, dismissOfferAction, storyAskAction } from "@/app/actions/works";
 import { markOpensSeen, markStoryPagesSeen, markWriterNewsSeen, myOffers, newOpens, storyGrowth, writerNews } from "@/server/services/works";
 import { QuickComposer } from "@/components/quick-composer";
+import { NoticeTray, type TrayItem } from "@/components/notice-tray";
+import { noticeKey, questionClosedStreak, visibleNotices } from "@/server/services/notices";
+import { questionReminderAction } from "@/app/actions/notices";
 import { composerText } from "@/components/memory-form";
 import { myGiftBoxes } from "@/server/services/gift-boxes";
 import { DayWatcher } from "@/components/day-watcher";
@@ -83,108 +86,99 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     .sort((a, b) => (a.state === b.state ? b.confidence - a.confidence : a.state === "consistent" ? -1 : 1));
   const writtenChapters = MANUAL_CHAPTERS.filter((ch) => traits.some((c) => AXIS_CHAPTER[c.claimKey] === ch)).length;
   const nowStage = chart ? lifeStages(chart, locale, tv.currentAge).find((x) => x.state === "current") : undefined;
+  const btn = "rounded-full px-3 py-1.5 text-xs font-semibold";
+  const go = (href: string, label: string) => <Link href={href} className="mt-1 inline-block text-xs font-semibold text-teal-800 underline underline-offset-4">{label} →</Link>;
+  const anniversaries = await recentAnniversaries(uid, account.profile.timeZone);
+  const cardUndecided = (await myCard(uid)) === null;
+  // Everything Home has to tell, in one tray: what's waiting on you first, then days, news, habits.
+  const all: TrayItem[] = [
+    ...(pendingOffer ? [{ ref: { key: noticeKey.offer(pendingOffer.id), kind: "action" as const }, icon: "📖", body: (
+      <div data-testid="offer-home">
+        <p className="font-semibold">{t.offer.homeTitle(pendingOffer.ownerName)}</p>
+        <p className="text-xs text-stone-500">「{pendingOffer.title}」</p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <form action={acceptOfferAction}><input type="hidden" name="offerId" value={pendingOffer.id} /><input type="hidden" name="back" value="/home" /><button type="submit" className={`${btn} bg-violet-700 text-white hover:bg-violet-800`}>{t.offer.connect}</button></form>
+          <Link href={`/me/work/received/${pendingOffer.id}`} className={`${btn} bg-white text-violet-800 ring-1 ring-violet-200`}>{t.offer.read}</Link>
+          <form action={dismissOfferAction}><input type="hidden" name="offerId" value={pendingOffer.id} /><input type="hidden" name="back" value="/home" /><button type="submit" className="px-1 text-xs text-stone-500 underline underline-offset-4">{t.offer.later}</button></form>
+        </div>
+      </div>
+    ) }] : []),
+    ...askedOfMe.map((r) => ({ ref: { key: noticeKey.peer(r.id), kind: "action" as const }, icon: "💭", body: <><p>{t.peers.homeAsked(r.otherName)}</p>{go(`/others/${r.id}`, t.peers.homeAnswer)}</> })),
+    ...waiting.map((c) => ({ ref: { key: noticeKey.conn(c.id), kind: "action" as const }, icon: "🔗", body: <><p>{t.home.connectionPending(c.otherName)}</p>{go(`/compare/${c.id}`, t.home.review)}</> })),
+    ...newReplies.slice(0, 5).map((x) => ({ ref: { key: noticeKey.reply(x.entryId, x.lastAt), kind: "action" as const }, icon: "💬", body: (
+      <Link href={x.iOwn ? `/memories/${x.entryId}#replies` : `/memories/shared/${x.entryId}#replies`} className="block">
+        <span className="block text-xs text-sky-800">{t.replies.fromOn(x.lastAuthorName ?? t.replies.friendOf(x.ownerName), x.iOwn ? null : x.ownerName)}</span>
+        <span className="line-clamp-2">{x.lastBody}</span>
+      </Link>
+    ) })),
+    ...(startAsk ? [{ ref: { key: `start:${startAsk.id}`, kind: "action" as const }, icon: "🌱", body: (
+      <div data-testid="offer-start">
+        <p className="font-semibold">{t.offer.startAsk(startAsk.ownerName)}</p>
+        <form action={answerStartAction} className="mt-2 flex flex-wrap gap-2">
+          <input type="hidden" name="offerId" value={startAsk.id} />
+          <button type="submit" name="tell" value="1" className={`${btn} bg-teal-700 text-white hover:bg-teal-800`}>{t.offer.startTell}</button>
+          <button type="submit" name="tell" value="0" className={`${btn} bg-white text-stone-700 ring-1 ring-stone-200`}>{t.offer.startKeep}</button>
+        </form>
+      </div>
+    ) }] : []),
+    ...(cardUndecided ? [{ ref: { key: "card", kind: "action" as const }, icon: "🪪", body: (
+      <div data-testid="card-ask">
+        <p className="font-semibold">{t.card.askTitle}</p>
+        <p className="text-xs leading-5 text-stone-500">{t.card.askLead}</p>
+        <form action={setCardAction} className="mt-2 flex flex-wrap items-center gap-2">
+          <input type="hidden" name="back" value="/home" />
+          <button type="submit" name="decide" value="show" className={`${btn} bg-teal-700 text-white hover:bg-teal-800`}>{t.card.askShow}</button>
+          <button type="submit" name="decide" value="hide" className={`${btn} bg-white text-stone-700 ring-1 ring-stone-200`}>{t.card.askHide}</button>
+          <Link href="/me/privacy#card" className="text-xs font-semibold text-teal-800 underline underline-offset-4">{t.card.askChoose}</Link>
+        </form>
+      </div>
+    ) }] : []),
+    ...anniversaries.map((a) => ({ ref: { key: `anniv:${a.sessionId}:${daily.day.slice(0, 4)}`, kind: "once" as const }, icon: "🎉", body: (
+      <div data-testid="anniversary">
+        <p className="font-semibold">{a.today ? t.pair.anniversaryToday(a.name, pairEventText(a.event, t)) : t.pair.anniversaryRecent(a.name, pairEventText(a.event, t), pairDate(a.event.on, locale))}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <form action={dmOpenForConnectionAction}><input type="hidden" name="sessionId" value={a.sessionId} /><input type="hidden" name="back" value="/home" /><button type="submit" className={`${btn} bg-teal-700 text-white hover:bg-teal-800`}>💬 {t.pair.anniversarySend}</button></form>
+          <Link href={`/compare/${a.sessionId}`} className="text-xs font-semibold text-teal-700 underline underline-offset-4">{t.pair.anniversaryOpen} →</Link>
+        </div>
+      </div>
+    ) })),
+    ...due.map((d) => ({ ref: { key: `date:${d.id}:${d.date}`, kind: "dated" as const, on: d.date }, icon: "📅", body: <p>{d.label}{d.personName ? ` · ${d.personName}` : ""} — {d.date}（{t.home.inDays(d.daysUntil)}）</p> })),
+    ...(opens.length ? [{ ref: { key: `opened:${opens.map((o) => o.id).join(",")}`.slice(0, 200), kind: "once" as const }, icon: "📖", body: <div data-testid="work-opened">{opens.map((o) => <p key={o.id} className="font-semibold">{t.work.openedHome(o.recipient)}</p>)}{go("/me/work#links", t.work.links)}</div> }] : []),
+    ...(news.connected.length || news.started.length ? [{ ref: { key: `news:${daily.day}`, kind: "once" as const }, icon: "🤝", body: <div data-testid="writer-news">{news.connected.map((w, i) => <p key={`c${i}`}>{t.offer.newsConnected(w)}</p>)}{news.started.map((w, i) => <p key={`s${i}`}>{t.offer.newsStarted(w)}</p>)}</div> }] : []),
+    ...(story.ask ? [{ ref: { key: `story-ask:${daily.day.slice(0, 7)}`, kind: "once" as const }, icon: "✉️", body: (
+      <div data-testid="story-ask">
+        <p className="font-semibold">{t.work.storyAskTitle}</p>
+        <p className="text-xs leading-5 text-stone-500">{t.work.storyAskLead}</p>
+        <form action={storyAskAction} className="mt-2"><button type="submit" name="go" value="work" className={`${btn} bg-violet-700 text-white hover:bg-violet-800`}>{t.work.storyAskYes}</button></form>
+      </div>
+    ), close: (
+      <form action={storyAskAction} className="shrink-0"><button type="submit" name="go" value="home" className="text-xs text-stone-500 underline underline-offset-4">{t.work.storyAskNo}</button></form>
+    ) }] : []),
+    ...(!story.ask && story.added > 0 ? [{ ref: { key: `grew:${story.pages}`, kind: "once" as const }, icon: "📖", body: <Link href="/me/manual#sec-novel" className="block" data-testid="story-grew"><span className="block font-semibold">{t.work.storyGrew(story.pages)}</span><span className="block text-xs text-stone-500">{t.work.storyGrewSub}</span></Link> }] : []),
+    ...(lookBack ? [{ ref: { key: `look:${monthKey(lookBack)}`, kind: "once" as const }, icon: "🗓", body: <Link href={`/reflection/${monthKey(lookBack)}`} className="block"><span className="block font-semibold">{t.monthly.homeCard(lookBack.month)}</span><span className="block text-xs text-stone-500">{t.monthly.homeCardSub}</span></Link> }] : []),
+    ...(questionReminder ? [{ ref: { key: `question:${daily.day}`, kind: "habit" as const }, icon: "🔔", body: <Link href="/discover" className="block font-semibold underline-offset-4 hover:underline">{t.home.todayQuestion}</Link> }] : []),
+    // A week of closing today's question: keep the reminder, or stop it (asked, not decided for them).
+    ...(np.dailyQuestion && (await questionClosedStreak(uid)) ? [{ ref: { key: `question-ask:${daily.day}`, kind: "once" as const }, icon: "🔕", body: (
+      <div data-testid="question-ask">
+        <p className="font-semibold">{t.notices.questionAsk}</p>
+        <form action={questionReminderAction} className="mt-2 flex flex-wrap gap-2">
+          <button type="submit" name="keep" value="1" className={`${btn} bg-teal-700 text-white hover:bg-teal-800`}>{t.notices.questionKeep}</button>
+          <button type="submit" name="keep" value="0" className={`${btn} bg-white text-stone-700 ring-1 ring-stone-200`}>{t.notices.questionStop}</button>
+        </form>
+      </div>
+    ), close: <span /> }] : []),
+  ];
+  const showing = await visibleNotices(uid, all.map((x) => x.ref));
+  const tray = all.filter((x) => showing.has(x.ref.key));
   return (
     <Page title={t.home.hello(account.profile.displayName)}>
       <Flash t={t} sp={sp} />
+      <NoticeTray items={tray} labels={{ title: t.notices.title, closeAll: t.notices.closeAll, close: t.notices.close, more: t.notices.more }} />
       {!account.profile.starterDismissedAt && <StarterChecklist
         t={t}
         resume={!account.profile.onboardedAt}
         done={{ chart: !!chart, answers: know.parts.answers >= 3, bio: know.parts.bio, record: know.parts.records > 0 }}
       />}
-      {pendingOffer && (
-        <section className="rounded-3xl bg-gradient-to-br from-violet-50 to-amber-50 p-5 shadow-sm ring-1 ring-violet-100" data-testid="offer-home">
-          <p className="font-bold text-stone-900">📖 {t.offer.homeTitle(pendingOffer.ownerName)}</p>
-          <p className="mt-1 text-sm text-stone-600">「{pendingOffer.title}」</p>
-          <p className="mt-2 text-xs leading-5 text-stone-500">{t.offer.askLead}</p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <form action={acceptOfferAction}>
-              <input type="hidden" name="offerId" value={pendingOffer.id} />
-              <input type="hidden" name="back" value="/home" />
-              <button type="submit" className="rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-800">{t.offer.connect}</button>
-            </form>
-            <Link href={`/me/work/received/${pendingOffer.id}`} className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-violet-800 ring-1 ring-violet-200">{t.offer.read}</Link>
-            <form action={dismissOfferAction}>
-              <input type="hidden" name="offerId" value={pendingOffer.id} />
-              <input type="hidden" name="back" value="/home" />
-              <button type="submit" className="px-2 text-sm text-stone-500 underline underline-offset-4">{t.offer.later}</button>
-            </form>
-          </div>
-        </section>
-      )}
-      {startAsk && (
-        <section className="rounded-3xl bg-white/85 p-4 shadow-sm ring-1 ring-amber-100" data-testid="offer-start">
-          <p className="font-semibold text-stone-900">🌱 {t.offer.startAsk(startAsk.ownerName)}</p>
-          <form action={answerStartAction} className="mt-3 flex flex-wrap gap-2">
-            <input type="hidden" name="offerId" value={startAsk.id} />
-            <button type="submit" name="tell" value="1" className="rounded-full bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">{t.offer.startTell}</button>
-            <button type="submit" name="tell" value="0" className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-stone-700 ring-1 ring-stone-200">{t.offer.startKeep}</button>
-          </form>
-        </section>
-      )}
-      {(news.connected.length > 0 || news.started.length > 0) && (
-        <section className="rounded-3xl bg-teal-50/80 p-4 ring-1 ring-teal-100" data-testid="writer-news">
-          {news.connected.map((w, i) => <p key={`c${i}`} className="font-semibold text-teal-950">🤝 {t.offer.newsConnected(w)}</p>)}
-          {news.started.map((w, i) => <p key={`s${i}`} className="font-semibold text-teal-950">🌱 {t.offer.newsStarted(w)}</p>)}
-        </section>
-      )}
-      {story.ask ? (
-        <section className="rounded-3xl bg-gradient-to-br from-violet-50 via-white to-amber-50 p-5 shadow-sm ring-1 ring-violet-100" data-testid="story-ask">
-          <p className="font-bold text-stone-900">📖 {t.work.storyAskTitle}</p>
-          <p className="mt-1 text-sm leading-6 text-stone-600">{t.work.storyAskLead}</p>
-          <form action={storyAskAction} className="mt-3 flex flex-wrap items-center gap-2">
-            <button type="submit" name="go" value="work" className="rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-800">{t.work.storyAskYes}</button>
-            <button type="submit" name="go" value="home" className="px-2 text-sm text-stone-500 underline underline-offset-4">{t.work.storyAskNo}</button>
-          </form>
-        </section>
-      ) : story.added > 0 && (
-        <Link href="/me/manual#sec-novel" className="flex items-center gap-3 rounded-3xl bg-gradient-to-br from-amber-50 to-violet-50 p-4 ring-1 ring-amber-100 transition hover:ring-violet-200" data-testid="story-grew">
-          <span aria-hidden className="text-2xl">📖</span>
-          <span className="min-w-0 flex-1">
-            <span className="block font-semibold text-stone-900">{t.work.storyGrew(story.pages)}</span>
-            <span className="block text-xs text-stone-500">{t.work.storyGrewSub}</span>
-          </span>
-          <span className="shrink-0 text-sm font-semibold text-violet-800">{t.work.storyRead} →</span>
-        </Link>
-      )}
-      {/* Someone opened the story they were handed: said once. */}
-      {opens.length > 0 && (
-        <section className="rounded-3xl bg-gradient-to-br from-violet-50 to-amber-50 p-4 ring-1 ring-violet-100" data-testid="work-opened">
-          {opens.map((o) => (
-            <p key={o.id} className="font-semibold text-violet-950">📖 {t.work.openedHome(o.recipient)}</p>
-          ))}
-          <Link href="/me/work#links" className="mt-1 inline-block text-sm font-semibold text-violet-800 underline underline-offset-4">{t.work.links} →</Link>
-        </section>
-      )}
-      {/* Accounts from before the calling card: asked once what connections may see from the start. */}
-      {(await myCard(uid)) === null && (
-        <section className="rounded-3xl bg-teal-50/80 p-5 shadow-sm ring-1 ring-teal-100" data-testid="card-ask">
-          <p className="font-bold text-stone-900">🪪 {t.card.askTitle}</p>
-          <p className="mt-1 text-sm leading-6 text-stone-600">{t.card.askLead}</p>
-          <form action={setCardAction} className="mt-3 flex flex-wrap items-center gap-2">
-            <input type="hidden" name="back" value="/home" />
-            <button type="submit" name="decide" value="show" className="rounded-full bg-teal-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-800">{t.card.askShow}</button>
-            <button type="submit" name="decide" value="hide" className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-stone-700 ring-1 ring-stone-200 hover:ring-stone-300">{t.card.askHide}</button>
-            <Link href="/me/privacy#card" className="px-2 text-sm font-semibold text-teal-800 underline underline-offset-4">{t.card.askChoose}</Link>
-          </form>
-        </section>
-      )}
-      {/* Anniversaries with the people you're connected to (today, or in the last few days). */}
-      {(await recentAnniversaries(uid, account.profile.timeZone)).map((a) => (
-        <section key={a.sessionId} className="rounded-3xl bg-linear-to-br from-amber-50 via-rose-50 to-violet-50 p-5 shadow-sm ring-1 ring-amber-100" data-testid="anniversary">
-          <p className="font-bold text-stone-900">
-            {a.today ? t.pair.anniversaryToday(a.name, pairEventText(a.event, t)) : t.pair.anniversaryRecent(a.name, pairEventText(a.event, t), pairDate(a.event.on, locale))}
-          </p>
-          <p className="mt-1 text-sm text-stone-600">{t.pair.anniversarySub}</p>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <form action={dmOpenForConnectionAction}>
-              <input type="hidden" name="sessionId" value={a.sessionId} />
-              <input type="hidden" name="back" value="/home" />
-              <Button type="submit">💬 {t.pair.anniversarySend}</Button>
-            </form>
-            <Link href={`/compare/${a.sessionId}`} className="text-sm font-semibold text-teal-700 underline underline-offset-4">🌱 {t.pair.anniversaryOpen} →</Link>
-          </div>
-        </section>
-      ))}
       {/* Posting: the same sheet as on records. */}
       <QuickComposer trigger="inline" tx={composerText(t)} canShare={(await shareTargets(uid)).length > 0} giftBoxes={(await myGiftBoxes(uid)).filter((b) => b.status === "open" && b.my_role !== "child").map((b) => ({ id: b.id, label: t.memories.composer.toGift(b.child_name) }))} />
       <Card title={t.home.recent}>
@@ -197,41 +191,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           </div>
         )}
       </Card>
-      {askedOfMe.map((r) => (
-        <Link key={r.id} href={`/others/${r.id}`} className="flex items-center gap-3 rounded-3xl border border-violet-200 bg-violet-50/80 p-4 text-sm text-violet-950 transition hover:shadow-md">
-          <span aria-hidden className="text-xl">💭</span>
-          <span className="flex-1">{t.peers.homeAsked(r.otherName)}</span>
-          <span className="shrink-0 rounded-full bg-white px-3 py-1 font-semibold text-violet-800">{t.peers.homeAnswer} →</span>
-        </Link>
-      ))}
-      {newReplies.length > 0 && (
-        <section className="rounded-3xl border border-sky-200 bg-sky-50/80 p-4">
-          <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-sky-950">
-            <span aria-hidden className="text-xl">💬</span>
-            {t.replies.homeTitle}
-          </h2>
-          <ul className="space-y-2">
-            {newReplies.slice(0, 3).map((x) => (
-              <li key={x.entryId}>
-                <Link
-                  href={x.iOwn ? `/memories/${x.entryId}#replies` : `/memories/shared/${x.entryId}#replies`}
-                  className="block rounded-2xl bg-white px-3.5 py-2.5 text-sm ring-1 ring-sky-100 transition hover:ring-sky-300"
-                >
-                  <span className="block text-xs text-sky-800">{t.replies.fromOn(x.lastAuthorName ?? t.replies.friendOf(x.ownerName), x.iOwn ? null : x.ownerName)}</span>
-                  <span className="line-clamp-2 text-stone-900">{x.lastBody}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-      {waiting.map((c) => (
-        <Link key={c.id} href={`/compare/${c.id}`} className="flex items-center gap-3 rounded-3xl border border-rose-200 bg-rose-50/80 p-4 text-sm text-rose-950 transition hover:shadow-md">
-          <span aria-hidden className="text-xl">🔗</span>
-          <span className="flex-1">{t.home.connectionPending(c.otherName)}</span>
-          <span className="shrink-0 rounded-full bg-white px-3 py-1 font-semibold text-rose-800">{t.home.review} →</span>
-        </Link>
-      ))}
       <Link
         href={traits.length ? "/me/manual" : "/discover"}
         className="group block overflow-hidden rounded-3xl bg-linear-to-br from-amber-100 via-rose-50 to-orange-100 p-5 text-amber-950 shadow-[0_10px_30px_-14px_rgba(160,90,40,0.35)] transition-transform hover:-translate-y-0.5 motion-reduce:transition-none"
@@ -276,22 +235,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           </>
         )}
       </Link>
-      {(due.length > 0 || questionReminder) && (
-        <Card title={t.home.reminders} className="border-amber-200 bg-amber-50">
-          <ul className="space-y-1 text-sm">
-            {questionReminder && (
-              <li>
-                🔔 <Link href="/discover" className="underline">{t.home.todayQuestion}</Link>
-              </li>
-            )}
-            {due.map((d) => (
-              <li key={d.id}>
-                🔔 {d.label}{d.personName ? ` · ${d.personName}` : ""} — {d.date} ({t.home.inDays(d.daysUntil)})
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
       <DayWatcher day={daily.day} timeZone={daily.timeZone} />
       <TimeZoneNotice saved={daily.timeZone} text={t.home.tzMismatch} action={t.home.tzFix} />
       <Card title={`${t.home.todayQuestion} · ${new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", weekday: "short", timeZone: "UTC" }).format(new Date(`${daily.day}T00:00:00Z`))}`}>
@@ -307,15 +250,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           <p className="text-sm text-stone-500">{t.discover.noQuestion}</p>
         )}
       </Card>
-      {lookBack && (
-        <Link href={`/reflection/${monthKey(lookBack)}`} className="flex items-center justify-between gap-3 rounded-3xl bg-linear-to-br from-sky-50 to-amber-50 px-5 py-4 shadow-sm ring-1 ring-sky-100">
-          <span>
-            <span className="block font-semibold text-stone-900">🗓 {t.monthly.homeCard(lookBack.month)}</span>
-            <span className="block text-xs text-stone-600">{t.monthly.homeCardSub}</span>
-          </span>
-          <span className="text-sm font-semibold text-teal-700">{t.monthly.open} →</span>
-        </Link>
-      )}
       <KnowledgeCard k={know} t={t} locale={locale} />
       <Link href="/insights" className="block rounded-3xl border border-stone-200/80 bg-white/80 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md motion-reduce:transition-none">
         <span className="flex items-baseline justify-between gap-2">

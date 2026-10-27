@@ -2,6 +2,16 @@ import type { Dict } from "./en";
 
 /** Japanese UI strings. Tử Vi terms keep their Vietnamese names, with kanji where helpful. */
 export const ja: Dict = {
+  notices: {
+    title: "お知らせ",
+    closeAll: "すべて閉じる",
+    close: "閉じる",
+    more: (n: number) => `ほか${n}件`,
+    bell: "お知らせ",
+    questionAsk: "この1週間、「今日の質問」のお知らせを閉じています。お知らせを続けますか？",
+    questionKeep: "続ける",
+    questionStop: "お知らせをやめる",
+  },
   form: {
     required: "この項目を入力してください。",
     email: "メールアドレスの形で入力してください。",

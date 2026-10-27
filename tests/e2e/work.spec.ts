@@ -141,7 +141,7 @@ test("the story grows: new pages are mentioned once, then one question about han
   await expect(grew.or(ask)).toBeVisible();
   if (await ask.count()) {
     await expect(ask).toContainText("あなたの物語を、知ってほしい人はいますか？");
-    await ask.getByRole("button", { name: "いまはいない" }).click();
+    await sora.getByRole("button", { name: "いまはいない" }).click();
     await sora.waitForURL(/\/home$/);
     await expect(ask).toHaveCount(0);
   } else {

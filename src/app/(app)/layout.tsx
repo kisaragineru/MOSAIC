@@ -13,6 +13,7 @@ import { HeaderBrand } from "@/components/header-brand";
 import { Suspense } from "react";
 import { onboardingState, resumeStep } from "@/server/services/onboarding";
 import { trialReturnUser } from "@/server/services/dev-trial";
+import { hasWaitingNotices } from "@/server/services/notices";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const uid = await requireUser();
@@ -23,6 +24,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const initial = Array.from(acc.profile.displayName.trim())[0]?.toUpperCase() ?? "?";
   // Development: trying sign-up with a test account, with the way back to your own.
   const trialOwner = await trialReturnUser();
+  // A dot on the bell when someone is waiting on you (no number: a nudge, not a count).
+  const waiting = await hasWaitingNotices(uid);
   const guideStep = acc.profile.onboardedAt ? null : resumeStep(await onboardingState(uid));
   return (
     <>
@@ -40,6 +43,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </HeaderBrand>
           </Suspense>
           <div className="ml-auto flex items-center gap-1">
+            <Link
+              href="/home#notices"
+              aria-label={t.notices.bell}
+              title={t.notices.bell}
+              className="relative flex h-9 w-9 items-center justify-center rounded-full text-stone-600 transition-colors hover:bg-stone-200 hover:text-stone-900"
+              data-testid="bell"
+            >
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M6 9a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9Z" />
+                <path d="M10 19a2 2 0 0 0 4 0" />
+              </svg>
+              {waiting && <span aria-hidden className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-[#faf8f5]" data-testid="bell-dot" />}
+            </Link>
             <Link
               href="/share"
               aria-label={t.nav.share}

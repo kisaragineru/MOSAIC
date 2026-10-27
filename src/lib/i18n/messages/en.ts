@@ -1,5 +1,15 @@
 /** English UI strings. `vi.ts` must have exactly the same shape (enforced by the type). */
 export const en = {
+  notices: {
+    title: "Notices",
+    closeAll: "Close all",
+    close: "Close",
+    more: (n: number) => `${n} more`,
+    bell: "Notices",
+    questionAsk: "You've closed the \"today's question\" reminder all week. Keep reminding you?",
+    questionKeep: "Keep it",
+    questionStop: "Stop the reminder",
+  },
   form: {
     required: "Please fill in this field.",
     email: "Please enter an email address.",
