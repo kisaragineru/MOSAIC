@@ -30,6 +30,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <Input name="password" type="password" autoComplete="current-password" required />
           </Field>
           <Button type="submit" className="w-full">{t.auth.submitLogin}</Button>
+          <p className="text-center text-xs">
+            <Link className="text-stone-500 underline underline-offset-4" href="/forgot">{t.auth.forgotLink}</Link>
+          </p>
         </form>
         <p className="mt-4 text-center text-sm">
           <Link className="text-teal-700 underline" href={`/register?next=${encodeURIComponent(next)}`}>{t.auth.noAccount}</Link>

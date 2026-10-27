@@ -1549,3 +1549,19 @@ export const pushSubscriptions = pgTable(
     check("push_subscriptions_keys_ck", sql`char_length(${t.p256dh}) between 1 and 200 and char_length(${t.auth}) between 1 and 100`),
   ],
 );
+
+/** One-time links to set a new password (only their hash is kept), issued by an admin or sent by email. */
+export const passwordResets = pgTable(
+  "password_resets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: userRef(),
+    tokenHash: text("token_hash").notNull(),
+    /** "admin" (an admin handed it over) or "email". */
+    via: text("via").notNull(),
+    expiresAt: ts("expires_at").notNull(),
+    usedAt: ts("used_at"),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("password_resets_token_uq").on(t.tokenHash), index("password_resets_user_idx").on(t.userId), check("password_resets_via_ck", sql`${t.via} in ('admin','email')`)],
+);

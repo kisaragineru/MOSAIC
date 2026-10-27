@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { setBetaAction } from "@/app/actions/admin";
+import { ResetLinkButton } from "@/components/reset-link-button";
 import { Avatar } from "@/components/avatar";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
@@ -61,6 +62,11 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
                   <p className="text-xs text-stone-500">{a.counts(u.records, u.connections)}</p>
                 </div>
               </div>
+              {!u.test && !u.email.endsWith(".invalid") && (
+                <div className="mt-2 flex justify-end">
+                  <ResetLinkButton userId={u.id} text={{ make: a.resetMake, note: a.resetNote, copy: a.copy, copied: a.copied, failed: a.resetFailed }} />
+                </div>
+              )}
               {!u.test && (
                 <form action={setBetaAction} className="mt-2 flex justify-end">
                   <input type="hidden" name="userId" value={u.id} />
