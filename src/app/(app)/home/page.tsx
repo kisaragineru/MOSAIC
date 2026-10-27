@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { setCardAction } from "@/app/actions/sharing";
 import { myCard } from "@/server/services/card";
+import { markOpensSeen, newOpens } from "@/server/services/works";
 import { QuickComposer } from "@/components/quick-composer";
 import { composerText } from "@/components/memory-form";
 import { myGiftBoxes } from "@/server/services/gift-boxes";
@@ -59,6 +60,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const pic = await portrait(uid);
   const know = await knowledge(uid);
   const lookBack = await lookBackDue(uid);
+  const opens = await newOpens(uid);
+  if (opens.length) await markOpensSeen(uid);
   const inbox = await replyInbox(uid);
   const newReplies = inbox.filter((x) => x.unread > 0);
   const { previews, counts: replyTotals } = await replyPreviews(uid, recent.flatMap((d) => d.items.filter((x) => !x.entry.sealed).map((x) => x.entry.id)));
@@ -77,6 +80,15 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         resume={!account.profile.onboardedAt}
         done={{ chart: !!chart, answers: know.parts.answers >= 3, bio: know.parts.bio, record: know.parts.records > 0, connect: comparisons.some((c) => c.status === "active") }}
       />}
+      {/* Someone opened the story they were handed: said once. */}
+      {opens.length > 0 && (
+        <section className="rounded-3xl bg-gradient-to-br from-violet-50 to-amber-50 p-4 ring-1 ring-violet-100" data-testid="work-opened">
+          {opens.map((o) => (
+            <p key={o.id} className="font-semibold text-violet-950">📖 {t.work.openedHome(o.recipient)}</p>
+          ))}
+          <Link href="/me/work#links" className="mt-1 inline-block text-sm font-semibold text-violet-800 underline underline-offset-4">{t.work.links} →</Link>
+        </section>
+      )}
       {/* Accounts from before the calling card: asked once what connections may see from the start. */}
       {(await myCard(uid)) === null && (
         <section className="rounded-3xl bg-teal-50/80 p-5 shadow-sm ring-1 ring-teal-100" data-testid="card-ask">

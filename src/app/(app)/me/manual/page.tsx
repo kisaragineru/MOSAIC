@@ -275,6 +275,13 @@ export default async function ManualPage({ searchParams }: { searchParams: Promi
                 </>
               );
             })()}
+            {/* The story can be handed to someone close, as a work. */}
+            {s.id === "novel" && (
+              <Link href="/me/work" className="flex items-center justify-between gap-3 rounded-3xl bg-gradient-to-br from-violet-50 to-amber-50 px-4 py-3 ring-1 ring-violet-100 transition hover:ring-violet-300 print:hidden" data-testid="work-entry">
+                <span className="font-semibold text-violet-950">✉️ {t.work.manualLink}</span>
+                <span aria-hidden className="text-violet-700">→</span>
+              </Link>
+            )}
             <p className="text-right print:hidden">
               <a href="#toc" className="text-xs text-stone-400 hover:text-teal-700">↑ {tm.top}</a>
             </p>

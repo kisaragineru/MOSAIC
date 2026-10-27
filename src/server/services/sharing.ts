@@ -70,7 +70,8 @@ export const PURPOSE_TEXT: I18nText = {
     ja: "目的：お二人に、Tử Viの伝統的な関係、共通点、違い、会話のヒントを示すことです。総合スコアは計算しません。日記、他の人についてのメモ、自由記述の回答は一切使いません。",
 };
 
-function appOrigin() {
+/** This site's address, for links people send (QR, invitations, works). */
+export function appOrigin() {
   return (process.env.APP_ORIGIN ?? "http://localhost:3000").replace(/\/$/, "");
 }
 

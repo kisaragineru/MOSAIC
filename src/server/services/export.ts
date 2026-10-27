@@ -51,6 +51,9 @@ export async function buildExport(userId: string) {
     const [manualRewrite] = await tx.select().from(s.manualRewrites).where(eq(s.manualRewrites.userId, userId));
     // Replies under my records (anyone's), and the ones I wrote under others' records.
     const memoryReplies = await tx.select().from(s.memoryReplies).where(or(eq(s.memoryReplies.ownerId, userId), eq(s.memoryReplies.authorId, userId))).orderBy(asc(s.memoryReplies.createdAt));
+    const myWorks = await tx.select().from(s.works).where(eq(s.works.ownerId, userId)).orderBy(asc(s.works.createdAt));
+    // Who each work was handed to (the link itself is never kept, only its hash, which isn't exported).
+    const myWorkLinks = (await tx.select().from(s.workLinks).where(eq(s.workLinks.ownerId, userId)).orderBy(asc(s.workLinks.createdAt))).map(({ tokenHash: _hash, ...l }) => l);
     const manualShareRewrites = await tx.select().from(s.manualShareRewrites).where(eq(s.manualShareRewrites.ownerId, userId));
     // Gift boxes I write in or received, each as I may see it (see gift_box_read).
     const giftIds = (await tx.execute<{ id: string }>(sql`select id from gift_boxes_mine()`)).rows;
@@ -127,6 +130,8 @@ export async function buildExport(userId: string) {
       manualShares,
       manualRewrite: manualRewrite ?? null,
       memoryReplies,
+      works: myWorks,
+      workLinks: myWorkLinks,
       manualShareRewrites,
       giftBoxes,
       tendencies: claims.map((c) => ({ ...c, evidence: evidence.filter((e) => e.claimId === c.id) })),

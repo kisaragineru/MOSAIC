@@ -1376,3 +1376,53 @@ export const memoryReplyReads = pgTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.entryId] })],
 );
+
+/**
+ * A work: the owner's story, fixed as it was when they chose to hand it over (later records don't
+ * change it). Read by its owner, and by the people they give a link to (work_links), never listed.
+ */
+export const works = pgTable(
+  "works",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    locale: text("locale").notNull(),
+    /** The story and its backstage, as shown: { name, types, storyTitle, subtitle, episodes, backstage }. */
+    content: jsonb("content").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("works_owner_idx").on(t.ownerId, t.createdAt), check("works_title_ck", sql`char_length(${t.title}) between 1 and 80`)],
+);
+
+/** One person a work was handed to: a link of its own, with a note, until it expires or is taken back. */
+export const workLinks = pgTable(
+  "work_links",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workId: uuid("work_id")
+      .notNull()
+      .references(() => works.id, { onDelete: "cascade" }),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull().unique(),
+    /** Who it's for (only the owner sees this). */
+    recipient: text("recipient").notNull(),
+    /** A few words on the cover (optional). */
+    note: text("note"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    /** First opened (told to the owner once). */
+    openedAt: timestamp("opened_at", { withTimezone: true }),
+    openedSeenAt: timestamp("opened_seen_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("work_links_owner_idx").on(t.ownerId, t.createdAt),
+    check("work_links_recipient_ck", sql`char_length(${t.recipient}) between 1 and 60`),
+    check("work_links_note_ck", sql`${t.note} IS NULL OR char_length(${t.note}) <= 300`),
+  ],
+);
