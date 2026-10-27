@@ -63,10 +63,10 @@ export function RecordReplies({
                 {/* Someone I'm connected to: the icon and name open our page together. */}
                 {link ? (
                   <Link href={link} aria-label={r.openProfile(x.authorName ?? "")} className="absolute -left-[1.95rem] top-0 rounded-full transition hover:scale-110 focus-visible:outline-2 focus-visible:outline-teal-600">
-                    <Avatar name={x.authorName ?? "?"} src={avatars.get(x.authorId)} className="h-7 w-7 text-[10px] ring-2 ring-white" />
+                    <Avatar name={x.authorName ?? x.authorInitial} src={avatars.get(x.authorId)} className="h-7 w-7 text-[10px] ring-2 ring-white" />
                   </Link>
                 ) : (
-                  <Avatar name={x.authorName ?? "?"} src={avatars.get(x.authorId)} className="absolute -left-[1.95rem] top-0 h-7 w-7 text-[10px] ring-2 ring-white" />
+                  <Avatar name={x.authorName ?? x.authorInitial} src={avatars.get(x.authorId)} className="absolute -left-[1.95rem] top-0 h-7 w-7 text-[10px] ring-2 ring-white" />
                 )}
                 <p className="flex flex-wrap items-center gap-1.5 px-1 text-xs">
                   {link ? (

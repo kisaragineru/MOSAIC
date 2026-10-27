@@ -272,6 +272,10 @@ test("replies under a record: one thread for everyone who can see it", async ({ 
   // Someone she's connected to (Hana) opens their page together from the icon; Ren's doesn't link.
   await expect(thread(sora).getByRole("link", { name: "ハナさんとのページを開く" }).first()).toHaveAttribute("href", /^\/compare\/[0-9a-f-]+$/);
   await expect(thread(sora).locator("li", { hasText: "ハナさんの友だち" }).getByRole("link")).toHaveCount(0);
+  // Ren's icon: his initial, no photo.
+  const renItem = thread(sora).locator("li", { hasText: "ハナさんの友だち" });
+  await expect(renItem.locator("span[aria-hidden]").first()).toHaveText("レ");
+  await expect(renItem.locator("img")).toHaveCount(0);
   await hana.goto("/home");
   await expect(hana.getByText("新しい返信")).toHaveCount(0);
   await hana.goto("/memories");

@@ -18,6 +18,8 @@ export interface Reply {
   authorId: string;
   /** Null when I'm not connected to the writer: they show as "a friend of <owner>". */
   authorName: string | null;
+  /** The first letter of their name, for the icon (shown even when the name is hidden). */
+  authorInitial: string;
   mine: boolean;
   body: string;
   createdAt: Date;
@@ -83,12 +85,12 @@ export async function deleteReply(userId: string, replyId: string): Promise<stri
 export async function readReplies(userId: string, entryId: string): Promise<Reply[]> {
   const id = uuid.parse(entryId);
   return run(userId, async (tx) => {
-    const r = await tx.execute<{ id: string; author_id: string; author_name: string | null; body: string; created_at: string | Date }>(sql`select * from memory_reply_thread(${id})`);
+    const r = await tx.execute<{ id: string; author_id: string; author_name: string | null; author_initial: string | null; body: string; created_at: string | Date }>(sql`select * from memory_reply_thread(${id})`);
     if (r.rows.length) {
       await tx.execute(sql`insert into memory_reply_reads (user_id, entry_id, read_at) values (${userId}, ${id}, now())
         on conflict (user_id, entry_id) do update set read_at = now()`);
     }
-    return r.rows.map((x) => ({ id: x.id, authorId: x.author_id, authorName: x.author_name, mine: x.author_id === userId, body: x.body, createdAt: new Date(x.created_at) }));
+    return r.rows.map((x) => ({ id: x.id, authorId: x.author_id, authorName: x.author_name, authorInitial: x.author_initial || "?", mine: x.author_id === userId, body: x.body, createdAt: new Date(x.created_at) }));
   });
 }
 

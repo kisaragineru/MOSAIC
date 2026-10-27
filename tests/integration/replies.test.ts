@@ -45,6 +45,8 @@ describe("replies under a record: one thread for everyone who can see it", () =>
     expect(await names(hana)).toEqual(["Hana", "Sora", "Ren", "Hana"]);
     expect(await names(ren)).toEqual(["Hana", null, "Ren", "Hana"]);
     expect(await names(sora)).toEqual(["Hana", "Sora", null, "Hana"]);
+    // The icon still gets the first letter of the hidden name (never the photo: see avatarUrls).
+    expect((await readReplies(sora.userId, id)).map((x) => x.authorInitial)).toEqual(["H", "S", "R", "H"]);
     expect((await readReplies(ren.userId, id)).map((x) => x.mine)).toEqual([false, false, true, false]);
     expect(await readReplies(stranger.userId, id)).toEqual([]);
     await expect(addReply(stranger.userId, id, "やあ")).rejects.toMatchObject({ code: "not_found" });
