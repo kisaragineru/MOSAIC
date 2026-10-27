@@ -30,9 +30,11 @@ function gate(request: NextRequest): NextResponse | null {
 /**
  * Fetched by the browser itself, often without the password it remembers (the app manifest, its
  * icons, the service worker that shows notifications), or needed by anyone before signing in
- * (the privacy policy, which sign-in providers check): open, as they say nothing about anyone.
+ * (the privacy policy and terms, which sign-in providers check): open, as they say nothing about anyone.
  */
-const OPEN = new Set(["/manifest.webmanifest", "/sw.js", "/icon.png", "/apple-icon.png", "/privacy"]);
+const OPEN = new Set(["/manifest.webmanifest", "/sw.js", "/icon.png", "/apple-icon.png", "/privacy", "/terms"]);
+/** The open pages (not files): they go on with their security headers. */
+const OPEN_PAGES = new Set(["/privacy", "/terms"]);
 
 /**
  * What scanners look for on any site (secrets, other software's admin pages): MOSAIC has none of
@@ -72,7 +74,7 @@ export function proxy(request: NextRequest) {
   if (isProbe(request.nextUrl.pathname)) return new NextResponse("Not found", { status: 404, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
   const open = OPEN.has(request.nextUrl.pathname);
   // Static files: as they are. The policy page goes on below, with its security headers.
-  if (open && request.nextUrl.pathname !== "/privacy") return NextResponse.next();
+  if (open && !OPEN_PAGES.has(request.nextUrl.pathname)) return NextResponse.next();
   const denied = open ? null : gate(request);
   if (denied) return denied;
   // Prefetches pass through the gate above, then go on as they always did (no nonce of their own).

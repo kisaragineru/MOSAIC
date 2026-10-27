@@ -77,6 +77,13 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
           )}
           <Notice>{t.auth.privacyNote}</Notice>
           <Button type="submit" className="w-full">{t.auth.submitRegister}</Button>
+          <p className="text-center text-xs leading-5 text-stone-500" data-testid="agree">
+            {t.auth.agreeBefore}
+            <Link href="/terms" className="underline underline-offset-2">{t.common.terms}</Link>
+            {t.auth.agreeAnd}
+            <Link href="/privacy" className="underline underline-offset-2">{t.common.privacyPolicy}</Link>
+            {t.auth.agreeAfter}
+          </p>
         </form>
         <p className="mt-4 text-center text-sm">
           <Link className="text-teal-700 underline" href={`/login?next=${encodeURIComponent(next)}`}>{t.auth.haveAccount}</Link>

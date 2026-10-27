@@ -42,6 +42,7 @@ describe("the site's shared ID and password (while trying it out)", () => {
     expect(policy.status).toBe(200);
     expect(policy.headers.get("content-security-policy")).toContain("default-src 'self'");
     expect(proxy(new NextRequest("http://localhost/privacy/x")).status).toBe(401);
+    expect(proxy(new NextRequest("http://localhost/terms")).status).toBe(200);
     const csp = proxy(req({ authorization: basic("tester", "secret") })).headers.get("content-security-policy")!;
     expect(csp).toContain("worker-src 'self'");
   });

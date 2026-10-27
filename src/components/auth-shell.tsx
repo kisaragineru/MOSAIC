@@ -25,6 +25,8 @@ export function AuthShell({ t, locale, back, trial = false, children }: { t: Dic
         ))}
       </form>
       <p className="mt-3 text-center text-xs">
+        <Link href="/terms" className="text-stone-500 underline underline-offset-4 hover:text-stone-800">{t.common.terms}</Link>
+        <span aria-hidden className="mx-2 text-stone-300">·</span>
         <Link href="/privacy" className="text-stone-500 underline underline-offset-4 hover:text-stone-800">{t.common.privacyPolicy}</Link>
       </p>
     </main>

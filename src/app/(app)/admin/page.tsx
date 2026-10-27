@@ -9,6 +9,7 @@ import { DevTools } from "./dev-tools";
 import { VapidKeygen } from "@/components/vapid-keygen";
 import { pushConfigured } from "@/server/services/push";
 import { getAccount } from "@/server/services/account";
+import { launchChecklist } from "@/server/services/launch";
 
 /** For the people running MOSAIC: how it's being used, in numbers only (no one's content). */
 export default async function AdminPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
@@ -51,6 +52,22 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           </dl>
         </Card>
       ))}
+      {s && (
+        <Card title={`🚀 ${a.launchTitle}`}>
+          <p className="mb-3 text-xs leading-5 text-stone-500">{a.launchLead}</p>
+          <ul className="space-y-2" data-testid="launch-checklist">
+            {launchChecklist().map((x) => (
+              <li key={x.key} className="flex gap-2 text-sm">
+                <span aria-hidden className="shrink-0">{x.ok ? "✅" : x.required ? "⬜" : "➖"}</span>
+                <span className="min-w-0">
+                  <span className="block font-semibold text-stone-900">{a.launch[x.key].label}{!x.required && <span className="ml-1 text-xs font-normal text-stone-400">（{a.launchOptional}）</span>}</span>
+                  {!x.ok && <span className="block text-xs leading-5 text-stone-500">{a.launch[x.key].todo}</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
       {s && (
         <Card title={`🔔 ${a.pushTitle}`}>
           <p className="mb-3 text-sm leading-6 text-stone-700" data-testid="push-status">{pushConfigured() ? `✅ ${a.pushOn}` : a.pushOff}</p>

@@ -114,7 +114,21 @@ before anything renders or the password gate runs. MOSAIC publishes only its bui
 of these exist; turning them away early just keeps them from costing server time.
 
 ## Before opening the site (removing the shared password)
-- `DEV_TOOLS` off (unset), or at least `ADMIN_EMAILS` set so only admins have the tools.
-- Decide on `REGISTRATION_CODE` (invite-only sign-up) and set `CONTACT_EMAIL` for the privacy policy.
-- `APP_ORIGIN` is the public address; Google sign-in's redirect URI matches it.
-- Remove `BASIC_AUTH_USER` / `BASIC_AUTH_PASSWORD`, redeploy, and check the access log for errors.
+The admin page shows this as a checklist, read from the deployment's settings (names only).
+- `APP_ORIGIN` is the site's own https domain; Google sign-in's redirect URI matches it.
+- `ADMIN_EMAILS` set; `DEV_TOOLS` removed.
+- `CONTACT_EMAIL` set (privacy policy, terms, forgotten-password page).
+- Optional: Google sign-in keys, push keys (`VAPID_…`), email (`RESEND_API_KEY`, `MAIL_FROM`) for
+  password resets by email, Cloudflare Turnstile (`TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`).
+- `REGISTRATION_CODE`: keep for invite-only (people arriving through a story or share link need no
+  code), or remove to open sign-up.
+- Last, remove `BASIC_AUTH_USER` / `BASIC_AUTH_PASSWORD`, redeploy, and check the access log.
+
+## Sign-up and password recovery
+- Sign-up by email is refused when the field only bots see is filled, when the form comes back
+  sooner than `SIGNUP_MIN_SECONDS` (default 3; the form's time is HMAC-signed) or after a day, and,
+  with Turnstile keys set, when Cloudflare says it's a bot. Plus the per-IP rate limit.
+- Password reset links: one-time, one hour, a newer one replaces an older one, using one ends
+  every session; only the hash is stored; the token travels after `#` so it never reaches logs.
+  Admins issue them from the users list; with email set up people request them themselves
+  (same answer whether or not the address has an account; rate-limited per IP and per address).
