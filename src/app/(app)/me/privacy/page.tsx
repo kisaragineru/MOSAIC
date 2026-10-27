@@ -118,7 +118,13 @@ export default async function PrivacyPage() {
                       <span className="text-xs font-semibold text-stone-500">{tp.sharing}</span>
                       {c.sharedScopes.length ? c.sharedScopes.map((s) => <Pill key={s} tone="teal">{scopeList([s])}</Pill>) : <span className="text-stone-500">{tp.nothingShared}</span>}
                     </p>
-                    {c.myScopes.some((s) => !c.sharedScopes.includes(s)) && <p className="text-xs text-stone-500">{tp.youAgreed(scopeList(c.myScopes))}</p>}
+                    {/* Chosen by you, not (yet) by them: not shared until they choose it too. */}
+                    {c.myScopes.some((s) => !c.sharedScopes.includes(s)) && (
+                      <p className="flex flex-wrap items-center gap-1" data-testid="privacy-waiting">
+                        <span className="text-xs font-semibold text-stone-500">{tp.waiting}</span>
+                        {c.myScopes.filter((s) => !c.sharedScopes.includes(s)).map((s) => <Pill key={s} tone="amber">⏳ {scopeList([s])}</Pill>)}
+                      </p>
+                    )}
                     <p>📘 {c.manualPreset ? tp.manual(SHARED_TEXT.presetName[c.manualPreset as keyof typeof SHARED_TEXT.presetName]?.[locale] ?? c.manualPreset) : tp.manualOff}</p>
                     <p>📖 {tp.recordsVisible(c.recordsVisible)}</p>
                   </div>
