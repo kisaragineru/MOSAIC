@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { TypePortraits } from "@/components/tuvi-type";
+import { connectionCard } from "@/server/services/card";
 import { consentAction, recomputeAction } from "@/app/actions/sharing";
 import { SHARED_TEXT } from "@/content/manual-text";
 import { myManualShare, sharedManualFor } from "@/server/services/manual-share";
@@ -82,6 +84,7 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
   if (!v) notFound();
   const myShare = await myManualShare(uid, v.id);
   const theirManual = v.status === "revoked" ? null : await sharedManualFor(uid, v.id, locale);
+  const card = v.status === "active" ? await connectionCard(uid, v.id, locale) : null;
   const personId = (await listComparisons(uid)).find((c) => c.id === v.id)?.personId ?? null;
   const relationship = personId ? ((await listPeople(uid)).find((p) => p.id === personId)?.relationship ?? null) : null;
   // What they chose to show me lately (records shared with this connection).
@@ -218,6 +221,16 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
       {v.status !== "revoked" && (
         <section id="know" className="scroll-mt-20 space-y-3">
           <h2 className="px-1 text-base font-bold text-stone-900">👤 {cc.knowTitle(v.otherName)}</h2>
+          {/* Their calling card: the type they show every connection. */}
+          {card && card.types.length > 0 && (
+            <Card>
+              <div data-testid="card-type">
+                {card.typeSource === "picked" && <p className="mb-2 text-xs font-semibold text-violet-700">{t.card.typePicked(v.otherName)}</p>}
+                <p className="mb-2 text-lg font-black leading-snug text-stone-900">{card.types.map((x) => x.persona).join(" × ")}</p>
+                <TypePortraits types={card.types} />
+              </div>
+            </Card>
+          )}
           {v.otherBio || v.otherIntro ? (
             <Card>
               <IntroPair bio={v.otherBio} intro={v.otherIntro} name={v.otherName} t={t} />

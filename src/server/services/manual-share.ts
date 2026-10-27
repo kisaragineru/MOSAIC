@@ -32,6 +32,8 @@ export interface SharedManualData {
   intro?: string | null;
   claims: { key: string; direction: 1 | -1; evidence: number; support: number; confidence: number }[];
   likes: { question_id: string; answer: Answer }[];
+  /** From the calling card only: just these parts (null or absent: the whole preset). */
+  parts?: ("summary" | "likes")[] | null;
 }
 
 export interface SharedTrait {
@@ -99,9 +101,15 @@ export function composeSharedManual(d: SharedManualData, locale: Locale): Shared
       const q = QMETA.get(l.question_id);
       return { k: q ? q.prompt[locale] : l.question_id, v: answerLabel(q?.options ?? null, l.answer, locale) };
     });
-  const out = chapters
-    .map((ch) => ({ chapter: ch, traits: AXES.filter((k) => AXIS_CHAPTER[k] === ch).flatMap((k) => claims.filter((c) => c.key === k).map(trait)) }))
-    .filter((c) => c.traits.length > 0);
+  // A calling card that shows only some parts: the summary and/or the likes, no chapters.
+  const part = (x: "summary" | "likes") => !d.parts || d.parts.includes(x);
+  const out = d.parts
+    ? []
+    : chapters
+        .map((ch) => ({ chapter: ch, traits: AXES.filter((k) => AXIS_CHAPTER[k] === ch).flatMap((k) => claims.filter((c) => c.key === k).map(trait)) }))
+        .filter((c) => c.traits.length > 0);
+  const shownLikes = part("likes") ? likes : [];
+  const summary = part("summary") ? clear.map((c) => L(S.consistent(d.name, pole(c.key, c.direction)))) : [];
   return {
     preset: d.preset,
     name: d.name,
@@ -110,12 +118,12 @@ export function composeSharedManual(d: SharedManualData, locale: Locale): Shared
     bio: d.bio,
     intro: d.intro ?? null,
     summaryTitle: L(SECTION_TEXT.summary.title),
-    summary: clear.map((c) => L(S.consistent(d.name, pole(c.key, c.direction)))),
+    summary,
     chapters: out,
-    likes,
+    likes: shownLikes,
     askLabel: L(S.askLabel(d.name)),
     likesTitle: L(S.likesTitle),
-    empty: out.length === 0 && likes.length === 0 ? L(S.nothing(d.name)) : null,
+    empty: out.length === 0 && shownLikes.length === 0 && summary.length === 0 ? L(S.nothing(d.name)) : null,
     outro: L(S.outro(d.name)),
   };
 }

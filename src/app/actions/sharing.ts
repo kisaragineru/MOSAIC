@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import QRCode from "qrcode";
 import { currentUserId, requireUser } from "@/server/auth/session";
+import { CARD_DEFAULT, setCard } from "@/server/services/card";
 import {
   addPersonFromConnection,
   createShare,
@@ -118,5 +119,18 @@ export async function manualShareAction(form: FormData) {
   const r = await attempt("manual.share", () => setManualShare(uid, id, str(form, "preset")));
   revalidatePath(`/compare/${id}`);
   const back = safeNext(str(form, "back"), `/compare/${id}`);
+  redirect(withParam(back, r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
+}
+
+/** What every connection sees from the start (the calling card). */
+export async function setCardAction(form: FormData) {
+  const uid = await requireUser();
+  const items = form.getAll("item").filter((x): x is string => typeof x === "string");
+  // The one-time question on Home: show the usual card, or nothing.
+  const decide = str(form, "decide");
+  const r = await attempt("card.set", () => setCard(uid, decide === "show" ? CARD_DEFAULT : decide === "hide" ? [] : items));
+  revalidatePath("/home");
+  revalidatePath("/me/privacy");
+  const back = safeNext(str(form, "back"), "/me/privacy#card");
   redirect(withParam(back, r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
 }

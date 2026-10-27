@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { setCardAction } from "@/app/actions/sharing";
+import { myCard } from "@/server/services/card";
 import { QuickComposer } from "@/components/quick-composer";
 import { composerText } from "@/components/memory-form";
 import { myGiftBoxes } from "@/server/services/gift-boxes";
@@ -75,6 +77,19 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         resume={!account.profile.onboardedAt}
         done={{ chart: !!chart, answers: know.parts.answers >= 3, bio: know.parts.bio, record: know.parts.records > 0, connect: comparisons.some((c) => c.status === "active") }}
       />}
+      {/* Accounts from before the calling card: asked once what connections may see from the start. */}
+      {(await myCard(uid)) === null && (
+        <section className="rounded-3xl bg-teal-50/80 p-5 shadow-sm ring-1 ring-teal-100" data-testid="card-ask">
+          <p className="font-bold text-stone-900">🪪 {t.card.askTitle}</p>
+          <p className="mt-1 text-sm leading-6 text-stone-600">{t.card.askLead}</p>
+          <form action={setCardAction} className="mt-3 flex flex-wrap items-center gap-2">
+            <input type="hidden" name="back" value="/home" />
+            <button type="submit" name="decide" value="show" className="rounded-full bg-teal-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-800">{t.card.askShow}</button>
+            <button type="submit" name="decide" value="hide" className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-stone-700 ring-1 ring-stone-200 hover:ring-stone-300">{t.card.askHide}</button>
+            <Link href="/me/privacy#card" className="px-2 text-sm font-semibold text-teal-800 underline underline-offset-4">{t.card.askChoose}</Link>
+          </form>
+        </section>
+      )}
       {/* Anniversaries with the people you're connected to (today, or in the last few days). */}
       {(await recentAnniversaries(uid, account.profile.timeZone)).map((a) => (
         <section key={a.sessionId} className="rounded-3xl bg-linear-to-br from-amber-50 via-rose-50 to-violet-50 p-5 shadow-sm ring-1 ring-amber-100" data-testid="anniversary">

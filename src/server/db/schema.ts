@@ -125,6 +125,11 @@ export const profiles = pgTable("profiles", {
   onboardedAt: ts("onboarded_at"),
   /** Tử Vi types the user chose as "probably me" while their birth time is unknown (up to two). */
   selfTypes: text("self_types").array(),
+  /**
+   * What every connection sees from the start (the calling card): type, bio, summary, likes, manual.
+   * Null: not decided yet (accounts from before the card); asked once, and only the bio shows meanwhile.
+   */
+  cardItems: text("card_items").array().default(sql`'{type,bio}'::text[]`),
   /** When the user closed Home's getting-started checklist (null: still shown until all done). */
   starterDismissedAt: ts("starter_dismissed_at"),
   createdAt: createdAt(),

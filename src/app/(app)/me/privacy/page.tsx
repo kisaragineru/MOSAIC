@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { CardForm } from "@/components/card-form";
+import { myCard } from "@/server/services/card";
 import type { ReactNode } from "react";
 import { Avatar } from "@/components/avatar";
 import { Page, Pill } from "@/components/ui";
@@ -63,6 +65,10 @@ export default async function PrivacyPage() {
           <Row label={tp.intro2} value={done(o.profile.hasIntro)} href="/me#intro" action={tp.change} />
         </ul>
         <Link href="/me/preview" className="inline-block text-sm font-semibold text-teal-700">👁 {t.me.preview} →</Link>
+      </Section>
+
+      <Section id="card" title={`🪪 ${t.card.title}`} help={t.card.lead}>
+        <CardForm t={t} items={(await myCard(uid)) ?? []} back="/me/privacy#card" />
       </Section>
 
       <Section id="records" title={tp.recordsTitle} help={tp.recordsHelp}>
