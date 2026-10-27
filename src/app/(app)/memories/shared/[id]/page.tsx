@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Avatar } from "@/components/avatar";
-import { CommentThread } from "@/components/comment-thread";
 import { dmReplyToRecordAction } from "@/app/actions/dm";
 import { RecordReplies } from "@/components/record-replies";
 import { readReplies } from "@/server/services/replies";
@@ -13,7 +12,7 @@ import { KIND_ICON } from "@/lib/timeline";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { getAccount } from "@/server/services/account";
-import { readThread, sharedEntry } from "@/server/services/comments";
+import { sharedEntry } from "@/server/services/comments";
 import { uuid } from "@/lib/validation/common";
 import { MediaGallery } from "@/components/media-grid";
 import { mediaFor } from "@/server/services/media";
@@ -29,7 +28,6 @@ export default async function SharedRecordPage({ params, searchParams }: { param
   const e = await sharedEntry(uid, id);
   if (!e) notFound();
   const tz = (await getAccount(uid)).profile.timeZone;
-  const comments = await readThread(uid, id, null).catch(() => []);
   const replies = await readReplies(uid, id);
   const media = (await mediaFor(uid, [e.id])).get(e.id) ?? [];
   return (
@@ -56,14 +54,6 @@ export default async function SharedRecordPage({ params, searchParams }: { param
           💬 {t.messages.replyToOwner(e.ownerName)}
         </button>
       </form>
-      {comments.length > 0 && (
-        <section id="comments" className="scroll-mt-24">
-          <Card title={`💬 ${t.replies.legacyTitle}`}>
-            <p className="-mt-1 mb-3 text-xs leading-relaxed text-stone-500">{t.replies.legacyNote}</p>
-            <CommentThread t={t} locale={locale} tz={tz} comments={comments} back={`/memories/shared/${e.id}`} />
-          </Card>
-        </section>
-      )}
     </Page>
   );
 }

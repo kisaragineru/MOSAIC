@@ -13,12 +13,10 @@ import { listPeople } from "@/server/services/people";
 import { shareTargets } from "@/server/services/memory-share";
 import { CIRCLE_ICON } from "@/components/circle-icon";
 import { todayIn } from "@/lib/validation/common";
-import { CommentThread } from "@/components/comment-thread";
 import { RecordReplies } from "@/components/record-replies";
 import { readReplies } from "@/server/services/replies";
 import { activeConnectionsWith } from "@/server/services/sharing";
 import { avatarUrls } from "@/server/services/avatars";
-import { commentInbox, readThread } from "@/server/services/comments";
 import { MediaGallery } from "@/components/media-grid";
 import { PostAbout } from "@/components/post-about";
 import { mediaFor } from "@/server/services/media";
@@ -44,11 +42,8 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
   const people = await listPeople(uid);
   const canShare = (await shareTargets(uid)).length > 0;
   const ta = t.memories.audience;
-  // One conversation per person who commented (each sees only theirs); unread counted before reading.
-  const threads = m.sealed ? [] : (await commentInbox(uid)).filter((x) => x.entryId === m.id && x.iOwn);
   const replies = m.sealed || m.kind === "letter_to_future" ? [] : await readReplies(uid, m.id);
   const replyAvatars = await avatarUrls(uid, replies.map((x) => x.authorId));
-  const convos = await Promise.all(threads.map(async (th) => ({ th, comments: await readThread(uid, m.id, th.partnerId) })));
   return (
     <Page title={m.title ?? (m.kind === "letter_to_future" ? t.memories.kinds[m.kind] : t.memories.post.titleOf)} back="/memories">
       <Flash t={t} sp={sp} />
@@ -112,22 +107,7 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
         <RecordReplies t={t} locale={locale} tz={tz} replies={replies} entryId={m.id} ownerId={uid} ownerName="" ownRecord back={`/memories/${m.id}`} avatars={replyAvatars} tints={await typeTints(uid, replies.map((x) => x.authorId))} connections={await activeConnectionsWith(uid, replies.map((x) => x.authorId))} note={m.visibility === "private" ? t.replies.privateNote : t.replies.sharedNote} />
       )}
       {!m.sealed && !editing && m.kind !== "letter_to_future" && <PostAbout t={t} id={m.id} labels={m.labels} by={m.labelsBy} feeling={m.feeling} ask={sp.ask === "feeling"} />}
-      {/* Earlier one-to-one comments (ended): still readable by the two people, nothing new. */}
-      {convos.length > 0 && (
-        <section id="comments" className="scroll-mt-24">
-          <Card title={`💬 ${t.replies.legacyTitle}`}>
-            <p className="-mt-1 mb-3 text-xs leading-relaxed text-stone-500">{t.replies.legacyNote}</p>
-            <div className="space-y-5">
-              {convos.map(({ th, comments }) => (
-                <section key={th.partnerId} id={`c-${th.partnerId}`} className="rounded-2xl bg-stone-50/80 p-3 ring-1 ring-stone-100">
-                  <h3 className="mb-2 text-sm font-semibold text-stone-800">{t.comments.with(th.otherName)}</h3>
-                  <CommentThread t={t} locale={locale} tz={tz} comments={comments} back={`/memories/${m.id}`} />
-                </section>
-              ))}
-            </div>
-          </Card>
-        </section>
-      )}
+      {/* Earlier one-to-one comments (ended) are no longer shown: replies replaced them. They stay in the data export. */}
       {m.versions.length > 1 && (
         <Card title={t.memories.versions}>
           <ol className="space-y-3">
