@@ -9,6 +9,8 @@ import { myAvatarUrl } from "@/server/services/avatars";
 import { Avatar } from "@/components/avatar";
 import { TrialBar } from "@/components/trial-bar";
 import { GuideBar } from "@/components/guide-bar";
+import { HeaderBrand } from "@/components/header-brand";
+import { Suspense } from "react";
 import { onboardingState, resumeStep } from "@/server/services/onboarding";
 import { trialReturnUser } from "@/server/services/dev-trial";
 
@@ -31,10 +33,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       )}
       <header className="sticky top-0 z-10 print:hidden border-b border-white/60 bg-[#faf8f5]/75 backdrop-blur-md">
         <div className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-2">
-          <Link href="/home" className="flex items-center gap-2">
-            <BrandMark className="h-7 w-7" />
-            <BrandWordmark className="h-3.5 w-auto" />
-          </Link>
+          <Suspense>
+            <HeaderBrand>
+              <BrandMark className="h-7 w-7" />
+              <BrandWordmark className="h-3.5 w-auto" />
+            </HeaderBrand>
+          </Suspense>
           <div className="ml-auto flex items-center gap-1">
             <Link
               href="/share"

@@ -1598,6 +1598,7 @@ export const en = {
   },
   film: {
     open: ["The person who knows you least", "might just be you."] as string[],
+    tagline: "",
     typesEyebrow: "In the sky of the day you were born",
     typesTitle: "Which type are you?",
     typesBody: "Tử Vi, a traditional Vietnamese reading, finds which of fourteen types you are closest to, from the day you were born.",

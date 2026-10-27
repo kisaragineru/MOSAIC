@@ -22,6 +22,8 @@ test("a new account is guided: the chart (not skippable) and its tour, three que
   await expect(film.getByText(/見せるのは、あなたが選んだ人だけ/)).toBeAttached();
   // The film opens the guide on its own: one mark, the greeting inside it, no step bar yet.
   await expect(film.getByText("ようこそ、リンさん")).toBeVisible();
+  await expect(film.getByText("ひとかけらずつ、あなたになる。")).toBeVisible();
+  await expect(film.getByRole("img", { name: "MOSAIC" })).toBeVisible();
   await expect(page.getByRole("button", { name: "ガイドを終了" })).toHaveCount(0);
   await page.getByRole("link", { name: /はじめる/ }).click();
 

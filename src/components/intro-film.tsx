@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 
 export interface FilmText {
   open: string[];
+  /** Under "A lifetime, piece by piece." in the reader's language (empty in English). */
+  tagline: string;
   typesEyebrow: string;
   typesTitle: string;
   typesBody: string;
@@ -95,7 +97,7 @@ function Scene({ children, tone = "paper", tall, id }: { children: (shown: boole
 
 const TILE_DELAY = ["delay-[1395ms]", "delay-[1080ms]", "delay-[450ms]", "delay-[225ms]", "delay-[1305ms]", "delay-[1215ms]", "delay-[360ms]", "delay-[1035ms]", "delay-[630ms]", "delay-[540ms]", "delay-[1260ms]", "delay-[990ms]", "delay-[1530ms]", "delay-[675ms]", "delay-[0ms]", "delay-[855ms]", "delay-[1350ms]", "delay-[315ms]", "delay-[945ms]", "delay-[1575ms]", "delay-[585ms]", "delay-[90ms]", "delay-[1485ms]", "delay-[270ms]", "delay-[720ms]", "delay-[45ms]", "delay-[810ms]", "delay-[495ms]", "delay-[1440ms]", "delay-[765ms]", "delay-[1170ms]", "delay-[180ms]", "delay-[135ms]", "delay-[1125ms]", "delay-[405ms]", "delay-[900ms]"];
 const TILE_COLOR = ["bg-teal-300", "bg-rose-400", "bg-rose-300", "bg-sky-200", "bg-sky-300", "bg-fuchsia-300", "bg-sky-200", "bg-sky-300", "bg-fuchsia-300", "bg-violet-500", "bg-violet-300", "bg-amber-300", "bg-violet-500", "bg-violet-300", "bg-amber-300", "bg-amber-200", "bg-emerald-300", "bg-teal-500", "bg-amber-200", "bg-emerald-300", "bg-teal-500", "bg-teal-300", "bg-rose-400", "bg-rose-300", "bg-teal-300", "bg-rose-400", "bg-rose-300", "bg-sky-200", "bg-sky-300", "bg-fuchsia-300", "bg-sky-200", "bg-sky-300", "bg-fuchsia-300", "bg-violet-500", "bg-violet-300", "bg-amber-300"];
-const OPEN_DELAY = ["delay-[1500ms]", "delay-[2200ms]", "delay-[2900ms]"];
+const OPEN_DELAY = ["delay-0", "delay-[700ms]", "delay-[1400ms]"];
 /** The opening's nine tiles: each starts scattered and turned, then settles into one small mosaic. */
 const GATHER = [
   { c: "bg-sky-300", from: "-translate-x-24 -translate-y-16 -rotate-45", d: "delay-[0ms]" },
@@ -110,6 +112,59 @@ const GATHER = [
 ];
 const RECORD_ICON = ["☕", "🍞", "🌙"];
 const CHAT_DELAY = ["delay-[700ms]", "delay-[1500ms]", "delay-[2300ms]"];
+
+/**
+ * The opening, in three beats once it's in view: the poem line by line; then the nine pieces fly
+ * together; then they give way to the logo, the name, the line under it (and, in the guide, the
+ * greeting). With reduced motion it is all simply there.
+ */
+function Opening({ s, tx, greeting }: { s: boolean; tx: FilmText; greeting?: string }) {
+  const [beat, setBeat] = useState(0);
+  useEffect(() => {
+    if (!s) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const id = window.setTimeout(() => setBeat(2), 0);
+      return () => window.clearTimeout(id);
+    }
+    const a = window.setTimeout(() => setBeat(1), 2300);
+    const b = window.setTimeout(() => setBeat(2), 4000);
+    return () => {
+      window.clearTimeout(a);
+      window.clearTimeout(b);
+    };
+  }, [s]);
+  const gathered = beat >= 1;
+  const named = beat >= 2;
+  return (
+    <>
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="absolute left-1/2 top-1/4 h-[55vmax] w-[55vmax] -translate-x-1/2 rounded-full bg-rose-200/40 blur-3xl motion-safe:animate-[drift_20s_ease-in-out_infinite_alternate]" />
+        <div className="absolute -right-1/4 bottom-0 h-[45vmax] w-[45vmax] rounded-full bg-violet-200/40 blur-3xl motion-safe:animate-[drift_24s_ease-in-out_-5s_infinite_alternate-reverse]" />
+      </div>
+      <p className="relative font-serif text-xl leading-[2.2] tracking-wide text-stone-800">
+        {tx.open.map((line, i) => (
+          <span key={i} className={`block ${fade(s, OPEN_DELAY[i])}`}>{line}</span>
+        ))}
+      </p>
+      {/* The pieces gather, then become the mark itself. */}
+      <div className="relative mt-12 flex h-24 w-24 items-center justify-center">
+        <div className={`absolute transition-opacity duration-700 ${named ? "opacity-0" : "opacity-100"}`}>
+          <Gather s={gathered} />
+        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/mark-lg.png" alt="" width={419} height={395} className={`absolute h-20 w-auto drop-shadow-[0_10px_24px_rgba(120,110,200,0.25)] transition duration-1000 ease-out ${named ? "scale-100 opacity-100" : "scale-90 opacity-0"}`} />
+      </div>
+      <p className={`relative mt-6 ${IN} delay-300 ${named ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/wordmark.png" alt="MOSAIC" width={337} height={56} className="mx-auto h-6 w-auto" />
+      </p>
+      <p className={`relative mt-4 font-serif text-sm italic tracking-wide text-stone-600 ${IN} delay-700 ${named ? "opacity-100" : "opacity-0"}`}>A lifetime, piece by piece.</p>
+      {tx.tagline && <p className={`relative mt-1 font-serif text-sm text-stone-600 ${IN} delay-1000 ${named ? "opacity-100" : "opacity-0"}`}>{tx.tagline}</p>}
+      {greeting && <p className={`relative mt-8 text-sm font-semibold tracking-[0.2em] text-violet-900/80 ${IN} delay-[1500ms] ${named ? "opacity-100" : "opacity-0"}`}>{greeting}</p>}
+      <p aria-hidden className={`absolute bottom-8 text-[11px] tracking-[0.3em] text-stone-400 ${IN} delay-[2000ms] ${named ? "opacity-100" : "opacity-0"}`}>{tx.scroll} ↓</p>
+    </>
+  );
+}
 
 /** Nine pieces that come together into one small mosaic as the scene comes in. */
 function Gather({ s, size = "h-5 w-5" }: { s: boolean; size?: string }) {
@@ -146,25 +201,9 @@ export function IntroFilm({ tx, types, start, after, embedded = false, greeting 
   const tall = embedded ? "min-h-[calc(100dvh-8.5rem)]" : "min-h-dvh";
   return (
     <div className={`${embedded ? "-mx-4 -mt-6 overflow-hidden rounded-b-[2rem]" : ""} bg-[#fbf8f2]`} data-testid="intro-film">
-      {/* 1. Quiet opening */}
+      {/* 1. Opening: the poem asks; the pieces answer, gathering into the mark, then the name. */}
       <Scene tone="dawn" tall={tall}>
-        {(s) => (
-          <>
-            <div aria-hidden className="pointer-events-none absolute inset-0">
-              <div className="absolute left-1/2 top-1/4 h-[55vmax] w-[55vmax] -translate-x-1/2 rounded-full bg-rose-200/40 blur-3xl motion-safe:animate-[drift_20s_ease-in-out_infinite_alternate]" />
-              <div className="absolute -right-1/4 bottom-0 h-[45vmax] w-[45vmax] rounded-full bg-violet-200/40 blur-3xl motion-safe:animate-[drift_24s_ease-in-out_-5s_infinite_alternate-reverse]" />
-            </div>
-            {/* Scattered pieces come together into one small mosaic: the only mark on this screen. */}
-            <div className="mb-8"><Gather s={s} /></div>
-            {greeting && <p className={`relative mb-8 text-sm font-semibold tracking-[0.2em] text-violet-900/80 ${fade(s, "delay-[1000ms]")}`}>{greeting}</p>}
-            <p className="relative font-serif text-xl leading-[2.2] tracking-wide text-stone-800">
-              {tx.open.map((line, i) => (
-                <span key={i} className={`block ${fade(s, OPEN_DELAY[i])}`}>{line}</span>
-              ))}
-            </p>
-            <p aria-hidden className={`absolute bottom-8 text-[11px] tracking-[0.3em] text-stone-400 ${fade(s, "delay-[3400ms]")}`}>{tx.scroll} ↓</p>
-          </>
-        )}
+        {(s) => <Opening s={s} tx={tx} greeting={greeting} />}
       </Scene>
 
       {/* 2. A birth date, a type: the fourteen turn quietly behind; one steps forward, in its own light. */}
