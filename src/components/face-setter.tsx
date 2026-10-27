@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { askConfirm } from "@/lib/confirm";
-import { faceRect, type FaceCrop, type FaceWho } from "@/lib/tuvi/faces";
+import { faceRect, TYPE_IMAGE, type FaceCrop, type FaceWho } from "@/lib/tuvi/faces";
 
 type Crops = Record<string, Partial<Record<FaceWho, FaceCrop>>>;
 const KEY = "mosaic.faces.v1";
@@ -46,7 +46,13 @@ export function FaceSetter({ types, initial }: { types: { id: string; label: str
       localStorage.setItem(KEY, JSON.stringify(next));
     } catch {}
   };
-  const set = (c: FaceCrop) => save({ ...crops, [t.id]: { ...crops[t.id], [who]: { cx: round(c.cx), cy: round(c.cy), r: round(c.r) } } });
+  // The circle stays inside the picture: it stops at the edges (and shrinks to fit at most).
+  const set = (c: FaceCrop) => {
+    const r = Math.min(round(c.r), 0.5);
+    const ry = (r * TYPE_IMAGE.w) / TYPE_IMAGE.h;
+    const within = (v: number, lo: number, hi: number) => Math.min(Math.floor(hi * 1000) / 1000, Math.max(Math.ceil(lo * 1000) / 1000, round(v)));
+    save({ ...crops, [t.id]: { ...crops[t.id], [who]: { cx: within(c.cx, r, 1 - r), cy: within(c.cy, ry, 1 - ry), r } } });
+  };
 
   useEffect(() => {
     let live = true;
