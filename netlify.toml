@@ -8,3 +8,11 @@
 [build.environment]
   NODE_VERSION = "22"
   PNPM_VERSION = "10.28.0"
+
+# The old address goes to the site's own domain (paths and query kept). Branch and preview
+# deploys have their own hosts and are not affected.
+[[redirects]]
+  from = "https://mosaic-test-3008fa.netlify.app/*"
+  to = "https://mosaicdiary.app/:splat"
+  status = 301
+  force = true
