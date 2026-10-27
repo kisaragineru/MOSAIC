@@ -96,7 +96,7 @@ test("QR connection: preview of what others see, who is waiting, results first",
   await expect(a.getByRole("heading", { level: 1, name: "ソラ" })).toBeVisible();
   await expect(a.getByRole("link", { name: /ソラさんのページ/ })).toBeVisible();
   // Above: what Sora shows. Below: Hana's own notebook about Sora, said to be hers alone.
-  await expect(a.getByText("🤝 つながり：ソラさんが見せてくれていること")).toBeVisible();
+  await expect(a.getByText("🤝 ソラさんが見せてくれていること")).toBeVisible();
   await expect(a.getByTestId("notebook").getByRole("heading", { name: "あなたのノート：ソラさんのこと" })).toBeVisible();
   await expect(a.getByTestId("notebook").getByText("🔒 あなただけに見えます（ソラさんには見えません）")).toBeVisible();
   await a.getByRole("link", { name: /ソラさんのページ/ }).click();

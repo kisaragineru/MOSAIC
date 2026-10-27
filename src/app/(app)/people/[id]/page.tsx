@@ -93,6 +93,10 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
   const ideas = giftResult?.v ?? null;
   const currency = normalizeCurrency(sp.currency) ?? (locale === "ja" ? "JPY" : locale === "vi" ? "VND" : "");
   // A birthday with a year gives the age, so the age group isn't asked for.
+  // Connected (or waiting to be): their face, words and page come with it.
+  const live = connection && connection.status !== "revoked" ? connection : null;
+  const pic = live ? ((await avatarUrls(uid, [live.otherId])).get(live.otherId ?? "") ?? null) : null;
+  const tint = live ? ((await typeTints(uid, [live.otherId])).get(live.otherId ?? "") ?? null) : null;
   const born = dates.find((d) => d.kind === "birthday" && d.year !== null);
   const [ty, tm, td] = today.split("-").map(Number) as [number, number, number];
   const birthAge = born ? ty - born.year! - (tm < born.month || (tm === born.month && td < born.day) ? 1 : 0) : null;
@@ -107,35 +111,40 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
       }
     >
       <Flash t={t} sp={sp} />
-      {connection && connection.status !== "revoked" && (
-        <p className="-mb-1 px-1 text-xs font-semibold text-teal-800">🤝 {t.people.sharedZone(connection.otherName)}</p>
-      )}
-      {connection && connection.status !== "revoked" && (
-        // Their page: what they chose to show you (introduction, manual, shared records, side by side).
-        <Link href={`/compare/${connection.id}`} className="block rounded-3xl bg-linear-to-br from-rose-50 via-white to-teal-50 p-4 shadow-sm ring-1 ring-teal-100 transition hover:shadow-md">
-          <span className="flex items-center gap-3">
-            <Avatar name={connection.otherName} src={(await avatarUrls(uid, [connection.otherId])).get(connection.otherId ?? "")} type={(await typeTints(uid, [connection.otherId])).get(connection.otherId ?? "")} className="h-12 w-12 text-lg ring-4 ring-white" />
-            <span className="min-w-0 flex-1">
-              <span className="block font-semibold text-stone-900">{t.people.theirPage(connection.otherName)}</span>
-              <span className="block text-xs text-stone-600">{t.people.theirPageSub}</span>
-              {together && <span className="mt-1 block text-xs font-semibold text-teal-800" data-testid="pair-line">🌱 {t.pair.personLine(together.days, together.messages)}</span>}
-            </span>
-            <span aria-hidden className="shrink-0 text-lg text-teal-700">→</span>
-          </span>
-          {(connection.otherBio || connection.otherIntro) && (
-            <span className="emoji-color mt-3 line-clamp-3 block whitespace-pre-line rounded-2xl bg-white/80 px-3 py-2 text-sm leading-6 text-stone-800">{connection.otherBio || connection.otherIntro}</span>
-          )}
-        </Link>
-      )}
-      {connection && connection.status === "active" && (
-        <form action={dmOpenForConnectionAction}>
-          <input type="hidden" name="sessionId" value={connection.id} />
-          <input type="hidden" name="back" value={`/people/${person.id}`} />
-          <button type="submit" className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-teal-700 text-base font-bold text-white shadow-md transition hover:bg-teal-800 active:scale-[0.98]">
-            {t.messages.message}
-          </button>
-        </form>
-      )}
+      {/* Who they are, at a glance: face, relationship, your time together, their words; then the two things to do. */}
+      <section className="rounded-3xl bg-linear-to-br from-rose-50 via-white to-teal-50 p-4 shadow-sm ring-1 ring-teal-100" data-testid="person-hero">
+        {live && <p className="mb-3 text-[11px] font-semibold tracking-wide text-teal-800">🤝 {t.people.sharedZone(live.otherName)}</p>}
+        <div className="flex items-center gap-4">
+          <Avatar name={person.nickname} src={live ? pic : null} type={live ? tint : null} className="h-16 w-16 shrink-0 text-2xl ring-4 ring-white" />
+          <div className="min-w-0 flex-1 space-y-1">
+            <Pill tone="teal">{t.people.relationships[person.relationship as (typeof RELS)[number]] ?? person.relationship}</Pill>
+            {together && <p className="text-xs font-semibold text-teal-800" data-testid="pair-line">🌱 {t.pair.personLine(together.days, together.messages)}</p>}
+            {!live && <p className="text-xs text-stone-500">{t.people.notConnectedYet}</p>}
+          </div>
+        </div>
+        {live && (live.otherBio || live.otherIntro) && (
+          <p className="emoji-color mt-3 line-clamp-3 whitespace-pre-line rounded-2xl bg-white/80 px-3 py-2 text-sm leading-6 text-stone-800">{live.otherBio || live.otherIntro}</p>
+        )}
+        {live && (
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            {live.status === "active" ? (
+              <form action={dmOpenForConnectionAction}>
+                <input type="hidden" name="sessionId" value={live.id} />
+                <input type="hidden" name="back" value={`/people/${person.id}`} />
+                <button type="submit" className="flex min-h-12 w-full items-center justify-center gap-1.5 rounded-full bg-teal-700 px-3 text-sm font-bold text-white shadow-md transition hover:bg-teal-800 active:scale-[0.98]">
+                  {t.messages.message}
+                </button>
+              </form>
+            ) : (
+              <span />
+            )}
+            <Link href={`/compare/${live.id}`} className="flex min-h-12 items-center justify-center gap-1.5 rounded-full bg-white px-3 text-sm font-bold text-teal-800 ring-1 ring-teal-200 transition hover:ring-teal-400">
+              📖 {t.people.theirPage(live.otherName)}
+            </Link>
+          </div>
+        )}
+        {live && <p className="mt-2 text-center text-[11px] leading-4 text-stone-500">{t.people.theirPageSub}</p>}
+      </section>
       {/* Below: the user's own notebook about this person, never shown to them. */}
       <div role="region" aria-labelledby="notebook-title" className="space-y-4 rounded-[2rem] bg-amber-50/60 p-3 ring-1 ring-amber-200/70" data-testid="notebook">
         <div className="flex gap-3 px-2 pt-2">
