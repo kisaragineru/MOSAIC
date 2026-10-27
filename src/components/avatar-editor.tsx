@@ -15,6 +15,16 @@ export interface AvatarEditorText {
   area: string;
   failed: string;
   errors: Record<string, string>;
+  fromType: string;
+  fromTypeHelp: string;
+  yourType: string;
+  otherTypes: string;
+}
+
+/** A type illustration that can be cropped into the picture. */
+export interface AvatarType {
+  id: string;
+  label: string;
 }
 
 /** Size of the crop area on screen (CSS px) and of the saved photo (px). */
@@ -59,7 +69,7 @@ function paint(ctx: CanvasRenderingContext2D, s: Shot, size: number) {
  * turns. The circle shows what will be used; the saved photo is a 512px square (re-encoded, so
  * camera metadata such as location is not kept).
  */
-export function AvatarEditor({ text: tx, hasPhoto }: { text: AvatarEditorText; hasPhoto: boolean }) {
+export function AvatarEditor({ text: tx, hasPhoto, mine = [], all = [] }: { text: AvatarEditorText; hasPhoto: boolean; /** My type(s), offered first. */ mine?: AvatarType[]; all?: AvatarType[] }) {
   const router = useRouter();
   const [shot, setShot] = useState<Shot | null>(null);
   const [busy, setBusy] = useState(false);
@@ -105,6 +115,19 @@ export function AvatarEditor({ text: tx, hasPhoto }: { text: AvatarEditorText; h
       setError(tx.errors.invalid_image ?? tx.failed);
     }
     if (file.current) file.current.value = "";
+  };
+
+  // A type illustration, opened in the same editor: it starts on the upper face, and the owner moves
+  // and zooms it to the part they like.
+  const pickType = async (id: string) => {
+    setError(null);
+    try {
+      const res = await fetch(`/tuvi-types/${id}.webp`);
+      const img = await createImageBitmap(await res.blob());
+      setShot(clamp({ img, rot: 0, zoom: 1.8, x: 0, y: 9999 }));
+    } catch {
+      setError(tx.failed);
+    }
   };
 
   const update = useCallback((fn: (s: Shot) => Shot) => setShot((s) => (s ? clamp(fn(s)) : s)), []);
@@ -257,8 +280,40 @@ export function AvatarEditor({ text: tx, hasPhoto }: { text: AvatarEditorText; h
           <button type="button" onClick={() => file.current?.click()} className="min-h-12 w-full rounded-full bg-teal-700 text-base font-bold text-white shadow-md transition hover:bg-teal-800 active:scale-[0.98]">
             📷 {hasPhoto ? tx.change : tx.choose}
           </button>
+          {all.length > 0 && (
+            <div className="rounded-2xl bg-violet-50/60 p-3 ring-1 ring-violet-100" data-testid="avatar-types">
+              <p className="text-sm font-semibold text-violet-950">✨ {tx.fromType}</p>
+              <p className="mt-0.5 text-xs text-stone-600">{tx.fromTypeHelp}</p>
+              {mine.length > 0 && (
+                <>
+                  <p className="mt-3 text-[11px] font-semibold text-stone-500">{tx.yourType}</p>
+                  <TypeChoices list={mine} onPick={(id) => void pickType(id)} />
+                </>
+              )}
+              <details className="mt-2" open={mine.length === 0}>
+                <summary className="cursor-pointer text-xs font-semibold text-violet-800">{tx.otherTypes}</summary>
+                <TypeChoices list={all.filter((x) => !mine.some((m) => m.id === x.id))} onPick={(id) => void pickType(id)} />
+              </details>
+            </div>
+          )}
         </>
       )}
     </div>
+  );
+}
+
+function TypeChoices({ list, onPick }: { list: AvatarType[]; onPick: (id: string) => void }) {
+  return (
+    <ul className="mt-1.5 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+      {list.map((x) => (
+        <li key={x.id} className="w-16 shrink-0">
+          <button type="button" onClick={() => onPick(x.id)} aria-label={x.label} className="block w-full overflow-hidden rounded-xl ring-1 ring-stone-200 transition hover:ring-violet-400 active:scale-95">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`/tuvi-types/${x.id}-sm.webp`} alt="" width={300} height={594} loading="lazy" className="block aspect-[3/4] w-full object-cover object-top" />
+          </button>
+          <p className="mt-0.5 line-clamp-2 text-center text-[10px] leading-tight text-stone-600">{x.label}</p>
+        </li>
+      ))}
+    </ul>
   );
 }

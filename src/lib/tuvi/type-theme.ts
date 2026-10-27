@@ -20,3 +20,21 @@ export const TYPE_THEME: Record<MainStarId, { bg: string; glow1: string; glow2: 
   that_sat: { bg: "bg-[#170a0c]", glow1: "bg-[#7a1c22]", glow2: "bg-[#3a2a33]", star: "bg-rose-100", halo: "shadow-[0_0_48px_rgba(220,110,110,0.3)]", accent: "text-rose-200" },
   pha_quan: { bg: "bg-[#130d24]", glow1: "bg-[#5b3aa0]", glow2: "bg-[#9a7fe0]", star: "bg-violet-50", halo: "shadow-[0_0_48px_rgba(200,170,255,0.38)]", accent: "text-violet-200" },
 };
+
+/** A light wash of the type's colours, behind a connection's initial when they have no photo. */
+export const AVATAR_TINT: Record<MainStarId, string> = {
+  tu_vi: "from-indigo-200 via-amber-100 to-amber-200",
+  thien_co: "from-teal-200 via-emerald-100 to-amber-100",
+  thai_duong: "from-orange-200 via-amber-100 to-yellow-100",
+  vu_khuc: "from-slate-300 via-sky-100 to-amber-100",
+  thien_dong: "from-emerald-200 via-teal-100 to-emerald-50",
+  liem_trinh: "from-rose-300 via-rose-100 to-orange-100",
+  thien_phu: "from-lime-200 via-amber-100 to-yellow-100",
+  thai_am: "from-indigo-200 via-violet-100 to-slate-100",
+  tham_lang: "from-teal-200 via-rose-100 to-rose-200",
+  cu_mon: "from-violet-300 via-violet-100 to-purple-100",
+  thien_tuong: "from-sky-300 via-sky-100 to-amber-100",
+  thien_luong: "from-green-200 via-lime-100 to-yellow-50",
+  that_sat: "from-rose-300 via-red-100 to-stone-200",
+  pha_quan: "from-violet-300 via-purple-100 to-fuchsia-100",
+};

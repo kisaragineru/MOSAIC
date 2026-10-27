@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { setCardAction } from "@/app/actions/sharing";
-import { myCard } from "@/server/services/card";
+import { myCard, typeTints } from "@/server/services/card";
 import { acceptOfferAction, answerStartAction, dismissOfferAction, storyAskAction } from "@/app/actions/works";
 import { markOpensSeen, markStoryPagesSeen, markWriterNewsSeen, myOffers, newOpens, storyGrowth, writerNews } from "@/server/services/works";
 import { QuickComposer } from "@/components/quick-composer";
@@ -192,7 +192,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           <p className="text-sm text-stone-500">{t.memories.empty}</p>
         ) : (
           <div className="space-y-3">
-            <Timeline me={{ name: (await getAccount(uid)).profile.displayName, src: (await myAvatarUrl(uid)) ?? undefined }} t={t} locale={locale} tz={account.profile.timeZone} days={recent} compact comments={counts} previews={previews} media={await mediaFor(uid, recent.flatMap((d) => d.items.filter((x) => !x.entry.sealed).map((x) => x.entry.id)))} avatars={await avatarUrls(uid, recent.flatMap((d) => d.items.map((x) => x.entry.ownerId)))} />
+            <Timeline me={{ name: (await getAccount(uid)).profile.displayName, src: (await myAvatarUrl(uid)) ?? undefined }} t={t} locale={locale} tz={account.profile.timeZone} days={recent} compact comments={counts} previews={previews} media={await mediaFor(uid, recent.flatMap((d) => d.items.filter((x) => !x.entry.sealed).map((x) => x.entry.id)))} avatars={await avatarUrls(uid, recent.flatMap((d) => d.items.map((x) => x.entry.ownerId)))} tints={await typeTints(uid, recent.flatMap((d) => d.items.map((x) => x.entry.ownerId)))} />
             <Link href="/memories" className="block text-right text-sm text-teal-700 underline">{t.memories.timeline.seeAll} →</Link>
           </div>
         )}

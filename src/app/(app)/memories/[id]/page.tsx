@@ -22,6 +22,7 @@ import { commentInbox, readThread } from "@/server/services/comments";
 import { MediaGallery } from "@/components/media-grid";
 import { PostAbout } from "@/components/post-about";
 import { mediaFor } from "@/server/services/media";
+import { typeTints } from "@/server/services/card";
 
 export default async function MemoryPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
@@ -108,7 +109,7 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
         </Card>
       )}
       {!m.sealed && !editing && m.kind !== "letter_to_future" && (
-        <RecordReplies t={t} locale={locale} tz={tz} replies={replies} entryId={m.id} ownerId={uid} ownerName="" ownRecord back={`/memories/${m.id}`} avatars={replyAvatars} connections={await activeConnectionsWith(uid, replies.map((x) => x.authorId))} note={m.visibility === "private" ? t.replies.privateNote : t.replies.sharedNote} />
+        <RecordReplies t={t} locale={locale} tz={tz} replies={replies} entryId={m.id} ownerId={uid} ownerName="" ownRecord back={`/memories/${m.id}`} avatars={replyAvatars} tints={await typeTints(uid, replies.map((x) => x.authorId))} connections={await activeConnectionsWith(uid, replies.map((x) => x.authorId))} note={m.visibility === "private" ? t.replies.privateNote : t.replies.sharedNote} />
       )}
       {!m.sealed && !editing && m.kind !== "letter_to_future" && <PostAbout t={t} id={m.id} labels={m.labels} by={m.labelsBy} feeling={m.feeling} ask={sp.ask === "feeling"} />}
       {/* Earlier one-to-one comments (ended): still readable by the two people, nothing new. */}

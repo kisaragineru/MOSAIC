@@ -1369,6 +1369,10 @@ export const en = {
     allPeople: "People you're connected with",
   },
   avatar: {
+    fromType: "Make one from a type illustration",
+    fromTypeHelp: "Put the part you like inside the circle to use it as your picture.",
+    yourType: "Your type",
+    otherTypes: "Choose from the other types",
     title: "Profile photo",
     choose: "Choose a photo",
     change: "Change photo",

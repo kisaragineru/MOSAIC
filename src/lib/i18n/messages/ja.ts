@@ -1371,6 +1371,10 @@ export const ja: Dict = {
     allPeople: "つながっている人",
   },
   avatar: {
+    fromType: "タイプのイラストから作る",
+    fromTypeHelp: "好きな部分を丸の中に入れて、アイコンにできます。",
+    yourType: "あなたのタイプ",
+    otherTypes: "ほかのタイプから選ぶ",
     title: "プロフィール写真",
     choose: "写真を選ぶ",
     change: "写真を変更",

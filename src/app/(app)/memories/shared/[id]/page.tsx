@@ -17,6 +17,7 @@ import { readThread, sharedEntry } from "@/server/services/comments";
 import { uuid } from "@/lib/validation/common";
 import { MediaGallery } from "@/components/media-grid";
 import { mediaFor } from "@/server/services/media";
+import { typeTints } from "@/server/services/card";
 
 /** Someone else's shared record, and my one-to-one conversation with them about it. */
 export default async function SharedRecordPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
@@ -36,7 +37,7 @@ export default async function SharedRecordPage({ params, searchParams }: { param
       <Flash t={t} sp={sp} />
       <article className="rounded-3xl border border-rose-100 bg-rose-50/50 p-4 shadow-sm">
         <div className="mb-2 flex flex-wrap items-center gap-1.5">
-          <Avatar name={e.ownerName} src={(await avatarUrls(uid, [e.ownerId])).get(e.ownerId)} className="h-8 w-8 text-xs" />
+          <Avatar name={e.ownerName} src={(await avatarUrls(uid, [e.ownerId])).get(e.ownerId)} type={(await typeTints(uid, [e.ownerId])).get(e.ownerId)} className="h-8 w-8 text-xs" />
           <span className="text-sm font-semibold text-rose-900">{e.ownerName}</span>
           {e.kind !== "note" && <Pill tone="rose">{KIND_ICON[e.kind]} {t.memories.kinds[e.kind]}</Pill>}
           <time dateTime={e.createdAt.toISOString()} className="text-xs text-stone-500">
@@ -47,7 +48,7 @@ export default async function SharedRecordPage({ params, searchParams }: { param
         {e.body && <p className="emoji-color whitespace-pre-line leading-relaxed text-stone-800">{e.body}</p>}
         {media.length > 0 && <div className={e.body ? "mt-3" : ""}><MediaGallery media={media} label={t.memories.media.label} /></div>}
       </article>
-      <RecordReplies t={t} locale={locale} tz={tz} replies={replies} entryId={e.id} ownerId={e.ownerId} ownerName={e.ownerName} ownRecord={false} back={`/memories/shared/${e.id}`} avatars={await avatarUrls(uid, replies.map((x) => x.authorId))} connections={await activeConnectionsWith(uid, replies.map((x) => x.authorId))} note={t.replies.sharedNote} nameNote={t.replies.nameNote(e.ownerName)} />
+      <RecordReplies t={t} locale={locale} tz={tz} replies={replies} entryId={e.id} ownerId={e.ownerId} ownerName={e.ownerName} ownRecord={false} back={`/memories/shared/${e.id}`} avatars={await avatarUrls(uid, replies.map((x) => x.authorId))} tints={await typeTints(uid, replies.map((x) => x.authorId))} connections={await activeConnectionsWith(uid, replies.map((x) => x.authorId))} note={t.replies.sharedNote} nameNote={t.replies.nameNote(e.ownerName)} />
       {/* Answer the owner privately: our one-to-one conversation opens with this record attached. */}
       <form action={dmReplyToRecordAction}>
         <input type="hidden" name="entryId" value={e.id} />

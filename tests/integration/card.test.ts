@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
-import { connectionCard, myCard, setCard } from "@/server/services/card";
+import { connectionCard, myCard, setCard, typeTints } from "@/server/services/card";
 import { sharedManualFor } from "@/server/services/manual-share";
 import { createShare, getComparison, giveConsent, openComparison } from "@/server/services/sharing";
 import { saveBirthProfile } from "@/server/services/tuvi";
@@ -65,5 +65,21 @@ describe("the calling card: what every connection sees from the start", () => {
     const id = await connect(hana.userId, sora.userId);
     expect(await connectionCard(sora.userId, id, "ja")).toMatchObject({ items: [], types: [] });
     expect((await getComparison(sora.userId, id)).otherBio).toBe("こんにちは");
+  });
+
+  it("the colour behind an initial: only connections whose card shows their type", async () => {
+    const hana = await makeUser("Hana");
+    const sora = await makeUser("Sora");
+    const stranger = await makeUser("X");
+    await saveSelfTypes(hana.userId, ["thai_am"]);
+    await saveSelfTypes(stranger.userId, ["tu_vi"]);
+    // Not connected yet: nothing.
+    expect((await typeTints(sora.userId, [hana.userId, stranger.userId])).size).toBe(0);
+    await connect(hana.userId, sora.userId);
+    const tints = await typeTints(sora.userId, [hana.userId, stranger.userId, sora.userId]);
+    expect([...tints]).toEqual([[hana.userId, "thai_am"]]);
+    // Taken off the card: gone.
+    await setCard(hana.userId, ["bio"]);
+    expect((await typeTints(sora.userId, [hana.userId])).size).toBe(0);
   });
 });

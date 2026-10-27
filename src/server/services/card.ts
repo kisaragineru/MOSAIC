@@ -64,3 +64,20 @@ export async function connectionCard(userId: string, sessionId: string, locale: 
   const picked = (row.self_types ?? []).filter(isStar);
   return { items, types: typesById(picked, locale), typeSource: picked.length ? "picked" : null };
 }
+
+/**
+ * The lead type of each of these people, for those I'm connected with whose card shows it (the
+ * colour behind their initial). Everyone else is left out.
+ */
+export async function typeTints(userId: string, ids: (string | null | undefined)[]): Promise<Map<string, MainStarId>> {
+  const list = [...new Set(ids.filter((x): x is string => !!x && uuid.safeParse(x).success && x !== userId))].slice(0, 200);
+  if (!list.length) return new Map();
+  const rows = await withUser(userId, async (tx) => (await tx.execute<{ user_id: string; chart: Chart | null; self_types: string[] | null }>(sql`select * from connection_types(${`{${list.join(",")}}`}::uuid[])`)).rows);
+  const out = new Map<string, MainStarId>();
+  for (const r of rows) {
+    const m = r.chart && r.chart.menh !== null ? mainsOf(r.chart, "menh") : null;
+    const lead = m?.mains[0] ?? (r.self_types ?? []).find(isStar);
+    if (lead) out.set(r.user_id, lead);
+  }
+  return out;
+}

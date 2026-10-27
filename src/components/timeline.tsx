@@ -1,3 +1,4 @@
+import type { MainStarId } from "@/lib/tuvi/stars";
 import Link from "next/link";
 import type { Dict } from "@/lib/i18n/messages/en";
 import type { Locale } from "@/lib/i18n/locales";
@@ -17,7 +18,7 @@ type Counts = Map<string, { count: number; unread: number }>;
 type Previews = Map<string, ReplyPreview[]>;
 type Media = Map<string, MediaItem[]>;
 
-export function Timeline({ t, locale, tz, days, compact = false, comments = new Map(), previews = new Map(), media = new Map(), avatars = new Map(), me }: { t: Dict; locale: Locale; tz: string; days: TimelineDay[]; compact?: boolean; comments?: Counts; previews?: Previews; media?: Media; avatars?: Map<string, string>; /** My name and photo, shown on my own posts. */ me?: { name: string; src?: string } }) {
+export function Timeline({ t, locale, tz, days, compact = false, comments = new Map(), previews = new Map(), media = new Map(), avatars = new Map(), tints = new Map(), me }: { t: Dict; locale: Locale; tz: string; days: TimelineDay[]; compact?: boolean; comments?: Counts; previews?: Previews; media?: Media; avatars?: Map<string, string>; /** Connections' types, for the colour behind an initial. */ tints?: Map<string, MainStarId>; /** My name and photo, shown on my own posts. */ me?: { name: string; src?: string } }) {
   const tl = t.memories.timeline;
   return (
     <ol className="space-y-5" aria-label={t.memories.title}>
@@ -38,7 +39,7 @@ export function Timeline({ t, locale, tz, days, compact = false, comments = new 
                   {it.entry.mine ? (
                     <Mine t={t} locale={locale} it={it} compact={compact} c={comments.get(it.entry.id)} p={previews.get(it.entry.id)} media={media.get(it.entry.id)} me={me} />
                   ) : (
-                    <Theirs t={t} it={it} compact={compact} c={comments.get(it.entry.id)} p={previews.get(it.entry.id)} media={media.get(it.entry.id)} src={avatars.get(it.entry.ownerId ?? "")} />
+                    <Theirs t={t} it={it} compact={compact} c={comments.get(it.entry.id)} p={previews.get(it.entry.id)} media={media.get(it.entry.id)} src={avatars.get(it.entry.ownerId ?? "")} type={tints.get(it.entry.ownerId ?? "")} />
                   )}
                 </li>
               ))}
@@ -131,14 +132,14 @@ function Mine({ t, locale, it, compact, c, p, media, me }: { t: Dict; locale: Lo
 }
 
 /** Someone else's shared record: the whole card opens it (text, photos and our comments). */
-function Theirs({ t, it, compact, c, p, media, src }: { t: Dict; it: TimelineItem; compact: boolean; c?: { count: number; unread: number }; p?: ReplyPreview[]; media?: MediaItem[]; src?: string }) {
+function Theirs({ t, it, compact, c, p, media, src, type }: { t: Dict; it: TimelineItem; compact: boolean; c?: { count: number; unread: number }; p?: ReplyPreview[]; media?: MediaItem[]; src?: string; type?: MainStarId }) {
   const m = it.entry;
   const tl = t.memories.timeline;
   const name = m.ownerName ?? "?";
   return (
     <Link href={`/memories/shared/${m.id}`} className="block rounded-2xl border border-rose-100 bg-rose-50/50 p-3 transition hover:border-rose-300" data-testid="their-record">
       <div className="mb-1 flex flex-wrap items-center gap-1.5">
-        <Avatar name={name} src={src} className="h-6 w-6 text-[10px]" />
+        <Avatar name={name} src={src} type={type} className="h-6 w-6 text-[10px]" />
         <span className="text-xs font-semibold text-rose-900">{tl.theirs(name)}</span>
         <Stamp t={t} it={it} />
         {m.kind !== "note" && <Pill tone="rose">{t.memories.kinds[m.kind as keyof Dict["memories"]["kinds"]]}</Pill>}

@@ -414,6 +414,13 @@
       "when": 1793080165556,
       "tag": "0058_story_growth",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1793085311017,
+      "tag": "0059_connection_types",
+      "breakpoints": true
     }
   ]
 }

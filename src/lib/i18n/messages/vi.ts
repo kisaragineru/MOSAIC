@@ -1371,6 +1371,10 @@ export const vi: Dict = {
     allPeople: "Người bạn đã kết nối",
   },
   avatar: {
+    fromType: "Tạo từ hình minh họa kiểu người",
+    fromTypeHelp: "Đặt phần bạn thích vào trong vòng tròn để dùng làm ảnh đại diện.",
+    yourType: "Kiểu của bạn",
+    otherTypes: "Chọn từ các kiểu khác",
     title: "Ảnh đại diện",
     choose: "Chọn ảnh",
     change: "Đổi ảnh",
