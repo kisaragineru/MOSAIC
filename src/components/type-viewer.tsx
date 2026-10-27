@@ -125,7 +125,7 @@ export function TypeViewer({
               ))}
             </div>
 
-            <header className="relative z-10 flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),0.75rem)]">
+            <header className="relative z-10 flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),0.5rem)]">
               <p className="font-mono text-xs font-bold tracking-[0.3em] text-amber-200/90">
                 {labels.label} <span className="text-base text-amber-100">{num(open)}</span>
                 <span className="text-amber-200/50"> / {num(n - 1)}</span>
@@ -134,45 +134,43 @@ export function TypeViewer({
                 type="button"
                 onClick={() => setOpen(null)}
                 aria-label={labels.close}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-xl ring-1 ring-white/25 backdrop-blur hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-amber-200"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-lg ring-1 ring-white/25 backdrop-blur hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-amber-200"
               >
                 ✕
               </button>
             </header>
 
-            <div key={x.id} className="relative z-0 flex min-h-0 flex-1 items-center justify-center px-6 pt-2">
-              <div className="relative h-full max-h-[62dvh] motion-safe:animate-[zoomIn_.9s_ease-out_both]">
+            {/* The picture takes every bit of height left; the arrows sit on its sides. */}
+            <div className="relative z-0 flex min-h-0 flex-1 items-center justify-center px-2 pt-1">
+              <div key={x.id} className="relative h-full max-w-full motion-safe:animate-[zoomIn_.9s_ease-out_both]">
                 <img
                   src={`/tuvi-types/${x.id}.webp`}
                   width={600}
                   height={1188}
                   alt={x.persona}
-                  className={`h-full w-auto rounded-3xl object-contain ring-1 ring-white/40 ${theme!.halo}`}
+                  className={`h-full max-h-full w-auto max-w-full rounded-3xl object-contain ring-1 ring-white/40 ${theme!.halo}`}
                 />
                 {/* A faint sheen passes across once. */}
                 <span aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
                   <span className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 motion-safe:animate-[shine_2.2s_ease-in-out_.5s_both] motion-safe:opacity-100" />
                 </span>
               </div>
+              <NavButton onClick={() => go(-1)} label={labels.prev} className="absolute left-1 top-1/2 -translate-y-1/2">‹</NavButton>
+              <NavButton onClick={() => go(1)} label={labels.next} className="absolute right-1 top-1/2 -translate-y-1/2">›</NavButton>
             </div>
 
-            <div className="relative z-10 px-5 pb-3 pt-4">
-              <div key={x.id} className="mx-auto max-w-md rounded-3xl bg-gradient-to-b from-white/12 to-white/5 p-4 ring-1 ring-amber-200/30 backdrop-blur-md motion-safe:animate-[riseIn_.45s_ease-out_.1s_both]">
+            <div className="relative z-10 px-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-2">
+              <div key={x.id} className="mx-auto max-w-md rounded-3xl bg-gradient-to-b from-white/12 to-white/5 px-4 py-3 ring-1 ring-amber-200/30 backdrop-blur-md motion-safe:animate-[riseIn_.45s_ease-out_.1s_both]">
                 <div className="flex items-center gap-3">
-                  <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/10 font-black ring-1 ring-white/30 backdrop-blur ${theme!.accent}`}>{num(open)}</span>
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 font-black ring-1 ring-white/30 backdrop-blur ${theme!.accent}`}>{num(open)}</span>
                   <div className="min-w-0">
-                    <p className={`text-lg font-black tracking-wide ${theme!.accent}`}>{x.name}</p>
+                    <p className={`text-sm font-black tracking-wide ${theme!.accent}`}>{x.name}</p>
                     <p className="text-xl font-black leading-snug text-white [text-shadow:0_0_12px_rgba(255,255,255,0.35)]">{x.persona}</p>
                   </div>
                 </div>
-                <p className="mt-3 text-sm leading-6 text-violet-100/90">{x.plain}</p>
+                <p className="mt-2 text-[13px] leading-5 text-violet-100/90">{x.plain}</p>
               </div>
-            </div>
-            {/* Outside the keyed parts, so the focused arrow stays put while the type changes. */}
-            <div className="relative z-10 mx-auto flex w-full max-w-md items-center justify-between px-5 pb-[max(env(safe-area-inset-bottom),1rem)]">
-              <NavButton onClick={() => go(-1)} label={labels.prev}>‹</NavButton>
-              <p className="text-[11px] text-violet-200/70">{labels.hint}</p>
-              <NavButton onClick={() => go(1)} label={labels.next}>›</NavButton>
+              <p className="mt-1.5 text-center text-[10px] text-white/45">{labels.hint}</p>
             </div>
           </div>
         )}
@@ -204,13 +202,13 @@ function Thumb({ t, label, onOpen, className = "" }: { t: TypeView; label: strin
   );
 }
 
-function NavButton({ onClick, label, children }: { onClick: () => void; label: string; children: React.ReactNode }) {
+function NavButton({ onClick, label, children, className = "" }: { onClick: () => void; label: string; children: React.ReactNode; className?: string }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={label}
-      className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-3xl font-light leading-none ring-1 ring-amber-200/40 hover:bg-white/20 active:scale-95 focus-visible:outline-2 focus-visible:outline-amber-200"
+      className={`flex h-11 w-11 items-center justify-center rounded-full bg-black/30 text-3xl font-light leading-none ring-1 ring-white/30 backdrop-blur-sm hover:bg-black/45 active:scale-95 focus-visible:outline-2 focus-visible:outline-amber-200 ${className}`}
     >
       {children}
     </button>
