@@ -65,7 +65,8 @@ export interface DmMessage {
   edited: boolean;
   deleted: boolean;
   reply: { id: string; senderName: string | null; kind: string; body: string | null; deleted: boolean } | null;
-  record: { id: string; mine: boolean; ownerName: string; kind: string; title: string | null; body: string | null } | { hidden: true } | null;
+  /** `shown`: its owner showed it in this message to someone outside its audience (the card only, no page). */
+  record: { id: string; mine: boolean; shown?: boolean; ownerName: string; kind: string; title: string | null; body: string | null } | { hidden: true } | null;
   attachments: { id: string; w: number; h: number }[];
   reactions: { userId: string; emoji: string }[];
 }
@@ -99,7 +100,7 @@ const toMessage = (j: Record<string, unknown>): DmMessage => {
       ? null
       : record.hidden
         ? { hidden: true }
-        : { id: record.id as string, mine: !!record.mine, ownerName: record.owner_name as string, kind: record.kind as string, title: (record.title as string | null) ?? null, body: (record.body as string | null) ?? null },
+        : { id: record.id as string, mine: !!record.mine, ...(record.shown ? { shown: true } : {}), ownerName: record.owner_name as string, kind: record.kind as string, title: (record.title as string | null) ?? null, body: (record.body as string | null) ?? null },
     attachments: ((j.attachments as { id: string; w: number; h: number }[]) ?? []).map((a) => ({ id: a.id, w: a.w, h: a.h })),
     reactions: ((j.reactions as { user_id: string; emoji: string }[]) ?? []).map((r) => ({ userId: r.user_id, emoji: r.emoji })),
   };
@@ -374,4 +375,22 @@ export async function dmSync(userId: string, conversationId: string, opts: { sin
       members: c.members.map((m) => ({ id: m.id, name: m.name, left: m.left, lastReadAt: m.last_read_at, typing: m.typing })),
     },
   };
+}
+
+
+// ── Sending my own record to people outside its audience ─────────────────
+
+/** Who among these people can't see my record (outside who it's shared with), by name. */
+export async function recordUnseenBy(userId: string, recordId: string, userIds: string[]): Promise<{ id: string; name: string }[]> {
+  const id = uuid.parse(recordId);
+  const ids = userIds.filter((x) => uuid.safeParse(x).success);
+  if (!ids.length) return [];
+  const r = await run(userId, (tx) => tx.execute<{ user_id: string; name: string }>(sql`select * from memory_unseen_by(${id}, ${`{${ids.join(",")}}`}::uuid[])`));
+  return r.rows.map((x) => ({ id: x.user_id, name: x.name }));
+}
+
+/** Show my record, in a message I sent, to the members outside its audience (after being asked). */
+export async function showRecordInMessage(userId: string, messageId: string) {
+  const id = uuid.parse(messageId);
+  await run(userId, (tx) => tx.execute(sql`select dm_show_record(${id})`));
 }

@@ -1147,6 +1147,8 @@ export const dmMessages = pgTable(
     body: text("body"),
     replyTo: uuid("reply_to"),
     recordId: uuid("record_id").references(() => memoryEntries.id, { onDelete: "set null" }),
+    /** The record's owner sent it and chose to show it here, to members outside its audience (the card only). */
+    recordShown: boolean("record_shown").notNull().default(false),
     /** System events: {"event": "created"|"added"|"left"|"renamed", ...}. */
     meta: jsonb("meta"),
     createdAt: createdAt(),

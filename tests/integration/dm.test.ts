@@ -17,12 +17,14 @@ import {
   markRead,
   messageText,
   openDirect,
+  recordUnseenBy,
   reactToMessage,
   renameGroup,
   sendMessage,
   sendMessageFast,
   setMuted,
   setTyping,
+  showRecordInMessage,
   sniffImage,
   unsendMessage,
   uploadPhoto,
@@ -228,5 +230,27 @@ describe("direct messages", () => {
     const photo = await uploadPhotoFast(hana.userId, c, PNG, 1, 1);
     await sendMessageFast(hana.userId, c, { id: crypto.randomUUID(), kind: "image", attachmentIds: [photo] });
     expect((await dmMessages(sora.userId, c)).at(-1)!.attachments).toHaveLength(1);
+  });
+
+  it("my record sent to someone outside its audience: they're named first, and shown it only if I choose", async () => {
+    const hana = await makeUser("Hana");
+    const sora = await makeUser("Sora");
+    await connect(hana.userId, sora.userId);
+    const c = await openDirect(hana.userId, sora.userId);
+    const rec = await createMemory(hana.userId, { body: "家族だけの話" }); // not shared with Sora
+    expect(await recordUnseenBy(hana.userId, rec, [hana.userId, sora.userId])).toEqual([{ id: sora.userId, name: "Sora" }]);
+    await expect(recordUnseenBy(sora.userId, rec, [hana.userId])).rejects.toMatchObject({ code: "not_found" }); // only the owner asks
+
+    // Sent without showing: hidden. Shown: the card, marked as shown (no page to open).
+    await sendMessage(hana.userId, c, { kind: "record", recordId: rec });
+    expect((await dmMessages(sora.userId, c)).at(-1)!.record).toEqual({ hidden: true });
+    const m = await sendMessage(hana.userId, c, { kind: "record", recordId: rec });
+    await expect(showRecordInMessage(sora.userId, m)).rejects.toMatchObject({ code: "not_found" }); // not hers to show
+    await showRecordInMessage(hana.userId, m);
+    expect((await dmMessages(sora.userId, c)).at(-1)!.record).toMatchObject({ shown: true, mine: false, ownerName: "Hana", body: "家族だけの話" });
+    expect((await dmMessages(hana.userId, c)).at(-1)!.record).toMatchObject({ mine: true });
+    // Showing it in a message doesn't open the record itself.
+    await setMemoryAudience(hana.userId, rec, { visibility: "connections" });
+    expect(await recordUnseenBy(hana.userId, rec, [sora.userId])).toEqual([]);
   });
 });

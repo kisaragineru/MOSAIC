@@ -7,16 +7,19 @@ import { sharedEntry } from "@/server/services/comments";
 import {
   addMembers,
   createGroup,
+  dmConversation,
   editMessage,
   hideConversation,
   leaveGroup,
   openDirect,
   openDirectForConnection,
+  recordUnseenBy,
   reactToMessage,
   renameGroup,
   sendMessage,
   setMuted,
   setTyping,
+  showRecordInMessage,
   unsendMessage,
   uploadPhoto,
 } from "@/server/services/dm";
@@ -78,14 +81,31 @@ export async function dmOpenForConnectionAction(form: FormData) {
   redirect(r.ok ? `/messages/${r.value}${draft ? `?draft=${encodeURIComponent(draft)}` : ""}` : withParam(safeNext(str(form, "back"), "/messages"), "e", r.error));
 }
 
+/**
+ * Sending my record where some members can't see it (outside who it's shared with): first ask
+ * (back to the page, naming them); once I choose to show it, the message shows them the card.
+ */
+async function sendRecord(uid: string, conv: string, record: string, show: boolean) {
+  const msg = await sendMessage(uid, conv, { kind: "record", recordId: record });
+  if (show) await showRecordInMessage(uid, msg);
+}
+
 /** New message: one person opens your conversation with them, several make a group. A record to share can come along. */
 export async function dmStartAction(form: FormData) {
   const uid = await requireUser();
   const ids = form.getAll("member").filter((v): v is string => typeof v === "string");
   const record = str(form, "record");
+  const show = str(form, "show") === "1";
+  if (record && !show && ids.length) {
+    const unseen = await recordUnseenBy(uid, record, ids).catch(() => []);
+    if (unseen.length) {
+      const q = new URLSearchParams({ record, to: ids.join(","), title: str(form, "title") });
+      redirect(`/messages/new?${q}#ask`);
+    }
+  }
   const r = await attempt("dm.start", async () => {
     const id = ids.length === 1 ? await openDirect(uid, ids[0]!) : await createGroup(uid, str(form, "title"), ids);
-    if (record) await sendMessage(uid, id, { kind: "record", recordId: record });
+    if (record) await sendRecord(uid, id, record, show);
     return id;
   });
   revalidatePath("/messages");
@@ -96,8 +116,15 @@ export async function dmStartAction(form: FormData) {
 export async function dmShareRecordAction(form: FormData) {
   const uid = await requireUser();
   const conv = str(form, "conversationId");
-  const r = await attempt("dm.share", () => sendMessage(uid, conv, { kind: "record", recordId: str(form, "record") }));
-  redirect(r.ok ? `/messages/${conv}` : withParam(`/messages/new?record=${str(form, "record")}`, "e", r.error));
+  const record = str(form, "record");
+  const show = str(form, "show") === "1";
+  if (!show) {
+    const members = await dmConversation(uid, conv).then((c) => c.members.filter((m) => !m.left).map((m) => m.id)).catch(() => []);
+    const unseen = await recordUnseenBy(uid, record, members).catch(() => []);
+    if (unseen.length) redirect(`/messages/new?${new URLSearchParams({ record, conv })}#ask`);
+  }
+  const r = await attempt("dm.share", () => sendRecord(uid, conv, record, show));
+  redirect(r.ok ? `/messages/${conv}` : withParam(`/messages/new?record=${record}`, "e", r.error));
 }
 
 function back(conv: string, r: { ok: boolean; error?: string }, ok = "saved") {

@@ -27,6 +27,8 @@ export interface ChatText {
   recordReply: string;
   /** "A reply to your record" (the owner's view of that card). */
   recordReplyToYou: string;
+  /** "A record {name} showed you" (shown in the message only: no page to open). */
+  shownBy: string;
   edit: string;
   editing: string;
   save: string;
@@ -726,6 +728,12 @@ export function ChatView({
                 {m.record &&
                   ("hidden" in m.record ? (
                     <p className="rounded-3xl bg-stone-100 px-3.5 py-2.5 text-sm text-stone-500 ring-1 ring-stone-200">📄 {tx.recordHidden}</p>
+                  ) : m.record.shown ? (
+                    <div className="block w-64 max-w-full rounded-3xl bg-white p-3 text-stone-900 shadow-sm ring-1 ring-stone-200" data-testid="shown-record">
+                      <span className="block text-[11px] font-semibold text-rose-800">📄 {fill(tx.shownBy, { name: m.record.ownerName })}</span>
+                      {m.record.title && <span className="emoji-color block font-semibold">{m.record.title}</span>}
+                      <span className="block whitespace-pre-line text-sm text-stone-700">{m.record.body}</span>
+                    </div>
                   ) : (
                     <Link
                       href={m.record.mine ? `/memories/${m.record.id}` : `/memories/shared/${m.record.id}`}

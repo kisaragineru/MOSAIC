@@ -1,0 +1,1 @@
+ALTER TABLE "dm_messages" ADD COLUMN "record_shown" boolean DEFAULT false NOT NULL;

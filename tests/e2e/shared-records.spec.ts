@@ -176,6 +176,18 @@ test("share by relationship, and a test companion from settings (development)", 
   await hana.goto("/memories?view=friends");
   await expect(hana.getByText(/駅前に新しいカフェができてた/)).toBeVisible();
   await expect(hana.getByText(/自分だけの記録/)).toHaveCount(0);
+
+  // Sending the family-only record to Mina (not family): Hana is asked first, then shows it in the message.
+  await hana.goto("/memories");
+  await hana.getByText("家族だけに伝えたいこと。").first().click();
+  await hana.waitForURL(/\/memories\/[0-9a-f-]+$/);
+  await hana.getByRole("link", { name: "メッセージで送る" }).click();
+  await hana.locator("label", { hasText: "ミナ（テスト）" }).getByRole("checkbox").check();
+  await hana.getByRole("button", { name: "送信", exact: true }).click();
+  await expect(hana.getByTestId("record-ask")).toContainText("ミナ（テスト）さんは、この記録を見られません");
+  await hana.getByRole("button", { name: "見せて送る" }).click();
+  await hana.waitForURL(/\/messages\/[0-9a-f-]+$/);
+  await expect(hana.getByText("家族だけに伝えたいこと。")).toBeVisible();
   await hana.goto("/settings");
   hana.once("dialog", (d) => d.accept());
   await hana.getByRole("button", { name: "削除" }).last().click();

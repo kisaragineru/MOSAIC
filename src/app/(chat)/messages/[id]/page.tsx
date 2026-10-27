@@ -42,6 +42,7 @@ export default async function ConversationPage({ params, searchParams }: { param
     replyingTo: tm.replyingTo(P),
     recordReply: tm.recordReply(P),
     recordReplyToYou: tm.recordReplyToYou,
+    shownBy: tm.shownBy(P),
     edit: tm.edit,
     editing: tm.editing,
     save: tm.save,

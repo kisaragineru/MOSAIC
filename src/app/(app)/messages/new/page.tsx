@@ -8,7 +8,7 @@ import { getT } from "@/lib/i18n/server";
 import { uuid } from "@/lib/validation/common";
 import { requireUser } from "@/server/auth/session";
 import { sharedEntry } from "@/server/services/comments";
-import { dmContacts, dmInbox } from "@/server/services/dm";
+import { dmContacts, dmConversation, dmInbox, recordUnseenBy } from "@/server/services/dm";
 import { avatarUrls } from "@/server/services/avatars";
 import { getMemory } from "@/server/services/memories";
 
@@ -31,6 +31,11 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
         })
     : null;
   const recent = recordId ? (await dmInbox(uid)).filter((c) => c.canSend).slice(0, 6) : [];
+  // Asked first: some of the people it's going to can't see this record.
+  const askTo = record && sp.to ? sp.to.split(",").filter((x) => uuid.safeParse(x).success) : [];
+  const askConv = record && sp.conv && uuid.safeParse(sp.conv).success ? sp.conv : null;
+  const askMembers = askConv ? await dmConversation(uid, askConv).then((c) => c.members.filter((m) => !m.left).map((m) => m.id)).catch(() => []) : askTo;
+  const unseen = record && askMembers.length ? await recordUnseenBy(uid, recordId!, askMembers).catch(() => []) : [];
   const pics = await avatarUrls(uid, [...contacts.map((c) => c.id), ...recent.flatMap((c) => c.others.map((o) => o.id))]);
   return (
     <Page title={record ? tm.shareTitle : tm.newMessage} back={record ? undefined : "/messages"}>
@@ -42,6 +47,22 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
           <p className="emoji-color line-clamp-3 whitespace-pre-line text-sm text-stone-700">{record.body}</p>
           <p className="mt-2 text-[11px] leading-5 text-stone-500">{tm.shareHelp}</p>
         </div>
+      )}
+      {unseen.length > 0 && (
+        <section id="ask" className="scroll-mt-24 rounded-3xl bg-amber-50 p-4 ring-1 ring-amber-200" data-testid="record-ask">
+          <p className="font-semibold text-amber-950">🔒 {tm.unseenTitle(unseen.map((u) => tm.person(u.name)).join(t.common.listSeparator))}</p>
+          <p className="mt-1 text-sm leading-6 text-amber-900">{tm.unseenLead}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <form action={askConv ? dmShareRecordAction : dmStartAction}>
+              <input type="hidden" name="record" value={recordId!} />
+              <input type="hidden" name="show" value="1" />
+              {askConv ? <input type="hidden" name="conversationId" value={askConv} /> : askTo.map((id) => <input key={id} type="hidden" name="member" value={id} />)}
+              {!askConv && sp.title && <input type="hidden" name="title" value={sp.title} />}
+              <button type="submit" className="rounded-full bg-teal-700 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-teal-800">{tm.unseenShow}</button>
+            </form>
+            <a href={`/messages/new?record=${recordId}`} className="text-sm font-semibold text-stone-600 underline underline-offset-4">{tm.unseenCancel}</a>
+          </div>
+        </section>
       )}
       {recent.length > 0 && (
         <Card title={tm.recent}>
