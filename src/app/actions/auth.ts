@@ -52,7 +52,7 @@ export async function startTrialAction() {
   const uid = await currentUserId();
   if (!uid) redirect("/login");
   const r = await attempt("dev.trial_start", () => startTrial(uid));
-  if (!r.ok) redirect(`/settings?e=${r.error}#dev`);
+  if (!r.ok) redirect(`/admin?e=${r.error}#dev`);
   redirect("/register");
 }
 
@@ -61,12 +61,12 @@ export async function actAsCompanionAction(form: FormData) {
   const uid = await currentUserId();
   if (!uid) redirect("/login");
   const r = await attempt("dev.act_as", () => actAsCompanion(uid, String(form.get("id") ?? "")));
-  if (!r.ok) redirect(`/settings?e=${r.error}#dev`);
+  if (!r.ok) redirect(`/admin?e=${r.error}#dev`);
   redirect("/home");
 }
 
 /** Development: back to your own account; the throwaway account is deleted. */
 export async function endTrialAction() {
   const back = await endTrial(await currentUserId());
-  redirect(back ? "/settings?ok=trial_ended#dev" : "/login");
+  redirect(back ? "/admin?ok=trial_ended#dev" : "/login");
 }

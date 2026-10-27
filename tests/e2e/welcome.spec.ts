@@ -198,7 +198,7 @@ test("development: try sign-up and the guide with a throwaway account, then go b
   await page.getByRole("button", { name: "アカウントを作成" }).click();
   await page.waitForURL(/\/welcome$/);
 
-  await page.goto("/settings");
+  await page.goto("/admin");
   await page.getByTestId("trial-start").getByRole("button", { name: /会員登録から試す/ }).click();
   await page.waitForURL(/\/register$/);
   await expect(page.getByTestId("trial-bar")).toContainText("会員登録のテスト中です");
@@ -211,7 +211,7 @@ test("development: try sign-up and the guide with a throwaway account, then go b
   await expect(page.getByTestId("trial-bar")).toContainText("テスト用アカウントで体験中です");
 
   await page.getByTestId("trial-bar").getByRole("button", { name: "元のアカウントに戻る" }).click();
-  await page.waitForURL(/\/settings\?ok=trial_ended/);
+  await page.waitForURL(/\/admin\?ok=trial_ended/);
   await expect(page.getByText("元のアカウントに戻りました。テスト用アカウントは削除しました。")).toBeVisible();
   await expect(page.getByTestId("trial-bar")).toHaveCount(0);
   // The throwaway account is gone.

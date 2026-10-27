@@ -8,11 +8,11 @@ import { attempt, str } from "./util";
 // Development only: every service call refuses unless DEV_TOOLS=on.
 
 function done(r: { ok: boolean; error?: string }, ok = "saved") {
-  revalidatePath("/settings");
+  revalidatePath("/admin");
   revalidatePath("/home");
   revalidatePath("/memories");
   revalidatePath("/people");
-  redirect(`/settings?${r.ok ? `ok=${ok}` : `e=${r.error}`}#dev`);
+  redirect(`/admin?${r.ok ? `ok=${ok}` : `e=${r.error}`}#dev`);
 }
 
 export async function createCompanionAction(form: FormData) {

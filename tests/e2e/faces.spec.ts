@@ -10,7 +10,7 @@ test("development: set where the faces are in the type illustrations, then write
   await page.getByLabel(/^パスワード/).fill("e2e correct horse battery");
   await page.getByRole("button", { name: "アカウントを作成" }).click();
   await page.waitForURL(/welcome/);
-  await page.goto("/settings#dev");
+  await page.goto("/admin#dev");
   await page.getByRole("link", { name: /タイプの顔の切り抜き/ }).click();
   await page.waitForURL(/\/settings\/faces$/);
   // A first pass is already set for all 28.

@@ -280,9 +280,9 @@ test("a web link shows the page's card (OGP), its image served from MOSAIC; MOSA
 test("test companions can reply in a group (development)", async ({ browser }) => {
   const hana = await user(browser, "ハナ");
   for (let i = 0; i < 2; i++) {
-    await hana.goto("/settings");
+    await hana.goto("/admin");
     await hana.getByRole("button", { name: /テスト相手をつくる/ }).click();
-    await hana.waitForURL(/settings\?ok=saved/);
+    await hana.waitForURL(/admin\?ok=saved/);
   }
   await hana.goto("/messages/new");
   await hana.getByLabel("ミナ（テスト）").check();
@@ -304,9 +304,9 @@ test("test companions can reply in a group (development)", async ({ browser }) =
 
 test("development: sign in as a test companion (set their picture), then back to yourself", async ({ browser }) => {
   const hana = await user(browser, "ハナ");
-  await hana.goto("/settings");
+  await hana.goto("/admin");
   await hana.getByRole("button", { name: /テスト相手をつくる/ }).click();
-  await hana.waitForURL(/settings\?ok=saved/);
+  await hana.waitForURL(/admin\?ok=saved/);
   await hana.getByRole("button", { name: /このユーザーとしてログイン/ }).click();
   await hana.waitForURL(/\/home$/);
   await expect(hana.getByTestId("trial-bar")).toBeVisible();
@@ -318,7 +318,7 @@ test("development: sign in as a test companion (set their picture), then back to
   await hana.waitForURL(/\/me\/photo\?ok=saved/);
   // Back to Hana: Mina is still there, now with her picture.
   await hana.getByTestId("trial-bar").getByRole("button").click();
-  await hana.waitForURL(/\/settings/);
+  await hana.waitForURL(/\/admin/);
   await expect(hana.getByTestId("trial-bar")).toHaveCount(0);
   await expect(hana.getByText("ミナ（テスト）").first()).toBeVisible();
   await hana.goto("/people");

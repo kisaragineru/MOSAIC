@@ -13,7 +13,7 @@ export default async function FacesPage() {
   if (!(await devToolsFor(uid))) notFound();
   const { locale } = await getT();
   return (
-    <Page title="タイプの顔の切り抜き" back="/settings#dev">
+    <Page title="タイプの顔の切り抜き" back="/admin#dev">
       <Card>
         <FaceSetter types={allTypes(locale).map((x) => ({ id: x.id, label: x.persona }))} initial={TYPE_FACES as Record<string, Record<string, { cx: number; cy: number; r: number }>>} />
       </Card>

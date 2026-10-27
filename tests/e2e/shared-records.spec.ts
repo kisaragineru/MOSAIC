@@ -171,9 +171,9 @@ test("share by relationship, and a test companion from settings (development)", 
   await hana.waitForURL(/\/people\/[0-9a-f-]+\/settings$/);
 
   // A test companion: connected right away, with records to read.
-  await hana.goto("/settings");
+  await hana.goto("/admin");
   await hana.getByRole("button", { name: /テスト相手をつくる/ }).click();
-  await hana.waitForURL(/settings\?ok=saved/);
+  await hana.waitForURL(/admin\?ok=saved/);
   await expect(hana.getByText("ミナ（テスト）")).toBeVisible();
   await hana.goto("/memories?view=friends");
   await expect(hana.getByText(/駅前に新しいカフェができてた/)).toBeVisible();
@@ -190,7 +190,7 @@ test("share by relationship, and a test companion from settings (development)", 
   await hana.getByRole("button", { name: "見せて送る" }).click();
   await hana.waitForURL(/\/messages\/[0-9a-f-]+$/);
   await expect(hana.getByText("家族だけに伝えたいこと。")).toBeVisible();
-  await hana.goto("/settings");
+  await hana.goto("/admin");
   await hana.getByRole("button", { name: "削除" }).last().click();
   await confirm(hana);
   await hana.waitForURL(/ok=deleted/);

@@ -12,11 +12,11 @@ test("notices sit in one tray at the top of Home; closed ones stay away, the bel
   await page.waitForURL(/welcome/);
 
   // Someone (a test companion) asks "how do you see me?": waiting on you.
-  await page.goto("/settings");
+  await page.goto("/admin");
   await page.getByRole("button", { name: /テスト相手をつくる/ }).click();
-  await page.waitForURL(/settings\?ok=saved/);
+  await page.waitForURL(/admin\?ok=saved/);
   await page.getByRole("button", { name: /あなたに「どう見える？」を聞かせる/ }).click();
-  await page.waitForURL(/settings\?ok=saved/);
+  await page.waitForURL(/admin\?ok=saved/);
   await expect(page.getByTestId("bell-dot")).toBeVisible();
 
   await page.goto("/home");
