@@ -27,7 +27,6 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       <Flash t={t} sp={sp} />
       <Card title={t.settings.profile}>
         <form action={updateProfileAction} className="space-y-3">
-          <Field label={t.settings.displayName}><Input name="displayName" defaultValue={acc.profile.displayName} required maxLength={80} /></Field>
           <Field label={t.common.language}>
             <Select name="locale" defaultValue={acc.profile.locale}>
               {SUPPORTED_LOCALES.map((l) => <option key={l} value={l}>{LOCALE_NAMES[l]}</option>)}

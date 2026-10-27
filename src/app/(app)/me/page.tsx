@@ -50,6 +50,14 @@ export default async function MePage({ searchParams }: { searchParams: Promise<R
         <div className="min-w-0">
           <p className="truncate text-xl font-bold text-stone-900">{acc.profile.displayName}</p>
           <p className="text-xs text-stone-500">{t.me.joined(acc.createdAt.toISOString().slice(0, 10))}</p>
+          <details className="group mt-1">
+            <summary className="cursor-pointer list-none text-xs font-semibold text-teal-700 group-open:hidden">✏️ {t.me.rename}</summary>
+            <form action={updateProfileAction} className="mt-2 flex flex-wrap items-center gap-2">
+              <input type="hidden" name="back" value="/me" />
+              <input name="displayName" defaultValue={acc.profile.displayName} required maxLength={80} aria-label={t.settings.displayName} className="min-w-0 flex-1 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none" />
+              <Button type="submit" variant="secondary" className="min-h-8 px-3 py-1 text-xs">{t.common.save}</Button>
+            </form>
+          </details>
           {!avatar && <Link href="/me/photo" className="mt-1 inline-block text-xs font-semibold text-teal-700">📷 {t.avatar.edit} →</Link>}
         </div>
       </section>

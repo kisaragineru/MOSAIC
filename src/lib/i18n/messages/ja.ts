@@ -1037,7 +1037,7 @@ export const ja: Dict = {
       deleteConfirm: "このテスト相手と、そのデータをすべて削除しますか？",
     },
     title: "設定",
-    profile: "プロフィール",
+    profile: "言語と地域",
     displayName: "表示名",
     bio: "自己紹介",
     timeZone: "タイムゾーン",
@@ -1906,6 +1906,7 @@ export const ja: Dict = {
     dm: "メッセージは、やりとりしている相手にだけ見えます。記録への返信は、その記録を見られる人全員に見えます。",
   },
   me: {
+    rename: "名前を変える",
     birthTitle: "生年月日（Tử Vi用）",
     birthAdd: "生年月日を入力する",
     birthOpen: "Tử Viを見る",

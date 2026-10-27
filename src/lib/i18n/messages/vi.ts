@@ -1037,7 +1037,7 @@ export const vi: Dict = {
       deleteConfirm: "Xoá người thử nghiệm này và toàn bộ dữ liệu?",
     },
     title: "Cài đặt",
-    profile: "Hồ sơ",
+    profile: "Ngôn ngữ và khu vực",
     displayName: "Tên hiển thị",
     bio: "Giới thiệu",
     timeZone: "Múi giờ",
@@ -1906,6 +1906,7 @@ export const vi: Dict = {
     dm: "Tin nhắn chỉ người trong cuộc trò chuyện đó thấy. Trả lời trên ghi chép thì ai xem được ghi chép đều thấy.",
   },
   me: {
+    rename: "Đổi tên",
     birthTitle: "Ngày giờ sinh (cho Tử Vi)",
     birthAdd: "Nhập ngày giờ sinh",
     birthOpen: "Xem Tử Vi",

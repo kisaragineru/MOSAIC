@@ -1035,7 +1035,7 @@ export const en = {
       deleteConfirm: "Remove this test companion and everything in it?",
     },
     title: "Settings",
-    profile: "Profile",
+    profile: "Language & region",
     displayName: "Display name",
     bio: "About me",
     timeZone: "Time zone",
@@ -1904,6 +1904,7 @@ export const en = {
     dm: "Messages are seen only by the people in that conversation. Replies on a record are seen by everyone who can see the record.",
   },
   me: {
+    rename: "Change name",
     birthTitle: "Birth details (for Tử Vi)",
     birthAdd: "Enter your birth details",
     birthOpen: "See your Tử Vi",
