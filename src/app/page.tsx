@@ -16,7 +16,7 @@ export default async function Root() {
       <IntroFilm
         tx={t.film}
         start="/register"
-        after={<Link href="/login" className="text-sm text-white/70 underline underline-offset-4 hover:text-white">{t.film.login}</Link>}
+        after={<Link href="/login" className="text-sm text-stone-600 underline underline-offset-4 hover:text-violet-800">{t.film.login}</Link>}
       />
     </main>
   );

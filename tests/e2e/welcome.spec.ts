@@ -18,7 +18,7 @@ test("a new account is guided: the chart (not skippable) and its tour, three que
   // What MOSAIC is, as a short film: a type from a birth date, pieces from answers, a story, handing it over.
   const film = page.getByTestId("intro-film");
   for (const x of ["あなたは、どのタイプ？", "あなたのかけらが、増えていく", "かけらは、あなたの物語になる", "誰かに、知ってほしくなったら"]) await expect(film.getByRole("heading", { name: x })).toBeAttached();
-  await expect(film.getByText("例", { exact: true })).toBeAttached(); // the sample story says it's an example
+  await expect(film.getByText("例", { exact: true })).toHaveCount(2); // the sample manual and story say they're examples
   await expect(film.getByText(/見せるのは、あなたが選んだ人だけ/)).toBeAttached();
   // The guide can be ended at any step.
   await expect(page.getByRole("button", { name: "ガイドを終了" })).toBeVisible();

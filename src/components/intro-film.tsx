@@ -11,6 +11,19 @@ export interface FilmText {
   piecesEyebrow: string;
   piecesTitle: string;
   piecesBody: string;
+  selfEyebrow: string;
+  selfTitle: string;
+  selfBody: string;
+  selfCardTitle: string;
+  selfCard: string[];
+  recordsEyebrow: string;
+  recordsTitle: string;
+  recordsBody: string;
+  recordItems: string[];
+  connectEyebrow: string;
+  connectTitle: string;
+  connectBody: string;
+  chat: string[];
   storyEyebrow: string;
   storyTitle: string;
   sampleLabel: string;
@@ -52,10 +65,19 @@ function useShown<T extends HTMLElement>() {
 const IN = "transition duration-700 ease-out motion-reduce:transition-none";
 const fade = (shown: boolean, delay = "") => `${IN} ${delay} ${shown ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 motion-reduce:opacity-100 motion-reduce:translate-y-0"}`;
 
-function Scene({ children, dark = false, tall, id }: { children: (shown: boolean) => React.ReactNode; dark?: boolean; tall: string; id?: string }) {
+/** Soft backgrounds, one per scene, so the film moves from dawn to a warm close. */
+const TONE = {
+  dawn: "bg-gradient-to-b from-[#fdf0f4] via-[#f4f0ff] to-[#fbf8f2]",
+  paper: "bg-[#fbf8f2]",
+  mist: "bg-gradient-to-b from-[#fbf8f2] via-[#eef6f6] to-[#fbf8f2]",
+  blush: "bg-gradient-to-b from-[#fbf8f2] via-[#fdf1ec] to-[#fbf8f2]",
+  warm: "bg-gradient-to-b from-[#fbf8f2] via-[#fdf3e3] to-[#f6eefc]",
+} as const;
+
+function Scene({ children, tone = "paper", tall, id }: { children: (shown: boolean) => React.ReactNode; tone?: keyof typeof TONE; tall: string; id?: string }) {
   const [ref, shown] = useShown<HTMLElement>();
   return (
-    <section ref={ref} id={id} className={`relative flex ${tall} snap-start flex-col items-center justify-center overflow-hidden px-6 py-16 text-center ${dark ? "bg-[#14112a] text-white" : ""}`}>
+    <section ref={ref} id={id} className={`relative flex ${tall} snap-start flex-col items-center justify-center overflow-hidden px-6 py-16 text-center text-stone-900 ${TONE[tone]}`}>
       {children(shown)}
     </section>
   );
@@ -65,31 +87,34 @@ const TYPES = ["tu_vi", "thien_co", "thai_duong", "vu_khuc", "thien_dong", "liem
 const TILE_DELAY = ["delay-[1395ms]", "delay-[1080ms]", "delay-[450ms]", "delay-[225ms]", "delay-[1305ms]", "delay-[1215ms]", "delay-[360ms]", "delay-[1035ms]", "delay-[630ms]", "delay-[540ms]", "delay-[1260ms]", "delay-[990ms]", "delay-[1530ms]", "delay-[675ms]", "delay-[0ms]", "delay-[855ms]", "delay-[1350ms]", "delay-[315ms]", "delay-[945ms]", "delay-[1575ms]", "delay-[585ms]", "delay-[90ms]", "delay-[1485ms]", "delay-[270ms]", "delay-[720ms]", "delay-[45ms]", "delay-[810ms]", "delay-[495ms]", "delay-[1440ms]", "delay-[765ms]", "delay-[1170ms]", "delay-[180ms]", "delay-[135ms]", "delay-[1125ms]", "delay-[405ms]", "delay-[900ms]"];
 const TILE_COLOR = ["bg-teal-300", "bg-rose-400", "bg-rose-300", "bg-sky-200", "bg-sky-300", "bg-fuchsia-300", "bg-sky-200", "bg-sky-300", "bg-fuchsia-300", "bg-violet-500", "bg-violet-300", "bg-amber-300", "bg-violet-500", "bg-violet-300", "bg-amber-300", "bg-amber-200", "bg-emerald-300", "bg-teal-500", "bg-amber-200", "bg-emerald-300", "bg-teal-500", "bg-teal-300", "bg-rose-400", "bg-rose-300", "bg-teal-300", "bg-rose-400", "bg-rose-300", "bg-sky-200", "bg-sky-300", "bg-fuchsia-300", "bg-sky-200", "bg-sky-300", "bg-fuchsia-300", "bg-violet-500", "bg-violet-300", "bg-amber-300"];
 const OPEN_DELAY = ["delay-0", "delay-[700ms]", "delay-[1400ms]"];
+const RECORD_ICON = ["☕", "🍞", "🌙"];
 const STORY_DELAY = ["delay-[200ms]", "delay-[700ms]", "delay-[1200ms]", "delay-[1700ms]"];
 
 /**
  * MOSAIC told as a short film you scroll through, in the order of its idea: you may know yourself
- * least; a birth date gives a type; answers add pieces; records turn them into a story; and when you
- * want someone to know you, you hand it to them. Ends with where to begin.
+ * least; a birth date gives a type; answers add pieces, which become your manual; your days, a line
+ * at a time, become a story; when you want someone to know you, you hand it to them, and connected
+ * you talk and read each other. Ends with where to begin. Light, gentle colours throughout.
  */
 export function IntroFilm({ tx, start, after, embedded = false }: { tx: FilmText; start: string; after?: React.ReactNode; embedded?: boolean }) {
   const tall = embedded ? "min-h-[78dvh]" : "min-h-dvh";
   return (
     <div className={`${embedded ? "-mx-4 overflow-hidden rounded-[2rem]" : ""} bg-[#fbf8f2]`} data-testid="intro-film">
       {/* 1. Quiet opening */}
-      <Scene dark tall={tall}>
+      <Scene tone="dawn" tall={tall}>
         {(s) => (
           <>
             <div aria-hidden className="pointer-events-none absolute inset-0">
-              <div className="absolute left-1/2 top-1/3 h-[60vmax] w-[60vmax] -translate-x-1/2 rounded-full bg-violet-700/30 blur-3xl motion-safe:animate-[drift_20s_ease-in-out_infinite_alternate]" />
+              <div className="absolute left-1/2 top-1/4 h-[55vmax] w-[55vmax] -translate-x-1/2 rounded-full bg-rose-200/40 blur-3xl motion-safe:animate-[drift_20s_ease-in-out_infinite_alternate]" />
+              <div className="absolute -right-1/4 bottom-0 h-[45vmax] w-[45vmax] rounded-full bg-violet-200/40 blur-3xl motion-safe:animate-[drift_24s_ease-in-out_-5s_infinite_alternate-reverse]" />
             </div>
-            <div className="mosaic-mark relative mb-10 h-12 w-12 rounded-xl opacity-90" aria-hidden />
-            <p className="relative font-serif text-xl leading-[2.2] tracking-wide">
+            <div className="mosaic-mark relative mb-10 h-12 w-12 rounded-xl" aria-hidden />
+            <p className="relative font-serif text-xl leading-[2.2] tracking-wide text-stone-800">
               {tx.open.map((line, i) => (
                 <span key={i} className={`block ${fade(s, OPEN_DELAY[i])}`}>{line}</span>
               ))}
             </p>
-            <p aria-hidden className={`absolute bottom-8 text-[11px] tracking-[0.3em] text-white/50 ${fade(s, "delay-[1800ms]")}`}>{tx.scroll} ↓</p>
+            <p aria-hidden className={`absolute bottom-8 text-[11px] tracking-[0.3em] text-stone-400 ${fade(s, "delay-[1800ms]")}`}>{tx.scroll} ↓</p>
           </>
         )}
       </Scene>
@@ -116,7 +141,7 @@ export function IntroFilm({ tx, start, after, embedded = false }: { tx: FilmText
       </Scene>
 
       {/* 3. Answers add pieces */}
-      <Scene tall={tall}>
+      <Scene tone="mist" tall={tall}>
         {(s) => (
           <>
             <p className={`text-xs font-bold tracking-[0.25em] text-teal-700 ${fade(s)}`}>{tx.piecesEyebrow}</p>
@@ -131,7 +156,46 @@ export function IntroFilm({ tx, start, after, embedded = false }: { tx: FilmText
         )}
       </Scene>
 
-      {/* 4. Records become a story (an example) */}
+      {/* 4. What comes to light becomes a manual */}
+      <Scene tall={tall}>
+        {(s) => (
+          <>
+            <p className={`text-xs font-bold tracking-[0.25em] text-sky-700 ${fade(s)}`}>{tx.selfEyebrow}</p>
+            <h2 className={`mt-2 text-2xl font-black text-stone-900 [text-wrap:balance] ${fade(s, "delay-150")}`}>{tx.selfTitle}</h2>
+            <figure className={`relative mt-8 w-full max-w-sm rounded-2xl bg-white px-5 py-6 text-left shadow-lg ring-1 ring-sky-100 ${fade(s, "delay-300")}`}>
+              <span className="absolute right-4 top-3 rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold text-stone-500">{tx.sampleLabel}</span>
+              <figcaption className="flex items-center gap-2 text-sm font-bold text-stone-900"><span aria-hidden>📖</span>{tx.selfCardTitle}</figcaption>
+              <ul className="mt-4 space-y-2.5">
+                {tx.selfCard.map((line, i) => (
+                  <li key={i} className={`rounded-xl bg-sky-50/70 px-3 py-2 text-sm leading-6 text-stone-700 ${fade(s, STORY_DELAY[i])}`}>{line}</li>
+                ))}
+              </ul>
+            </figure>
+            <p className={`mt-8 max-w-sm text-sm leading-7 text-stone-600 ${fade(s, "delay-[1500ms]")}`}>{tx.selfBody}</p>
+          </>
+        )}
+      </Scene>
+
+      {/* 5. Every day, a line at a time */}
+      <Scene tone="blush" tall={tall}>
+        {(s) => (
+          <>
+            <p className={`text-xs font-bold tracking-[0.25em] text-rose-600 ${fade(s)}`}>{tx.recordsEyebrow}</p>
+            <h2 className={`mt-2 text-2xl font-black text-stone-900 [text-wrap:balance] ${fade(s, "delay-150")}`}>{tx.recordsTitle}</h2>
+            <ol className="relative mt-8 w-full max-w-xs space-y-3 border-l-2 border-rose-200 pl-5 text-left">
+              {tx.recordItems.map((line, i) => (
+                <li key={i} className={`relative rounded-2xl bg-white px-4 py-3 text-sm text-stone-800 shadow-sm ring-1 ring-rose-100 ${fade(s, STORY_DELAY[i])}`}>
+                  <span aria-hidden className="absolute -left-[1.9rem] top-3 h-3 w-3 rounded-full bg-rose-300 ring-4 ring-[#fdf1ec]" />
+                  <span aria-hidden className="mr-2">{RECORD_ICON[i]}</span>{line}
+                </li>
+              ))}
+            </ol>
+            <p className={`mt-8 max-w-sm text-sm leading-7 text-stone-600 ${fade(s, "delay-[1500ms]")}`}>{tx.recordsBody}</p>
+          </>
+        )}
+      </Scene>
+
+      {/* 6. Records become a story (an example) */}
       <Scene tall={tall}>
         {(s) => (
           <>
@@ -149,8 +213,8 @@ export function IntroFilm({ tx, start, after, embedded = false }: { tx: FilmText
         )}
       </Scene>
 
-      {/* 5. When you want someone to know you */}
-      <Scene tall={tall}>
+      {/* 7. When you want someone to know you */}
+      <Scene tone="warm" tall={tall}>
         {(s) => (
           <>
             <p className={`text-xs font-bold tracking-[0.25em] text-amber-700 ${fade(s)}`}>{tx.handEyebrow}</p>
@@ -167,16 +231,36 @@ export function IntroFilm({ tx, start, after, embedded = false }: { tx: FilmText
         )}
       </Scene>
 
-      {/* 6. Where to begin */}
-      <Scene dark tall={embedded ? "min-h-[60dvh]" : "min-h-[80dvh]"}>
+      {/* 8. Closer to the people you love */}
+      <Scene tone="mist" tall={tall}>
+        {(s) => (
+          <>
+            <p className={`text-xs font-bold tracking-[0.25em] text-teal-700 ${fade(s)}`}>{tx.connectEyebrow}</p>
+            <h2 className={`mt-2 text-2xl font-black text-stone-900 [text-wrap:balance] ${fade(s, "delay-150")}`}>{tx.connectTitle}</h2>
+            <div aria-hidden className={`mt-8 flex items-center gap-3 ${fade(s, "delay-300")}`}>
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-rose-200 to-amber-100 text-lg font-bold text-stone-700 ring-4 ring-white">ミ</span>
+              <span className={`h-0.5 w-16 origin-left rounded-full bg-teal-300 ${IN} delay-500 ${s ? "scale-x-100" : "scale-x-0 motion-reduce:scale-x-100"}`} />
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-sky-200 to-violet-100 text-lg font-bold text-stone-700 ring-4 ring-white">ソ</span>
+            </div>
+            <div className="mt-6 w-full max-w-xs space-y-2">
+              <p className={`ml-auto w-fit max-w-[85%] rounded-3xl rounded-br-md bg-teal-600 px-4 py-2 text-left text-sm text-white shadow-sm ${fade(s, "delay-700")}`}>{tx.chat[0]}</p>
+              <p className={`w-fit max-w-[85%] rounded-3xl rounded-bl-md bg-white px-4 py-2 text-left text-sm text-stone-800 shadow-sm ring-1 ring-stone-200 ${fade(s, "delay-[1200ms]")}`}>{tx.chat[1]}</p>
+            </div>
+            <p className={`mt-8 max-w-sm text-sm leading-7 text-stone-600 ${fade(s, "delay-[1600ms]")}`}>{tx.connectBody}</p>
+          </>
+        )}
+      </Scene>
+
+      {/* 9. Where to begin */}
+      <Scene tone="dawn" tall={embedded ? "min-h-[60dvh]" : "min-h-[80dvh]"}>
         {(s) => (
           <>
             <div aria-hidden className="pointer-events-none absolute inset-0">
-              <div className="absolute -bottom-1/4 left-1/2 h-[50vmax] w-[50vmax] -translate-x-1/2 rounded-full bg-amber-500/20 blur-3xl" />
+              <div className="absolute -bottom-1/4 left-1/2 h-[50vmax] w-[50vmax] -translate-x-1/2 rounded-full bg-amber-200/50 blur-3xl" />
             </div>
             <div className="mosaic-mark relative mb-6 h-12 w-12 rounded-xl" aria-hidden />
-            <h2 className={`relative whitespace-pre-line font-serif text-xl font-bold leading-relaxed [text-wrap:balance] ${fade(s)}`}>{tx.startTitle}</h2>
-            <Link href={start} className={`relative mt-8 inline-block rounded-full bg-white px-8 py-3.5 font-bold text-[#14112a] shadow-lg hover:bg-amber-50 ${fade(s, "delay-300")}`}>{tx.start}</Link>
+            <h2 className={`relative whitespace-pre-line font-serif text-xl font-bold leading-relaxed text-stone-900 [text-wrap:balance] ${fade(s)}`}>{tx.startTitle}</h2>
+            <Link href={start} className={`relative mt-8 inline-block rounded-full bg-violet-700 px-8 py-3.5 font-bold text-white shadow-lg hover:bg-violet-800 ${fade(s, "delay-300")}`}>{tx.start}</Link>
             {after && <div className={`relative mt-6 ${fade(s, "delay-500")}`}>{after}</div>}
           </>
         )}
