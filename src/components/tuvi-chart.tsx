@@ -48,6 +48,8 @@ const FLOAT_DELAY = ["[animation-delay:0ms]", "[animation-delay:160ms]", "[anima
 
 export interface ChartLabels {
   help: string;
+  /** Added to the help when the chart has a "this decade" area for this age. */
+  helpNow: string;
   menh: string;
   than: string;
   now: string;
@@ -146,7 +148,11 @@ export function TuviChart({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs leading-5 text-stone-600">{labels.help}</p>
+      {/* "This decade" only when the chart has one for this age (not before the first one starts). */}
+      <p className="text-xs leading-5 text-stone-600">
+        {labels.help}
+        {chart.palaces.some((p) => isNow(p.branch)) && <>{" "}{labels.helpNow}</>}
+      </p>
 
       <div className="relative">
         <div className="grid grid-cols-4 grid-rows-4 gap-px overflow-hidden rounded-3xl border border-stone-200 bg-stone-200/80 shadow-[0_8px_30px_-16px_rgba(91,70,160,0.35)]" data-testid="tuvi-chart">

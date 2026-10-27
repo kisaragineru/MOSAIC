@@ -49,6 +49,7 @@ export function chartView(c: Chart, locale: Locale, t: Dict, opts: { birth: bool
   const hoaPlain = { loc: HOA_PLAIN.loc[locale], quyen: HOA_PLAIN.quyen[locale], khoa: HOA_PLAIN.khoa[locale], ky: HOA_PLAIN.ky[locale] };
   const labels: ChartLabels = {
     help: ui.plainHelp,
+    helpNow: ui.plainHelpNow,
     menh: ui.plainMenh,
     than: ui.plainThan,
     now: ui.plainNow,
