@@ -18,6 +18,7 @@ import { myPeerRequests } from "@/server/services/peers";
 import { replyInbox } from "@/server/services/replies";
 import { listComparisons } from "@/server/services/sharing";
 import { getTuvi } from "@/server/services/tuvi";
+import { yearStoryDue } from "@/server/services/year-story";
 import { markOpensSeen, markStoryPagesSeen, markWriterNewsSeen, myOffers, newOpens, storyGrowth, writerNews } from "@/server/services/works";
 
 /**
@@ -46,6 +47,7 @@ export async function noticeItems(uid: string, t: Dict, locale: Locale): Promise
   const story = await storyGrowth(uid, locale);
   if (story.added > 0) await markStoryPagesSeen(uid, story.pages);
   const newReplies = (await replyInbox(uid)).filter((x) => x.unread > 0);
+  const birthday = await yearStoryDue(uid, daily.day);
   const btn = "rounded-full px-3 py-1.5 text-xs font-semibold";
   const go = (href: string, label: string) => <Link href={href} className="mt-1 inline-block text-xs font-semibold text-teal-800 underline underline-offset-4">{label} →</Link>;
   const anniversaries = await recentAnniversaries(uid, account.profile.timeZone);
@@ -103,6 +105,7 @@ export async function noticeItems(uid: string, t: Dict, locale: Locale): Promise
       </div>
     ) })),
     ...due.map((d) => ({ ref: { key: `date:${d.id}:${d.date}`, kind: "dated" as const, on: d.date }, icon: "📅", body: <p>{d.label}{d.personName ? ` · ${d.personName}` : ""} — {d.date}（{t.home.inDays(d.daysUntil)}）</p> })),
+    ...(birthday ? [{ ref: { key: `year:${birthday.year}`, kind: "once" as const }, icon: "🎂", body: <div data-testid="year-notice"><p className="font-semibold">{t.yearStory.notice(birthday.age)}</p>{go(`/me/year/${birthday.year}`, t.yearStory.read)}</div> }] : []),
     ...(opens.length ? [{ ref: { key: `opened:${opens.map((o) => o.id).join(",")}`.slice(0, 200), kind: "once" as const }, icon: "📖", body: <div data-testid="work-opened">{opens.map((o) => <p key={o.id} className="font-semibold">{t.work.openedHome(o.recipient)}</p>)}{go("/me/work#links", t.work.links)}</div> }] : []),
     ...(news.connected.length || news.started.length ? [{ ref: { key: `news:${daily.day}`, kind: "once" as const }, icon: "🤝", body: <div data-testid="writer-news">{news.connected.map((w, i) => <p key={`c${i}`}>{t.offer.newsConnected(w)}</p>)}{news.started.map((w, i) => <p key={`s${i}`}>{t.offer.newsStarted(w)}</p>)}</div> }] : []),
     ...(story.ask ? [{ ref: { key: `story-ask:${daily.day.slice(0, 7)}`, kind: "once" as const }, icon: "✉️", body: (

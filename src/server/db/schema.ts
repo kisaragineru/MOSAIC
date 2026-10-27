@@ -1483,3 +1483,20 @@ export const noticeDismissals = pgTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.key] }), check("notice_dismissals_key_ck", sql`char_length(${t.key}) between 1 and 200`)],
 );
+
+/** The story of a year, given on the birthday that ends it (kept once written, per language). */
+export const yearStories = pgTable(
+  "year_stories",
+  {
+    userId: userRef(),
+    /** The birthday's year (the story covers the twelve months before it). */
+    year: smallint("year").notNull(),
+    locale: text("locale").notNull(),
+    title: text("title").notNull(),
+    paragraphs: jsonb("paragraphs").notNull(),
+    /** Written by AI (the owner allows it), or from the records as they are. */
+    ai: boolean("ai").notNull().default(false),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.year, t.locale] })],
+);

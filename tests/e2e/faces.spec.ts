@@ -21,10 +21,10 @@ test("development: set where the faces are in the type illustrations, then write
   const b = (await area.boundingBox())!;
   await page.mouse.move(b.x + 150, b.y + 80);
   await page.mouse.down();
-  await page.mouse.move(b.x + 160, b.y + 60, { steps: 4 });
+  await page.mouse.move(b.x + 160, b.y + 110, { steps: 4 });
   await page.mouse.up();
   await page.getByRole("button", { name: "設定を書き出す" }).click();
   const out = JSON.parse(await page.locator("textarea").inputValue());
-  expect(out.tu_vi.m.r).toBe(0.3);
-  expect(out.tu_vi.m.cx).not.toBe(0.5);
+  expect(out.tu_vi.m.r).toBe(0.5);
+  expect(out.tu_vi.m.cy).not.toBe(0.241);
 });

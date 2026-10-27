@@ -2,6 +2,14 @@ import type { Dict } from "./en";
 
 /** Japanese UI strings. Tử Vi terms keep their Vietnamese names, with kanji where helpful. */
 export const ja: Dict = {
+  yearStory: {
+    pageTitle: "1年の物語",
+    eyebrow: (year: number) => `${year}年のお誕生日に`,
+    notice: (age: number) => `お誕生日おめでとうございます。${age}歳までの1年の物語が届きました`,
+    read: "読む",
+    byAi: "あなたの記録だけをもとに、AIが書きました。",
+    byRecords: "あなたの記録から、そのままのことばで。",
+  },
   admin: {
     title: "管理者ページ",
     lead: "数字だけを表示しています。誰かの記録や回答の中身は見えません。テスト用のアカウントは含めていません。",

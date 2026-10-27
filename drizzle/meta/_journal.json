@@ -449,6 +449,13 @@
       "when": 1793096124432,
       "tag": "0063_work_translations",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1793096358624,
+      "tag": "0064_year_stories",
+      "breakpoints": true
     }
   ]
 }

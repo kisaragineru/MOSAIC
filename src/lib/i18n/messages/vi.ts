@@ -2,6 +2,14 @@ import type { Dict } from "./en";
 
 /** Vietnamese UI strings. */
 export const vi: Dict = {
+  yearStory: {
+    pageTitle: "Câu chuyện một năm",
+    eyebrow: (year: number) => `Mừng sinh nhật năm ${year}`,
+    notice: (age: number) => `Chúc mừng sinh nhật. Câu chuyện của năm bạn tròn ${age} tuổi đã đến`,
+    read: "Đọc",
+    byAi: "AI viết chỉ dựa trên ghi chép của bạn.",
+    byRecords: "Từ ghi chép của bạn, bằng chính lời của bạn.",
+  },
   admin: {
     title: "Trang quản trị",
     lead: "Chỉ hiển thị con số: không xem được nội dung ghi chép hay câu trả lời của ai. Không tính tài khoản thử nghiệm.",

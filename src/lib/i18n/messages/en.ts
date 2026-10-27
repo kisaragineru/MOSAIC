@@ -1,5 +1,13 @@
 /** English UI strings. `vi.ts` must have exactly the same shape (enforced by the type). */
 export const en = {
+  yearStory: {
+    pageTitle: "A year's story",
+    eyebrow: (year: number) => `For your birthday, ${year}`,
+    notice: (age: number) => `Happy birthday. Here's the story of the year you turned ${age}`,
+    read: "Read it",
+    byAi: "Written by AI from your records only.",
+    byRecords: "From your records, in your own words.",
+  },
   admin: {
     title: "Admin",
     lead: "Numbers only: no one's records or answers are visible here. Test accounts are left out.",

@@ -129,10 +129,11 @@ export function AvatarEditor({ text: tx, hasPhoto, mine = [], all = [] }: { text
       const img = await createImageBitmap(await res.blob());
       if (face) {
         const { w, h } = { w: img.width, h: img.height };
-        const zoom = Math.min(MAX_ZOOM, 1 / (2 * face.r));
+        // Starts zoomed all the way out (the slider at its minimum), centred where the face was set.
+        const zoom = 1;
         const k = Math.max(VIEW / w, VIEW / h) * zoom;
         setShot(clamp({ img, rot: 0, zoom, x: (w / 2 - face.cx * w) * k, y: (h / 2 - face.cy * h) * k }));
-      } else setShot(clamp({ img, rot: 0, zoom: 1.8, x: 0, y: 9999 }));
+      } else setShot(clamp({ img, rot: 0, zoom: 1, x: 0, y: 9999 }));
     } catch {
       setError(tx.failed);
     }
