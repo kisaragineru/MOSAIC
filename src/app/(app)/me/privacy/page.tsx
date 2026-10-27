@@ -9,6 +9,7 @@ import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { avatarUrls } from "@/server/services/avatars";
 import { privacyOverview } from "@/server/services/privacy";
+import { myTint, typeTints } from "@/server/services/card";
 
 const CIRCLES = ["partner", "family", "friend", "colleague"] as const;
 
@@ -43,6 +44,7 @@ export default async function PrivacyPage() {
   const tp = t.privacyHub;
   const o = await privacyOverview(uid);
   const avatars = await avatarUrls(uid, o.connections.map((c) => c.otherId));
+  const tints = await typeTints(uid, o.connections.map((c) => c.otherId));
   const scopeList = (s: string[]) => s.map((x) => t.compare.scopeNames[x as keyof typeof t.compare.scopeNames] ?? x).join(t.common.listSeparator);
   const done = (ok: boolean) => <Pill tone={ok ? "teal" : "stone"}>{ok ? tp.set : tp.notSet}</Pill>;
   return (
@@ -101,7 +103,7 @@ export default async function PrivacyPage() {
             {o.connections.map((c) => (
               <li key={c.sessionId} data-testid="privacy-connection" className="rounded-2xl border border-stone-200 p-3">
                 <div className="flex items-center gap-3">
-                  <Avatar name={c.name} src={avatars.get(c.otherId ?? "")} className="h-10 w-10 text-base" />
+                  <Avatar name={c.name} src={avatars.get(c.otherId ?? "")} type={tints.get(c.otherId ?? "")} className="h-10 w-10 text-base" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-stone-900">{c.name}</p>
                     {c.relationship && <p className="text-xs text-stone-500">{t.people.relationships[c.relationship as keyof typeof t.people.relationships] ?? c.relationship}</p>}

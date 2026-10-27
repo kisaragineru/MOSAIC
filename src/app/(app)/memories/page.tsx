@@ -20,7 +20,7 @@ import { shareTargets, connectionFeed, feedForPage, feedToEntry, mineToEntry } f
 import { listPeople } from "@/server/services/people";
 import { avatarUrls, myAvatarUrl } from "@/server/services/avatars";
 import { replyCounts, replyInbox, replyPreviews } from "@/server/services/replies";
-import { typeTints } from "@/server/services/card";
+import { myTint, typeTints } from "@/server/services/card";
 
 const PAGE_SIZE = 50;
 
@@ -136,7 +136,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
       {days.length === 0 ? (
         <Empty>{view === "friends" ? tl.friendsEmpty : t.memories.empty}</Empty>
       ) : (
-        <Timeline me={{ name: (await getAccount(uid)).profile.displayName, src: (await myAvatarUrl(uid)) ?? undefined }} t={t} locale={locale} tz={tz} days={days} comments={counts} previews={previews} media={media} avatars={await avatarUrls(uid, entries.map((e) => e.ownerId))} tints={await typeTints(uid, entries.map((e) => e.ownerId))} />
+        <Timeline me={{ name: (await getAccount(uid)).profile.displayName, src: (await myAvatarUrl(uid)) ?? undefined, type: await myTint(uid) }} t={t} locale={locale} tz={tz} days={days} comments={counts} previews={previews} media={media} avatars={await avatarUrls(uid, entries.map((e) => e.ownerId))} tints={await typeTints(uid, entries.map((e) => e.ownerId))} />
       )}
       {(page > 0 || hasOlder) && (
         <nav className="flex justify-between text-sm" aria-label="pagination">

@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm";
 import { answerQuestion } from "@/server/services/discovery";
 import { createMemory } from "@/server/services/memories";
 import { saveBirthProfile } from "@/server/services/tuvi";
-import { answerChoices, draftWork, extendLink, handOver, latestWork, makeWork, markOpensSeen, myLinks, newOpens, openWork, revokeLink } from "@/server/services/works";
+import { answerChoices, draftWork, extendLink, handOver, latestWork, makeWork, markOpensSeen, markWorkOpened, myLinks, newOpens, openWork, revokeLink } from "@/server/services/works";
 import { withUser } from "@/server/db/tx";
 import { makeUser } from "../helpers/factory";
 
@@ -34,11 +34,15 @@ describe("works: the story, handed to someone as a work", () => {
 
     // The owner opening their own link isn't "opened".
     expect(await openWork(token, hana.userId)).toMatchObject({ status: "open", mine: true });
+    await markWorkOpened(token, hana.userId);
     expect(await newOpens(hana.userId)).toEqual([]);
     // Someone without an account reads it.
     const w = await openWork(token, null);
     expect(w).toMatchObject({ status: "open", mine: false, title: "ハナの物語", note: "読んでほしくて" });
     expect(JSON.stringify(w)).not.toContain("母"); // the recipient label is the owner's alone
+    // Looking (a link preview, too) isn't opening; opening the envelope is.
+    expect(await newOpens(hana.userId)).toEqual([]);
+    await markWorkOpened(token, null);
     expect(await newOpens(hana.userId)).toEqual([{ id: linkId, recipient: "母" }]);
     await markOpensSeen(hana.userId);
     expect(await newOpens(hana.userId)).toEqual([]);

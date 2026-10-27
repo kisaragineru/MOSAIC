@@ -11,6 +11,7 @@ import { myAvatarUrl } from "@/server/services/avatars";
 import { getTuvi } from "@/server/services/tuvi";
 import { typeInsight } from "@/server/services/tuvi-type";
 import { allTypes } from "@/lib/tuvi/type-view";
+import { myTint } from "@/server/services/card";
 
 /** Set, crop, change or remove your profile photo. */
 export default async function PhotoPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
@@ -30,7 +31,7 @@ export default async function PhotoPage({ searchParams }: { searchParams: Promis
       <Flash t={t} sp={sp} />
       <Card>
         <div className="mb-5 flex flex-col items-center gap-3">
-          <Avatar name={name} src={src} className="h-32 w-32 text-5xl ring-4 ring-white shadow-md" />
+          <Avatar name={name} src={src} type={await myTint(uid)} className="h-32 w-32 text-5xl ring-4 ring-white shadow-md" />
           <p className="font-semibold text-stone-900">{name}</p>
         </div>
         <AvatarEditor

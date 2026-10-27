@@ -14,6 +14,7 @@ import { Suspense } from "react";
 import { onboardingState, resumeStep } from "@/server/services/onboarding";
 import { trialReturnUser } from "@/server/services/dev-trial";
 import { hasWaitingNotices } from "@/server/services/notices";
+import { myTint } from "@/server/services/card";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const uid = await requireUser();
@@ -91,7 +92,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               title={t.nav.profileMenu}
               className="flex h-9 w-9 items-center justify-center rounded-full ring-2 ring-white transition hover:ring-teal-300"
             >
-              <Avatar name={acc.profile.displayName} src={avatar} className="h-9 w-9 text-sm" />
+              <Avatar name={acc.profile.displayName} src={avatar} type={await myTint(uid)} className="h-9 w-9 text-sm" />
             </Link>
           </div>
         </div>

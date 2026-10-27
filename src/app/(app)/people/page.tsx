@@ -1,3 +1,5 @@
+import { typeTints } from "@/server/services/card";
+import { AVATAR_TINT } from "@/lib/tuvi/type-theme";
 import Link from "next/link";
 import { ConnectionPersonForm } from "@/components/connection-person-form";
 import { avatarUrls } from "@/server/services/avatars";
@@ -39,6 +41,13 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
   const photoOf = (personId: string) => {
     const c = connections.find((x) => x.personId === personId && x.status === "active");
     return c?.otherId ? (pics.get(c.otherId) ?? null) : null;
+  };
+  // Without a photo: their type's colours (a connection whose card shows it), else the relationship's.
+  const tints = await typeTints(uid, connections.filter((c) => c.status === "active").map((c) => c.otherId));
+  const tintOf = (personId: string) => {
+    const c = connections.find((x) => x.personId === personId && x.status === "active");
+    const ty = c?.otherId ? tints.get(c.otherId) : undefined;
+    return ty ? `bg-linear-to-br ${AVATAR_TINT[ty]} text-stone-800` : null;
   };
   return (
     <Page title={t.people.title}>
@@ -88,7 +97,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={photoOf(p.id)!} alt="" width={112} height={112} className="h-14 w-14 shrink-0 rounded-2xl object-cover" />
                   ) : (
-                    <span aria-hidden className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-xl font-bold ${tone.avatar}`}>
+                    <span aria-hidden className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-xl font-bold ${tintOf(p.id) ?? tone.avatar}`}>
                       {Array.from(p.nickname.trim())[0]?.toUpperCase() ?? "?"}
                     </span>
                   )}

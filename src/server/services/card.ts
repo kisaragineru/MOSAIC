@@ -4,7 +4,8 @@
  * whole chart never is: from it, the server only takes the type. Accounts from before the card
  * haven't decided (null) and are asked once; until then only their bio shows, as before.
  */
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
+import { cache } from "react";
 import { z } from "zod";
 import type { TypeView } from "@/components/tuvi-type";
 import type { Locale } from "@/lib/i18n/locales";
@@ -13,7 +14,7 @@ import { mainsOf } from "@/lib/tuvi/interpret";
 import { MAIN_STARS, type MainStarId } from "@/lib/tuvi/stars";
 import { typesById } from "@/lib/tuvi/type-view";
 import { uuid } from "@/lib/validation/common";
-import { profiles } from "../db/schema";
+import { profiles, tuviCharts } from "../db/schema";
 import { withUser } from "../db/tx";
 import { mapDbError } from "../errors";
 import { audit } from "./audit";
@@ -81,3 +82,13 @@ export async function typeTints(userId: string, ids: (string | null | undefined)
   }
   return out;
 }
+
+/** My own type, behind my initial (always mine to see): from my chart, or the one I picked. */
+export const myTint = cache(async (userId: string): Promise<MainStarId | null> => {
+  const [row] = await withUser(userId, (tx) => tx.select({ chart: tuviCharts.chart }).from(tuviCharts).where(and(eq(tuviCharts.userId, userId), eq(tuviCharts.isCurrent, true))).limit(1));
+  const chart = row?.chart as Chart | undefined;
+  const m = chart && chart.menh !== null ? mainsOf(chart, "menh") : null;
+  if (m?.mains[0]) return m.mains[0];
+  const [p] = await withUser(userId, (tx) => tx.select({ t: profiles.selfTypes }).from(profiles).where(eq(profiles.userId, userId)));
+  return (p?.t ?? []).find(isStar) ?? null;
+});

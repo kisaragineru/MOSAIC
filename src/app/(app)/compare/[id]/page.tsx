@@ -36,6 +36,7 @@ import { chartView } from "@/lib/tuvi/chart-view";
 import { nominalAge } from "@/lib/tuvi/engine";
 import { interpret } from "@/lib/tuvi/interpret";
 import { fromSharedChart } from "@/lib/tuvi/shared-chart";
+import { myTint, typeTints } from "@/server/services/card";
 
 const SCOPES = ["tuvi", "tuvi_detail", "preferences", "values"] as const;
 const QMETA = new Map(LOCALIZED_BANK.map((q) => [q.id, q]));
@@ -144,8 +145,8 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
       <section className="rounded-3xl bg-linear-to-br from-rose-50 via-white to-teal-50 p-5 shadow-sm ring-1 ring-white/80">
         <div className="flex items-center gap-3">
           <div className="flex -space-x-3" aria-hidden>
-            <Avatar name={myName || "?"} src={pics.get(uid)} className="h-12 w-12 text-lg ring-4 ring-white" />
-            <Avatar name={v.otherName} src={pics.get(other ?? "")} className="h-12 w-12 text-lg ring-4 ring-white" />
+            <Avatar name={myName || "?"} src={pics.get(uid)} type={await myTint(uid)} className="h-12 w-12 text-lg ring-4 ring-white" />
+            <Avatar name={v.otherName} src={pics.get(other ?? "")} type={(await typeTints(uid, [other])).get(other ?? "")} className="h-12 w-12 text-lg ring-4 ring-white" />
           </div>
           <div className="min-w-0">
             <p className="truncate text-lg font-bold text-stone-900">{v.otherName}</p>

@@ -6,6 +6,7 @@ import { dmEdit, dmReact, dmTranslate, dmUnsend } from "@/app/actions/dm";
 import type { DmMessage } from "@/server/services/dm";
 import { DmAvatar } from "./dm-avatar";
 import { firstUrl, LinkCard } from "./link-card";
+import type { MainStarId } from "@/lib/tuvi/stars";
 
 export interface ChatText {
   back: string;
@@ -79,6 +80,8 @@ export interface ConvView {
   members: { id: string; name: string; left: boolean; lastReadAt: string | null; typing: boolean }[];
   /** Photo links of members whose photo I may see. */
   avatars: Record<string, string>;
+  /** Members' types (connections whose card shows it), for the colour behind an initial. */
+  tints?: Record<string, MainStarId>;
 }
 
 type Msg = DmMessage & { pending?: boolean; failed?: string; localPhotos?: string[] };
@@ -671,7 +674,7 @@ export function ChatView({
     const corner = mine ? `${first ? "" : "rounded-tr-md"} ${last ? "" : "rounded-br-md"}` : `${first ? "" : "rounded-tl-md"} ${last ? "" : "rounded-bl-md"}`;
     rows.push(
       <li key={m.id} id={`m-${m.id}`} className={`emoji-color flex items-end gap-2 ${mine ? "justify-end" : "justify-start"} ${last ? "mb-2" : "mb-0.5"}`}>
-        {!mine && conv.kind === "group" && <span className="w-7 shrink-0">{last && <DmAvatar names={[m.senderName ?? "?"]} srcs={[conv.avatars[m.senderId ?? ""]]} size="sm" />}</span>}
+        {!mine && conv.kind === "group" && <span className="w-7 shrink-0">{last && <DmAvatar names={[m.senderName ?? "?"]} srcs={[conv.avatars[m.senderId ?? ""]]} types={[conv.tints?.[m.senderId ?? ""]]} size="sm" />}</span>}
         <div className={`flex max-w-[78%] flex-col ${mine ? "items-end" : "items-start"}`}>
           {!mine && conv.kind === "group" && first && <span className="mb-0.5 ml-3 text-[11px] text-stone-500">{m.senderName}</span>}
           {m.reply && (
@@ -816,7 +819,7 @@ export function ChatView({
         <Link href="/messages" aria-label={tx.back} className="flex h-10 w-10 items-center justify-center rounded-full text-xl text-stone-600 hover:bg-stone-100">
           ←
         </Link>
-        <DmAvatar names={(conv.kind === "group" ? activeOthers : others).map((m) => m.name)} srcs={(conv.kind === "group" ? activeOthers : others).map((m) => conv.avatars[m.id])} size="sm" />
+        <DmAvatar names={(conv.kind === "group" ? activeOthers : others).map((m) => m.name)} srcs={(conv.kind === "group" ? activeOthers : others).map((m) => conv.avatars[m.id])} types={(conv.kind === "group" ? activeOthers : others).map((m) => conv.tints?.[m.id])} size="sm" />
         <div className="min-w-0 flex-1">
           <h1 className="truncate font-semibold text-stone-900">{title}</h1>
           {subtitle && <p className={`truncate text-xs ${typing.length ? "text-teal-700" : "text-stone-500"}`}>{subtitle}</p>}

@@ -18,7 +18,7 @@ type Counts = Map<string, { count: number; unread: number }>;
 type Previews = Map<string, ReplyPreview[]>;
 type Media = Map<string, MediaItem[]>;
 
-export function Timeline({ t, locale, tz, days, compact = false, comments = new Map(), previews = new Map(), media = new Map(), avatars = new Map(), tints = new Map(), me }: { t: Dict; locale: Locale; tz: string; days: TimelineDay[]; compact?: boolean; comments?: Counts; previews?: Previews; media?: Media; avatars?: Map<string, string>; /** Connections' types, for the colour behind an initial. */ tints?: Map<string, MainStarId>; /** My name and photo, shown on my own posts. */ me?: { name: string; src?: string } }) {
+export function Timeline({ t, locale, tz, days, compact = false, comments = new Map(), previews = new Map(), media = new Map(), avatars = new Map(), tints = new Map(), me }: { t: Dict; locale: Locale; tz: string; days: TimelineDay[]; compact?: boolean; comments?: Counts; previews?: Previews; media?: Media; avatars?: Map<string, string>; /** Connections' types, for the colour behind an initial. */ tints?: Map<string, MainStarId>; /** My name and photo, shown on my own posts. */ me?: { name: string; src?: string; type?: MainStarId | null } }) {
   const tl = t.memories.timeline;
   return (
     <ol className="space-y-5" aria-label={t.memories.title}>
@@ -84,14 +84,14 @@ function Comments({ t, items, total, ownerName = "" }: { t: Dict; items: ReplyPr
   );
 }
 
-function Mine({ t, locale, it, compact, c, p, media, me }: { t: Dict; locale: Locale; it: TimelineItem; compact: boolean; c?: { count: number; unread: number }; p?: ReplyPreview[]; media?: MediaItem[]; me?: { name: string; src?: string } }) {
+function Mine({ t, locale, it, compact, c, p, media, me }: { t: Dict; locale: Locale; it: TimelineItem; compact: boolean; c?: { count: number; unread: number }; p?: ReplyPreview[]; media?: MediaItem[]; me?: { name: string; src?: string; type?: MainStarId | null } }) {
   const m = it.entry;
   const tl = t.memories.timeline;
   if (it.letter) {
     const written = new Intl.DateTimeFormat(locale, { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }).format(new Date(`${it.letter.writtenOn}T00:00:00Z`));
     return (
       <Link href={`/memories/${m.id}`} className="block rounded-2xl border border-violet-200 bg-linear-to-br from-violet-50 via-white to-amber-50 p-3.5 shadow-sm transition hover:border-violet-300">
-        <p className="flex items-center gap-1.5 text-sm font-semibold text-violet-900">{me && <Avatar name={me.name} src={me.src} className="h-6 w-6 text-[10px]" />}{tl.letterArrived}</p>
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-violet-900">{me && <Avatar name={me.name} src={me.src} type={me.type} className="h-6 w-6 text-[10px]" />}{tl.letterArrived}</p>
         <p className="mb-2 text-xs text-violet-800/80">{tl.letterFrom(written, it.letter.days)}</p>
         {m.title && <p className="emoji-color font-medium text-stone-900">{m.title}</p>}
         <p className={`emoji-color whitespace-pre-line text-sm leading-relaxed text-stone-800 ${compact ? "line-clamp-3" : "line-clamp-6"}`}>{m.body}</p>
@@ -101,7 +101,7 @@ function Mine({ t, locale, it, compact, c, p, media, me }: { t: Dict; locale: Lo
   return (
     <Link href={`/memories/${m.id}`} className="block rounded-2xl border border-stone-200 bg-white p-3 transition hover:border-teal-300">
       <div className="mb-1 flex flex-wrap items-center gap-1.5">
-        {me && <Avatar name={me.name} src={me.src} className="h-6 w-6 text-[10px]" />}
+        {me && <Avatar name={me.name} src={me.src} type={me.type} className="h-6 w-6 text-[10px]" />}
         <Stamp t={t} it={it} />
         {m.feeling && <span aria-label={t.memories.feeling.names[m.feeling as keyof Dict["memories"]["feeling"]["names"]]} className="emoji-color text-base leading-none">{FEELING_EMOJI[m.feeling as Feeling]}</span>}
         {m.kind === "letter_to_future" ? (

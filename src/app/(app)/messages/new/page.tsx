@@ -11,6 +11,7 @@ import { sharedEntry } from "@/server/services/comments";
 import { dmContacts, dmConversation, dmInbox, recordUnseenBy } from "@/server/services/dm";
 import { avatarUrls } from "@/server/services/avatars";
 import { getMemory } from "@/server/services/memories";
+import { myTint, typeTints } from "@/server/services/card";
 
 /** Start a conversation (one person) or a group (several), optionally sending a record. */
 export default async function NewMessagePage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
@@ -37,6 +38,7 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
   const askMembers = askConv ? await dmConversation(uid, askConv).then((c) => c.members.filter((m) => !m.left).map((m) => m.id)).catch(() => []) : askTo;
   const unseen = record && askMembers.length ? await recordUnseenBy(uid, recordId!, askMembers).catch(() => []) : [];
   const pics = await avatarUrls(uid, [...contacts.map((c) => c.id), ...recent.flatMap((c) => c.others.map((o) => o.id))]);
+  const tints = await typeTints(uid, [...contacts.map((c) => c.id), ...recent.flatMap((c) => c.others.map((o) => o.id))]);
   return (
     <Page title={record ? tm.shareTitle : tm.newMessage} back={record ? undefined : "/messages"}>
       <Flash t={t} sp={sp} />
@@ -73,7 +75,7 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
                   <input type="hidden" name="conversationId" value={c.id} />
                   <input type="hidden" name="record" value={recordId!} />
                   <button type="submit" className="flex w-full items-center gap-3 rounded-2xl px-2 py-2 text-left transition hover:bg-stone-50 active:scale-[0.99]">
-                    <DmAvatar names={c.others.map((o) => o.name)} srcs={c.others.map((o) => pics.get(o.id))} size="sm" />
+                    <DmAvatar names={c.others.map((o) => o.name)} srcs={c.others.map((o) => pics.get(o.id))} types={c.others.map((o) => tints.get(o.id))} size="sm" />
                     <span className="flex-1 truncate font-medium text-stone-800">{dmTitle(c, t)}</span>
                     <span className="rounded-full bg-teal-700 px-3 py-1 text-xs font-bold text-white">{tm.send}</span>
                   </button>
@@ -94,7 +96,7 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
               {contacts.map((c) => (
                 <li key={c.id}>
                   <label className="flex cursor-pointer items-center gap-3 rounded-2xl px-2 py-2 transition hover:bg-stone-50 has-[:checked]:bg-teal-50">
-                    <DmAvatar names={[c.name]} srcs={[pics.get(c.id)]} size="sm" />
+                    <DmAvatar names={[c.name]} srcs={[pics.get(c.id)]} types={[tints.get(c.id)]} size="sm" />
                     <span className="flex-1 font-medium text-stone-800">{c.name}</span>
                     <input type="checkbox" name="member" value={c.id} className="h-5 w-5 accent-teal-700" />
                   </label>

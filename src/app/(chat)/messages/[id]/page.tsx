@@ -7,6 +7,7 @@ import { uuid } from "@/lib/validation/common";
 import { requireUser } from "@/server/auth/session";
 import { getAccount } from "@/server/services/account";
 import { avatarUrls } from "@/server/services/avatars";
+import { myTint, typeTints } from "@/server/services/card";
 
 /** One conversation. Loads the newest messages; the client keeps it up to date. */
 export default async function ConversationPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ draft?: string; record?: string }> }) {
@@ -90,6 +91,7 @@ export default async function ConversationPage({ params, searchParams }: { param
     left: conv.me.left,
     members: conv.members.map((m) => ({ id: m.id, name: m.name, left: m.left, lastReadAt: m.lastReadAt?.toISOString() ?? null, typing: m.typing })),
     avatars: Object.fromEntries(await avatarUrls(uid, conv.members.map((m) => m.id))),
+    tints: Object.fromEntries(await typeTints(uid, conv.members.map((m) => m.id))),
   };
   // Opened to answer someone's record: only theirs, in our one-to-one conversation with them.
   const shared = sp.record && uuid.safeParse(sp.record).success ? await sharedEntry(uid, sp.record) : null;

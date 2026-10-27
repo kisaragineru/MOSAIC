@@ -14,6 +14,7 @@ import { ConfirmButton } from "@/components/confirm-button";
 import { headers } from "next/headers";
 import { BirthForm } from "@/components/birth-form";
 import { getBirthForm } from "@/server/services/tuvi";
+import { myTint } from "@/server/services/card";
 
 const pill =
   "cursor-pointer rounded-full border border-stone-200 bg-white px-3 py-1 text-stone-700 has-[:checked]:border-teal-600 has-[:checked]:bg-teal-600 has-[:checked]:text-white";
@@ -43,7 +44,7 @@ export default async function MePage({ searchParams }: { searchParams: Promise<R
       <Flash t={t} sp={sp} />
       <section className="flex items-center gap-4 rounded-3xl bg-white/85 p-5 shadow-sm ring-1 ring-white/80">
         <Link href="/me/photo" aria-label={t.avatar.title} className="group relative shrink-0">
-          <Avatar name={acc.profile.displayName} src={avatar} className="h-16 w-16 text-2xl ring-4 ring-white" />
+          <Avatar name={acc.profile.displayName} src={avatar} type={await myTint(uid)} className="h-16 w-16 text-2xl ring-4 ring-white" />
           <span aria-hidden className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-teal-700 text-xs text-white ring-2 ring-white transition group-hover:scale-110">📷</span>
         </Link>
         <div className="min-w-0">

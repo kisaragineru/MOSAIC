@@ -40,7 +40,7 @@ test("ask a connection how they see you; they answer with their name; you see th
 
   // Sora is told on Home and answers every item.
   await sora.goto("/home");
-  await sora.getByRole("link", { name: /ハナさんが「あなたから見たハナさん」を知りたがっています/ }).click();
+  await sora.getByTestId("notice").filter({ hasText: /ハナさんが「あなたから見たハナさん」を知りたがっています/ }).getByRole("link").click();
   await sora.waitForURL(/\/others\//);
   await expect(sora.getByRole("heading", { name: "あなたから見たハナさん" })).toBeVisible();
   for (const label of ["先に計画を立てる", "何があっても落ち着いている"]) await sora.getByText(label, { exact: true }).click();

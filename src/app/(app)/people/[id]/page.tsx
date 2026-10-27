@@ -28,6 +28,7 @@ import { avatarUrls } from "@/server/services/avatars";
 import { normalizeCurrency, suggestGifts } from "@/server/services/gifts";
 import { getPerson, listCategories, nextOccurrence } from "@/server/services/people";
 import { connectionForPerson } from "@/server/services/sharing";
+import { myTint, typeTints } from "@/server/services/card";
 
 const RELS = ["partner", "family", "friend", "colleague", "other"] as const;
 
@@ -113,7 +114,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
         // Their page: what they chose to show you (introduction, manual, shared records, side by side).
         <Link href={`/compare/${connection.id}`} className="block rounded-3xl bg-linear-to-br from-rose-50 via-white to-teal-50 p-4 shadow-sm ring-1 ring-teal-100 transition hover:shadow-md">
           <span className="flex items-center gap-3">
-            <Avatar name={connection.otherName} src={(await avatarUrls(uid, [connection.otherId])).get(connection.otherId ?? "")} className="h-12 w-12 text-lg ring-4 ring-white" />
+            <Avatar name={connection.otherName} src={(await avatarUrls(uid, [connection.otherId])).get(connection.otherId ?? "")} type={(await typeTints(uid, [connection.otherId])).get(connection.otherId ?? "")} className="h-12 w-12 text-lg ring-4 ring-white" />
             <span className="min-w-0 flex-1">
               <span className="block font-semibold text-stone-900">{t.people.theirPage(connection.otherName)}</span>
               <span className="block text-xs text-stone-600">{t.people.theirPageSub}</span>

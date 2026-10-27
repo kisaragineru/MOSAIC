@@ -272,8 +272,7 @@ test("replies under a record: one thread for everyone who can see it", async ({ 
 
   // Hana is told on Home, and the timeline shows the newest replies under the record.
   await hana.goto("/home");
-  await expect(hana.getByText("新しい返信")).toBeVisible();
-  await hana.getByRole("link", { name: /あなたの記録にレンさんが返信/ }).click();
+  await hana.getByTestId("notice-tray").getByRole("link", { name: /あなたの記録にレンさんが返信/ }).click();
   await hana.waitForURL(new RegExp(record));
   await expect(thread(hana)).toContainText("おいしそう！");
   // Hana is connected to both, so she sees both names.
@@ -291,7 +290,7 @@ test("replies under a record: one thread for everyone who can see it", async ({ 
   await expect(renItem.locator("span[aria-hidden]").first()).toHaveText("レ");
   await expect(renItem.locator("img")).toHaveCount(0);
   await hana.goto("/home");
-  await expect(hana.getByText("新しい返信")).toHaveCount(0);
+  await expect(hana.getByTestId("notice-tray").getByText(/返信/)).toHaveCount(0);
   await hana.goto("/memories");
   const lines = hana.getByRole("list", { name: "返信" });
   await expect(lines.getByText("レシピ知りたい")).toBeVisible();

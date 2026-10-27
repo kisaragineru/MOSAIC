@@ -18,6 +18,7 @@ import { TuviChart } from "@/components/tuvi-chart";
 import { TuviThemes } from "@/components/tuvi-themes";
 import { themeLabels } from "@/lib/tuvi/theme-labels";
 import { chartView } from "@/lib/tuvi/chart-view";
+import { myTint } from "@/server/services/card";
 
 const PHONE_SCOPES = ["tuvi", "tuvi_detail", "preferences", "values"] as const;
 type PhoneScope = (typeof PHONE_SCOPES)[number];
@@ -72,7 +73,7 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
           {/* What their page offers them: the same buttons, shown but not pressable here. */}
           <div className="rounded-2xl bg-linear-to-br from-rose-50 via-white to-teal-50 p-3 ring-1 ring-white" data-testid="phone-actions">
             <div className="flex items-center gap-2">
-              <Avatar name={p.displayName} src={photo} className="h-9 w-9 text-sm ring-2 ring-white" />
+              <Avatar name={p.displayName} src={photo} type={await myTint(uid)} className="h-9 w-9 text-sm ring-2 ring-white" />
               <p className="truncate font-bold text-stone-900">{p.displayName}</p>
             </div>
             <div aria-hidden className="mt-2 grid grid-cols-3 gap-1.5">
