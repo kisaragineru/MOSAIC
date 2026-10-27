@@ -326,6 +326,7 @@ export const vi: Dict = {
     intro: "Mỗi ngày một câu hỏi nhỏ. Bạn có thể bỏ qua bất cứ câu nào.",
     skip: "Bỏ qua",
     submit: "Lưu câu trả lời",
+    saving: "Đang lưu…",
     allowCompare: "Cho phép dùng câu trả lời này trong các lần so sánh tôi đồng ý",
     privacyLink: "👁 Ai thấy câu trả lời của bạn",
     privacyShort: "Ai thấy",

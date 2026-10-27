@@ -1,4 +1,5 @@
 import { answerAction, skipAction } from "@/app/actions/discovery";
+import { SubmitButton } from "./submit-button";
 import { AXIS_LABEL, CHAPTER_INFO, chapterOf } from "@/content/axes";
 import { QUESTION_BANK } from "@/content/questions";
 import type { Locale } from "@/lib/i18n/locales";
@@ -98,7 +99,7 @@ export function QuestionForm({ q, t, locale, back, allowSkip = true }: { q: Ques
         </label>
       )}
       <div className="flex gap-2">
-        <Button type="submit">{d.submit}</Button>
+        <SubmitButton pending={d.saving}>{d.submit}</SubmitButton>
         {allowSkip && (
           <Button type="submit" variant="ghost" formAction={skipAction} formNoValidate>
             {d.skip}

@@ -326,6 +326,7 @@ export const ja: Dict = {
     intro: "1日1つの小さな質問です。答えたくないものはスキップできます。",
     skip: "スキップ",
     submit: "回答を保存",
+    saving: "保存しています…",
     allowCompare: "自分が同意した比較で、この回答を使うことを許可する",
     privacyLink: "👁 回答の公開設定（相手からの見え方）",
     privacyShort: "見え方・公開設定",

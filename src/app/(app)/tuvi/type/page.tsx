@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Flash } from "@/components/flash";
 import { redirect } from "next/navigation";
 import { Card, Page } from "@/components/ui";
 import { QuestionForm } from "@/components/question-form";
@@ -88,6 +89,8 @@ export default async function TypeQuizPage({ searchParams }: { searchParams: Pro
   const total = more ? n + 3 : QUIZ_LENGTH;
   return (
     <Page title={q.title} back={next}>
+      {/* Only errors: each answer moving on is the confirmation. */}
+      <Flash t={t} sp={{ e: sp.e }} />
       <p className="text-sm leading-6 text-stone-600">{picked.length >= 2 ? q.leadPicked(picked[0]!.persona, picked[1]!.persona) : q.lead}</p>
       <div className="flex items-center gap-3" aria-label={q.step(n + 1, total)}>
         <div className="h-2 flex-1 overflow-hidden rounded-full bg-violet-100">

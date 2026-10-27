@@ -324,6 +324,7 @@ export const en = {
     intro: "One small question a day. Skip anything you don't want to answer.",
     skip: "Skip",
     submit: "Save answer",
+    saving: "Saving…",
     allowCompare: "Allow this answer in comparisons I approve",
     privacyLink: "👁 Who sees your answers (how others see you)",
     privacyShort: "Visibility",
