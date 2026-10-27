@@ -5,6 +5,7 @@
  * way, so connections, shared manuals and shared records can be tried from one account. The
  * owner can make it write another record, or remove it (which deletes the account entirely).
  */
+import { notifyMessageLater } from "./push";
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -300,7 +301,7 @@ export async function companionMessages(ownerId: string, companionId: string) {
   const last = yours.at(-1);
   if (last && !last.reactions.some((r) => r.userId === cid)) await reactToMessage(cid, last.id, "❤️");
   await markRead(cid, conv);
-  await sendMessage(cid, conv, { kind: "text", body: DM_LINES[msgs.filter((m) => m.senderId === cid).length % DM_LINES.length], replyTo: last?.id ?? null });
+  await notifyMessageLater(cid, await sendMessage(cid, conv, { kind: "text", body: DM_LINES[msgs.filter((m) => m.senderId === cid).length % DM_LINES.length], replyTo: last?.id ?? null }));
 }
 
 const GROUP_LINES = [
@@ -328,7 +329,7 @@ export async function companionsReplyInGroup(ownerId: string, conversationId: st
     if (n === 0 && yours && !yours.reactions.some((r) => r.userId === c.id)) await reactToMessage(c.id, yours.id, "❤️");
     await markRead(c.id, conv.id);
     const lines = GROUP_LINES[c.i % GROUP_LINES.length]!;
-    await sendMessage(c.id, conv.id, { kind: "text", body: lines[msgs.filter((m) => m.senderId === c.id).length % lines.length]!, replyTo: n === 0 ? (yours?.id ?? null) : null });
+    await notifyMessageLater(c.id, await sendMessage(c.id, conv.id, { kind: "text", body: lines[msgs.filter((m) => m.senderId === c.id).length % lines.length]!, replyTo: n === 0 ? (yours?.id ?? null) : null }));
     n++;
   }
   return n;
@@ -344,7 +345,7 @@ export async function companionGroupMessages(ownerId: string, companionId: strin
     const msgs = await dmMessages(cid, g.id, { limit: 40 });
     const last = msgs.filter((m) => m.kind !== "system" && !m.deleted).at(-1);
     await markRead(cid, g.id);
-    await sendMessage(cid, g.id, { kind: "text", body: lines[msgs.filter((m) => m.senderId === cid).length % lines.length]!, replyTo: last?.senderId === ownerId ? last.id : null });
+    await notifyMessageLater(cid, await sendMessage(cid, g.id, { kind: "text", body: lines[msgs.filter((m) => m.senderId === cid).length % lines.length]!, replyTo: last?.senderId === ownerId ? last.id : null }));
   }
   return groups.length;
 }

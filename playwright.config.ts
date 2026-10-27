@@ -1,9 +1,20 @@
+import { generateKeyPairSync } from "node:crypto";
 import { defineConfig, devices } from "@playwright/test";
 
 const PORT = Number(process.env.E2E_PORT ?? 3100);
 const E2E_DB = process.env.E2E_DATABASE_URL ?? "postgres://mosaic_app:app_dev_pw@localhost:5432/mosaic_e2e";
 // Use a pre-installed Chromium when the bundled one is unavailable (CI images, sandboxes).
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH ?? (process.env.PLAYWRIGHT_BROWSERS_PATH ? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" : undefined);
+
+// Push notification keys for this run only (made fresh each time; nothing is sent to a real push service).
+const vapid = (() => {
+  const { publicKey, privateKey } = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
+  const pub = publicKey.export({ format: "jwk" });
+  return {
+    pub: Buffer.concat([Buffer.from([4]), Buffer.from(pub.x!, "base64url"), Buffer.from(pub.y!, "base64url")]).toString("base64url"),
+    priv: privateKey.export({ format: "jwk" }).d!,
+  };
+})();
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -48,6 +59,9 @@ export default defineConfig({
       TRUST_PROXY: "1",
       CLIENT_IP_HEADER: "x-e2e-client-ip",
       DEV_TOOLS: "on",
+      VAPID_PUBLIC_KEY: vapid.pub,
+      VAPID_PRIVATE_KEY: vapid.priv,
+      VAPID_SUBJECT: "mailto:e2e@example.test",
       // Sign-in with Google / Facebook goes to the stand-in provider above (never set outside tests).
       OAUTH_TEST_BASE: "http://127.0.0.1:4599",
       GOOGLE_CLIENT_ID: "test-google",

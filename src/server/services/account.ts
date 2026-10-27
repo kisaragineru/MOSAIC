@@ -268,7 +268,7 @@ export async function updateProfile(userId: string, input: unknown) {
 export async function getNotificationPrefs(userId: string) {
   return withUser(userId, async (tx) => {
     const [n] = await tx.select().from(notificationPreferences).where(eq(notificationPreferences.userId, userId));
-    return n ?? { userId, dailyQuestion: false, dateReminders: true, channel: "in_app", updatedAt: new Date() };
+    return n ?? { userId, dailyQuestion: false, dateReminders: true, channel: "in_app", pushPreview: false, updatedAt: new Date() };
   });
 }
 

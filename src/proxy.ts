@@ -27,8 +27,15 @@ function gate(request: NextRequest): NextResponse | null {
   return new NextResponse("Authentication required", { status: 401, headers: { "WWW-Authenticate": 'Basic realm="MOSAIC", charset="UTF-8"', "Cache-Control": "no-store" } });
 }
 
+/**
+ * Fetched by the browser itself, often without the password it remembers (the app manifest, its
+ * icons, the service worker that shows notifications): open, as they say nothing about anyone.
+ */
+const OPEN = new Set(["/manifest.webmanifest", "/sw.js", "/icon.png", "/apple-icon.png"]);
+
 /** Per-request CSP nonce + security headers (see docs/SECURITY.md). */
 export function proxy(request: NextRequest) {
+  if (OPEN.has(request.nextUrl.pathname)) return NextResponse.next();
   const denied = gate(request);
   if (denied) return denied;
   // Prefetches pass through the gate above, then go on as they always did (no nonce of their own).
@@ -45,6 +52,9 @@ export function proxy(request: NextRequest) {
     "media-src 'self' blob:",
     "font-src 'self'",
     "connect-src 'self'",
+    // The service worker for push notifications (/sw.js).
+    "worker-src 'self'",
+    "manifest-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

@@ -794,6 +794,8 @@ export const notificationPreferences = pgTable("notification_preferences", {
   dateReminders: boolean("date_reminders").notNull().default(true),
   /** in_app only for now; email/push need external providers (see docs). */
   channel: text("channel").notNull().default("in_app"),
+  /** Push notifications for messages show what was written (off: only who wrote). */
+  pushPreview: boolean("push_preview").notNull().default(false),
   updatedAt: updatedAt(),
 });
 
@@ -1527,4 +1529,23 @@ export const dmGroupPhotos = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [check("dm_group_photos_mime_ck", sql`${t.mime} in ('image/jpeg','image/png','image/webp')`), check("dm_group_photos_size_ck", sql`${t.size} between 1 and 1000000`)],
+);
+
+/** Where to send push notifications (Web Push): one row per browser that turned them on. */
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: userRef(),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("push_subscriptions_endpoint_uq").on(t.endpoint),
+    index("push_subscriptions_user_idx").on(t.userId),
+    check("push_subscriptions_endpoint_ck", sql`${t.endpoint} like 'https://%' and char_length(${t.endpoint}) <= 1000`),
+    check("push_subscriptions_keys_ck", sql`char_length(${t.p256dh}) between 1 and 200 and char_length(${t.auth}) between 1 and 100`),
+  ],
 );

@@ -26,13 +26,16 @@ import {
 import { getLocale } from "@/lib/i18n/server";
 import { translateMessage } from "@/server/services/translate";
 import { removeGroupPhoto, setGroupPhoto } from "@/server/services/group-photo";
+import { notifyMessageLater } from "@/server/services/push";
 import { attempt, safeNext, str, withParam } from "./util";
 
 // ── Called from the chat screen (return a result, no redirect) ──────────
 
 export async function dmSend(conversationId: string, input: { kind: "text" | "image" | "record"; body?: string; replyTo?: string | null; recordId?: string | null; attachmentIds?: string[] }) {
   const uid = await requireUser();
-  return attempt("dm.send", () => sendMessage(uid, conversationId, input));
+  const r = await attempt("dm.send", () => sendMessage(uid, conversationId, input));
+  if (r.ok) await notifyMessageLater(uid, r.value);
+  return r;
 }
 
 export async function dmEdit(messageId: string, body: string) {
@@ -89,6 +92,7 @@ export async function dmOpenForConnectionAction(form: FormData) {
 async function sendRecord(uid: string, conv: string, record: string, show: boolean) {
   const msg = await sendMessage(uid, conv, { kind: "record", recordId: record });
   if (show) await showRecordInMessage(uid, msg);
+  await notifyMessageLater(uid, msg);
 }
 
 /** New message: one person opens your conversation with them, several make a group. A record to share can come along. */

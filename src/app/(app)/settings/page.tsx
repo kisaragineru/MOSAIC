@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { pushPreviewAction } from "@/app/actions/push";
 import { aiOptInAction, changePasswordAction, deleteAccountAction, notificationsAction, updateProfileAction } from "@/app/actions/settings";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
@@ -12,6 +13,8 @@ import { requireUser } from "@/server/auth/session";
 import { aiConfigured } from "@/server/ai/claude";
 import { getAccount, getNotificationPrefs } from "@/server/services/account";
 import { devToolsFor, isAdmin } from "@/server/services/admin";
+import { PushToggle } from "@/components/push-toggle";
+import { pushDevices, pushPublicKey } from "@/server/services/push";
 
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
@@ -22,6 +25,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const np = await getNotificationPrefs(uid);
   const dev = await devToolsFor(uid);
   const admin = await isAdmin(uid);
+  const pushKey = pushPublicKey();
+  const tp = t.settings.push;
   return (
     <Page title={t.settings.title}>
       <Flash t={t} sp={sp} />
@@ -46,6 +51,21 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <Button type="submit" variant="secondary">{t.common.save}</Button>
         </form>
       </Card>
+      {/* Only once the keys are set in the hosting settings (see /admin). */}
+      {pushKey && (
+        <section id="push" className="scroll-mt-20">
+          <Card title={tp.title}>
+            <p className="mb-3 text-xs leading-5 text-stone-500">{tp.help}</p>
+            <PushToggle publicKey={pushKey} text={{ on: tp.on, off: tp.off, turnOn: tp.turnOn, turnOff: tp.turnOff, working: tp.working, unsupported: tp.unsupported, denied: tp.denied, iosTitle: tp.iosTitle, iosSteps: tp.iosSteps, failed: tp.failed }} />
+            <form action={pushPreviewAction} className="mt-4 space-y-2 border-t border-stone-100 pt-4">
+              <Checkbox name="preview" defaultChecked={np.pushPreview} label={tp.preview} />
+              <p className="text-xs leading-5 text-stone-500">{tp.previewHelp}</p>
+              <Button type="submit" variant="secondary">{t.common.save}</Button>
+            </form>
+            <p className="mt-3 text-xs text-stone-400">{tp.devices(await pushDevices(uid))}</p>
+          </Card>
+        </section>
+      )}
       <Card title={t.settings.privacy}>
         <Link href="/me/privacy" className="mb-3 flex items-center justify-between rounded-2xl bg-teal-50/70 px-4 py-3 text-sm font-semibold text-teal-900 hover:bg-teal-50">
           <span>🛡 {t.privacyHub.link}</span><span aria-hidden>→</span>

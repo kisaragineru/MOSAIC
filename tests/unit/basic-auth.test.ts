@@ -31,4 +31,13 @@ describe("the site's shared ID and password (while trying it out)", () => {
     expect(proxy(req({ purpose: "prefetch" })).status).toBe(401);
     expect(proxy(req({ authorization: basic("tester", "pa:ss word") })).status).toBe(200);
   });
+
+  it("leaves open only what the browser fetches by itself (app manifest, icons, the notification worker)", () => {
+    process.env.BASIC_AUTH_USER = "tester";
+    process.env.BASIC_AUTH_PASSWORD = "secret";
+    for (const p of ["/manifest.webmanifest", "/sw.js", "/icon.png", "/apple-icon.png"]) expect(proxy(new NextRequest(`http://localhost${p}`)).status).toBe(200);
+    for (const p of ["/sw.js/x", "/home", "/api/dm/x/icon", "/icon.png.txt"]) expect(proxy(new NextRequest(`http://localhost${p}`)).status).toBe(401);
+    const csp = proxy(req({ authorization: basic("tester", "secret") })).headers.get("content-security-policy")!;
+    expect(csp).toContain("worker-src 'self'");
+  });
 });

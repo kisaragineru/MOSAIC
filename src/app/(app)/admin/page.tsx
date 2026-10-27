@@ -6,6 +6,9 @@ import { requireUser } from "@/server/auth/session";
 import { adminStats, devToolsEnabled, devToolsFor } from "@/server/services/admin";
 import { Flash } from "@/components/flash";
 import { DevTools } from "./dev-tools";
+import { VapidKeygen } from "@/components/vapid-keygen";
+import { pushConfigured } from "@/server/services/push";
+import { getAccount } from "@/server/services/account";
 
 /** For the people running MOSAIC: how it's being used, in numbers only (no one's content). */
 export default async function AdminPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
@@ -48,6 +51,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           </dl>
         </Card>
       ))}
+      {s && (
+        <Card title={`🔔 ${a.pushTitle}`}>
+          <p className="mb-3 text-sm leading-6 text-stone-700" data-testid="push-status">{pushConfigured() ? `✅ ${a.pushOn}` : a.pushOff}</p>
+          <VapidKeygen text={{ make: a.vapidMake, again: a.vapidAgain, publicLabel: a.vapidPublic, privateLabel: a.vapidPrivate, subjectLabel: a.vapidSubject, subjectValue: `mailto:${(await getAccount(uid)).email}`, copy: a.copy, copied: a.copied, warning: a.vapidWarning, failed: a.vapidFailed }} />
+        </Card>
+      )}
       {s && (
         <Card title={a.access}>
           <p className="text-sm leading-6 text-stone-700">{devToolsEnabled() ? a.devOn : a.devOff}</p>
