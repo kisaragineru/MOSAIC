@@ -36,7 +36,7 @@ export interface FilmText {
   connectTitle: string;
   connectBody: string;
   chat: string[];
-  /** The two people's initials over the chat: the reader, then Mio (names common in the language). */
+  /** The two people's initials over the chat: the reader, then the story's writer (names common in the language). */
   chatInitials: string[];
   storyEyebrow: string;
   storyTitle: string;

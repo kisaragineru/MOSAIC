@@ -2,6 +2,16 @@ import type { Dict } from "./en";
 
 /** Vietnamese UI strings. */
 export const vi: Dict = {
+  form: {
+    required: "Vui lòng điền vào mục này.",
+    email: "Vui lòng nhập địa chỉ email.",
+    url: "Vui lòng nhập URL.",
+    tooShort: "Vui lòng nhập dài hơn một chút.",
+    tooLong: "Nội dung quá dài.",
+    pattern: "Vui lòng nhập đúng định dạng.",
+    range: "Giá trị nằm ngoài phạm vi cho phép.",
+    bad: "Vui lòng kiểm tra lại nội dung đã nhập.",
+  },
   common: {
     colon: ": ",
     quoteOpen: "“",
@@ -947,6 +957,7 @@ export const vi: Dict = {
   },
   settings: {
     dev: {
+      faces: "🎭 Đặt vị trí khuôn mặt trong hình minh họa",
       askOwner: "Cho họ hỏi bạn \"bạn thấy tôi thế nào?\"",
       dm: "Trả lời tin nhắn của bạn",
       groupDm: "Trả lời trong nhóm",
@@ -1615,7 +1626,7 @@ export const vi: Dict = {
     selfEyebrow: "Những điều dần hiện ra",
     selfTitle: "thành bản hướng dẫn về bạn",
     selfBody: "Từ câu trả lời của bạn, MOSAIC viết bằng lời nhẹ nhàng về tính cách bạn và cách bạn ở bên mọi người.",
-    selfCardTitle: "Bản hướng dẫn của Mio",
+    selfCardTitle: "Bản hướng dẫn của Mai",
     selfCard: ["Khi ở cùng mọi người: nhóm nhỏ, trò chuyện chậm rãi", "Khi quyết định: nghĩ kỹ rồi mới làm", "Điều quý trọng: giữ lời hứa"] as string[],
     recordsEyebrow: "Không cần viết nhật ký",
     recordsTitle: "chỉ một dòng là đủ",
@@ -1629,8 +1640,8 @@ export const vi: Dict = {
     storyEyebrow: "Khi ghi chép dày thêm",
     storyTitle: "các mảnh ghép thành câu chuyện của bạn",
     sampleLabel: "Ví dụ",
-    sampleName: "Câu chuyện của Mio",
-    sample: ["Mio sinh ra ở một thị trấn hay mưa.", "Hồi nhỏ, cô thích nhất kệ sách trong cùng của thư viện.", "Giờ đây, mọi người nói cô giỏi lắng nghe đến cuối.", "Một ngày nào đó, cô định đi ngắm biển phương bắc mà cô chưa từng thấy."] as string[],
+    sampleName: "Câu chuyện của Mai",
+    sample: ["Mai sinh ra ở một thị trấn hay mưa.", "Hồi nhỏ, cô thích nhất kệ sách trong cùng của thư viện.", "Giờ đây, mọi người nói cô giỏi lắng nghe đến cuối.", "Một ngày nào đó, cô định đi ngắm biển phương bắc mà cô chưa từng thấy."] as string[],
     storyClose: "Những gì đã qua, và những gì phía trước. Câu chuyện của bạn vẫn đang được viết.",
     handEyebrow: "Và",
     handTitle: "khi bạn muốn ai đó hiểu mình",
@@ -1641,7 +1652,7 @@ export const vi: Dict = {
     start: "Bắt đầu (khoảng 3 phút)",
     login: "Đã có tài khoản? Đăng nhập",
     scroll: "Cuộn xuống",
-    typesMio: "Mio là kiểu “{persona}”.",
+    typesMio: "Mai là kiểu “{persona}”.",
     pieceQ: "Ngày nghỉ, bạn muốn làm gì?",
     pieceA: ["Một mình, thong thả", "Đi chơi cùng ai đó"] as string[],
     selfQuote: "“Hóa ra mình là người như thế.”",

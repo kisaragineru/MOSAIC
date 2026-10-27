@@ -2,6 +2,16 @@ import type { Dict } from "./en";
 
 /** Japanese UI strings. Tử Vi terms keep their Vietnamese names, with kanji where helpful. */
 export const ja: Dict = {
+  form: {
+    required: "この項目を入力してください。",
+    email: "メールアドレスの形で入力してください。",
+    url: "URLの形で入力してください。",
+    tooShort: "もう少し長く入力してください。",
+    tooLong: "文字数が多すぎます。",
+    pattern: "入力の形が正しくありません。",
+    range: "入力できる範囲を超えています。",
+    bad: "入力の形が正しくありません。",
+  },
   common: {
     colon: "：",
     quoteOpen: "「",
@@ -947,6 +957,7 @@ export const ja: Dict = {
   },
   settings: {
     dev: {
+      faces: "🎭 タイプの顔の切り抜きを設定する",
       askOwner: "あなたに「どう見える？」を聞かせる",
       dm: "メッセージに返信する",
       groupDm: "グループで返信する",

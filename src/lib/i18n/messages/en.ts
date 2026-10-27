@@ -1,5 +1,15 @@
 /** English UI strings. `vi.ts` must have exactly the same shape (enforced by the type). */
 export const en = {
+  form: {
+    required: "Please fill in this field.",
+    email: "Please enter an email address.",
+    url: "Please enter a URL.",
+    tooShort: "Please enter a little more.",
+    tooLong: "That's too long.",
+    pattern: "Please match the format asked for.",
+    range: "That's outside the range allowed.",
+    bad: "Please check what you entered.",
+  },
   common: {
     colon: ": ",
     quoteOpen: "“",
@@ -945,6 +955,7 @@ export const en = {
   },
   settings: {
     dev: {
+      faces: "🎭 Set the faces in the type illustrations",
       askOwner: "Make them ask you \"how do you see me?\"",
       dm: "Reply to your messages",
       groupDm: "Reply in groups",
