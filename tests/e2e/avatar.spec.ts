@@ -61,8 +61,8 @@ test("profile photo: choose, place by dragging and zooming, save, shown to conne
     await p.goto(compare);
     await p.getByRole("checkbox", { name: /^好み/ }).check();
     await p.locator('input[name="agree"]').check();
-    await p.getByRole("button", { name: "同意する" }).click();
-    await expect(p.getByRole("button", { name: "同意する" })).toHaveCount(0);
+    await p.getByRole("button", { name: "つながる", exact: true }).click();
+    await expect(p.getByRole("button", { name: "つながる", exact: true })).toHaveCount(0);
   }
   expect((await sora.request.get(src)).status()).toBe(200);
   await sora.goto("/messages/new");

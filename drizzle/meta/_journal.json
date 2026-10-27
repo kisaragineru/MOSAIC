@@ -358,6 +358,13 @@
       "when": 1793061381445,
       "tag": "0050_dm_record_shown_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1793067487138,
+      "tag": "0051_connect_without_scopes",
+      "breakpoints": true
     }
   ]
 }

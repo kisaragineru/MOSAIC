@@ -173,7 +173,8 @@ export async function openComparison(userId: string, token: unknown): Promise<st
 }
 
 const consentSchema = z.object({
-  scopes: z.array(z.enum(COMPARISON_SCOPES)).min(1).max(COMPARISON_SCOPES.length),
+  // Nothing chosen is fine: you are connected, and each of you can choose what to show later.
+  scopes: z.array(z.enum(COMPARISON_SCOPES)).max(COMPARISON_SCOPES.length),
   agree: z.literal(true),
 });
 

@@ -27,7 +27,7 @@ async function agree(page: import("@playwright/test").Page) {
   await page.getByRole("checkbox", { name: /^Tử Vi —/ }).check();
   await page.getByRole("checkbox", { name: /^Tử Vi 命盤の詳細/ }).check();
   await page.locator('input[name="agree"]').check();
-  await page.getByRole("button", { name: "同意する" }).click();
+  await page.getByRole("button", { name: "つながる", exact: true }).click();
 }
 
 test("full charts shared by both: partner chart, readings by relationship, no birth date or hour", async ({ browser }) => {

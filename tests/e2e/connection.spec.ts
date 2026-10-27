@@ -51,7 +51,7 @@ test("QR connection: preview of what others see, who is waiting, results first",
   await b.waitForURL(/\/compare\//);
   await b.getByRole("checkbox", { name: /^好み/ }).check();
   await b.locator('input[name="agree"]').check();
-  await b.getByRole("button", { name: "同意する" }).click();
+  await b.getByRole("button", { name: "つながる", exact: true }).click();
   // Before ハナ agrees, ソラ does not see her bio.
   await expect(b.getByText("お茶と散歩が好きです。")).toHaveCount(0);
   await b.goto("/share");
@@ -65,7 +65,7 @@ test("QR connection: preview of what others see, who is waiting, results first",
   await a.getByRole("link", { name: /^ソラさん/ }).click();
   await a.getByRole("checkbox", { name: /^好み/ }).check();
   await a.locator('input[name="agree"]').check();
-  await a.getByRole("button", { name: "同意する" }).click();
+  await a.getByRole("button", { name: "つながる", exact: true }).click();
 
   // Once both agree the results come first; what is shared stays in plain view below.
   await expect(a.getByTestId("pref-items").getByText("お茶", { exact: true })).toHaveCount(2);
@@ -85,7 +85,7 @@ test("QR connection: preview of what others see, who is waiting, results first",
   await b.goBack();
   await expect(a.getByRole("heading", { name: "🔐 共有する内容" })).toBeVisible();
   await expect(a.getByTestId("shared-now").getByText("好み", { exact: true })).toBeVisible();
-  await expect(a.getByRole("button", { name: "同意内容を更新" })).toBeVisible();
+  await expect(a.getByRole("button", { name: "見せるものを更新" })).toBeVisible();
   await a.goto("/home");
   await expect(a.getByText(/ソラさんがあなたのQRからつながりました/)).toHaveCount(0);
 

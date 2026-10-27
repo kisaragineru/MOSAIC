@@ -196,8 +196,8 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   await expect(pb.getByText("The two of you, side by side")).toHaveCount(0);
   await pb.getByLabel(/Tử Vi —/).check();
   await pb.getByLabel(/Preferences —/).check();
-  await pb.getByLabel(/I understand and consent/).check();
-  await pb.getByRole("button", { name: "Give consent" }).click();
+  await pb.getByLabel(/I understand, and agree to connect/).check();
+  await pb.getByRole("button", { name: "Connect", exact: true }).click();
   await expect(pb.getByText(/You consented to: Tử Vi, Preferences/)).toBeVisible();
   await expect(pb.getByText("The two of you, side by side")).toHaveCount(0);
 
@@ -207,8 +207,8 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   await expect(pa.getByText("The other person has consented.")).toBeVisible();
   await pa.getByLabel(/Tử Vi —/).check();
   await pa.getByLabel(/Preferences —/).check();
-  await pa.getByLabel(/I understand and consent/).check();
-  await pa.getByRole("button", { name: "Give consent" }).click();
+  await pa.getByLabel(/I understand, and agree to connect/).check();
+  await pa.getByRole("button", { name: "Connect", exact: true }).click();
   await expect(pa.getByRole("heading", { name: "The two of you, side by side" })).toBeVisible();
   const items = pa.getByTestId("pref-items");
   await expect(items.getByText("Your go-to drink?")).toBeVisible();

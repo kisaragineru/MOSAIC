@@ -202,4 +202,20 @@ describe("consented comparison", () => {
     const v = await getComparison(a.userId, sid, { recompute: true });
     expect(v.result!.preferences!.items.map((i) => i.questionId)).not.toContain("f.drink");
   });
+
+  it("connects with nothing chosen to show: connected, nothing compared, and each can choose later", async () => {
+    const a = await makeUser("A");
+    const b = await makeUser("B");
+    const share = await createShare(a.userId);
+    const sid = await openComparison(b.userId, share.token);
+    expect(await giveConsent(b.userId, sid, { scopes: [], agree: true })).toBe("pending");
+    expect(await giveConsent(a.userId, sid, { scopes: [], agree: true })).toBe("active");
+    const v = await getComparison(a.userId, sid, { recompute: true });
+    expect(v.status).toBe("active");
+    expect(v.result!.agreedScopes).toEqual([]);
+    expect(v.result!.tuvi).toBeNull();
+    // Agreeing is still required, and only known areas can be chosen.
+    await expect(giveConsent(a.userId, sid, { scopes: [], agree: false })).rejects.toThrow();
+    await expect(giveConsent(a.userId, sid, { scopes: ["diary"], agree: true })).rejects.toThrow();
+  });
 });
