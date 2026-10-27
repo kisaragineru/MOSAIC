@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { IntroFilm } from "@/components/intro-film";
 import { finishOnboardingAction } from "@/app/actions/onboarding";
 import { updateProfileAction } from "@/app/actions/settings";
 import { BrandMark } from "@/components/brand";
@@ -70,22 +71,9 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
           <div className="text-center">
             <BrandMark className="mx-auto h-16 w-16" />
             <h1 className="mt-4 text-2xl font-bold text-stone-900">{w.hello(acc.profile.displayName)}</h1>
-            <p className="mt-2 leading-7 text-stone-600">{w.lead}</p>
           </div>
-          <ol className="grid gap-3 sm:grid-cols-2">
-            {w.cards.map(([icon, title, body], i) => (
-              <li key={title} className="rounded-3xl bg-white/85 p-4 shadow-sm ring-1 ring-white/80">
-                <p className="flex items-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-teal-700 text-xs font-bold text-white">{i + 1}</span>
-                  <span className="text-xl" aria-hidden>{icon}</span>
-                  <span className="font-semibold text-stone-900">{title}</span>
-                </p>
-                <p className="mt-1 text-sm leading-6 text-stone-600">{body}</p>
-              </li>
-            ))}
-          </ol>
-          <p className="text-center text-xs text-stone-500">{w.privacyLine}</p>
-          <Link href={st.hasChart ? "/welcome?step=3" : "/welcome?step=2"} className="block rounded-full bg-teal-700 py-3 text-center font-semibold text-white shadow-sm hover:bg-teal-800">{w.start}</Link>
+          {/* MOSAIC as a short film; its last scene leads to the next step. */}
+          <IntroFilm tx={t.film} start={st.hasChart ? "/welcome?step=3" : "/welcome?step=2"} embedded />
         </section>
       )}
 

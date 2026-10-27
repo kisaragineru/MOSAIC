@@ -279,3 +279,9 @@ input {
   0%, 100% { opacity: 0.15; }
   50% { opacity: 0.8; }
 }
+
+/* The intro film: the type cards pass by slowly. */
+@keyframes filmReel {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}

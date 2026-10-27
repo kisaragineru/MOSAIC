@@ -15,9 +15,11 @@ test("a new account is guided: the chart (not skippable) and its tour, three que
   await page.getByRole("button", { name: "アカウントを作成" }).click();
   await page.waitForURL(/\/welcome$/);
   await expect(page.getByRole("heading", { name: "ようこそ、リンさん" })).toBeVisible();
-  // What MOSAIC is for: know yourself, share it, know them, grow closer.
-  for (const x of ["自分を知る", "伝える", "相手を知る", "仲良くなる"]) await expect(page.getByText(x, { exact: true })).toBeVisible();
-  await expect(page.getByText(/見せるのは、選んだものだけ/)).toBeVisible();
+  // What MOSAIC is, as a short film: a type from a birth date, pieces from answers, a story, handing it over.
+  const film = page.getByTestId("intro-film");
+  for (const x of ["あなたは、どのタイプ？", "あなたのかけらが、増えていく", "かけらは、あなたの物語になる", "誰かに、知ってほしくなったら"]) await expect(film.getByRole("heading", { name: x })).toBeAttached();
+  await expect(film.getByText("例", { exact: true })).toBeAttached(); // the sample story says it's an example
+  await expect(film.getByText(/見せるのは、あなたが選んだ人だけ/)).toBeAttached();
   // The guide can be ended at any step.
   await expect(page.getByRole("button", { name: "ガイドを終了" })).toBeVisible();
   await page.getByRole("link", { name: /はじめる/ }).click();
@@ -210,4 +212,14 @@ test("development: try sign-up and the guide with a throwaway account, then go b
   await page.goto("/home");
   await expect(page.getByRole("heading", { level: 1, name: "こんにちは、ねるさん" })).toBeVisible();
   await ctx.close();
+});
+
+test("before signing up, the top page tells MOSAIC as a short film and leads to sign-up or log-in", async ({ browser }) => {
+  const page = await (await browser.newContext({ locale: "ja-JP", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9" } })).newPage();
+  await page.goto("/");
+  const film = page.getByTestId("intro-film");
+  await expect(film.getByText("もしかしたら、自分かもしれない。")).toBeVisible();
+  await expect(film.getByRole("link", { name: "はじめる（約3分）" })).toHaveAttribute("href", "/register");
+  await film.getByRole("link", { name: /ログイン/ }).click();
+  await page.waitForURL(/\/login/);
 });
