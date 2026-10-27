@@ -46,3 +46,17 @@ describe("the site's shared ID and password (while trying it out)", () => {
     expect(csp).toContain("worker-src 'self'");
   });
 });
+
+describe("scanners' requests", () => {
+  it("are turned away at once (404), without the password and without rendering", async () => {
+    const { isProbe } = await import("@/proxy");
+    process.env.BASIC_AUTH_USER = "tester";
+    process.env.BASIC_AUTH_PASSWORD = "secret";
+    for (const p of ["/.env", "/.git/config", "/.DS_Store", "/wp-login.php", "/index.php", "/phpmyadmin/", "/actuator/env", "/ecp/Current/x", "/backup.sql", "/cgi-bin/x", "/config.bak"]) {
+      expect(isProbe(p)).toBe(true);
+      expect(proxy(new NextRequest(`http://localhost${p}`)).status).toBe(404);
+    }
+    // MOSAIC's own pages and files are not caught.
+    for (const p of ["/", "/home", "/w/abc_DEF-123", "/s", "/privacy", "/api/dm/x/icon", "/sw.js", "/manifest.webmanifest", "/tuvi-types/people/x-m.webp", "/.well-known/security.txt", "/me/privacy/records", "/admin/users"]) expect(isProbe(p)).toBe(false);
+  });
+});

@@ -106,3 +106,15 @@ keys, anonymous access, role privilege escalation, and identity leakage across p
 ## Data at rest
 Rely on the database provider's disk encryption; encrypt backups with GPG (see DEPLOYMENT.md).
 Application-level field encryption is not implemented.
+
+## Scanners
+Requests for what scanners look for on any site (dotfiles such as `/.env` or `/.git/config`,
+`.php` and other server scripts, other software's admin pages) are answered `404` in `proxy.ts`
+before anything renders or the password gate runs. MOSAIC publishes only its build output, so none
+of these exist; turning them away early just keeps them from costing server time.
+
+## Before opening the site (removing the shared password)
+- `DEV_TOOLS` off (unset), or at least `ADMIN_EMAILS` set so only admins have the tools.
+- Decide on `REGISTRATION_CODE` (invite-only sign-up) and set `CONTACT_EMAIL` for the privacy policy.
+- `APP_ORIGIN` is the public address; Google sign-in's redirect URI matches it.
+- Remove `BASIC_AUTH_USER` / `BASIC_AUTH_PASSWORD`, redeploy, and check the access log for errors.

@@ -34,8 +34,20 @@ function gate(request: NextRequest): NextResponse | null {
  */
 const OPEN = new Set(["/manifest.webmanifest", "/sw.js", "/icon.png", "/apple-icon.png", "/privacy"]);
 
+/**
+ * What scanners look for on any site (secrets, other software's admin pages): MOSAIC has none of
+ * it, so it is turned away at once, before anything renders and before the password gate.
+ */
+const PROBE = [
+  /\/\.(?!well-known\/)/, // dotfiles and folders: /.env, /.git/config, /.DS_Store, /.aws/…
+  /\.(php\d?|aspx?|jsp|cgi|env|sql|bak|old|ini|sh|log)$/i,
+  /^\/(wp-|wordpress|phpmyadmin|pma|cgi-bin|actuator|vendor\/|ecp\/|owa\/|autodiscover|server-status|xmlrpc|boaform|hnap1)/i,
+];
+export const isProbe = (path: string) => PROBE.some((r) => r.test(path));
+
 /** Per-request CSP nonce + security headers (see docs/SECURITY.md). */
 export function proxy(request: NextRequest) {
+  if (isProbe(request.nextUrl.pathname)) return new NextResponse("Not found", { status: 404, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
   const open = OPEN.has(request.nextUrl.pathname);
   // Static files: as they are. The policy page goes on below, with its security headers.
   if (open && request.nextUrl.pathname !== "/privacy") return NextResponse.next();
