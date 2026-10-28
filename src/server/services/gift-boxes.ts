@@ -1,6 +1,6 @@
 /**
- * Gift boxes: parents and grandparents write for a child — growth records, letters, and how they
- * see the child — and the child receives it all on a date the box's owner sets, either into
+ * Gift boxes: parents and grandparents write for a child — growth records and letters (views
+ * written before 2026-10-28 are kept in the book) — and the child receives it all on a date the box's owner sets, either into
  * their own MOSAIC account (with a one-time code) or as a printed book. Every read and write goes
  * through the SECURITY DEFINER functions of migration 0011, which hold the rules: who may write,
  * who sees which letters, when the box can be handed over, and that it closes for good after.

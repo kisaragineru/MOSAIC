@@ -3,13 +3,12 @@ import { dateText } from "@/lib/i18n/date-text";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
-  deleteGiftEntryAction, deliverAsBookAction, giftEntryAction, giftViewAction, inviteCodeAction, receiveCodeAction, removeGiftWriterAction, updateGiftBoxAction,
+  deleteGiftEntryAction, deliverAsBookAction, giftEntryAction, inviteCodeAction, receiveCodeAction, removeGiftWriterAction, updateGiftBoxAction,
 } from "@/app/actions/gift-boxes";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
 import { OneTimeCode } from "@/components/one-time-code";
 import { Button, Card, Field, Input, Page, SegmentedTabs, Select, Textarea } from "@/components/ui";
-import { AXES, AXIS_CHAPTER, AXIS_CHAPTERS, CHAPTER_INFO, PEER_POLES } from "@/content/axes";
 import { ageAt, daysUntil, todayIso } from "@/lib/gift-dates";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
@@ -20,19 +19,14 @@ import { MediaGrid } from "@/components/media-grid";
 import { MediaPicker } from "@/components/media-picker";
 import { mediaPickerText } from "@/components/memory-form";
 
-const pill =
-  "flex min-h-10 cursor-pointer items-center justify-center rounded-2xl border border-stone-200 bg-white/90 px-2 py-1.5 text-center text-xs leading-snug text-stone-700 transition-colors hover:border-teal-300 has-[:checked]:border-teal-600 has-[:checked]:bg-teal-600 has-[:checked]:font-semibold has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-600/40";
-const pillNeutral =
-  "flex min-h-10 cursor-pointer items-center justify-center rounded-2xl border border-stone-200 bg-white/90 px-2 py-1.5 text-center text-[11px] leading-snug text-stone-500 transition-colors has-[:checked]:border-stone-500 has-[:checked]:bg-stone-500 has-[:checked]:text-white";
-
-const TABS = ["growth", "letters", "view", "manage"] as const;
+const TABS = ["growth", "letters", "manage"] as const;
 type Tab = (typeof TABS)[number];
 
 export default async function GiftBoxPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
   const { id } = await params;
   const sp = await searchParams;
-  const { t, locale } = await getT();
+  const { t } = await getT();
   const g = t.giftBox;
   const box = await readGiftBox(uid, id).catch(() => null);
   if (!box) notFound();
@@ -102,36 +96,6 @@ export default async function GiftBoxPage({ params, searchParams }: { params: Pr
           <SegmentedTabs current={`${base}?tab=${tab}`} items={tabs.map((x) => ({ href: `${base}?tab=${x}`, label: g.tabs[x] }))} />
           {tab === "growth" && <Entries box={box} kind="growth" help={g.growthHelp} nameOf={nameOf} t={t} draft={sp.draft?.slice(0, 5000)} media={media} />}
           {tab === "letters" && <Entries box={box} kind="letter" help={g.lettersHelp} nameOf={nameOf} t={t} media={media} />}
-          {tab === "view" && (
-            <form action={giftViewAction} className="space-y-4">
-              <input type="hidden" name="boxId" value={box.id} />
-              <p className="text-sm leading-7 text-stone-600">{g.viewHelp(box.child_name)}</p>
-              {AXIS_CHAPTERS.map((ch) => (
-                <Card key={ch}>
-                  <p className="mb-3 text-xs font-semibold text-violet-800">{CHAPTER_INFO[ch].icon} {CHAPTER_INFO[ch].title[locale]}</p>
-                  <div className="space-y-2">
-                    {AXES.filter((k) => AXIS_CHAPTER[k] === ch).map((k) => {
-                      const cur = box.views.find((v) => v.author_id === box.me)?.answers[k];
-                      return (
-                        <fieldset key={k} className="grid grid-cols-[1fr_auto_1fr] gap-1.5">
-                          <legend className="sr-only">{`${PEER_POLES[k].pos[locale]} / ${PEER_POLES[k].neg[locale]}`}</legend>
-                          <label className={pill}><input type="radio" name={`ax_${k}`} value="1" defaultChecked={cur === 1} className="sr-only" />{PEER_POLES[k].pos[locale]}</label>
-                          <label className={pillNeutral}><input type="radio" name={`ax_${k}`} value="0" defaultChecked={cur === 0} className="sr-only" />{g.neither}</label>
-                          <label className={pill}><input type="radio" name={`ax_${k}`} value="-1" defaultChecked={cur === -1} className="sr-only" />{PEER_POLES[k].neg[locale]}</label>
-                        </fieldset>
-                      );
-                    })}
-                  </div>
-                </Card>
-              ))}
-              <Card>
-                <Field label={g.viewComment}>
-                  <Textarea name="comment" rows={3} maxLength={1000} defaultValue={box.views.find((v) => v.author_id === box.me)?.comment ?? ""} />
-                </Field>
-              </Card>
-              <Button type="submit" className="w-full">{g.save}</Button>
-            </form>
-          )}
           {tab === "manage" && box.my_role === "owner" && (
             <>
               <Card title={g.manageInfo}>

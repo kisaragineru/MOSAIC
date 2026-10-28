@@ -1,11 +1,10 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { AXES } from "@/content/axes";
 import { requireUser } from "@/server/auth/session";
 import {
   connectGiftWriter, createGiftBox, deleteGiftEntry, deliverAsBook, inviteGiftWriter, issueReceiveCode, joinGiftBox, receiveGift, removeGiftWriter,
-  saveGiftEntry, saveGiftView, updateGiftBox,
+  saveGiftEntry, updateGiftBox,
 } from "@/server/services/gift-boxes";
 import { attempt, str, withParam } from "./util";
 
@@ -77,18 +76,6 @@ export async function deleteGiftEntryAction(form: FormData) {
   const id = str(form, "boxId");
   const r = await attempt("gift.entry_delete", () => deleteGiftEntry(uid, str(form, "entryId")));
   redirect(withParam(boxUrl(id, str(form, "tab") || "growth"), r.ok ? "ok" : "e", r.ok ? "deleted" : r.error));
-}
-
-export async function giftViewAction(form: FormData) {
-  const uid = await requireUser();
-  const id = str(form, "boxId");
-  const answers: Record<string, number> = {};
-  for (const k of AXES) {
-    const v = str(form, `ax_${k}`);
-    if (v === "1" || v === "0" || v === "-1") answers[k] = Number(v);
-  }
-  const r = await attempt("gift.view", () => saveGiftView(uid, id, { answers, comment: str(form, "comment") }));
-  redirect(withParam(boxUrl(id, "view"), r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
 }
 
 export async function removeGiftWriterAction(form: FormData) {

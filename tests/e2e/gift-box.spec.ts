@@ -84,12 +84,9 @@ test("a gift box: parents write, letters stay private, the child receives it as 
   await expect(dad.getByText("生まれてきてくれてありがとう。", { exact: false })).toHaveCount(0);
   await dad.getByLabel("本文").first().fill("パパより。いつでも味方だよ。");
   await dad.getByRole("button", { name: "追加" }).click();
-  await dad.getByRole("link", { name: "あなたの見方" }).click();
-  await dad.waitForURL(/tab=view/);
-  await dad.getByText("先に計画を立てる", { exact: true }).click();
-  await dad.getByLabel("ひとこと（任意）").fill("やさしくて、よく笑う子。");
-  await dad.getByRole("button", { name: "保存" }).click();
-  await expect(dad).toHaveURL(/tab=view&ok=saved/);
+  await expect(dad.getByText("パパより。いつでも味方だよ。").first()).toBeVisible();
+  // Only growth records and letters are written (no questionnaire about the child).
+  await expect(dad.getByRole("link", { name: "あなたの見方" })).toHaveCount(0);
 
   // The date has come: Mom issues the receive code; the child receives it.
   await mom.goto(`${boxUrl}?tab=manage`);
@@ -105,7 +102,6 @@ test("a gift box: parents write, letters stay private, the child receives it as 
   await expect(child.getByText("リビングで3歩。みんなで拍手した。").first()).toBeVisible();
   await expect(child.getByText("ハナへ。生まれてきてくれてありがとう。")).toBeVisible();
   await expect(child.getByText("パパより。いつでも味方だよ。")).toBeVisible();
-  await expect(child.getByText("やさしくて、よく笑う子。")).toBeVisible();
   // They are in the child's own records too: private, saying who wrote them.
   await expect(child.getByTestId("gift-in-records")).toContainText("あなたの記録にも入りました");
   await child.getByRole("link", { name: "記録で見る →" }).click();
