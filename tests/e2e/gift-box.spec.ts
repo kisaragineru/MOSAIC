@@ -112,6 +112,17 @@ test("a gift box: parents write, letters stay private, the child receives it as 
   await expect(child.getByText("🎁 ママより").first()).toBeVisible();
   await expect(child.getByText("✉️ パパからの手紙").first()).toBeVisible();
   await child.goBack();
+  // The people who wrote it: one tap connects, and they join the child's people as family.
+  const kin = child.getByTestId("gift-writers");
+  await expect(kin).toContainText("書いてくれた人とつながる");
+  await kin.getByRole("listitem").filter({ hasText: "ママ" }).getByRole("button", { name: "つながる" }).click();
+  await child.waitForURL(/\/book\?ok=saved/);
+  await expect(kin.getByRole("listitem").filter({ hasText: "パパ" }).getByRole("button", { name: "つながる" })).toBeVisible();
+  await kin.getByRole("link", { name: /つながっています/ }).click();
+  await child.waitForURL(/\/people\/[0-9a-f-]+$/);
+  await expect(child.getByRole("heading", { level: 1, name: "ママ" })).toBeVisible();
+  await expect(child.getByTestId("person-hero")).toContainText("家族");
+  await child.goBack();
   // A real PDF comes out of it (A5 pages).
   await child.emulateMedia({ media: "print" });
   const pdf = await child.pdf({ preferCSSPageSize: true, printBackground: true });

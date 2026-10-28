@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  codeHash, createGiftBox, deleteGiftEntry, deliverAsBook, giftMedia, inviteGiftWriter, issueReceiveCode, joinGiftBox, myGiftBoxes,
-  newCode, readGiftBox, receiveGift, removeGiftWriter, saveGiftEntry, saveGiftView, updateGiftBox,
+  codeHash, connectGiftWriter, createGiftBox, deleteGiftEntry, deliverAsBook, giftMedia, inviteGiftWriter, issueReceiveCode, joinGiftBox, myGiftBoxes,
+  newCode, readGiftBox, receiveGift, removeGiftWriter, saveGiftEntry, saveGiftView, updateGiftBox, writersForChild,
 } from "@/server/services/gift-boxes";
+import { listPeople } from "@/server/services/people";
+import { activeConnectionsWith, getComparison, revokeComparison } from "@/server/services/sharing";
 import { buildExport } from "@/server/services/export";
 import { buildManual } from "@/server/services/manual";
 import { deleteAccount } from "@/server/services/account";
@@ -233,5 +235,37 @@ describe("gift boxes", () => {
     expect(media[0]!.id).not.toBe(a);
     expect(await mediaThumb(mom.userId, media[0]!.id)).toBeNull();
   });
-});
 
+  it("on receiving, the child connects with each writer in one tap: family in People, nothing shown yet; an ended connection is not brought back", async () => {
+    const { mom, dad, grandma, box } = await family(PAST, TEEN);
+    const child = await makeUser("Hana");
+    // Not the child's yet: nobody else may list or connect.
+    await expect(writersForChild(child.userId, box)).rejects.toThrow();
+    await receiveGift(child.userId, await issueReceiveCode(mom.userId, box));
+    await expect(writersForChild(dad.userId, box)).rejects.toThrow();
+    await expect(connectGiftWriter(dad.userId, box, mom.userId)).rejects.toThrow();
+
+    const before = await writersForChild(child.userId, box);
+    expect(before.map((w) => [w.name, w.role, w.offer, w.sessionId])).toEqual([["ママ", "mother", true, null], ["パパ", "father", true, null], ["おばあちゃん", "grandmother", true, null]]);
+
+    const personId = await connectGiftWriter(child.userId, box, mom.userId);
+    expect(await connectGiftWriter(child.userId, box, mom.userId)).toBe(personId); // twice: the same person
+    const sid = (await activeConnectionsWith(child.userId, [mom.userId])).get(mom.userId)!;
+    expect(sid).toBeTruthy();
+    expect((await activeConnectionsWith(mom.userId, [child.userId])).get(child.userId)).toBe(sid);
+    expect((await listPeople(child.userId)).find((p) => p.id === personId)).toMatchObject({ nickname: "ママ", relationship: "family" });
+    const view = await getComparison(child.userId, sid);
+    expect(view).toMatchObject({ status: "active", myConsent: { scopes: [] }, otherConsented: true });
+    expect((await writersForChild(child.userId, box))[0]).toMatchObject({ sessionId: sid, personId, offer: false });
+
+    // Someone outside the box can't be reached through it.
+    await expect(connectGiftWriter(child.userId, box, (await makeUser()).userId)).rejects.toThrow();
+    // A connection that was ended is not offered again, and can't be restarted from the box.
+    await connectGiftWriter(child.userId, box, dad.userId);
+    await revokeComparison(dad.userId, (await activeConnectionsWith(dad.userId, [child.userId])).get(child.userId)!);
+    expect((await writersForChild(child.userId, box)).find((w) => w.role === "father")).toMatchObject({ offer: false, sessionId: null });
+    await expect(connectGiftWriter(child.userId, box, dad.userId)).rejects.toThrow(/connection_ended/);
+    expect((await writersForChild(child.userId, box)).find((w) => w.role === "grandmother")).toMatchObject({ offer: true });
+    expect((await listPeople(grandma.userId)).length).toBe(0);
+  });
+});

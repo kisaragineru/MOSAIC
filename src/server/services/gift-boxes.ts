@@ -6,15 +6,15 @@
  * who sees which letters, when the box can be handed over, and that it closes for good after.
  */
 import { randomInt } from "node:crypto";
-import { sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { TENDENCY_KEYS, type TendencyKey } from "@/content/questions";
 import { isoDate, optionalDate, uuid } from "@/lib/validation/common";
 import { sha256 } from "../auth/crypto";
 import { enforceRateLimit } from "../auth/rate-limit";
-import { GIFT_ROLES } from "../db/schema";
+import { GIFT_ROLES, people } from "../db/schema";
 import { withUser } from "../db/tx";
-import { mapDbError } from "../errors";
+import { AppError, mapDbError, notFound } from "../errors";
 import { audit } from "./audit";
 import type { MediaItem } from "./media";
 
@@ -222,4 +222,50 @@ export async function receivedGifts(userId: string): Promise<GiftBox[]> {
   const out: GiftBox[] = [];
   for (const g of mine.filter((x) => x.my_role === "child")) out.push(await readGiftBox(userId, g.id));
   return out;
+}
+
+export interface ChildWriter {
+  userId: string;
+  /** What they wrote as (ママ), else their name in MOSAIC. */
+  name: string;
+  role: GiftRole;
+  /** Our connection, when we are connected. */
+  sessionId: string | null;
+  /** Them in my People, when placed there. */
+  personId: string | null;
+  /** Not connected, and never ended before: one tap connects. */
+  offer: boolean;
+}
+
+/** For the child who received a box: the people who wrote it, and where we stand with each. */
+export async function writersForChild(userId: string, boxId: string): Promise<ChildWriter[]> {
+  const rows = await call<{ user_id: string; name: string; label: string | null; role: GiftRole; session_id: string | null; person_id: string | null; offer: boolean }>(
+    userId,
+    sql`select * from gift_writers_for_child(${uuid.parse(boxId)})`,
+  );
+  return rows.map((r) => ({ userId: r.user_id, name: r.label ?? r.name, role: r.role, sessionId: r.session_id, personId: r.person_id, offer: r.offer }));
+}
+
+/**
+ * The child connects with one of the box's writers in one tap and keeps them in People as family
+ * (under the name they wrote as). Nothing is shown to each other yet. Returns the person's id.
+ */
+export async function connectGiftWriter(userId: string, boxId: string, writerId: string): Promise<string> {
+  const box = uuid.parse(boxId);
+  const writer = uuid.parse(writerId);
+  return withUser(userId, async (tx) => {
+    try {
+      const w = (await tx.execute<{ name: string; label: string | null }>(sql`select name, label from gift_writers_for_child(${box}) where user_id = ${writer}`)).rows[0];
+      if (!w) throw notFound();
+      const sid = (await tx.execute<{ sid: string }>(sql`select gift_writer_connect(${box}, ${writer}) as sid`)).rows[0]!.sid;
+      const [existing] = await tx.select({ id: people.id }).from(people).where(and(eq(people.userId, userId), eq(people.connectionSessionId, sid)));
+      if (existing) return existing.id;
+      const [p] = await tx.insert(people).values({ userId, nickname: (w.label ?? w.name).slice(0, 80), relationship: "family", connectionSessionId: sid }).returning({ id: people.id });
+      await audit(tx, userId, "gift.writer_connected", "gift_box", box);
+      return p!.id;
+    } catch (e) {
+      if (e instanceof AppError) throw e;
+      mapDbError(e);
+    }
+  });
 }

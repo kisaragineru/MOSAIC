@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { AXES } from "@/content/axes";
 import { requireUser } from "@/server/auth/session";
 import {
-  createGiftBox, deleteGiftEntry, deliverAsBook, inviteGiftWriter, issueReceiveCode, joinGiftBox, receiveGift, removeGiftWriter,
+  connectGiftWriter, createGiftBox, deleteGiftEntry, deliverAsBook, inviteGiftWriter, issueReceiveCode, joinGiftBox, receiveGift, removeGiftWriter,
   saveGiftEntry, saveGiftView, updateGiftBox,
 } from "@/server/services/gift-boxes";
 import { attempt, str, withParam } from "./util";
@@ -39,6 +39,15 @@ export async function receiveGiftAction(form: FormData) {
   const r = await attempt("gift.receive", () => receiveGift(uid, str(form, "code")));
   revalidatePath("/gifts");
   redirect(r.ok ? withParam(boxUrl(r.value), "ok", "saved") : `/gifts?e=${r.error}`);
+}
+
+/** The child connects with one of the box's writers; the book page shows where they stand. */
+export async function connectGiftWriterAction(form: FormData) {
+  const uid = await requireUser();
+  const id = str(form, "boxId");
+  const r = await attempt("gift.connect", () => connectGiftWriter(uid, id, str(form, "userId")));
+  revalidatePath("/people");
+  redirect(`/gifts/${id}/book?${r.ok ? "ok=saved" : `e=${r.error}`}#writers`);
 }
 
 export async function giftEntryAction(form: FormData) {

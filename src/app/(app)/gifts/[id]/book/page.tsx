@@ -8,7 +8,9 @@ import { ageAt } from "@/lib/gift-dates";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { MediaGrid } from "@/components/media-grid";
-import { giftMedia, readGiftBox, writerName, type GiftEntry } from "@/server/services/gift-boxes";
+import { connectGiftWriterAction } from "@/app/actions/gift-boxes";
+import { Flash } from "@/components/flash";
+import { giftMedia, readGiftBox, writerName, writersForChild, type GiftEntry } from "@/server/services/gift-boxes";
 
 // A book face for the gift: Mincho for Japanese, with latin and Vietnamese glyphs.
 const mincho = Shippori_Mincho({ weight: ["400", "600"], subsets: ["latin", "latin-ext"], display: "swap", preload: false });
@@ -19,9 +21,10 @@ const fmtDate = (d: string, locale: string) => {
 };
 
 /** The gift box as an A5 book: cover, introduction, growth by age, how each writer saw the child, letters, closing. */
-export default async function GiftBookPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function GiftBookPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
   const { id } = await params;
+  const sp = await searchParams;
   const { t, locale } = await getT();
   const g = t.giftBox;
   const b = g.book;
@@ -30,6 +33,9 @@ export default async function GiftBookPage({ params }: { params: Promise<{ id: s
   const everything = box.my_role === "child" || (box.my_role === "owner" && box.delivered_via === "pdf");
   const nameOf = (x: Parameters<typeof writerName>[1]) => writerName(box, x, g.roles);
   const media = await giftMedia(uid, box.id);
+  // Received into an account: the writers, to connect with in one tap (those whose connection ended aren't offered).
+  const received = box.my_role === "child" && box.delivered_via === "account";
+  const kin = received ? (await writersForChild(uid, box.id)).filter((w) => w.offer || w.sessionId) : [];
   const writers = box.writers.filter((w) => !w.removed || box.entries.some((e) => e.author_id === w.user_id));
   const names = writers.map((w) => w.label ?? g.roles[w.role]).join(locale === "ja" ? "・" : ", ");
   const growth = box.entries.filter((e) => e.kind === "growth");
@@ -59,10 +65,39 @@ export default async function GiftBookPage({ params }: { params: Promise<{ id: s
         <PrintButton label={b.save} />
       </div>
       {!everything && <p className="rounded-2xl bg-amber-50 px-4 py-3 font-sans text-xs text-amber-900 print:hidden">{box.status === "open" ? b.preview : b.copy}</p>}
-      {box.my_role === "child" && box.delivered_via === "account" && (
+      {received && (
         <p className="rounded-2xl bg-teal-50 px-4 py-3 font-sans text-xs leading-5 text-teal-900 print:hidden" data-testid="gift-in-records">
           {g.inRecords} <Link href="/memories" className="font-semibold underline underline-offset-4">{g.inRecordsLink} →</Link>
         </p>
+      )}
+      {kin.length > 0 && (
+        <section id="writers" className="scroll-mt-4 space-y-3 rounded-2xl bg-white px-4 py-4 font-sans shadow-sm ring-1 ring-rose-100 print:hidden" data-testid="gift-writers">
+          <Flash t={t} sp={sp} />
+          <h2 className="text-sm font-bold text-stone-900">🤝 {g.writersTitle}</h2>
+          <p className="text-xs leading-5 text-stone-600">{g.writersLead}</p>
+          <ul className="divide-y divide-stone-100">
+            {kin.map((w) => (
+              <li key={w.userId} className="flex items-center gap-3 py-2">
+                <p className="min-w-0 flex-1 text-sm text-stone-800">
+                  {w.name}<span className="text-xs text-stone-500">（{g.roles[w.role]}）</span>
+                </p>
+                {w.sessionId ? (
+                  <Link href={`/people/with/${w.userId}`} className="shrink-0 text-xs font-semibold text-teal-800 underline underline-offset-4">
+                    ✓ {g.writerConnected} · {g.writerOpen}
+                  </Link>
+                ) : (
+                  <form action={connectGiftWriterAction} className="shrink-0">
+                    <input type="hidden" name="boxId" value={box.id} />
+                    <input type="hidden" name="userId" value={w.userId} />
+                    <button type="submit" className="min-h-9 rounded-full bg-teal-700 px-4 text-xs font-bold text-white hover:bg-teal-800 active:scale-[0.98]">
+                      {g.writerConnect}
+                    </button>
+                  </form>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {/* Cover */}

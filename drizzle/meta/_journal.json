@@ -575,6 +575,13 @@
       "when": 1793196016221,
       "tag": "0081_gift_to_records",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1793201377570,
+      "tag": "0082_gift_writer_connect",
+      "breakpoints": true
     }
   ]
 }
