@@ -168,6 +168,7 @@ export const mineToEntry = (m: MemorySummary): TimelineEntry => ({
   people: m.people,
   labels: m.labels,
   feeling: m.feeling,
+  fromGift: m.fromGift,
 });
 
 export const feedToEntry = (f: FeedItem): TimelineEntry => ({

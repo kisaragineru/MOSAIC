@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, inArray, lte, gte, sql, type SQL } from "drizzle-orm";
+import type { GiftOrigin } from "@/lib/timeline";
 import { z } from "zod";
 import { escapeLike, isoDate, optionalDate, optionalText, tagList, todayIn, uuid } from "@/lib/validation/common";
 import { MEMORY_CIRCLES, MEMORY_KINDS, memoryCircles, memoryEntries, memoryEntryVersions, memoryPeople, memoryTags, people, profiles } from "../db/schema";
@@ -183,6 +184,8 @@ export interface MemorySummary {
   labels: Label[];
   labelsBy: "auto" | "user";
   feeling: Feeling | null;
+  /** Received from a gift box (see migration 0081). */
+  fromGift: GiftOrigin | null;
 }
 
 export const memoryFilters = z.object({
@@ -336,6 +339,7 @@ async function hydrate(
       labels: sealed ? [] : (e.labels as Label[]),
       labelsBy: e.labelsBy as "auto" | "user",
       feeling: sealed ? null : (e.feeling as Feeling | null),
+      fromGift: e.fromKind ? { label: e.fromLabel, role: e.fromRole, kind: e.fromKind as GiftOrigin["kind"] } : null,
     };
   });
 }

@@ -557,7 +557,7 @@ export async function gatherManual(userId: string, locale: Locale): Promise<Manu
         .filter((e) => e.kind === "growth")
         .map((e) => {
           const w = b.writers.find((x) => x.user_id === e.author_id);
-          return { from: w?.label ?? w?.name ?? "", date: e.occurred_on, title: e.title, body: e.body };
+          return { from: w?.label ?? w?.name ?? e.author_label ?? "", date: e.occurred_on, title: e.title, body: e.body };
         }),
     ),
     prefs: prefs.map((p) => ({ label: p.label, sentiment: p.current.sentiment })),

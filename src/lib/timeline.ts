@@ -29,6 +29,14 @@ export interface TimelineEntry {
   /** Mine: what it's about, and how I felt. */
   labels?: string[];
   feeling?: string | null;
+  /** Mine, received from a gift box: who wrote it (their label, else role) and whether it was a letter. */
+  fromGift?: GiftOrigin | null;
+}
+
+export interface GiftOrigin {
+  label: string | null;
+  role: string | null;
+  kind: "growth" | "letter";
 }
 
 export interface TimelineItem {

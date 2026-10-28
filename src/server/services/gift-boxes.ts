@@ -16,6 +16,7 @@ import { GIFT_ROLES } from "../db/schema";
 import { withUser } from "../db/tx";
 import { mapDbError } from "../errors";
 import { audit } from "./audit";
+import type { MediaItem } from "./media";
 
 export type GiftRole = (typeof GIFT_ROLES)[number];
 
@@ -29,7 +30,10 @@ export interface GiftWriter {
 }
 export interface GiftEntry {
   id: string;
-  author_id: string;
+  /** Null once the writer has left MOSAIC; author_label/author_role say who they were. */
+  author_id: string | null;
+  author_label: string | null;
+  author_role: GiftRole | null;
   kind: "growth" | "letter";
   occurred_on: string | null;
   title: string | null;
@@ -50,7 +54,7 @@ export interface GiftBox {
   owner_name: string;
   writers: GiftWriter[];
   entries: GiftEntry[];
-  views: { author_id: string; answers: Partial<Record<TendencyKey, 1 | 0 | -1>>; comment: string | null }[];
+  views: { author_id: string | null; author_label: string | null; author_role: GiftRole | null; answers: Partial<Record<TendencyKey, 1 | 0 | -1>>; comment: string | null }[];
   hidden_letters: number;
 }
 export interface GiftSummary {
@@ -62,6 +66,14 @@ export interface GiftSummary {
   writers: number;
   delivered_at: Date | null;
   delivered_via: "account" | "pdf" | null;
+}
+
+/** Who wrote a record or view: their label in the box, else their role (also after they left MOSAIC). */
+export function writerName(box: Pick<GiftBox, "writers">, x: { author_id: string | null; author_label: string | null; author_role: GiftRole | null }, roles: Record<GiftRole, string>): string {
+  const w = x.author_id ? box.writers.find((y) => y.user_id === x.author_id) : undefined;
+  const label = w ? w.label : x.author_label;
+  const role = w ? w.role : x.author_role;
+  return label ?? (role ? roles[role] : "");
 }
 
 // Codes people type: 12 characters without look-alikes, shown as XXXX-XXXX-XXXX.
@@ -130,7 +142,9 @@ const entrySchema = z.object({
   kind: z.enum(["growth", "letter"]),
   occurredOn: optionalDate,
   title: z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? undefined : v), z.string().trim().max(120).optional()),
-  body: z.string().trim().min(1).max(5000),
+  body: z.string().trim().max(5000).default(""),
+  /** Photos and videos (growth records only), as uploaded for records. */
+  media: z.array(uuid).max(5).default([]),
 });
 
 export async function saveGiftEntry(userId: string, boxId: string, input: unknown, entryId?: string): Promise<string> {
@@ -138,11 +152,22 @@ export async function saveGiftEntry(userId: string, boxId: string, input: unknow
   const d = entrySchema.parse(input);
   const rows = await call<{ id: string }>(
     userId,
-    sql`select gift_entry_save(${entryId ? uuid.parse(entryId) : null}::uuid, ${id}, ${d.kind}, ${d.occurredOn ?? null}::date, ${d.title ?? null}, ${d.body}) as id`,
+    sql`select gift_entry_save(${entryId ? uuid.parse(entryId) : null}::uuid, ${id}, ${d.kind}, ${d.occurredOn ?? null}::date, ${d.title ?? null}, ${d.body}, ${`{${d.media.join(",")}}`}::uuid[]) as id`,
     entryId ? "gift.entry_updated" : "gift.entry_added",
     id,
   );
   return rows[0]!.id;
+}
+
+/** The photos and videos of a box's records that I may see, by record. */
+export async function giftMedia(userId: string, boxId: string): Promise<Map<string, MediaItem[]>> {
+  const rows = await call<{ id: string; entry_id: string; kind: "image" | "video"; width: number; height: number; duration_ms: number | null }>(
+    userId,
+    sql`select * from gift_media_for(${uuid.parse(boxId)})`,
+  );
+  const out = new Map<string, MediaItem[]>();
+  for (const r of rows) out.set(r.entry_id, [...(out.get(r.entry_id) ?? []), { id: r.id, kind: r.kind, width: r.width, height: r.height, durationMs: r.duration_ms }]);
+  return out;
 }
 
 export async function deleteGiftEntry(userId: string, entryId: string) {

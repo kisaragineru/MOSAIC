@@ -4,7 +4,7 @@ import { PersonLink } from "./person-link";
 import type { Dict } from "@/lib/i18n/messages/en";
 import type { Locale } from "@/lib/i18n/locales";
 import { FEELING_EMOJI, type Feeling } from "@/lib/labels";
-import { KIND_ICON, relativeDay, type TimelineDay, type TimelineItem } from "@/lib/timeline";
+import { KIND_ICON, relativeDay, type GiftOrigin, type TimelineDay, type TimelineItem } from "@/lib/timeline";
 import type { ReplyPreview } from "@/server/services/replies";
 import { Avatar } from "./avatar";
 import { MediaGrid } from "./media-grid";
@@ -105,7 +105,9 @@ function Mine({ t, locale, it, compact, c, p, media, me }: { t: Dict; locale: Lo
         {me && <Avatar name={me.name} src={me.src} type={me.type} className="h-6 w-6 text-[10px]" />}
         <Stamp t={t} it={it} />
         {m.feeling && <span aria-label={t.memories.feeling.names[m.feeling as keyof Dict["memories"]["feeling"]["names"]]} className="emoji-color text-base leading-none">{FEELING_EMOJI[m.feeling as Feeling]}</span>}
-        {m.kind === "letter_to_future" ? (
+        {m.fromGift ? (
+          <FromGift t={t} from={m.fromGift} />
+        ) : m.kind === "letter_to_future" ? (
           <Pill tone="violet">{t.memories.kinds.letter_to_future}</Pill>
         ) : (
           (m.labels ?? []).slice(0, 2).map((l) => <Pill key={l} tone="teal">{t.memories.kinds[l as keyof Dict["memories"]["kinds"]]}</Pill>)
@@ -130,6 +132,13 @@ function Mine({ t, locale, it, compact, c, p, media, me }: { t: Dict; locale: Lo
       )}
     </Link>
   );
+}
+
+/** A record received from a gift box: who wrote it for me. */
+export function FromGift({ t, from }: { t: Dict; from: GiftOrigin }) {
+  const g = t.giftBox;
+  const name = from.label ?? (from.role ? g.roles[from.role as keyof Dict["giftBox"]["roles"]] : "") ?? "";
+  return <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-900 ring-1 ring-amber-200" data-testid="from-gift">{from.kind === "letter" ? g.fromLetter(name) : g.fromRecord(name)}</span>;
 }
 
 /** Someone else's shared record: the whole card opens it (text, photos and our comments). */

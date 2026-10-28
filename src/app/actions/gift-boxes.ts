@@ -47,7 +47,18 @@ export async function giftEntryAction(form: FormData) {
   const kind = str(form, "kind");
   const tab = kind === "letter" ? "letters" : "growth";
   const r = await attempt("gift.entry", () =>
-    saveGiftEntry(uid, id, { kind, occurredOn: str(form, "occurredOn"), title: str(form, "title"), body: str(form, "body") }, str(form, "entryId") || undefined),
+    saveGiftEntry(
+      uid,
+      id,
+      {
+        kind,
+        occurredOn: str(form, "occurredOn"),
+        title: str(form, "title"),
+        body: str(form, "body"),
+        ...(form.has("mediaField") && kind === "growth" ? { media: form.getAll("media").filter((x): x is string => typeof x === "string" && x !== "") } : {}),
+      },
+      str(form, "entryId") || undefined,
+    ),
   );
   redirect(withParam(boxUrl(id, tab), r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
 }

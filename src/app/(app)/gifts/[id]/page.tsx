@@ -14,7 +14,11 @@ import { ageAt, daysUntil, todayIso } from "@/lib/gift-dates";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { GIFT_ROLES } from "@/server/db/schema";
-import { readGiftBox, type GiftBox, type GiftEntry } from "@/server/services/gift-boxes";
+import { giftMedia, readGiftBox, writerName, type GiftBox, type GiftEntry } from "@/server/services/gift-boxes";
+import type { MediaItem } from "@/server/services/media";
+import { MediaGrid } from "@/components/media-grid";
+import { MediaPicker } from "@/components/media-picker";
+import { mediaPickerText } from "@/components/memory-form";
 
 const pill =
   "flex min-h-10 cursor-pointer items-center justify-center rounded-2xl border border-stone-200 bg-white/90 px-2 py-1.5 text-center text-xs leading-snug text-stone-700 transition-colors hover:border-teal-300 has-[:checked]:border-teal-600 has-[:checked]:bg-teal-600 has-[:checked]:font-semibold has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-600/40";
@@ -36,11 +40,11 @@ export default async function GiftBoxPage({ params, searchParams }: { params: Pr
   if (box.my_role === "child") redirect(`/gifts/${box.id}/book`);
   const tabs = TABS.filter((x) => x !== "manage" || box.my_role === "owner");
   const tab: Tab = (tabs as readonly string[]).includes(sp.tab ?? "") ? (sp.tab as Tab) : "growth";
-  const nameOf = (userId: string) => {
-    const w = box.writers.find((x) => x.user_id === userId);
-    return w ? w.label ?? g.roles[w.role] : "?";
-  };
+  const nameOf = (x: GiftEntry) => writerName(box, x, g.roles) || "?";
+  const media = tab === "growth" ? await giftMedia(uid, box.id) : new Map<string, MediaItem[]>();
   const left = daysUntil(box.deliver_on);
+  // An account can receive it from 13 (the terms of use), when the birthday is known.
+  const from13 = box.child_birthday ? `${Number(box.child_birthday.slice(0, 4)) + 13}${box.child_birthday.slice(4)}` : null;
   const open = box.status === "open";
   const base = `/gifts/${box.id}`;
 
@@ -74,8 +78,8 @@ export default async function GiftBoxPage({ params, searchParams }: { params: Pr
       ) : (
         <>
           <SegmentedTabs current={`${base}?tab=${tab}`} items={tabs.map((x) => ({ href: `${base}?tab=${x}`, label: g.tabs[x] }))} />
-          {tab === "growth" && <Entries box={box} kind="growth" help={g.growthHelp} nameOf={nameOf} t={t} draft={sp.draft?.slice(0, 5000)} />}
-          {tab === "letters" && <Entries box={box} kind="letter" help={g.lettersHelp} nameOf={nameOf} t={t} />}
+          {tab === "growth" && <Entries box={box} kind="growth" help={g.growthHelp} nameOf={nameOf} t={t} draft={sp.draft?.slice(0, 5000)} media={media} />}
+          {tab === "letters" && <Entries box={box} kind="letter" help={g.lettersHelp} nameOf={nameOf} t={t} media={media} />}
           {tab === "view" && (
             <form action={giftViewAction} className="space-y-4">
               <input type="hidden" name="boxId" value={box.id} />
@@ -158,6 +162,7 @@ export default async function GiftBoxPage({ params, searchParams }: { params: Pr
                     <div>
                       <p className="mb-2 text-sm leading-6 text-stone-700">{g.handoverCodeHelp}</p>
                       {box.code_active && <p className="mb-2 text-xs text-teal-800">✓ {g.codeActive}</p>}
+                      {from13 && from13 > todayIso() && <p className="mb-2 rounded-2xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900" data-testid="gift-from13">{g.accountFrom13(from13)}</p>}
                       <OneTimeCode action={receiveCodeAction} hidden={{ boxId: box.id }} button={g.handoverCode} labels={{ once: g.codeOnce, copy: g.copy, copied: g.copied, errors: t.errors }} />
                     </div>
                     <form action={deliverAsBookAction} className="space-y-2 border-t border-stone-100 pt-4">
@@ -176,22 +181,31 @@ export default async function GiftBoxPage({ params, searchParams }: { params: Pr
   );
 }
 
-function Entries({ box, kind, help, nameOf, t, draft }: { box: GiftBox; kind: GiftEntry["kind"]; help: string; nameOf: (id: string) => string; t: Awaited<ReturnType<typeof getT>>["t"]; draft?: string }) {
+function Entries({ box, kind, help, nameOf, t, draft, media }: { box: GiftBox; kind: GiftEntry["kind"]; help: string; nameOf: (x: GiftEntry) => string; t: Awaited<ReturnType<typeof getT>>["t"]; draft?: string; media: Map<string, MediaItem[]> }) {
   const g = t.giftBox;
   const list = box.entries.filter((e) => e.kind === kind);
   const tab = kind === "letter" ? "letters" : "growth";
+  const growth = kind === "growth";
+  // Like a record: words (or, for growth, photos alone), when it was, and a heading only if wanted.
+  const fields = (e?: GiftEntry) => (
+    <>
+      <Textarea name="body" required={!growth} rows={growth ? 4 : 8} maxLength={5000} defaultValue={e ? e.body : draft} autoFocus={!e && !!draft} placeholder={growth ? g.growthPlaceholder : g.letterPlaceholder} aria-label={g.body} />
+      {growth && <MediaPicker tx={mediaPickerText(t)} initial={e ? (media.get(e.id) ?? []) : []} />}
+      <DateSelect label={g.occurredOn} name="occurredOn" text={dateText(t)} max={growth ? todayIso() : undefined} defaultValue={e?.occurred_on ?? ""} />
+      <details open={!!e?.title} className="group">
+        <summary className="cursor-pointer list-none text-sm font-semibold text-teal-700 group-open:mb-2">{g.addTitle}</summary>
+        <Input name="title" maxLength={120} defaultValue={e?.title ?? ""} aria-label={g.entryTitle} placeholder={g.entryTitle} />
+      </details>
+    </>
+  );
   return (
     <>
       <Card>
         <p className="mb-3 text-sm leading-6 text-stone-600">{help}</p>
-        <form action={giftEntryAction} className="space-y-3">
+        <form action={giftEntryAction} className="space-y-3" data-testid={`gift-${kind}-form`}>
           <input type="hidden" name="boxId" value={box.id} />
           <input type="hidden" name="kind" value={kind} />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <DateSelect label={g.occurredOn} name="occurredOn" text={dateText(t)} max={kind === "growth" ? todayIso() : undefined} />
-            <Field label={g.entryTitle}><Input name="title" maxLength={120} /></Field>
-          </div>
-          <Field label={g.body}><Textarea name="body" required rows={kind === "letter" ? 8 : 4} maxLength={5000} defaultValue={draft} autoFocus={!!draft} /></Field>
+          {fields()}
           <Button type="submit">{g.add}</Button>
         </form>
       </Card>
@@ -201,14 +215,15 @@ function Entries({ box, kind, help, nameOf, t, draft }: { box: GiftBox; kind: Gi
           const age = ageAt(box.child_birthday, e.occurred_on);
           const mine = e.author_id === box.me;
           return (
-            <li key={e.id} className="rounded-2xl bg-white/85 p-4 shadow-sm ring-1 ring-stone-200/60">
+            <li key={e.id} className="rounded-2xl bg-white/85 p-4 shadow-sm ring-1 ring-stone-200/60" data-testid="gift-entry">
               <p className="flex flex-wrap items-baseline gap-x-2 text-xs text-stone-500">
                 {e.occurred_on && <span className="font-semibold text-stone-700">{e.occurred_on}</span>}
                 {age && <span>（{g.age(age.y, age.m)}）</span>}
-                <span className="ml-auto">{g.from(nameOf(e.author_id))}</span>
+                <span className="ml-auto">{g.from(nameOf(e))}</span>
               </p>
               {e.title && <p className="emoji-color mt-1 font-semibold text-stone-900">{e.title}</p>}
-              <p className="emoji-color mt-1 whitespace-pre-line text-sm leading-7 text-stone-800">{e.body}</p>
+              {e.body && <p className="emoji-color mt-1 whitespace-pre-line text-sm leading-7 text-stone-800">{e.body}</p>}
+              {media.get(e.id) && <MediaGrid media={media.get(e.id)!} label={t.memories.media.label} />}
               {mine && (
                 <details className="mt-2">
                   <summary className="cursor-pointer text-xs text-teal-700">{g.edit}</summary>
@@ -216,9 +231,7 @@ function Entries({ box, kind, help, nameOf, t, draft }: { box: GiftBox; kind: Gi
                     <input type="hidden" name="boxId" value={box.id} />
                     <input type="hidden" name="kind" value={kind} />
                     <input type="hidden" name="entryId" value={e.id} />
-                    <DateSelect label={g.occurredOn} hideLabel name="occurredOn" text={dateText(t)} defaultValue={e.occurred_on ?? ""} />
-                    <Input name="title" defaultValue={e.title ?? ""} maxLength={120} aria-label={g.entryTitle} />
-                    <Textarea name="body" required defaultValue={e.body} rows={4} maxLength={5000} aria-label={g.body} />
+                    {fields(e)}
                     <Button type="submit" variant="secondary">{g.save}</Button>
                   </form>
                   <form action={deleteGiftEntryAction} className="mt-2">

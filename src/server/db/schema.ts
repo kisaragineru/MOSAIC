@@ -280,6 +280,12 @@ export const memoryEntries = pgTable(
     labelsBy: text("labels_by").notNull().default("auto"),
     /** How they felt, if they answered the one question after posting. */
     feeling: text("feeling"),
+    /** Received from a gift box: the record it came from, and who wrote it (their label and role). */
+    fromGiftEntry: uuid("from_gift_entry"),
+    fromLabel: text("from_label"),
+    fromRole: text("from_role"),
+    /** growth or letter */
+    fromKind: text("from_kind"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -296,6 +302,8 @@ export const memoryEntries = pgTable(
     check("memory_labels_by_ck", sql`${t.labelsBy} in ('auto','user')`),
     check("memory_labels_ck", sql`${t.labels} <@ array['note','daily','memo','fun','like','achievement','decision','goal','dream','regret','feeling','value','memory','thought']::text[]`),
     check("memory_feeling_ck", sql`${t.feeling} is null or ${t.feeling} in ('happy','calm','grateful','sad','frustrated','anxious')`),
+    uniqueIndex("memory_entries_from_gift_uq").on(t.userId, t.fromGiftEntry),
+    check("memory_from_kind_ck", sql`${t.fromKind} is null or ${t.fromKind} in ('growth','letter')`),
   ],
 );
 
@@ -912,10 +920,11 @@ export const giftBoxes = pgTable(
   "gift_boxes",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    /** The box's manager: sets the date, invites and removes writers, hands it over. */
-    ownerId: uuid("owner_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    /**
+     * The box's manager: sets the date, invites and removes writers, hands it over. If they leave
+     * MOSAIC an open box passes to the next writer; a delivered one keeps no owner.
+     */
+    ownerId: uuid("owner_id").references(() => users.id, { onDelete: "set null" }),
     childName: text("child_name").notNull(),
     childBirthday: date("child_birthday"),
     deliverOn: date("deliver_on").notNull(),
@@ -983,9 +992,11 @@ export const giftEntries = pgTable(
     boxId: uuid("box_id")
       .notNull()
       .references(() => giftBoxes.id, { onDelete: "cascade" }),
-    authorId: uuid("author_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    /** Null once the writer has left MOSAIC: their words stay for the child (see author_label). */
+    authorId: uuid("author_id").references(() => users.id, { onDelete: "set null" }),
+    /** Who wrote it, kept when the writer leaves MOSAIC (their label and role then). */
+    authorLabel: text("author_label"),
+    authorRole: text("author_role"),
     kind: text("kind").notNull(),
     occurredOn: date("occurred_on"),
     title: text("title"),
@@ -997,7 +1008,8 @@ export const giftEntries = pgTable(
     index("gift_entries_box_idx").on(t.boxId),
     check("gift_entries_kind_ck", sql`${t.kind} in ('growth','letter')`),
     check("gift_entries_title_ck", sql`${t.title} is null or char_length(${t.title}) <= 120`),
-    check("gift_entries_body_ck", sql`char_length(${t.body}) between 1 and 5000`),
+    // Empty only for a growth record with photos (checked in gift_entry_save).
+    check("gift_entries_body_ck", sql`char_length(${t.body}) <= 5000`),
   ],
 );
 
@@ -1005,17 +1017,19 @@ export const giftEntries = pgTable(
 export const giftViews = pgTable(
   "gift_views",
   {
+    id: uuid("id").primaryKey().defaultRandom(),
     boxId: uuid("box_id")
       .notNull()
       .references(() => giftBoxes.id, { onDelete: "cascade" }),
-    authorId: uuid("author_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    /** Null once the writer has left MOSAIC (as gift_entries). */
+    authorId: uuid("author_id").references(() => users.id, { onDelete: "set null" }),
+    authorLabel: text("author_label"),
+    authorRole: text("author_role"),
     answers: jsonb("answers").notNull(),
     comment: text("comment"),
     updatedAt: updatedAt(),
   },
-  (t) => [primaryKey({ columns: [t.boxId, t.authorId] }), check("gift_views_comment_ck", sql`${t.comment} is null or char_length(${t.comment}) <= 1000`)],
+  (t) => [uniqueIndex("gift_views_box_author_uq").on(t.boxId, t.authorId), check("gift_views_comment_ck", sql`${t.comment} is null or char_length(${t.comment}) <= 1000`)],
 );
 
 export const MEMORY_CIRCLES = ["partner", "family", "friend", "colleague"] as const;
@@ -1279,6 +1293,8 @@ export const memoryMedia = pgTable(
     userId: userRef(),
     /** Null until the record it belongs to is saved. */
     entryId: uuid("entry_id").references(() => memoryEntries.id, { onDelete: "cascade" }),
+    /** Or a growth record in a gift box (read under the box's rules; copied to the child's record on receiving). */
+    giftEntryId: uuid("gift_entry_id").references(() => giftEntries.id, { onDelete: "cascade" }),
     position: smallint("position").notNull().default(0),
     kind: text("kind").notNull(),
     mime: text("mime").notNull(),
@@ -1294,6 +1310,7 @@ export const memoryMedia = pgTable(
   },
   (t) => [
     index("memory_media_entry_idx").on(t.entryId, t.position),
+    index("memory_media_gift_idx").on(t.giftEntryId, t.position),
     index("memory_media_user_idx").on(t.userId, t.createdAt),
     check("memory_media_kind_ck", sql`${t.kind} in ('image','video')`),
     check("memory_media_mime_ck", sql`${t.mime} in ('image/jpeg','image/png','image/webp','video/mp4','video/quicktime','video/webm')`),

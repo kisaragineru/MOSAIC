@@ -1,20 +1,30 @@
 import { describe, expect, it } from "vitest";
 import {
-  codeHash, createGiftBox, deleteGiftEntry, deliverAsBook, inviteGiftWriter, issueReceiveCode, joinGiftBox, myGiftBoxes,
+  codeHash, createGiftBox, deleteGiftEntry, deliverAsBook, giftMedia, inviteGiftWriter, issueReceiveCode, joinGiftBox, myGiftBoxes,
   newCode, readGiftBox, receiveGift, removeGiftWriter, saveGiftEntry, saveGiftView, updateGiftBox,
 } from "@/server/services/gift-boxes";
 import { buildExport } from "@/server/services/export";
 import { buildManual } from "@/server/services/manual";
+import { deleteAccount } from "@/server/services/account";
+import { listMemories } from "@/server/services/memories";
+import { mediaFor, mediaThumb, startUpload } from "@/server/services/media";
+import { readFileSync } from "node:fs";
 import { makeUser } from "../helpers/factory";
+
+const JPEG = new Uint8Array(readFileSync("tests/e2e/fixtures-photo.jpg"));
+const photo = async (u: string) => (await startUpload(u, { kind: "image", width: 40, height: 30, size: JPEG.length }, JPEG, JPEG)).id;
 
 const FUTURE = "2040-04-01";
 const PAST = "2020-04-01";
 
-async function family(deliverOn = FUTURE) {
+// Old enough to receive with an account (13, as the terms of use say).
+const TEEN = "2008-05-05";
+
+async function family(deliverOn = FUTURE, childBirthday = "2018-05-05") {
   const mom = await makeUser("Mai");
   const dad = await makeUser("Duc");
   const grandma = await makeUser("Ba");
-  const box = await createGiftBox(mom.userId, { childName: "Hana", childBirthday: "2018-05-05", deliverOn, role: "mother", label: "ママ" });
+  const box = await createGiftBox(mom.userId, { childName: "Hana", childBirthday, deliverOn, role: "mother", label: "ママ" });
   await joinGiftBox(dad.userId, await inviteGiftWriter(mom.userId, box, "father"), "パパ");
   await joinGiftBox(grandma.userId, await inviteGiftWriter(mom.userId, box, "grandmother"), "おばあちゃん");
   return { mom, dad, grandma, box };
@@ -95,7 +105,7 @@ describe("gift boxes", () => {
   });
 
   it("the child receives everything with a code; then it is closed, and each writer keeps their own copy", async () => {
-    const { mom, dad, grandma, box } = await family(PAST);
+    const { mom, dad, grandma, box } = await family(PAST, TEEN);
     await saveGiftEntry(mom.userId, box, { kind: "growth", title: "初めて歩いた", body: "3歩。" });
     await saveGiftEntry(mom.userId, box, { kind: "letter", body: "ママの手紙" });
     await saveGiftEntry(dad.userId, box, { kind: "letter", body: "パパの手紙" });
@@ -120,7 +130,7 @@ describe("gift boxes", () => {
   });
 
   it("a new date cancels a code issued for the old one", async () => {
-    const { mom, box } = await family(PAST);
+    const { mom, box } = await family(PAST, TEEN);
     const code = await issueReceiveCode(mom.userId, box);
     await updateGiftBox(mom.userId, box, { childName: "Hana", deliverOn: "2021-01-01" });
     await expect(receiveGift((await makeUser()).userId, code)).rejects.toThrow(/invalid_code/);
@@ -150,7 +160,7 @@ describe("gift boxes", () => {
   });
 
   it("becomes part of the child's own manual story and export", async () => {
-    const { mom, box } = await family(PAST);
+    const { mom, box } = await family(PAST, TEEN);
     await saveGiftEntry(mom.userId, box, { kind: "growth", occurredOn: "2019-06-01", title: "初めて歩いた", body: "リビングで3歩。" });
     await saveGiftEntry(mom.userId, box, { kind: "letter", body: "ないしょの手紙" });
     const child = await makeUser("Hana");
@@ -163,6 +173,65 @@ describe("gift boxes", () => {
     const doc = JSON.parse((await buildExport(child.userId)).json);
     expect(doc.giftBoxes).toHaveLength(1);
     expect(JSON.stringify(doc.giftBoxes)).toContain("ないしょの手紙");
+  });
+
+  it("growth records take photos like records do (or photos alone), seen only by those who may read the record", async () => {
+    const { mom, dad, box } = await family();
+    const stranger = await makeUser("X");
+    const a = await photo(mom.userId);
+    const e = await saveGiftEntry(mom.userId, box, { kind: "growth", occurredOn: "2019-06-01", body: "", media: [a] });
+    expect((await giftMedia(dad.userId, box)).get(e)?.map((m) => m.id)).toEqual([a]);
+    expect(await mediaThumb(dad.userId, a)).not.toBeNull();
+    expect(await mediaThumb(stranger.userId, a)).toBeNull();
+    // Not on a letter, not someone else's upload, and not nothing at all.
+    await expect(saveGiftEntry(mom.userId, box, { kind: "letter", body: "x", media: [await photo(mom.userId)] })).rejects.toThrow(/invalid_media/);
+    await expect(saveGiftEntry(dad.userId, box, { kind: "growth", body: "", media: [await photo(mom.userId)] })).rejects.toThrow(/invalid_media/);
+    await expect(saveGiftEntry(mom.userId, box, { kind: "growth", body: "" })).rejects.toThrow(/empty_record/);
+    // Editing keeps the list it is given.
+    await saveGiftEntry(mom.userId, box, { kind: "growth", body: "words now", media: [] }, e);
+    expect((await giftMedia(mom.userId, box)).get(e)).toBeUndefined();
+  });
+
+  it("a writer who leaves MOSAIC: their words stay under the name they wrote as, and their box passes on", async () => {
+    const { mom, dad, box } = await family();
+    await saveGiftEntry(mom.userId, box, { kind: "growth", body: "ママの記録", media: [await photo(mom.userId)] });
+    await saveGiftView(mom.userId, box, { answers: { giving: 1 } });
+    await deleteAccount(mom.userId, { password: mom.password, confirm: "DELETE" });
+    const b = await readGiftBox(dad.userId, box);
+    expect(b.my_role).toBe("owner");
+    const e = b.entries.find((x) => x.body === "ママの記録")!;
+    expect(e).toMatchObject({ author_id: null, author_label: "ママ", author_role: "mother" });
+    expect((await giftMedia(dad.userId, box)).get(e.id)).toHaveLength(1);
+    // The last writer leaving takes the box with them.
+    const solo = await makeUser("Solo");
+    const lone = await createGiftBox(solo.userId, { childName: "K", deliverOn: FUTURE, role: "parent" });
+    await deleteAccount(solo.userId, { password: solo.password, confirm: "DELETE" });
+    await expect(readGiftBox(dad.userId, lone)).rejects.toThrow();
+  });
+
+  it("received with an account from 13 only (when the birthday is known)", async () => {
+    const { mom, box } = await family(PAST);
+    await expect(issueReceiveCode(mom.userId, box)).rejects.toThrow(/gift_too_young/);
+    await deliverAsBook(mom.userId, box);
+  });
+
+  it("on receiving, its growth records and letters become the child's own records: private, dated, with photos and who wrote them", async () => {
+    const { mom, dad, box } = await family(PAST, TEEN);
+    const a = await photo(mom.userId);
+    await saveGiftEntry(mom.userId, box, { kind: "growth", occurredOn: "2010-06-01", title: "初めて歩いた", body: "3歩。", media: [a] });
+    await saveGiftEntry(dad.userId, box, { kind: "letter", body: "パパの手紙" });
+    const child = await makeUser("Hana");
+    await receiveGift(child.userId, await issueReceiveCode(mom.userId, box));
+    const mine = await listMemories(child.userId);
+    expect(mine).toHaveLength(2);
+    const walk = mine.find((m) => m.title === "初めて歩いた")!;
+    expect(walk).toMatchObject({ occurredOn: "2010-06-01", visibility: "private", body: "3歩。", fromGift: { label: "ママ", role: "mother", kind: "growth" } });
+    expect(mine.find((m) => m.body === "パパの手紙")).toMatchObject({ visibility: "private", fromGift: { label: "パパ", kind: "letter" } });
+    // The photo is the child's own copy.
+    const media = (await mediaFor(child.userId, [walk.id])).get(walk.id)!;
+    expect(media).toHaveLength(1);
+    expect(media[0]!.id).not.toBe(a);
+    expect(await mediaThumb(mom.userId, media[0]!.id)).toBeNull();
   });
 });
 

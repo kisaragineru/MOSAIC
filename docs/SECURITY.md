@@ -59,6 +59,13 @@ keys, anonymous access, role privilege escalation, and identity leakage across p
   rate-limited. A box can be handed over only from its date, and closes for good when handed over
   (to the child's own account, or as a book printed by the owner); writers keep read-only copies
   of their own part. A removed writer loses access; the owner chooses whether their entries stay.
+  Since migration 0081: growth records take photos and videos (memory_media rows with
+  gift_entry_id), read only under the box's own rule (gift_media_visible). A writer who deletes
+  their account leaves their words, views and photos in the box under the label and role they
+  wrote as; an open box they managed passes to the next active writer (or is deleted with them
+  when nobody else writes in it). Receiving the box copies its growth records and letters, with
+  copies of their photos, into the child's own records as private entries (memory_entries.from_*);
+  a receive code is issued and accepted only when the child is 13 or older, if the birthday is known.
 - Sharing a record (migrations 0014–0015): records are private unless the owner picks, per
   record, "everyone I'm connected with" or relationships (partner / family / friend / colleague)
   through `memory_set_audience` (owner only; letters to the future always stay private). A

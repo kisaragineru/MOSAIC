@@ -4,6 +4,7 @@ import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
 import { MemoryForm } from "@/components/memory-form";
 import { Card, LinkButton, Notice, Page, Pill } from "@/components/ui";
+import { FromGift } from "@/components/timeline";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { AppError } from "@/server/errors";
@@ -48,6 +49,7 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
     <Page title={m.title ?? (m.kind === "letter_to_future" ? t.memories.kinds[m.kind] : t.memories.post.titleOf)} back="/memories">
       <Flash t={t} sp={sp} />
       <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500">
+        {m.fromGift && <FromGift t={t} from={m.fromGift} />}
         {m.kind === "letter_to_future" && <Pill tone="violet">{t.memories.kinds[m.kind]}</Pill>}
         {m.occurredOn && <span>{m.occurredOn}</span>}
         <span>{t.common.created} {new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: tz }).format(m.createdAt)}</span>

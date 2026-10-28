@@ -7,7 +7,8 @@ import { AXES, AXIS_CHAPTER, AXIS_CHAPTERS, AXIS_LABEL, CHAPTER_INFO, PEER_POLES
 import { ageAt } from "@/lib/gift-dates";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
-import { readGiftBox, type GiftEntry } from "@/server/services/gift-boxes";
+import { MediaGrid } from "@/components/media-grid";
+import { giftMedia, readGiftBox, writerName, type GiftEntry } from "@/server/services/gift-boxes";
 
 // A book face for the gift: Mincho for Japanese, with latin and Vietnamese glyphs.
 const mincho = Shippori_Mincho({ weight: ["400", "600"], subsets: ["latin", "latin-ext"], display: "swap", preload: false });
@@ -27,10 +28,8 @@ export default async function GiftBookPage({ params }: { params: Promise<{ id: s
   const box = await readGiftBox(uid, id).catch(() => null);
   if (!box) notFound();
   const everything = box.my_role === "child" || (box.my_role === "owner" && box.delivered_via === "pdf");
-  const writerName = (userId: string) => {
-    const w = box.writers.find((x) => x.user_id === userId);
-    return w ? w.label ?? g.roles[w.role] : "";
-  };
+  const nameOf = (x: Parameters<typeof writerName>[1]) => writerName(box, x, g.roles);
+  const media = await giftMedia(uid, box.id);
   const writers = box.writers.filter((w) => !w.removed || box.entries.some((e) => e.author_id === w.user_id));
   const names = writers.map((w) => w.label ?? g.roles[w.role]).join(locale === "ja" ? "・" : ", ");
   const growth = box.entries.filter((e) => e.kind === "growth");
@@ -60,6 +59,11 @@ export default async function GiftBookPage({ params }: { params: Promise<{ id: s
         <PrintButton label={b.save} />
       </div>
       {!everything && <p className="rounded-2xl bg-amber-50 px-4 py-3 font-sans text-xs text-amber-900 print:hidden">{box.status === "open" ? b.preview : b.copy}</p>}
+      {box.my_role === "child" && box.delivered_via === "account" && (
+        <p className="rounded-2xl bg-teal-50 px-4 py-3 font-sans text-xs leading-5 text-teal-900 print:hidden" data-testid="gift-in-records">
+          {g.inRecords} <Link href="/memories" className="font-semibold underline underline-offset-4">{g.inRecordsLink} →</Link>
+        </p>
+      )}
 
       {/* Cover */}
       <section className="book-sheet relative mx-auto flex aspect-[148/210] w-full max-w-md flex-col items-center justify-center overflow-hidden rounded-2xl bg-linear-to-br from-sky-100 via-white to-rose-100 p-10 text-center shadow-[0_20px_50px_-20px_rgba(60,60,120,0.35)]">
@@ -107,8 +111,9 @@ export default async function GiftBookPage({ params }: { params: Promise<{ id: s
                     <span aria-hidden className="absolute -left-[25px] top-2 h-2.5 w-2.5 rounded-full bg-sky-400 ring-4 ring-white" />
                     <p className="font-sans text-[11px] text-stone-500">{e.occurred_on ? fmtDate(e.occurred_on, locale) : ""}</p>
                     {e.title && <p className="emoji-color mt-0.5 text-lg font-semibold text-[#2e3a4b]">{e.title}</p>}
-                    <p className="emoji-color mt-1 whitespace-pre-line leading-8 text-stone-800">{e.body}</p>
-                    <p className="mt-1 text-right text-xs text-stone-500">— {writerName(e.author_id)}</p>
+                    {e.body && <p className="emoji-color mt-1 whitespace-pre-line leading-8 text-stone-800">{e.body}</p>}
+                    {media.get(e.id) && <MediaGrid media={media.get(e.id)!} label={t.memories.media.label} />}
+                    <p className="mt-1 text-right text-xs text-stone-500">— {nameOf(e)}</p>
                   </li>
                 ))}
               </ol>
@@ -127,7 +132,7 @@ export default async function GiftBookPage({ params }: { params: Promise<{ id: s
                 <thead>
                   <tr className="font-sans text-[10px] text-stone-500">
                     <th className="w-20 pb-1 text-left font-normal" />
-                    {views.map((v) => <th key={v.author_id} className="pb-1 text-left font-normal">{writerName(v.author_id)}</th>)}
+                    {views.map((v) => <th key={v.author_id ?? v.author_label ?? v.author_role ?? ""} className="pb-1 text-left font-normal">{nameOf(v)}</th>)}
                   </tr>
                 </thead>
                 <tbody>
@@ -136,7 +141,7 @@ export default async function GiftBookPage({ params }: { params: Promise<{ id: s
                       <td className="py-1.5 pr-2 font-sans text-[11px] text-stone-500">{AXIS_LABEL[k].name[locale]}</td>
                       {views.map((v) => {
                         const a = v.answers[k];
-                        return <td key={v.author_id} className="py-1.5 pr-2 leading-6 text-stone-800">{a === 1 ? PEER_POLES[k].pos[locale] : a === -1 ? PEER_POLES[k].neg[locale] : a === 0 ? "—" : ""}</td>;
+                        return <td key={v.author_id ?? v.author_label ?? v.author_role ?? ""} className="py-1.5 pr-2 leading-6 text-stone-800">{a === 1 ? PEER_POLES[k].pos[locale] : a === -1 ? PEER_POLES[k].neg[locale] : a === 0 ? "—" : ""}</td>;
                       })}
                     </tr>
                   ))}
@@ -145,9 +150,9 @@ export default async function GiftBookPage({ params }: { params: Promise<{ id: s
             </div>
           ))}
           {views.filter((v) => v.comment).map((v) => (
-            <blockquote key={v.author_id} className="book-entry mt-6 border-l-2 border-rose-200 pl-4 leading-8 text-stone-800">
+            <blockquote key={v.author_id ?? v.author_label ?? v.author_role ?? ""} className="book-entry mt-6 border-l-2 border-rose-200 pl-4 leading-8 text-stone-800">
               {v.comment}
-              <footer className="mt-1 text-right text-xs text-stone-500">— {writerName(v.author_id)}</footer>
+              <footer className="mt-1 text-right text-xs text-stone-500">— {nameOf(v)}</footer>
             </blockquote>
           ))}
         </section>
@@ -159,7 +164,7 @@ export default async function GiftBookPage({ params }: { params: Promise<{ id: s
           <p className="text-lg text-[#2e3a4b]">{b.to(box.child_name)}</p>
           {e.title && <p className="emoji-color mt-2 text-sm text-stone-500">{e.title}</p>}
           <div className="mt-6 flex-1 overflow-hidden whitespace-pre-line bg-[linear-gradient(transparent_calc(2rem-1px),#f1e6cf_calc(2rem-1px))] bg-size-[100%_2rem] leading-8 text-stone-800">{e.body}</div>
-          <p className="mt-6 text-right text-stone-700">{b.letterFrom(writerName(e.author_id))}</p>
+          <p className="mt-6 text-right text-stone-700">{b.letterFrom(nameOf(e))}</p>
           {e.occurred_on && <p className="text-right font-sans text-[11px] text-stone-400">{fmtDate(e.occurred_on, locale)}</p>}
         </section>
       ))}

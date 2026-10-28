@@ -23,7 +23,8 @@ test("a gift box: parents write, letters stay private, the child receives it as 
   await mom.getByRole("link", { name: /ギフトボックス/ }).click();
   await mom.waitForURL("/gifts");
   await mom.getByLabel("子どもの名前（呼び名）").fill("ハナ");
-  await setDate(mom, "子どもの誕生日（任意）", "2018-05-05");
+  // Old enough to receive it with an account (13, as the terms of use say).
+  await setDate(mom, "子どもの誕生日（任意）", "2008-05-05");
   await setDate(mom, "渡す日", today);
   await mom.getByLabel("あなたとの関係").selectOption("mother");
   await mom.getByLabel(/子どもからの呼ばれ方/).first().fill("ママ");
@@ -32,13 +33,20 @@ test("a gift box: parents write, letters stay private, the child receives it as 
   const boxUrl = new URL(mom.url()).pathname;
   await expect(mom.getByRole("heading", { name: "ハナへのギフトボックス" })).toBeVisible();
 
-  // A growth record, shared with every writer, and a letter only Mom can see.
-  await setDate(mom, "日付（任意）", "2019-06-01");
-  await mom.getByLabel("見出し（任意）").fill("初めて歩いた");
-  await mom.getByLabel("本文").fill("リビングで3歩。みんなで拍手した。");
-  await mom.getByRole("button", { name: "追加" }).click();
+  // A growth record, written like a record (words, a photo, the day, a heading only if wanted),
+  // shared with every writer; and a letter only Mom can see.
+  const form = mom.getByTestId("gift-growth-form");
+  await form.getByLabel("本文").fill("リビングで3歩。みんなで拍手した。");
+  await form.getByTestId("media-picker").locator('input[type="file"][multiple]').setInputFiles("tests/e2e/fixtures-photo.jpg");
+  await expect(form.locator('input[name="media"]')).toHaveCount(1);
+  await setDate(form, "日付（任意）", "2019-06-01");
+  await expect(form.getByLabel("見出し（任意）")).toBeHidden();
+  await form.getByText("＋見出しをつける").click();
+  await form.getByLabel("見出し（任意）").fill("初めて歩いた");
+  await form.getByRole("button", { name: "追加", exact: true }).click();
   await expect(mom.getByText("リビングで3歩。みんなで拍手した。").first()).toBeVisible();
-  await expect(mom.getByText("（1歳0か月）")).toBeVisible();
+  await expect(mom.getByText("（11歳0か月）")).toBeVisible();
+  await expect(mom.getByTestId("gift-entry").first().locator('[data-testid="media-grid"][data-count="1"]')).toBeVisible();
   await mom.getByRole("link", { name: "手紙" }).click();
   await mom.waitForURL(/tab=letters/);
   await mom.getByLabel("本文").first().fill("ハナへ。生まれてきてくれてありがとう。");
@@ -97,6 +105,13 @@ test("a gift box: parents write, letters stay private, the child receives it as 
   await expect(child.getByText("ハナへ。生まれてきてくれてありがとう。")).toBeVisible();
   await expect(child.getByText("パパより。いつでも味方だよ。")).toBeVisible();
   await expect(child.getByText("やさしくて、よく笑う子。")).toBeVisible();
+  // They are in the child's own records too: private, saying who wrote them.
+  await expect(child.getByTestId("gift-in-records")).toContainText("あなたの記録にも入りました");
+  await child.getByRole("link", { name: "記録で見る →" }).click();
+  await child.waitForURL(/\/memories/);
+  await expect(child.getByText("🎁 ママより").first()).toBeVisible();
+  await expect(child.getByText("✉️ パパからの手紙").first()).toBeVisible();
+  await child.goBack();
   // A real PDF comes out of it (A5 pages).
   await child.emulateMedia({ media: "print" });
   const pdf = await child.pdf({ preferCSSPageSize: true, printBackground: true });
