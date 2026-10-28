@@ -23,6 +23,12 @@ export function getDb(): Db {
   return globalForDb.__mosaicDb;
 }
 
+/** The pool behind getDb(), for transactions that run their own BEGIN (see withUser). */
+export function getPool(): Pool {
+  getDb();
+  return globalForDb.__mosaicPool!;
+}
+
 export async function closeDb() {
   await globalForDb.__mosaicPool?.end();
   globalForDb.__mosaicPool = undefined;

@@ -20,15 +20,19 @@ import { pushConfigured } from "@/server/services/push";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const uid = await requireUser();
-  const { t } = await getT();
-  const acc = await getAccount(uid);
-  const unread = await dmUnreadTotal(uid);
-  const avatar = await myAvatarUrl(uid);
+  // All at once: none of these waits on another.
+  // trialOwner — development: trying sign-up with a test account, with the way back to your own.
+  // waiting — a dot on the bell when someone is waiting on you (no number: a nudge, not a count).
+  const [{ t }, acc, unread, avatar, trialOwner, waiting, tint] = await Promise.all([
+    getT(),
+    getAccount(uid),
+    dmUnreadTotal(uid),
+    myAvatarUrl(uid),
+    trialReturnUser(),
+    hasWaitingNotices(uid),
+    myTint(uid),
+  ]);
   const initial = Array.from(acc.profile.displayName.trim())[0]?.toUpperCase() ?? "?";
-  // Development: trying sign-up with a test account, with the way back to your own.
-  const trialOwner = await trialReturnUser();
-  // A dot on the bell when someone is waiting on you (no number: a nudge, not a count).
-  const waiting = await hasWaitingNotices(uid);
   const guideStep = acc.profile.onboardedAt ? null : resumeStep(await onboardingState(uid));
   return (
     <>
@@ -94,7 +98,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               title={t.nav.profileMenu}
               className="flex h-9 w-9 items-center justify-center rounded-full ring-2 ring-white transition hover:ring-teal-300"
             >
-              <Avatar name={acc.profile.displayName} src={avatar} type={await myTint(uid)} className="h-9 w-9 text-sm" />
+              <Avatar name={acc.profile.displayName} src={avatar} type={tint} className="h-9 w-9 text-sm" />
             </Link>
           </div>
         </div>

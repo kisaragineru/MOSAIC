@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { BankText, I18nText, Signal } from "@/content/questions";
@@ -172,8 +173,10 @@ async function assign(tx: Tx, userId: string, day: string, slot: number, timeZon
   return true;
 }
 
-/** Today's question(s). Assigns the daily question on first call of the (local) day. */
-export async function getDaily(userId: string, now = new Date()): Promise<DailyState> {
+/** Today's question(s). Assigns the daily question on first call of the (local) day. Once per request. */
+export const getDaily = cache((userId: string, now?: Date) => getDailyUncached(userId, now));
+
+async function getDailyUncached(userId: string, now = new Date()): Promise<DailyState> {
   return withUser(userId, async (tx) => {
     const tz = await userTz(tx, userId);
     const day = todayIn(tz, now);

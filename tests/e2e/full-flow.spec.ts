@@ -142,7 +142,7 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   // Comparable answers
   await answer(pa, "f.drink", (p) => p.getByLabel("Coffee", { exact: true }).check(), true);
   await answer(pa, "m.genres", async (p) => { await p.getByLabel("Jazz", { exact: true }).check(); await p.getByLabel("Pop", { exact: true }).check(); }, true);
-  await answer(pa, "f.spicy", (p) => p.getByLabel("5", { exact: true }).check(), false); // private: must not be compared
+  await answer(pa, "f.spicy", (p) => p.getByLabel("The spicier the better", { exact: true }).check(), false); // private: must not be compared
   // Change an answer → "did your view change?"
   await answer(pa, "f.drink", (p) => p.getByLabel("Tea", { exact: true }).check(), true);
   await expect(pa.getByText("This is different from your previous answer")).toBeVisible();
@@ -184,7 +184,7 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   const pb = b.page;
   await answer(pb, "f.drink", (p) => p.getByLabel("Tea", { exact: true }).check(), true);
   await answer(pb, "m.genres", async (p) => { await p.getByLabel("Jazz", { exact: true }).check(); await p.getByLabel("Rock", { exact: true }).check(); }, true);
-  await answer(pb, "f.spicy", (p) => p.getByLabel("1", { exact: true }).check(), true);
+  await answer(pb, "f.spicy", (p) => p.getByLabel("I avoid it", { exact: true }).check(), true);
 
   // B opens the link: the token is in the fragment and is removed from the address bar.
   await pb.goto(shareUrl);

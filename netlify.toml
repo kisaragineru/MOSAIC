@@ -16,3 +16,13 @@
   to = "https://mosaicdiary.app/:splat"
   status = 301
   force = true
+
+# The app's own pictures (not hashed, rarely changed): kept a day, refreshed in the background.
+[[headers]]
+  for = "/brand/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+[[headers]]
+  for = "/tuvi-types/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"

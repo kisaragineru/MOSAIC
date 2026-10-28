@@ -119,7 +119,8 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Prefetches too, so nothing gets past the gate (see proxy()).
-    { source: "/((?!_next/static|_next/image|favicon.ico|icon.svg).*)" },
+    // Prefetches too, so nothing gets past the gate (see proxy()). The app's own pictures (logo,
+    // type illustrations) say nothing about anyone: served straight from the CDN, cached.
+    { source: "/((?!_next/static|_next/image|favicon.ico|icon.svg|brand/|tuvi-types/).*)" },
   ],
 };

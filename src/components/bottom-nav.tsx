@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 export type NavIcon = "home" | "tuvi" | "discover" | "insights" | "memories" | "people";
 
@@ -37,17 +38,24 @@ const PATHS: Record<NavIcon, React.ReactNode> = {
 
 export function BottomNav({ items }: { items: { href: string; label: string; icon: NavIcon }[] }) {
   const path = usePathname();
+  // The tapped tab lights up at once; it belongs to the page it was tapped on, so it gives way
+  // to the real one as soon as the next page is there.
+  const [tapped, setTapped] = useState<{ on: string; href: string } | null>(null);
+  const going = tapped && tapped.on === path ? tapped.href : null;
   return (
     <nav className="fixed inset-x-0 bottom-0 z-20 print:hidden rounded-t-3xl border-t border-white/70 bg-white/85 pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_24px_-14px_rgba(110,80,50,0.25)] backdrop-blur-md">
       {/* A class, not an inline style: the CSP blocks style attributes in server-rendered HTML. */}
       <ul className="mx-auto grid max-w-2xl grid-cols-6">
         {items.map((it) => {
-          const active = path === it.href || path.startsWith(`${it.href}/`);
+          const active = going ? going === it.href : path === it.href || path.startsWith(`${it.href}/`);
           const special = it.icon === "tuvi";
           return (
             <li key={it.href}>
               <Link
                 href={it.href}
+                onClick={(e) => {
+                  if (e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && it.href !== path) setTapped({ on: path, href: it.href });
+                }}
                 aria-current={active ? "page" : undefined}
                 className={`group flex flex-col items-center gap-0.5 pb-1.5 pt-1 text-[10.5px] leading-none transition-colors ${
                   active ? "font-bold text-teal-800" : "text-stone-500 hover:text-stone-700"

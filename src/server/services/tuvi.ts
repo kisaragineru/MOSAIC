@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { SUPPORTED_LOCALES, type Locale } from "@/lib/i18n/locales";
@@ -164,7 +165,9 @@ export async function currentLunarYearFor(userId: string, now = new Date()): Pro
   });
 }
 
-export async function getTuvi(userId: string, locale: Locale, now = new Date()): Promise<TuviView> {
+export const getTuvi = cache((userId: string, locale: Locale, now?: Date): Promise<TuviView> => getTuviUncached(userId, locale, now));
+
+async function getTuviUncached(userId: string, locale: Locale, now = new Date()): Promise<TuviView> {
   return withUser(userId, async (tx) => {
     const [profile] = await tx.select().from(birthProfiles).where(eq(birthProfiles.userId, userId));
     const [p] = await tx.select({ tz: profiles.timeZone }).from(profiles).where(eq(profiles.userId, userId));

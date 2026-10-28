@@ -12,11 +12,16 @@ export function NavProgress({ label }: { label: string }) {
   const here = `${usePathname()}?${useSearchParams().toString()}`;
   const [from, setFrom] = useState<string | null>(null);
   const [slow, setSlow] = useState(false);
+  // Following a link to another page: its frame stands in for the content almost at once.
+  const [link, setLink] = useState(false);
+  const [frame, setFrame] = useState(false);
   const busy = from !== null && from === here;
 
   useEffect(() => {
-    const start = () => {
+    const start = (toPage = false) => {
       setSlow(false);
+      setFrame(false);
+      setLink(toPage);
       setFrom(`${location.pathname}?${location.search.slice(1)}`);
     };
     const onClick = (e: MouseEvent) => {
@@ -28,7 +33,7 @@ export function NavProgress({ label }: { label: string }) {
       if (url.origin !== location.origin) return;
       // Same page (incl. in-page anchors): nothing to load.
       if (url.pathname === location.pathname && url.search === location.search) return;
-      start();
+      start(url.pathname !== location.pathname);
     };
     const onSubmit = () => start();
     document.addEventListener("click", onClick);
@@ -42,16 +47,33 @@ export function NavProgress({ label }: { label: string }) {
   useEffect(() => {
     if (!busy) return;
     const s = setTimeout(() => setSlow(true), 350);
+    const f = link ? setTimeout(() => setFrame(true), 120) : undefined;
     const done = setTimeout(() => setFrom(null), 8_000);
     return () => {
       clearTimeout(s);
+      clearTimeout(f);
       clearTimeout(done);
     };
-  }, [busy]);
+  }, [busy, link]);
 
   if (!busy) return null;
+  const bar = "rounded-full bg-stone-200/80 motion-safe:animate-pulse";
   return (
     <>
+      {frame && (
+        <div aria-hidden data-testid="page-frame" className="fixed inset-0 z-[5] overflow-hidden bg-[#faf8f5] pt-16 print:hidden">
+          <div className="mx-auto w-full max-w-2xl space-y-4 px-4 pt-4">
+            <div className={`h-7 w-40 ${bar}`} />
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="space-y-3 rounded-3xl border border-white/80 bg-white/70 p-5 shadow-[0_8px_30px_-14px_rgba(110,80,50,0.18)]">
+                <div className={`h-4 w-28 ${bar}`} />
+                <div className={`h-3 w-full ${bar}`} />
+                <div className={`h-3 w-4/5 ${bar}`} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <div aria-hidden data-testid="nav-progress" className="fixed inset-x-0 top-0 z-50 h-1 overflow-hidden bg-teal-100/60 print:hidden">
         <div className="h-full w-full origin-left animate-[navProgress_1.1s_ease-in-out_infinite] bg-linear-to-r from-teal-500 via-violet-500 to-rose-400 motion-reduce:animate-none" />
       </div>

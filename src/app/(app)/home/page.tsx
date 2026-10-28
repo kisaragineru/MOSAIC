@@ -36,31 +36,48 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const uid = await requireUser();
   const sp = await searchParams;
   const { t, locale } = await getT();
-  const account = await getAccount(uid);
-  const daily = await getDaily(uid);
-  // A year ahead (366 days, so a date just passed still shows its next occurrence in a leap year).
-  const dates = await upcomingDates(uid, 366);
-  const recent = buildTimeline(await recentTimeline(uid, 3), account.profile.timeZone);
-  const first = daily.slots[0];
-  const tv = await getTuvi(uid, locale);
-  const chart = tv.chart;
-  const menhStars = chart && chart.menh !== null ? chart.palaces[chart.menh]!.mainStars.map((s) => STAR_INFO[s.id].vi) : [];
-  const pic = await portrait(uid);
-  const know = await knowledge(uid);
-  // Stories handed to me: the writer's offer to connect, and (once I have my own chart) whether to tell them.
+  // Everything Home reads, all at once (none waits on another); then what hangs on the latest records.
+  // dates: a year ahead (366 days, so a date just passed still shows its next occurrence in a leap year).
+  // inbox — stories handed to me: the writer's offer to connect, and (once I have my own chart) whether to tell them.
   // For the writer: who connected through a story, who started their own (said once).
   // The story grows with the records: new pages are mentioned once; once grown, a single question.
-  const inbox = await replyInbox(uid);
-  const { previews, counts: replyTotals } = await replyPreviews(uid, recent.flatMap((d) => d.items.filter((x) => !x.entry.sealed).map((x) => x.entry.id)));
+  // notices — everything Home has to tell (see notices/items.tsx): the tray shows what isn't closed.
+  const [account, daily, dates, timeline, tv, pic, know, inbox, tendencies, notices, targets, boxes, myPic, myType] = await Promise.all([
+    getAccount(uid),
+    getDaily(uid),
+    upcomingDates(uid, 366),
+    recentTimeline(uid, 3),
+    getTuvi(uid, locale),
+    portrait(uid),
+    knowledge(uid),
+    replyInbox(uid),
+    listTendencies(uid),
+    noticeItems(uid, t, locale),
+    shareTargets(uid),
+    myGiftBoxes(uid),
+    myAvatarUrl(uid),
+    myTint(uid),
+  ]);
+  const recent = buildTimeline(timeline, account.profile.timeZone);
+  const first = daily.slots[0];
+  const chart = tv.chart;
+  const menhStars = chart && chart.menh !== null ? chart.palaces[chart.menh]!.mainStars.map((s) => STAR_INFO[s.id].vi) : [];
+  const shownIds = recent.flatMap((d) => d.items.filter((x) => !x.entry.sealed).map((x) => x.entry.id));
+  const ownerIds = recent.flatMap((d) => d.items.map((x) => x.entry.ownerId));
+  const [{ previews, counts: replyTotals }, media, avatars, tints] = await Promise.all([
+    replyPreviews(uid, shownIds),
+    mediaFor(uid, shownIds),
+    avatarUrls(uid, ownerIds),
+    typeTints(uid, ownerIds),
+  ]);
   const counts = replyCounts(replyTotals, inbox);
   // The manual at a glance, from the tendencies the page already reads (no extra queries).
-  const traits = (await listTendencies(uid))
+  const traits = tendencies
     .filter((c) => c.userStatus !== "rejected" && (c.state === "consistent" || c.state === "emerging"))
     .sort((a, b) => (a.state === b.state ? b.confidence - a.confidence : a.state === "consistent" ? -1 : 1));
   const writtenChapters = MANUAL_CHAPTERS.filter((ch) => traits.some((c) => AXIS_CHAPTER[c.claimKey] === ch)).length;
   const nowStage = chart ? lifeStages(chart, locale, tv.currentAge).find((x) => x.state === "current") : undefined;
-  // Everything Home has to tell (see notices/items.tsx): the tray shows what isn't closed.
-  const { all, showing } = await noticeItems(uid, t, locale);
+  const { all, showing } = notices;
   const tray = all.filter((x) => showing.has(x.ref.key));
   return (
     <Page title={t.home.hello(account.profile.displayName)}>
@@ -72,13 +89,13 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         done={{ chart: !!chart, answers: know.parts.answers >= 3, bio: know.parts.bio, record: know.parts.records > 0 }}
       />}
       {/* Posting: the same sheet as on records. */}
-      <QuickComposer trigger="inline" tx={composerText(t)} canShare={(await shareTargets(uid)).length > 0} giftBoxes={(await myGiftBoxes(uid)).filter((b) => b.status === "open" && b.my_role !== "child").map((b) => ({ id: b.id, label: t.memories.composer.toGift(b.child_name) }))} />
+      <QuickComposer trigger="inline" tx={composerText(t)} canShare={targets.length > 0} giftBoxes={boxes.filter((b) => b.status === "open" && b.my_role !== "child").map((b) => ({ id: b.id, label: t.memories.composer.toGift(b.child_name) }))} />
       <Card title={t.home.recent}>
         {recent.length === 0 ? (
           <p className="text-sm text-stone-500">{t.memories.empty}</p>
         ) : (
           <div className="space-y-3">
-            <Timeline me={{ name: (await getAccount(uid)).profile.displayName, src: (await myAvatarUrl(uid)) ?? undefined, type: await myTint(uid) }} t={t} locale={locale} tz={account.profile.timeZone} days={recent} compact comments={counts} previews={previews} media={await mediaFor(uid, recent.flatMap((d) => d.items.filter((x) => !x.entry.sealed).map((x) => x.entry.id)))} avatars={await avatarUrls(uid, recent.flatMap((d) => d.items.map((x) => x.entry.ownerId)))} tints={await typeTints(uid, recent.flatMap((d) => d.items.map((x) => x.entry.ownerId)))} />
+            <Timeline me={{ name: account.profile.displayName, src: myPic ?? undefined, type: myType }} t={t} locale={locale} tz={account.profile.timeZone} days={recent} compact comments={counts} previews={previews} media={media} avatars={avatars} tints={tints} />
             <Link href="/memories" className="block text-right text-sm text-teal-700 underline">{t.memories.timeline.seeAll} →</Link>
           </div>
         )}

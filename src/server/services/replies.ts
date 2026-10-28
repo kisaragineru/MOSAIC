@@ -1,3 +1,4 @@
+import { cache } from "react";
 /**
  * Replies under a record, as one thread: the owner's follow-ups and the words of the people the
  * record is shared with. Everyone who can see the record reads the whole thread (only the owner for
@@ -115,7 +116,9 @@ export async function replyPreviews(userId: string, entryIds: string[], per = 2)
 }
 
 /** Threads I'm in, newest activity first. */
-export async function replyInbox(userId: string): Promise<ReplyThread[]> {
+export const replyInbox = cache((userId: string): Promise<ReplyThread[]> => replyInboxUncached(userId));
+
+async function replyInboxUncached(userId: string): Promise<ReplyThread[]> {
   const r = await run(userId, (tx) =>
     tx.execute<{ entry_id: string; owner_name: string; i_own: boolean; unread: number; last_body: string | null; last_author_name: string | null; last_at: string | Date | null }>(sql`select * from memory_reply_inbox()`),
   );

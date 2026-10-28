@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { AGE_BANDS, GENDERS } from "@/content/gift-general";
@@ -482,7 +483,9 @@ export function nextOccurrence(month: number, day: number, today: string): { dat
   throw new Error("unreachable");
 }
 
-export async function upcomingDates(userId: string, withinDays = 60, now = new Date()): Promise<UpcomingDate[]> {
+export const upcomingDates = cache((userId: string, withinDays?: number, now?: Date): Promise<UpcomingDate[]> => upcomingDatesUncached(userId, withinDays, now));
+
+async function upcomingDatesUncached(userId: string, withinDays = 60, now = new Date()): Promise<UpcomingDate[]> {
   return withUser(userId, async (tx) => {
     const [p] = await tx.select({ tz: profiles.timeZone }).from(profiles).where(eq(profiles.userId, userId));
     const [np] = await tx.select().from(notificationPreferences).where(eq(notificationPreferences.userId, userId));

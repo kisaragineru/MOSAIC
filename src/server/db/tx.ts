@@ -1,5 +1,7 @@
 import { sql } from "drizzle-orm";
-import { getDb, type Db } from "./client";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { getDb, getPool, type Db } from "./client";
+import * as schema from "./schema";
 
 export type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
@@ -48,24 +50,38 @@ function sanitize(e: unknown): unknown {
  */
 export async function withUser<T>(userId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
   if (!/^[0-9a-f-]{36}$/i.test(userId)) throw new Error("invalid user id");
-  try {
-    return await getDb().transaction(async (tx) => {
-      await tx.execute(sql`select set_config('app.user_id', ${userId}, true)`);
-      return fn(tx);
-    });
-  } catch (e) {
-    throw sanitize(e);
-  }
+  return identified(userId, fn);
 }
 
 /** Transaction with no identity: RLS hides all personal rows. Used for login/rate limits. */
 export async function withAnon<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
+  return identified("", fn);
+}
+
+/**
+ * BEGIN and the transaction-local identity go in one round trip (a simple-protocol query of two
+ * statements), so every transaction costs one fewer trip to the database. `who` is a checked
+ * UUID or empty, so it can be written into the statement.
+ */
+async function identified<T>(who: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
+  let client;
   try {
-    return await getDb().transaction(async (tx) => {
-      await tx.execute(sql`select set_config('app.user_id', '', true)`);
-      return fn(tx);
-    });
+    client = await getPool().connect();
   } catch (e) {
     throw sanitize(e);
+  }
+  let broken = false;
+  try {
+    await client.query(`begin; select set_config('app.user_id', '${who}', true)`);
+    const result = await fn(drizzle(client, { schema }) as unknown as Tx);
+    await client.query("commit");
+    return result;
+  } catch (e) {
+    await client.query("rollback").catch(() => {
+      broken = true;
+    });
+    throw sanitize(e);
+  } finally {
+    client.release(broken);
   }
 }

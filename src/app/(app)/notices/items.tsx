@@ -31,39 +31,49 @@ import { markOpensSeen, markStoryPagesSeen, markWriterNewsSeen, myOffers, newOpe
  * News (opened, connected, new pages) is told once: seeing it here counts.
  */
 export async function noticeItems(uid: string, t: Dict, locale: Locale): Promise<{ all: TrayItem[]; showing: Set<string> }> {
-  const account = await getAccount(uid);
-  const daily = await getDaily(uid);
+  // Everything read at once; what is told once is marked seen after (in the same request).
+  const [account, daily, upcoming, np, tv, comparisons, peerRequests, lookBack, opens, offers, news, story, inbox, card, jar] = await Promise.all([
+    getAccount(uid),
+    getDaily(uid),
+    upcomingDates(uid, 366),
+    getNotificationPrefs(uid),
+    getTuvi(uid, locale),
+    listComparisons(uid),
+    myPeerRequests(uid),
+    lookBackDue(uid),
+    newOpens(uid),
+    myOffers(uid),
+    writerNews(uid),
+    storyGrowth(uid, locale),
+    replyInbox(uid),
+    myCard(uid),
+    cookies(),
+  ]);
+  const [birthday, anniversaries] = await Promise.all([yearStoryDue(uid, daily.day), recentAnniversaries(uid, account.profile.timeZone)]);
+  await Promise.all([
+    opens.length ? markOpensSeen(uid) : null,
+    news.connected.length || news.started.length ? markWriterNewsSeen(uid) : null,
+    story.added > 0 ? markStoryPagesSeen(uid, story.pages) : null,
+  ]);
   const first = daily.slots[0];
-  const due = (await upcomingDates(uid, 366)).filter((d) => d.reminderDue);
-  const np = await getNotificationPrefs(uid);
+  const due = upcoming.filter((d) => d.reminderDue);
   const questionReminder = np.dailyQuestion && !!first && !first.doneToday;
-  const chart = (await getTuvi(uid, locale)).chart;
-  const comparisons = await listComparisons(uid);
+  const chart = tv.chart;
   const waiting = comparisons.filter((c) => c.waitingOn === "you");
-  const askedOfMe = (await myPeerRequests(uid)).filter((r) => r.role === "responder" && r.status === "pending");
-  const lookBack = await lookBackDue(uid);
-  const opens = await newOpens(uid);
-  if (opens.length) await markOpensSeen(uid);
-  const offers = await myOffers(uid);
+  const askedOfMe = peerRequests.filter((r) => r.role === "responder" && r.status === "pending");
   const pendingOffer = offers.find((x) => !x.accepted && !x.dismissed);
   const startAsk = chart ? offers.find((x) => x.startAnswer === null) : undefined;
-  const news = await writerNews(uid);
-  if (news.connected.length || news.started.length) await markWriterNewsSeen(uid);
-  const story = await storyGrowth(uid, locale);
-  if (story.added > 0) await markStoryPagesSeen(uid, story.pages);
-  const newReplies = (await replyInbox(uid)).filter((x) => x.unread > 0);
-  const birthday = await yearStoryDue(uid, daily.day);
+  const newReplies = inbox.filter((x) => x.unread > 0);
   const btn = "rounded-full px-3 py-1.5 text-xs font-semibold";
   const go = (href: string, label: string) => <Link href={href} className="mt-1 inline-block text-xs font-semibold text-teal-800 underline underline-offset-4">{label} →</Link>;
-  const anniversaries = await recentAnniversaries(uid, account.profile.timeZone);
-  const cardUndecided = (await myCard(uid)) === null;
+  const cardUndecided = card === null;
   // Notifications, suggested when they'd help: this device could turn them on now (its cookie,
   // kept by PushReadiness), someone could write to you, and you've been here a day or have
   // started talking. A nudge: closed, it comes back after 14 days, then 30, then never.
   const pushKey = pushPublicKey();
   const pushAsk =
     !!pushKey &&
-    (await cookies()).get("mosaic_push")?.value === "ready" &&
+    jar.get("mosaic_push")?.value === "ready" &&
     comparisons.some((c) => c.status === "active") &&
     (Date.now() - account.createdAt.getTime() > 86_400_000 || (await dmInbox(uid)).length > 0);
   // Everything Home has to tell, in one tray: what's waiting on you first, then days, news, habits.
