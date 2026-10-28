@@ -5,6 +5,7 @@ import { groupPhotoUrls } from "@/server/services/group-photo";
 import { isAdmin } from "@/server/services/admin";
 import { ConfirmButton } from "@/components/confirm-button";
 import { DmAvatar } from "@/components/dm-avatar";
+import { PersonLink } from "@/components/person-link";
 import { Flash } from "@/components/flash";
 import { Button, Card, Page } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
@@ -92,7 +93,13 @@ export default async function ConversationInfoPage({ params, searchParams }: { p
         <ul className="space-y-2">
           {active.map((m) => (
             <li key={m.id} className="flex items-center gap-3">
-              <DmAvatar names={[m.name]} srcs={[pics.get(m.id)]} types={[tints.get(m.id)]} size="sm" />
+              {m.connected && m.id !== uid ? (
+                <PersonLink userId={m.id} label={t.replies.openProfile(m.name)}>
+                  <DmAvatar names={[m.name]} srcs={[pics.get(m.id)]} types={[tints.get(m.id)]} size="sm" />
+                </PersonLink>
+              ) : (
+                <DmAvatar names={[m.name]} srcs={[pics.get(m.id)]} types={[tints.get(m.id)]} size="sm" />
+              )}
               <span className="flex-1">
                 <span className="block font-medium text-stone-900">{m.id === uid ? `${m.name}（${tm.you}）` : m.name}</span>
                 {(m.role === "owner" && group) || (!m.connected && m.id !== uid) ? (

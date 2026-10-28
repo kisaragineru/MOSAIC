@@ -77,6 +77,8 @@ test("direct messages: send, read, reply, react, edit, unsend, photos", async ({
   await sora.getByRole("link", { name: /ハナ/ }).click();
   await sora.waitForURL(thread);
   await expect(sora.getByText("こんにちは！")).toBeVisible();
+  // Hana's icon at the top leads to Sora's page about her.
+  await expect(sora.getByRole("link", { name: "ハナさんとのページを開く" })).toHaveAttribute("href", /^\/people\/with\/[0-9a-f-]+$/);
   // Hana sees it was read, and that Sora is typing.
   await expect(hana.getByText("既読")).toBeVisible({ timeout: 15_000 });
   await sora.getByLabel("メッセージを入力…").fill("い");
@@ -112,8 +114,10 @@ test("direct messages: send, read, reply, react, edit, unsend, photos", async ({
   await confirm(sora);
   await expect(hana.getByText("メッセージの送信が取り消されました")).toBeVisible({ timeout: 15_000 });
 
-  // A photo: only members can load it.
-  await hana.locator('input[type="file"]').setInputFiles({ name: "dot.png", mimeType: "image/png", buffer: PNG });
+  // A photo: only members can load it. (On a phone there is also the camera, next to the gallery.)
+  await expect(hana.getByRole("button", { name: "カメラで撮る" })).toBeVisible();
+  await expect(hana.getByTestId("dm-camera")).toHaveAttribute("capture", "environment");
+  await hana.locator('input[type="file"][multiple]').setInputFiles({ name: "dot.png", mimeType: "image/png", buffer: PNG });
   await expect(hana.getByRole("button", { name: "写真を外す" })).toBeVisible();
   await hana.getByRole("button", { name: "送信", exact: true }).click();
   const img = sora.locator('img[src^="/api/dm/photo/"]');

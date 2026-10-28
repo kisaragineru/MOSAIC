@@ -1,5 +1,6 @@
 import type { MainStarId } from "@/lib/tuvi/stars";
 import Link from "next/link";
+import { PersonLink } from "./person-link";
 import type { Dict } from "@/lib/i18n/messages/en";
 import type { Locale } from "@/lib/i18n/locales";
 import { FEELING_EMOJI, type Feeling } from "@/lib/labels";
@@ -137,9 +138,17 @@ function Theirs({ t, it, compact, c, p, media, src, type }: { t: Dict; it: Timel
   const tl = t.memories.timeline;
   const name = m.ownerName ?? "?";
   return (
-    <Link href={`/memories/shared/${m.id}`} className="block rounded-2xl border border-rose-100 bg-rose-50/50 p-3 transition hover:border-rose-300" data-testid="their-record">
+    // The whole card opens the record; their icon (above it) opens my page about them.
+    <div className="relative rounded-2xl border border-rose-100 bg-rose-50/50 p-3 transition hover:border-rose-300" data-testid="their-record">
+      <Link href={`/memories/shared/${m.id}`} aria-label={t.comments.openRecord} className="absolute inset-0 rounded-2xl" />
       <div className="mb-1 flex flex-wrap items-center gap-1.5">
-        <Avatar name={name} src={src} type={type} className="h-6 w-6 text-[10px]" />
+        {m.ownerId ? (
+          <PersonLink userId={m.ownerId} label={t.replies.openProfile(name)} className="relative z-10">
+            <Avatar name={name} src={src} type={type} className="h-6 w-6 text-[10px]" />
+          </PersonLink>
+        ) : (
+          <Avatar name={name} src={src} type={type} className="h-6 w-6 text-[10px]" />
+        )}
         <span className="text-xs font-semibold text-rose-900">{tl.theirs(name)}</span>
         <Stamp t={t} it={it} />
         {m.kind !== "note" && <Pill tone="rose">{t.memories.kinds[m.kind as keyof Dict["memories"]["kinds"]]}</Pill>}
@@ -149,7 +158,7 @@ function Theirs({ t, it, compact, c, p, media, src, type }: { t: Dict; it: Timel
       {m.body && <p className={`emoji-color whitespace-pre-line text-sm text-stone-800 ${compact ? "line-clamp-2" : "line-clamp-4"}`}>{m.body}</p>}
       {media && <MediaGrid media={media} label={t.memories.media.label} />}
       {p && p.length > 0 && <Comments t={t} items={p} total={c?.count ?? p.length} ownerName={name} />}
-      <p className="mt-2 text-right text-xs font-semibold text-rose-800">{t.comments.openRecord} →</p>
-    </Link>
+      <p aria-hidden className="mt-2 text-right text-xs font-semibold text-rose-800">{t.comments.openRecord} →</p>
+    </div>
   );
 }

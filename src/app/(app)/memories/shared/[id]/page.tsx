@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { PersonLink } from "@/components/person-link";
 import { Avatar } from "@/components/avatar";
 import { dmReplyToRecordAction } from "@/app/actions/dm";
 import { RecordReplies } from "@/components/record-replies";
@@ -35,7 +36,9 @@ export default async function SharedRecordPage({ params, searchParams }: { param
       <Flash t={t} sp={sp} />
       <article className="rounded-3xl border border-rose-100 bg-rose-50/50 p-4 shadow-sm">
         <div className="mb-2 flex flex-wrap items-center gap-1.5">
-          <Avatar name={e.ownerName} src={(await avatarUrls(uid, [e.ownerId])).get(e.ownerId)} type={(await typeTints(uid, [e.ownerId])).get(e.ownerId)} className="h-8 w-8 text-xs" />
+          <PersonLink userId={e.ownerId} label={t.replies.openProfile(e.ownerName)}>
+            <Avatar name={e.ownerName} src={(await avatarUrls(uid, [e.ownerId])).get(e.ownerId)} type={(await typeTints(uid, [e.ownerId])).get(e.ownerId)} className="h-8 w-8 text-xs" />
+          </PersonLink>
           <span className="text-sm font-semibold text-rose-900">{e.ownerName}</span>
           {e.kind !== "note" && <Pill tone="rose">{KIND_ICON[e.kind]} {t.memories.kinds[e.kind]}</Pill>}
           <time dateTime={e.createdAt.toISOString()} className="text-xs text-stone-500">

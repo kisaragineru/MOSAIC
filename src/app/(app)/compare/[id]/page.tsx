@@ -144,9 +144,16 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
       {/* Who: the two of you, how you're connected, and where to go on this page. */}
       <section className="rounded-3xl bg-linear-to-br from-rose-50 via-white to-teal-50 p-5 shadow-sm ring-1 ring-white/80">
         <div className="flex items-center gap-3">
-          <div className="flex -space-x-3" aria-hidden>
+          <div className="flex -space-x-3">
             <Avatar name={myName || "?"} src={pics.get(uid)} type={await myTint(uid)} className="h-12 w-12 text-lg ring-4 ring-white" />
-            <Avatar name={v.otherName} src={pics.get(other ?? "")} type={(await typeTints(uid, [other])).get(other ?? "")} className="h-12 w-12 text-lg ring-4 ring-white" />
+            {/* Their icon opens my page about them, once they're in My people. */}
+            {personId ? (
+              <Link href={`/people/${personId}`} aria-label={t.replies.openProfile(v.otherName)} className="shrink-0 rounded-full transition hover:scale-110 focus-visible:outline-2 focus-visible:outline-teal-600">
+                <Avatar name={v.otherName} src={pics.get(other ?? "")} type={(await typeTints(uid, [other])).get(other ?? "")} className="h-12 w-12 text-lg ring-4 ring-white" />
+              </Link>
+            ) : (
+              <Avatar name={v.otherName} src={pics.get(other ?? "")} type={(await typeTints(uid, [other])).get(other ?? "")} className="h-12 w-12 text-lg ring-4 ring-white" />
+            )}
           </div>
           <div className="min-w-0">
             <p className="truncate text-lg font-bold text-stone-900">{v.otherName}</p>

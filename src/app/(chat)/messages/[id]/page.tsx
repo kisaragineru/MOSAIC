@@ -28,6 +28,8 @@ export default async function ConversationPage({ params, searchParams }: { param
   const text: ChatText = {
     back: t.common.back ?? "←",
     info: tm.info,
+    camera: t.memories.media.camera,
+    openPerson: t.replies.openProfile(P),
     you: tm.you,
     unsent: tm.unsent,
     unsentMine: tm.unsentMine,
@@ -92,7 +94,7 @@ export default async function ConversationPage({ params, searchParams }: { param
     title: conv.title,
     canSend: conv.canSend,
     left: conv.me.left,
-    members: conv.members.map((m) => ({ id: m.id, name: m.name, left: m.left, lastReadAt: m.lastReadAt?.toISOString() ?? null, typing: m.typing })),
+    members: conv.members.map((m) => ({ id: m.id, name: m.name, left: m.left, lastReadAt: m.lastReadAt?.toISOString() ?? null, typing: m.typing, connected: m.connected })),
     avatars: Object.fromEntries(await avatarUrls(uid, conv.members.map((m) => m.id))),
     photo: conv.kind === "group" ? ((await groupPhotoUrls(uid, [conv.id])).get(conv.id) ?? null) : null,
     tints: Object.fromEntries(await typeTints(uid, conv.members.map((m) => m.id))),

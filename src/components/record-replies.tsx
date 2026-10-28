@@ -1,5 +1,6 @@
 import type { MainStarId } from "@/lib/tuvi/stars";
 import Link from "next/link";
+import { personHref } from "./person-link";
 import { addReplyAction, deleteReplyAction } from "@/app/actions/comments";
 import type { Dict } from "@/lib/i18n/messages/en";
 import type { Locale } from "@/lib/i18n/locales";
@@ -61,10 +62,10 @@ export function RecordReplies({
           {replies.map((x) => {
             const byOwner = x.authorId === ownerId;
             const session = x.mine ? undefined : connections.get(x.authorId);
-            const link = session && x.authorName ? `/compare/${session}` : null;
+            const link = session && x.authorName ? personHref(x.authorId) : null;
             return (
               <li key={x.id} className="relative">
-                {/* Someone I'm connected to: the icon and name open our page together. */}
+                {/* Someone I'm connected to: the icon and name open my page about them. */}
                 {link ? (
                   <Link href={link} aria-label={r.openProfile(x.authorName ?? "")} className="absolute -left-[1.95rem] top-0 rounded-full transition hover:scale-110 focus-visible:outline-2 focus-visible:outline-teal-600">
                     <Avatar name={x.authorName ?? x.authorInitial} src={avatars.get(x.authorId)} type={tints.get(x.authorId)} className="h-7 w-7 text-[10px] ring-2 ring-white" />

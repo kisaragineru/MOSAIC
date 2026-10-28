@@ -283,7 +283,7 @@ test("replies under a record: one thread for everyone who can see it", async ({ 
   await expect(thread(sora)).toContainText("ハナさんの友だち");
   await expect(thread(sora)).not.toContainText("レン");
   // Someone she's connected to (Hana) opens their page together from the icon; Ren's doesn't link.
-  await expect(thread(sora).getByRole("link", { name: "ハナさんとのページを開く" }).first()).toHaveAttribute("href", /^\/compare\/[0-9a-f-]+$/);
+  await expect(thread(sora).getByRole("link", { name: "ハナさんとのページを開く" }).first()).toHaveAttribute("href", /^\/people\/with\/[0-9a-f-]+$/);
   await expect(thread(sora).locator("li", { hasText: "ハナさんの友だち" }).getByRole("link")).toHaveCount(0);
   // Ren's icon: his initial, no photo.
   const renItem = thread(sora).locator("li", { hasText: "ハナさんの友だち" });
@@ -413,6 +413,10 @@ test("photos on a record: uploaded as chosen, a tidy block on the timeline, whol
   await sora.goto("/memories?view=friends");
   const card = sora.getByTestId("their-record").filter({ hasText: "海に行った。" });
   await expect(card.locator('[data-testid="media-grid"][data-count="3"]')).toBeVisible();
+  // Hana's icon opens Sora's page about her (their connection page, while she isn't in My people).
+  await card.getByRole("link", { name: "ハナさんとのページを開く" }).click();
+  await sora.waitForURL(/\/compare\/[0-9a-f-]+$/);
+  await sora.goBack();
   await card.click();
   await sora.waitForURL(/\/memories\/shared\//);
   await expect(sora.getByTestId("media-gallery").getByRole("img")).toHaveCount(3);

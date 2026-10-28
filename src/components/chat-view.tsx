@@ -5,12 +5,15 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { dmEdit, dmReact, dmTranslate, dmUnsend } from "@/app/actions/dm";
 import type { DmMessage } from "@/server/services/dm";
 import { DmAvatar } from "./dm-avatar";
+import { PersonLink } from "./person-link";
 import { firstUrl, LinkCard } from "./link-card";
 import type { MainStarId } from "@/lib/tuvi/stars";
 
 export interface ChatText {
   back: string;
   info: string;
+  /** "{name}": opens my page about someone I'm connected to (their icon). */
+  openPerson: string;
   you: string;
   unsent: string;
   unsentMine: string;
@@ -22,6 +25,8 @@ export interface ChatText {
   placeholder: string;
   send: string;
   attach: string;
+  /** Straight to the camera (phones). */
+  camera: string;
   removePhoto: string;
   like: string;
   replyingTo: string;
@@ -79,7 +84,7 @@ export interface ConvView {
   title: string | null;
   canSend: boolean;
   left: boolean;
-  members: { id: string; name: string; left: boolean; lastReadAt: string | null; typing: boolean }[];
+  members: { id: string; name: string; left: boolean; lastReadAt: string | null; typing: boolean; connected?: boolean }[];
   /** Photo links of members whose photo I may see. */
   avatars: Record<string, string>;
   /** The group's own photo. */
@@ -176,6 +181,7 @@ export function ChatView({
   const list = useRef<HTMLDivElement>(null);
   const area = useRef<HTMLTextAreaElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const cameraInput = useRef<HTMLInputElement>(null);
   const stickToBottom = useRef(true);
   const keepOffset = useRef<number | null>(null);
   const lastTyping = useRef(0);
@@ -679,7 +685,7 @@ export function ChatView({
     const corner = mine ? `${first ? "" : "rounded-tr-md"} ${last ? "" : "rounded-br-md"}` : `${first ? "" : "rounded-tl-md"} ${last ? "" : "rounded-bl-md"}`;
     rows.push(
       <li key={m.id} id={`m-${m.id}`} className={`emoji-color flex items-end gap-2 ${mine ? "justify-end" : "justify-start"} ${last ? "mb-2" : "mb-0.5"}`}>
-        {!mine && conv.kind === "group" && <span className="w-7 shrink-0">{last && <DmAvatar names={[m.senderName ?? "?"]} srcs={[conv.avatars[m.senderId ?? ""]]} types={[conv.tints?.[m.senderId ?? ""]]} size="sm" />}</span>}
+        {!mine && conv.kind === "group" && <span className="w-7 shrink-0">{last && <Sender conv={conv} id={m.senderId} name={m.senderName ?? "?"} label={tx.openPerson} />}</span>}
         <div className={`flex max-w-[78%] flex-col ${mine ? "items-end" : "items-start"}`}>
           {!mine && conv.kind === "group" && first && <span className="mb-0.5 ml-3 text-[11px] text-stone-500">{m.senderName}</span>}
           {m.reply && (
@@ -824,7 +830,11 @@ export function ChatView({
         <Link href="/messages" aria-label={tx.back} className="flex h-10 w-10 items-center justify-center rounded-full text-xl text-stone-600 hover:bg-stone-100">
           ←
         </Link>
-        <DmAvatar names={(conv.kind === "group" ? activeOthers : others).map((m) => m.name)} srcs={(conv.kind === "group" ? activeOthers : others).map((m) => conv.avatars[m.id])} types={(conv.kind === "group" ? activeOthers : others).map((m) => conv.tints?.[m.id])} size="sm" photo={conv.photo} />
+        {conv.kind === "direct" && others[0] ? (
+          <Sender conv={conv} id={others[0].id} name={others[0].name} label={tx.openPerson} />
+        ) : (
+          <DmAvatar names={(conv.kind === "group" ? activeOthers : others).map((m) => m.name)} srcs={(conv.kind === "group" ? activeOthers : others).map((m) => conv.avatars[m.id])} types={(conv.kind === "group" ? activeOthers : others).map((m) => conv.tints?.[m.id])} size="sm" photo={conv.photo} />
+        )}
         <div className="min-w-0 flex-1">
           <h1 className="truncate font-semibold text-stone-900">{title}</h1>
           {subtitle && <p className={`truncate text-xs ${typing.length ? "text-teal-700" : "text-stone-500"}`}>{subtitle}</p>}
@@ -932,6 +942,17 @@ export function ChatView({
                     🖼
                   </button>
                   <input ref={fileInput} type="file" accept="image/*" multiple hidden onChange={(e) => void pickPhotos(e.target.files)} />
+                  {/* On a phone: the camera itself, for a photo taken now. */}
+                  <button
+                    type="button"
+                    aria-label={tx.camera}
+                    onClick={() => cameraInput.current?.click()}
+                    disabled={photos.length >= maxPhotos}
+                    className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-stone-100 text-xl text-stone-600 transition hover:bg-stone-200 active:scale-90 disabled:opacity-40 pointer-coarse:flex"
+                  >
+                    📷
+                  </button>
+                  <input ref={cameraInput} type="file" accept="image/*" capture="environment" hidden data-testid="dm-camera" onChange={(e) => void pickPhotos(e.target.files)} />
                 </>
               )}
               <textarea
@@ -1030,6 +1051,13 @@ export function ChatView({
 type TranslationState = { state: "loading" } | { state: "done"; text: string; same: boolean } | { state: "error"; error: string };
 
 /** A translation under the original message (the original always stays), with a way to turn it off. */
+/** Someone's icon in the conversation: opens my page about them when we're connected. */
+function Sender({ conv, id, name, label }: { conv: ConvView; id: string | null | undefined; name: string; label: string }) {
+  const icon = <DmAvatar names={[name]} srcs={[conv.avatars[id ?? ""]]} types={[conv.tints?.[id ?? ""]]} size="sm" />;
+  const connected = id && conv.members.find((x) => x.id === id)?.connected;
+  return connected ? <PersonLink userId={id} label={fill(label, { name })}>{icon}</PersonLink> : icon;
+}
+
 function Translation({ x, tx, mine, onClose }: { x: TranslationState; tx: ChatText; mine: boolean; onClose: () => void }) {
   return (
     <div className={`mt-1 max-w-full rounded-2xl border border-dashed px-3 py-2 text-sm ${mine ? "border-teal-200 bg-teal-50/70" : "border-stone-300 bg-white/80"}`} data-testid="translation" aria-live="polite">
