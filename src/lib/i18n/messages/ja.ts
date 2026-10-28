@@ -1137,6 +1137,7 @@ export const ja: Dict = {
     pairPrompts: "話してみたいこと",
     menhTitle: "命宮どうし",
     timingTitle: "いまの10年",
+    pairCare: "{name}さんとの間で心に留めたいこと",
     partnerChart: (n: string) => `${n}さんの命盤`,
     partnerReading: (n: string) => `${n}さんの読み`,
     detailMissingYou: "あなたの命盤がまだないため、命盤の詳細は表示できません。命盤をつくると、「最新の回答で更新」で反映されます。",

@@ -1135,6 +1135,7 @@ export const en = {
     pairPrompts: "Things to talk about",
     menhTitle: "Mệnh to Mệnh",
     timingTitle: "Your current decades",
+    pairCare: "With {name}, keep in mind",
     partnerChart: (n: string) => `${n}'s chart`,
     partnerReading: (n: string) => `Reading for ${n}`,
     detailMissingYou: "Your full chart can't be shown because you have not made it yet. Make it, then use “Update with latest answers”.",

@@ -438,6 +438,7 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                         menhTitle: t.compare.menhTitle,
                         timingTitle: t.compare.timingTitle,
                         noMain: t.tuvi.ui.noMain,
+                        care: t.compare.pairCare,
                       }}
                     />
                   </Card>

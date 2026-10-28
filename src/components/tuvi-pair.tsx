@@ -9,6 +9,8 @@ export interface PairLabels {
   menhTitle: string;
   timingTitle: string;
   noMain: string;
+  /** "{name}" is the other person's name. */
+  care: string;
 }
 
 const ICON: Record<PairLens, string> = { love: "♡", friends: "∞", collaborators: "✦" };
@@ -62,7 +64,14 @@ export function TuviPair({ readings, labels }: { readings: PairReadings; labels:
                 <Stars items={s.menhStars} shared={s.shared} noMain={labels.noMain} />
               </div>
             </div>
-            <p className="mt-2 text-sm leading-relaxed text-stone-800">{s.text}</p>
+            <p className="mt-2 text-xs leading-5 text-stone-500">{s.text}</p>
+            {s.reading && <p className="mt-1.5 text-sm leading-relaxed text-stone-800" data-testid="pair-reading">{s.reading}</p>}
+            {s.care && (
+              <p className="mt-2 rounded-xl bg-white/70 px-3 py-2 text-xs leading-5 text-stone-700">
+                <span className="mb-0.5 block font-semibold text-rose-800">💡 {labels.care.replace("{name}", s.to)}</span>
+                {s.care}
+              </p>
+            )}
           </div>
         ))}
         {r.prompts.length > 0 && (

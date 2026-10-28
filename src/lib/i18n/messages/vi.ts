@@ -1137,6 +1137,7 @@ export const vi: Dict = {
     pairPrompts: "Điều nên trò chuyện",
     menhTitle: "Mệnh với Mệnh",
     timingTitle: "Mười năm hiện tại",
+    pairCare: "Với {name}, nên lưu ý",
     partnerChart: (n: string) => `Lá số của ${n}`,
     partnerReading: (n: string) => `Luận giải cho ${n}`,
     detailMissingYou: "Chưa hiển thị được lá số đầy đủ vì bạn chưa lập lá số. Hãy lập rồi bấm “Cập nhật”.",

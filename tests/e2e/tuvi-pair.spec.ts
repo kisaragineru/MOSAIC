@@ -47,6 +47,9 @@ test("full charts shared by both: partner chart, readings by relationship, no bi
 
   await expect(a.getByRole("heading", { name: /二人のTử Vi/ })).toBeVisible();
   await expect(a.getByText(/ハナさんの夫妻宮の星と、ソラさんの命宮の星/)).toBeVisible();
+  // Said in plain words: what Hana tends to look for, what Sora brings, one thing to keep in mind.
+  await expect(a.getByTestId("pair-reading").first()).toContainText("ハナさんがパートナーに求めやすいのは");
+  await expect(a.getByText("ソラさんとの間で心に留めたいこと")).toBeVisible();
   await a.getByRole("tab", { name: "友人", exact: true }).click();
   await expect(a.getByText(/ハナさんの奴僕宮の星と、ソラさんの命宮の星/)).toBeVisible();
   await expect(a.getByText(/ソラさん：数え\d+〜\d+歳/)).toBeVisible();

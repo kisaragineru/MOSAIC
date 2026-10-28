@@ -129,6 +129,10 @@ Shown only when both people agreed to the `tuvi_detail` scope (whole chart). Sou
   Mệnh palace — partners: Phu Thê; friends: Nô Bộc; close collaborators: Huynh Đệ. Both directions
   are shown. Main stars the two palaces share are named ("can be read as close to the person one
   pictures"); no shared star is worded as a chance to discover new sides, never as a bad sign.
+  Each direction is then said in plain words (`src/lib/compare/pair-stars.ts`): what the first
+  person tends to look for (their relationship palace's stars), what the other brings and how it
+  tends to show (their Mệnh stars), how the two meet, and one thing to keep in mind with the other
+  person. These are the usual star meanings (as in `interpret.ts`) said concretely, not new rules.
 - **Mệnh to Mệnh**: main stars both Mệnh palaces hold.
 - **Timing**: each person's current Đại Hạn (from interp-3 `lifeStages`) and the years until it
   changes; when both are in the same palace's decade, that is pointed out.

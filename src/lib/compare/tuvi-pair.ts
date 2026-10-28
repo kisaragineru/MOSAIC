@@ -17,6 +17,7 @@ import type { Chart } from "@/lib/tuvi/engine";
 import { PALACE_JA, PALACE_SHORT } from "@/lib/tuvi/interpret-detail";
 import { lifeStages, mainKeywords, mainsOf, traitWords } from "@/lib/tuvi/interpret";
 import { PALACE_INFO, STAR_INFO, type MainStarId, type PalaceId } from "@/lib/tuvi/stars";
+import { PAIR_STAR } from "./pair-stars";
 
 export const PAIR_VERSION = "pair-1";
 export const PAIR_LENSES = ["love", "friends", "collaborators"] as const;
@@ -41,6 +42,10 @@ export interface PairSide {
   menhStars: PairStar[];
   shared: string[];
   text: string;
+  /** In plain words: what one tends to look for here, what the other brings, how they meet. */
+  reading: string | null;
+  /** One thing to keep in mind with the other person (from their Mệnh star). */
+  care: string | null;
 }
 
 export interface PairLensReading {
@@ -60,6 +65,43 @@ export interface PairReadings {
 const palaceName = (id: PalaceId, l: Locale) => (l === "ja" ? PALACE_JA[id] : l === "vi" ? `cung ${PALACE_INFO[id].vi}` : `${PALACE_INFO[id].vi} palace`);
 const stars = (ids: MainStarId[], l: Locale): PairStar[] => ids.map((m) => ({ name: STAR_INFO[m].vi, keywords: mainKeywords(m, l) }));
 const join = (xs: string[], l: Locale) => xs.join(l === "ja" ? "・" : ", ");
+// Two stars: each phrase kept whole (the phrases have their own commas).
+const both = (xs: string[], l: Locale) => (l === "ja" ? (xs.length > 1 ? xs.map((x) => `「${x}」`).join("と") : xs.join("")) : xs.join(l === "vi" ? ", cùng " : ", plus "));
+const starText = (ids: MainStarId[], key: "want" | "give", l: Locale) => both(ids.map((m) => PAIR_STAR[m][key][l]), l);
+
+const REL: Record<PairLens, T> = {
+  love: { ja: "パートナー", en: "a partner", vi: "người bạn đời" },
+  friends: { ja: "友人や仲間", en: "friends", vi: "bạn bè" },
+  collaborators: { ja: "身近な協力者", en: "close collaborators", vi: "người cộng tác thân thiết" },
+};
+
+/** What x tends to look for (x's relationship palace), what y brings (y's Mệnh), and how they meet. */
+function pairReading(x: string, y: string, lens: PairLens, want: MainStarId[], give: MainStarId[], shared: string[], l: Locale): string | null {
+  if (!want.length || !give.length) return null;
+  const w = starText(want, "want", l);
+  const g = starText(give, "give", l);
+  const scene = PAIR_STAR[give[0]!].scene[l];
+  const rel = pick(REL[lens], l);
+  const head = pick({ ja: `${x}さんが${rel}に求めやすいのは、${w}。${y}さんの持ち味は${g}で、${scene}`, en: `What ${x} tends to look for in ${rel} is ${w}. ${y} brings ${g}. ${scene}`, vi: `Điều ${x} dễ tìm ở ${rel} là ${w}. ${y} mang đến ${g}. ${scene}` }, l);
+  const meet = shared.length
+    ? pick(
+        {
+          ja: `重なる${join(shared, l)}がちょうどそこに当たるので、${x}さんから見た${y}さんは「こういう人がいい」と思い描く姿に近く映りやすい組み合わせです。`,
+          en: `The shared ${join(shared, l)} sits right there, so to ${x}, ${y} can easily feel close to the kind of person they picture.`,
+          vi: `${join(shared, l)} chung nằm đúng ở đó, nên với ${x}, ${y} dễ giống hình mẫu mà ${x} hằng nghĩ tới.`,
+        },
+        l,
+      )
+    : pick(
+        {
+          ja: `求めるものと持ち味が違う形なので、はじめは「思っていたのと違う」と感じることもありそうです。そのぶん、${y}さんは、${x}さんが自分では選ばない見方や過ごし方を運んでくれる相手と読めます。`,
+          en: `What ${x} looks for and what ${y} brings take different shapes, so it may feel unexpected at first. Read another way, ${y} brings ways of seeing and spending time that ${x} wouldn't pick alone.`,
+          vi: `Điều ${x} tìm và điều ${y} mang đến có hình dạng khác nhau, nên lúc đầu có thể thấy bất ngờ. Nhìn cách khác, ${y} mang đến những góc nhìn và cách sống mà ${x} tự mình sẽ không chọn.`,
+        },
+        l,
+      );
+  return `${head}${l === "ja" ? "" : " "}${meet}`;
+}
 
 function side(a: Chart, b: Chart, names: [string, string], lens: PairLens, l: Locale): PairSide {
   const palace = LENS_PALACE[lens];
@@ -76,21 +118,21 @@ function side(a: Chart, b: Chart, names: [string, string], lens: PairLens, l: Lo
   const text = shared.length
     ? pick(
         {
-          ja: `${x}さんの${p}の星と、${y}さんの命宮の星が重なっています（${join(shared, l)}）。伝統的には、思い描く相手像に近い組み合わせと読まれることがあります。${borrowedNote}`,
-          en: `${x}'s ${p} and ${y}'s Mệnh palace share ${join(shared, l)}. Traditionally this can be read as ${y} being close to the kind of person ${x} pictures here.${borrowedNote}`,
-          vi: `${p} của ${x} và cung Mệnh của ${y} có chung sao ${join(shared, l)}. Theo truyền thống, có thể đọc là ${y} gần với hình mẫu mà ${x} hướng tới.${borrowedNote}`,
+          ja: `${x}さんの${p}の星と、${y}さんの命宮の星が重なっています（${join(shared, l)}）。${borrowedNote}`,
+          en: `${x}'s ${p} and ${y}'s Mệnh palace share ${join(shared, l)}.${borrowedNote}`,
+          vi: `${p} của ${x} và cung Mệnh của ${y} có chung sao ${join(shared, l)}.${borrowedNote}`,
         },
         l,
       )
     : pick(
         {
-          ja: `${x}さんの${p}の星と、${y}さんの命宮の星は重なっていません。違いは、相手から新しい面を知るきっかけとして読むこともできます。${borrowedNote}`,
-          en: `${x}'s ${p} and ${y}'s Mệnh palace share no main star. The difference can also be read as a way to discover new sides through each other.${borrowedNote}`,
-          vi: `${p} của ${x} và cung Mệnh của ${y} không có chính tinh chung. Sự khác biệt cũng có thể là dịp khám phá những mặt mới qua nhau.${borrowedNote}`,
+          ja: `${x}さんの${p}の星と、${y}さんの命宮の星は重なっていません。${borrowedNote}`,
+          en: `${x}'s ${p} and ${y}'s Mệnh palace share no main star.${borrowedNote}`,
+          vi: `${p} của ${x} và cung Mệnh của ${y} không có chính tinh chung.${borrowedNote}`,
         },
         l,
       );
-  return { from: x, to: y, palace: p, lensStars: stars(lensIds, l), borrowed: !!own?.borrowed, menhStars: stars(menhIds, l), shared, text };
+  return { from: x, to: y, palace: p, lensStars: stars(lensIds, l), borrowed: !!own?.borrowed, menhStars: stars(menhIds, l), shared, text, reading: pairReading(x, y, lens, lensIds, menhIds, shared, l), care: menhIds.length ? PAIR_STAR[menhIds[0]!].care[l] : null };
 }
 
 const INTRO: Record<PairLens, (p: string) => T> = {
@@ -168,21 +210,23 @@ export function pairReadings(a: Chart, b: Chart, names: [string, string], ages: 
   }));
   const ma = mainsOf(a, "menh")?.mains ?? [];
   const mb = mainsOf(b, "menh")?.mains ?? [];
-  const common = ma.filter((m) => mb.includes(m)).map((m) => STAR_INFO[m].vi);
+  const commonIds = ma.filter((m) => mb.includes(m));
+  const common = commonIds.map((m) => STAR_INFO[m].vi);
+  const give = (ids: MainStarId[]) => starText(ids, "give", l);
   const menhText = common.length
     ? pick(
         {
-          ja: `二人の命宮には共通の星（${join(common, l)}）があります。似た持ち味を持つ組み合わせと読まれます。`,
-          en: `Both Mệnh palaces hold ${join(common, l)} — traditionally read as a similar temperament.`,
-          vi: `Cả hai cung Mệnh đều có ${join(common, l)} — theo truyền thống là có khí chất tương đồng.`,
+          ja: `二人の命宮には共通の星（${join(common, l)}）があります。どちらも${give(commonIds)}を持つ者どうしなので、説明しなくても通じ合いやすい組み合わせです。その一方で、同じところでつまずきやすい面もあります。`,
+          en: `Both Mệnh palaces hold ${join(common, l)}: you both bring ${give(commonIds)}, so you tend to understand each other without explaining. The flip side is that you may stumble in the same places.`,
+          vi: `Cả hai cung Mệnh đều có ${join(common, l)}: cả hai cùng mang ${give(commonIds)}, nên dễ hiểu nhau mà không cần giải thích. Mặt khác, hai người cũng dễ vấp ở cùng một chỗ.`,
         },
         l,
       )
     : pick(
         {
-          ja: "二人の命宮の星は異なります。持ち味の違いは、役割を分け合える組み合わせとして読むこともできます。",
-          en: "Your Mệnh palaces hold different stars. Different temperaments can also be read as roles you can share out.",
-          vi: "Hai cung Mệnh có các sao khác nhau. Khí chất khác nhau cũng có thể là dịp chia sẻ vai trò.",
+          ja: ma.length && mb.length ? `二人の命宮の星は異なります。${names[0]}さんの持ち味は${give(ma)}、${names[1]}さんの持ち味は${give(mb)}。得意なことが違うので、役割を分け合える組み合わせと読めます。` : "二人の命宮の星は異なります。持ち味の違いは、役割を分け合える組み合わせとして読むこともできます。",
+          en: ma.length && mb.length ? `Your Mệnh palaces hold different stars. ${names[0]} brings ${give(ma)}; ${names[1]} brings ${give(mb)}. With different strengths, you can share out the roles.` : "Your Mệnh palaces hold different stars. Different temperaments can also be read as roles you can share out.",
+          vi: ma.length && mb.length ? `Hai cung Mệnh có các sao khác nhau. ${names[0]} mang ${give(ma)}; ${names[1]} mang ${give(mb)}. Thế mạnh khác nhau nên có thể chia sẻ vai trò.` : "Hai cung Mệnh có các sao khác nhau. Khí chất khác nhau cũng có thể là dịp chia sẻ vai trò.",
         },
         l,
       );
