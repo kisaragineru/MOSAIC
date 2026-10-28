@@ -129,4 +129,20 @@ test("QR connection: preview of what others see, who is waiting, results first",
   await expect(b.getByTestId("rel-ask")).toHaveCount(0);
   await b.goto("/people");
   await expect(b.getByRole("link", { name: /ハナ.*つながっている/ })).toBeVisible();
+
+  // Hana's bio on her card: a short one is shown whole; a long one opens in place with 続きを読む.
+  await b.getByRole("link", { name: /ハナ.*つながっている/ }).click();
+  const bio = b.getByTestId("person-bio");
+  await expect(bio).toContainText("お茶と散歩が好きです。");
+  await expect(bio.getByRole("button", { name: "続きを読む" })).toHaveCount(0);
+  await a.goto("/me");
+  await a.locator('textarea[name="bio"]').fill("お茶と散歩が好きです。\n朝は早起き。\n週末は海へ。\n夜は本を読みます。\n最後の行まで読めます。");
+  await a.getByRole("button", { name: "保存", exact: true }).click();
+  await expect(a.getByText("保存しました。")).toBeVisible();
+  await b.reload();
+  const text = bio.locator("p");
+  const clamped = (await text.boundingBox())!.height;
+  await bio.getByRole("button", { name: "続きを読む" }).click();
+  await expect.poll(async () => (await text.boundingBox())!.height).toBeGreaterThan(clamped * 1.4);
+  await expect(bio.getByRole("button", { name: "閉じる" })).toHaveAttribute("aria-expanded", "true");
 });

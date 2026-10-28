@@ -123,7 +123,9 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           </div>
         </div>
         {live && (live.otherBio || live.otherIntro) && (
-          <p className="emoji-color mt-3 line-clamp-3 whitespace-pre-line rounded-2xl bg-white/80 px-3 py-2 text-sm leading-6 text-stone-800">{live.otherBio || live.otherIntro}</p>
+          <div className="mt-3 rounded-2xl bg-white/80 px-3 py-2" data-testid="person-bio">
+            <ExpandableText text={live.otherBio || live.otherIntro || ""} more={t.people.readMore} less={t.people.showLess} lines={3} />
+          </div>
         )}
         {live && (
           <div className="mt-4 grid grid-cols-2 gap-2">
