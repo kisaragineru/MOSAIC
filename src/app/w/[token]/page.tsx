@@ -60,6 +60,15 @@ export default async function WorkLinkPage({ params, searchParams }: { params: P
         </div>
       ) : (
         <>
+          {/* Signed in: always a way back to the app (this page has no app header). The writer
+              opening their own link sees it as the people they gave it to will. */}
+          {viewer && (
+            <div className={`mb-4 flex flex-wrap items-center gap-2 ${work.mine ? "rounded-2xl bg-white/90 p-3 shadow-sm ring-1 ring-violet-100" : ""}`} data-testid="work-back">
+              {work.mine && <p className="w-full text-xs leading-5 text-stone-600">👀 {w.ownPreview}</p>}
+              <Link href={onboarded ? "/home" : "/welcome"} className="inline-flex min-h-9 items-center rounded-full bg-white px-4 text-sm font-semibold text-violet-800 ring-1 ring-violet-200 hover:ring-violet-400">← {w.backToApp}</Link>
+              {work.mine && <Link href="/me/work#links" className="inline-flex min-h-9 items-center rounded-full px-3 text-sm font-semibold text-stone-600 underline underline-offset-4">{w.ownLinks}</Link>}
+            </div>
+          )}
           <WorkEnvelope token={token} note={work.note} skip={sp.open === "1" || !!offer} text={{ from: w.envFrom(work.content.name), lead: w.envLead(work.content.name), about: w.envAbout, open: w.envOpen }}>
           {/* Written in another language: read it in yours (translated by AI, once), or the original. */}
           {work.locale !== locale && !work.mine && (

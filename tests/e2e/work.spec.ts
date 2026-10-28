@@ -43,10 +43,17 @@ test("hand the story over as a work: read it first, fix it, a link of their own,
   await expect(hana.getByTestId("work-handed")).toContainText("母さんに渡すリンクができました");
   const url = await hana.getByTestId("share-link").getByRole("textbox").inputValue();
   expect(url).toMatch(/\/w\/[A-Za-z0-9_-]+$/);
+  // Opening her own link: she sees it as Mum will, with the way back to MOSAIC.
+  await hana.goto(url);
+  await expect(hana.getByTestId("work-back")).toContainText("これはあなたが渡した物語です");
+  await hana.getByRole("link", { name: "← MOSAICに戻る" }).click();
+  await hana.waitForURL(/\/(home|welcome)/);
 
   // Someone without an account reads it: the cover note, the story, how it came to be, and an invitation.
   const guest = await (await browser.newContext({ locale: "ja-JP" })).newPage();
   await guest.goto(url);
+  // Not signed in: no way "back" to show, only the invitation at the end.
+  await expect(guest.getByTestId("work-back")).toHaveCount(0);
   // Like a letter: the link's preview and the envelope say who it's from and what MOSAIC is.
   await expect(guest).toHaveTitle("ハナさんから、物語が届きました — MOSAIC");
   await expect(guest.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
