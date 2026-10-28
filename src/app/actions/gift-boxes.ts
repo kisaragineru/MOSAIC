@@ -6,6 +6,8 @@ import {
   connectGiftWriter, createGiftBox, linkCode, receivePath, deleteGiftEntry, deliverAsBook, inviteGiftWriter, issueReceiveCode, joinGiftBox, receiveGift, removeGiftWriter,
   saveGiftEntry, updateGiftBox,
 } from "@/server/services/gift-boxes";
+import { todayIn } from "@/lib/validation/common";
+import { getAccount } from "@/server/services/account";
 import { appOrigin } from "@/server/services/sharing";
 import { attempt, str, withParam } from "./util";
 
@@ -58,13 +60,16 @@ export async function giftEntryAction(form: FormData) {
   const id = str(form, "boxId");
   const kind = str(form, "kind");
   const tab = kind === "letter" ? "letters" : "growth";
+  // Left empty: the day it was written (an edit keeps the day it was first written), so every
+  // record says when it was.
+  const occurredOn = str(form, "occurredOn") || str(form, "writtenOn") || todayIn((await getAccount(uid)).profile.timeZone);
   const r = await attempt("gift.entry", () =>
     saveGiftEntry(
       uid,
       id,
       {
         kind,
-        occurredOn: str(form, "occurredOn"),
+        occurredOn,
         title: str(form, "title"),
         body: str(form, "body"),
         ...(form.has("mediaField") && kind === "growth" ? { media: form.getAll("media").filter((x): x is string => typeof x === "string" && x !== "") } : {}),

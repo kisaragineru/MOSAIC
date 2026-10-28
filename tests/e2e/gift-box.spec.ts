@@ -40,7 +40,7 @@ test("a gift box: parents write, letters stay private, the child receives it as 
   await form.getByLabel("本文").fill("リビングで3歩。みんなで拍手した。");
   await form.getByTestId("media-picker").locator('input[type="file"][multiple]').setInputFiles("tests/e2e/fixtures-photo.jpg");
   await expect(form.locator('input[name="media"]')).toHaveCount(1);
-  await setDate(form, "日付（任意）", "2019-06-01");
+  await setDate(form, "日付", "2019-06-01");
   await expect(form.getByLabel("見出し（任意）")).toBeHidden();
   await form.getByText("＋見出しをつける").click();
   await form.getByLabel("見出し（任意）").fill("初めて歩いた");
@@ -154,6 +154,10 @@ test("a box handed over as a book reaches the child's account later: a code from
   await form.getByLabel("本文").fill("はじめての海。");
   await form.getByRole("button", { name: "追加", exact: true }).click();
   await expect(mom.getByText("はじめての海。").first()).toBeVisible();
+  // No date picked: today's (filled in), and when it was written.
+  const entry = mom.getByTestId("gift-entry").filter({ hasText: "はじめての海。" });
+  await expect(entry.getByTestId("gift-entry-date")).toHaveText(/^\d{4}-\d{2}-\d{2}$/); // today, in the writer's time zone
+  await expect(entry.getByTestId("gift-entry-written")).toContainText("に記録");
 
   // Handed over as a book first.
   await mom.goto(`${boxUrl}?tab=manage`);

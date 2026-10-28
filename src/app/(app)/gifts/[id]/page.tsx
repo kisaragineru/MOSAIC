@@ -13,6 +13,8 @@ import { ageAt, daysUntil, todayIso } from "@/lib/gift-dates";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { GIFT_ROLES } from "@/server/db/schema";
+import { todayIn } from "@/lib/validation/common";
+import { getAccount } from "@/server/services/account";
 import { giftMedia, readGiftBox, writerName, type GiftBox, type GiftEntry } from "@/server/services/gift-boxes";
 import type { MediaItem } from "@/server/services/media";
 import { MediaGrid } from "@/components/media-grid";
@@ -26,7 +28,9 @@ export default async function GiftBoxPage({ params, searchParams }: { params: Pr
   const uid = await requireUser();
   const { id } = await params;
   const sp = await searchParams;
-  const { t } = await getT();
+  const { t, locale } = await getT();
+  // Dates and times as the writer lives them (their time zone in Settings).
+  const tz = (await getAccount(uid)).profile.timeZone;
   const g = t.giftBox;
   const box = await readGiftBox(uid, id).catch(() => null);
   if (!box) notFound();
@@ -95,8 +99,8 @@ export default async function GiftBoxPage({ params, searchParams }: { params: Pr
       ) : (
         <>
           <SegmentedTabs current={`${base}?tab=${tab}`} items={tabs.map((x) => ({ href: `${base}?tab=${x}`, label: g.tabs[x] }))} />
-          {tab === "growth" && <Entries box={box} kind="growth" help={g.growthHelp} nameOf={nameOf} t={t} draft={sp.draft?.slice(0, 5000)} media={media} />}
-          {tab === "letters" && <Entries box={box} kind="letter" help={g.lettersHelp} nameOf={nameOf} t={t} media={media} />}
+          {tab === "growth" && <Entries box={box} kind="growth" help={g.growthHelp} nameOf={nameOf} t={t} draft={sp.draft?.slice(0, 5000)} media={media} tz={tz} locale={locale} />}
+          {tab === "letters" && <Entries box={box} kind="letter" help={g.lettersHelp} nameOf={nameOf} t={t} media={media} tz={tz} locale={locale} />}
           {tab === "manage" && box.my_role === "owner" && (
             <>
               <Card title={g.manageInfo}>
@@ -168,8 +172,11 @@ export default async function GiftBoxPage({ params, searchParams }: { params: Pr
   );
 }
 
-function Entries({ box, kind, help, nameOf, t, draft, media }: { box: GiftBox; kind: GiftEntry["kind"]; help: string; nameOf: (x: GiftEntry) => string; t: Awaited<ReturnType<typeof getT>>["t"]; draft?: string; media: Map<string, MediaItem[]> }) {
+function Entries({ box, kind, help, nameOf, t, draft, media, tz, locale }: { box: GiftBox; kind: GiftEntry["kind"]; help: string; nameOf: (x: GiftEntry) => string; t: Awaited<ReturnType<typeof getT>>["t"]; draft?: string; media: Map<string, MediaItem[]>; tz: string; locale: string }) {
   const g = t.giftBox;
+  const today = todayIn(tz);
+  const writtenOn = (e: GiftEntry) => todayIn(tz, new Date(e.created_at));
+  const writtenAt = (e: GiftEntry) => new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: tz }).format(new Date(e.created_at));
   const list = box.entries.filter((e) => e.kind === kind);
   const tab = kind === "letter" ? "letters" : "growth";
   const growth = kind === "growth";
@@ -178,7 +185,8 @@ function Entries({ box, kind, help, nameOf, t, draft, media }: { box: GiftBox; k
     <>
       <Textarea name="body" required={!growth} rows={growth ? 4 : 8} maxLength={5000} defaultValue={e ? e.body : draft} autoFocus={!e && !!draft} placeholder={growth ? g.growthPlaceholder : g.letterPlaceholder} aria-label={g.body} />
       {growth && <MediaPicker tx={mediaPickerText(t)} initial={e ? (media.get(e.id) ?? []) : []} />}
-      <DateSelect label={g.occurredOn} name="occurredOn" text={dateText(t)} max={growth ? todayIso() : undefined} defaultValue={e?.occurred_on ?? ""} />
+      {/* Today unless changed; left empty it becomes the day it was written. */}
+      <DateSelect label={g.occurredOn} hint={g.occurredOnHint} name="occurredOn" text={dateText(t)} max={growth ? today : undefined} defaultValue={e ? (e.occurred_on ?? writtenOn(e)) : today} />
       <details open={!!e?.title} className="group">
         <summary className="cursor-pointer list-none text-sm font-semibold text-teal-700 group-open:mb-2">{g.addTitle}</summary>
         <Input name="title" maxLength={120} defaultValue={e?.title ?? ""} aria-label={g.entryTitle} placeholder={g.entryTitle} />
@@ -199,18 +207,19 @@ function Entries({ box, kind, help, nameOf, t, draft, media }: { box: GiftBox; k
       {kind === "letter" && box.hidden_letters > 0 && <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900">✉️ {g.hiddenLetters(box.hidden_letters)}</p>}
       <ul className="space-y-3">
         {list.map((e) => {
-          const age = ageAt(box.child_birthday, e.occurred_on);
+          const age = ageAt(box.child_birthday, e.occurred_on ?? writtenOn(e));
           const mine = e.author_id === box.me;
           return (
             <li key={e.id} className="rounded-2xl bg-white/85 p-4 shadow-sm ring-1 ring-stone-200/60" data-testid="gift-entry">
               <p className="flex flex-wrap items-baseline gap-x-2 text-xs text-stone-500">
-                {e.occurred_on && <span className="font-semibold text-stone-700">{e.occurred_on}</span>}
+                <span className="font-semibold text-stone-700" data-testid="gift-entry-date">{e.occurred_on ?? writtenOn(e)}</span>
                 {age && <span>（{g.age(age.y, age.m)}）</span>}
                 <span className="ml-auto">{g.from(nameOf(e))}</span>
               </p>
               {e.title && <p className="emoji-color mt-1 font-semibold text-stone-900">{e.title}</p>}
               {e.body && <p className="emoji-color mt-1 whitespace-pre-line text-sm leading-7 text-stone-800">{e.body}</p>}
               {media.get(e.id) && <MediaGrid media={media.get(e.id)!} label={t.memories.media.label} />}
+              <p className="mt-2 text-[11px] text-stone-400" data-testid="gift-entry-written">{g.writtenAt(writtenAt(e))}</p>
               {mine && (
                 <details className="mt-2">
                   <summary className="cursor-pointer text-xs text-teal-700">{g.edit}</summary>
@@ -218,6 +227,7 @@ function Entries({ box, kind, help, nameOf, t, draft, media }: { box: GiftBox; k
                     <input type="hidden" name="boxId" value={box.id} />
                     <input type="hidden" name="kind" value={kind} />
                     <input type="hidden" name="entryId" value={e.id} />
+                    <input type="hidden" name="writtenOn" value={writtenOn(e)} />
                     {fields(e)}
                     <Button type="submit" variant="secondary">{g.save}</Button>
                   </form>
