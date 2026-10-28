@@ -75,6 +75,36 @@ test("hand the story over as a work: read it first, fix it, a link of their own,
   await tryIt.getByRole("button", { name: "タイプを見る" }).click();
   await expect(guest.getByTestId("type-try-result")).toContainText("あなたは「");
   await expect(guest.getByTestId("work-why")).toContainText("見せるのは、あなたが選んだ人だけ");
+
+  // Another reader doesn't know the hour: they pick the type that feels like them, and it carries
+  // into sign-up (the date, time unknown, and that type ticked to start with).
+  const nohour = await (await browser.newContext({ locale: "ja-JP", extraHTTPHeaders: { "x-e2e-client-ip": `10.8.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } })).newPage();
+  await nohour.goto(url);
+  await nohour.getByRole("button", { name: /物語をひらく/ }).click();
+  const tryNo = nohour.getByTestId("type-try");
+  await setDate(tryNo, "生年月日", "1992-08-08");
+  await tryNo.getByRole("button", { name: "タイプを見る" }).click();
+  const pickIt = nohour.getByTestId("type-try-pick");
+  await expect(pickIt).toContainText("時刻がわからなくても大丈夫");
+  await pickIt.getByRole("button", { name: "まわりを照らす太陽タイプ" }).click();
+  await expect(nohour.getByTestId("type-try-result")).toContainText("あなたは「まわりを照らす太陽タイプ」");
+  await expect(nohour.getByTestId("type-try-result")).toContainText("あなたが選んだタイプです");
+  await nohour.getByRole("link", { name: "自分の物語を始める" }).click();
+  await nohour.waitForURL(/\/register/);
+  await nohour.getByLabel("なんと呼べばいいですか？").fill("ナギ");
+  await nohour.getByLabel("メールアドレス").fill(`${randomUUID().slice(0, 8)}@example.test`);
+  await nohour.getByLabel(/^パスワード/).fill("e2e correct horse battery");
+  await nohour.getByRole("button", { name: "アカウントを作成" }).click();
+  await nohour.waitForURL(/\/w\//);
+  await nohour.goto("/welcome?step=2");
+  await expect(nohour.locator('input[name="solarDate"]')).toHaveValue("1992-08-08");
+  await nohour.getByRole("button", { name: "命盤をつくる" }).click();
+  await nohour.waitForURL(/step=3/);
+  const status = nohour.getByTestId("type-status");
+  await expect(status.locator('input[name="type"][value="thai_duong"]')).toBeChecked();
+  await status.getByRole("button", { name: "このタイプにする" }).click();
+  await expect(nohour.getByTestId("self-types")).toContainText("まわりを照らす太陽タイプ");
+  await nohour.context().close();
   await expect(guest.getByRole("link", { name: "自分の物語を始める" })).toHaveAttribute("href", /\/register\?next=%2Fw%2F.+%3Fopen%3D1$/);
 
   // The reader signs up from the story, comes back to it, and connects in one tap.

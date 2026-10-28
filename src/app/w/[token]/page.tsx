@@ -6,7 +6,7 @@ import { WorkEnvelope } from "@/components/work-envelope";
 import { registrationCodeRequired } from "@/server/services/account";
 import { WorkView } from "@/components/work-view";
 import { dateText } from "@/lib/i18n/date-text";
-import { typesById } from "@/lib/tuvi/type-view";
+import { allTypes, typesById } from "@/lib/tuvi/type-view";
 import { getT } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n/locales";
 import { currentUserId } from "@/server/auth/session";
@@ -137,7 +137,8 @@ export default async function WorkLinkPage({ params, searchParams }: { params: P
                     <TypeTry
                       date={dateText(t)}
                       theirs={writerType ? { id: writerType.id, persona: `${work.content.name} · ${writerType.persona}` } : null}
-                      text={{ title: w.tryTitle, lead: w.tryLead, date: w.tryDate, hour: w.tryHour, hourUnknown: w.tryHourUnknown, go: w.tryGo, yours: w.tryYours, noTime: w.tryNoTime, needs: w.tryNeeds, invalid: w.tryInvalid }}
+                      choices={allTypes(locale).map(({ id, persona }) => ({ id, persona }))}
+                      text={{ title: w.tryTitle, lead: w.tryLead, date: w.tryDate, hour: w.tryHour, hourUnknown: w.tryHourUnknown, go: w.tryGo, yours: w.tryYours, noTime: w.tryNoTime, pickYours: w.tryPickYours, picked: w.tryPicked, needs: w.tryNeeds, invalid: w.tryInvalid }}
                     />
                   </div>
                 )}

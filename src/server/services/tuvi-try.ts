@@ -5,20 +5,21 @@
  */
 import { computeChart } from "@/lib/tuvi/engine";
 import { mainsOf } from "@/lib/tuvi/interpret";
-import type { MainStarId } from "@/lib/tuvi/stars";
+import { MAIN_STARS, type MainStarId } from "@/lib/tuvi/stars";
 import { isoDate } from "@/lib/validation/common";
 
 /** Where the tried date waits (in the visitor's own browser, an hour) to fill in sign-up's birth form. */
 export const TRY_COOKIE = "mosaic_try_birth";
 
-/** The tried date and hour, if any, as the birth form's starting values. */
-export function triedBirth(raw: string | undefined): { solarDate: string; birthTime: string | null } | null {
+/** The tried date and hour (and, without the hour, the type they picked), as sign-up's starting values. */
+export function triedBirth(raw: string | undefined): { solarDate: string; birthTime: string | null; pick: MainStarId | null } | null {
   try {
-    const v = JSON.parse(raw ?? "") as { date?: unknown; hour?: unknown };
+    const v = JSON.parse(raw ?? "") as { date?: unknown; hour?: unknown; pick?: unknown };
     const d = isoDate.safeParse(v.date);
     if (!d.success) return null;
     const h = Number(v.hour);
-    return { solarDate: d.data, birthTime: v.hour !== "" && Number.isInteger(h) && h >= 0 && h < 24 ? `${String(h).padStart(2, "0")}:00` : null };
+    const pick = typeof v.pick === "string" && (MAIN_STARS as readonly string[]).includes(v.pick) ? (v.pick as MainStarId) : null;
+    return { solarDate: d.data, birthTime: v.hour !== "" && Number.isInteger(h) && h >= 0 && h < 24 ? `${String(h).padStart(2, "0")}:00` : null, pick };
   } catch {
     return null;
   }

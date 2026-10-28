@@ -209,7 +209,7 @@ async function ChartResult({ uid, t, locale, tv, error }: { error?: string; uid:
         <>
           {insight && (
             <section className="rounded-3xl bg-white/85 p-4 shadow-sm ring-1 ring-violet-100">
-              <TypeStatus t={t} all={allTypes(locale)} judged={typesById(insight.types, locale)} provisional={typesById(insight.provisional, locale)} progress={insight.progress} picked={insight.selfTypes} addTimeHref="/welcome?step=2" back="/welcome?step=3" guide error={error} />
+              <TypeStatus t={t} all={allTypes(locale)} judged={typesById(insight.types, locale)} provisional={typesById(insight.provisional, locale)} progress={insight.progress} picked={insight.selfTypes} suggested={insight.selfTypes.length ? [] : await triedPick()} addTimeHref="/welcome?step=2" back="/welcome?step=3" guide error={error} />
             </section>
           )}
           <Link href="/welcome?step=4" className="block rounded-full bg-teal-700 py-3 text-center font-semibold text-white">{w.tourNext} →</Link>
@@ -366,6 +366,12 @@ async function Finished({ uid, t, locale, answered }: { uid: string; t: Awaited<
  * The date (and hour) tried after reading a work, before signing up: the form starts with them.
  * Only a starting value; nothing is saved until the form is.
  */
+/** The type picked after reading a work (without the hour), before signing up: ticked to start with. */
+async function triedPick(): Promise<string[]> {
+  const pick = triedBirth((await cookies()).get(TRY_COOKIE)?.value)?.pick;
+  return pick ? [pick] : [];
+}
+
 async function triedProfile(uid: string): Promise<TuviView["profile"]> {
   const tried = triedBirth((await cookies()).get(TRY_COOKIE)?.value);
   if (!tried) return null;

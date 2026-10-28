@@ -16,6 +16,7 @@ export function TypeStatus({
   provisional = [],
   progress,
   picked,
+  suggested = [],
   addTimeHref,
   back,
   guide = false,
@@ -30,6 +31,8 @@ export function TypeStatus({
   provisional?: TypeView[];
   progress: number;
   picked: string[];
+  /** Not saved yet: a type they picked before signing up, ticked to start with. */
+  suggested?: string[];
   addTimeHref: string;
   /** Where the pick form returns to. */
   back: string;
@@ -100,7 +103,7 @@ export function TypeStatus({
       )}
 
       {judged.length === 0 && (
-        <details open={(guide && mine.length === 0) || !!error} className="group rounded-2xl bg-white/70 ring-1 ring-violet-100">
+        <details open={(guide && mine.length === 0) || !!error || suggested.length > 0} className="group rounded-2xl bg-white/70 ring-1 ring-violet-100">
           <summary className="cursor-pointer list-none px-3 py-2.5 text-sm font-semibold text-violet-900">
             {mine.length ? s.pickAgain : s.pickTitle} <span aria-hidden className="text-violet-400 group-open:hidden">▾</span>
           </summary>
@@ -113,7 +116,7 @@ export function TypeStatus({
               {all.map((x) => (
                 <li key={x.id}>
                   <label className="relative block cursor-pointer">
-                    <input type="checkbox" name="type" value={x.id} defaultChecked={picked.includes(x.id)} className="peer sr-only" />
+                    <input type="checkbox" name="type" value={x.id} defaultChecked={(picked.length ? picked : suggested).includes(x.id)} className="peer sr-only" />
                     <span className="relative block overflow-hidden rounded-xl bg-white ring-1 ring-stone-200 transition peer-checked:ring-2 peer-checked:ring-violet-600 peer-focus-visible:ring-2 peer-focus-visible:ring-teal-600">
                       <TypeImage t={x} small />
                       <span className="block px-1 py-1 text-center text-[10px] font-bold leading-tight text-stone-900"><TypeName t={x} /></span>
