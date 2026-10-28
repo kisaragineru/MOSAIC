@@ -18,7 +18,7 @@ import { enabledProviders } from "@/server/auth/oauth";
 import { OAuthButtons } from "@/components/oauth-buttons";
 import { trialAccount, trialReturnUser } from "@/server/services/dev-trial";
 
-const PERK_ICONS = ["🪞", "📝", "🤝"];
+const PERK_ICONS = ["🌌", "🪞", "📝", "🤝"];
 
 export default async function RegisterPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const sp = await searchParams;

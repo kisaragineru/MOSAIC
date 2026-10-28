@@ -44,8 +44,15 @@ test("QR connection: preview of what others see, who is waiting, results first",
   await a.goto("/share");
   await a.getByRole("button", { name: "QRを表示" }).click();
   const url = await a.getByTestId("share-url").inputValue();
+  // The QR can be kept as a picture, made on the phone: MOSAIC's, and from Hana.
+  const [download] = await Promise.all([a.waitForEvent("download"), a.getByTestId("qr-save").click()]);
+  expect(download.suggestedFilename()).toMatch(/^MOSAIC-QR-\d{4}-\d{2}-\d{2}\.png$/);
+  if (process.env.E2E_SAVE_QR) await download.saveAs(process.env.E2E_SAVE_QR);
 
-  await b.goto(url.replace(/^https?:\/\/[^/]+/, ""));
+  // Sora reads the saved picture in MOSAIC (as if from the gallery) and lands on the invitation.
+  await b.goto("/share");
+  await b.getByTestId("qr-from-image").locator("input[type=file]").setInputFiles((await download.path())!);
+  await b.waitForURL(/\/s#/);
   await expect(b.getByText("ハナさんからつながりの招待が届いています。")).toBeVisible();
   await b.getByRole("button", { name: "続ける" }).click();
   await b.waitForURL(/\/compare\//);

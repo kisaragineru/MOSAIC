@@ -12,7 +12,7 @@ import { handOverAction } from "@/app/actions/works";
 import { makeInviteCodeAction, revokeInviteCodeAction } from "@/app/actions/invites";
 import { InviteCodeSend } from "@/components/invite-code-send";
 import { QrFromImage } from "@/components/qr-from-image";
-import { registrationCodeRequired } from "@/server/services/account";
+import { getAccount, registrationCodeRequired } from "@/server/services/account";
 import { myInviteCodes } from "@/server/services/invite-codes";
 
 export default async function SharePage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
@@ -22,6 +22,7 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
   const shares = await listShares(uid);
   const comps = await listComparisons(uid);
   const work = await latestWork(uid);
+  const account = await getAccount(uid);
   // While sign-up is by invitation: invite codes anyone can make and send.
   const inviting = registrationCodeRequired();
   const codes = inviting ? await myInviteCodes(uid) : [];
@@ -87,6 +88,7 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
         </ul>
         <div className="mt-4 rounded-2xl bg-white/80 p-4">
           <ShareCreator
+            name={account.profile.displayName}
             tx={{
               create: s.create,
               advanced: s.advanced,
@@ -98,6 +100,12 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
               qrAlt: s.qrAlt,
               copy: s.copy,
               copied: s.copied,
+              save: s.save,
+              saving: s.saving,
+              cardFrom: s.cardFrom,
+              cardLead: s.cardLead,
+              cardHow: s.cardHow,
+              cardUntil: s.cardUntil,
               errors: t.errors,
             }}
           />

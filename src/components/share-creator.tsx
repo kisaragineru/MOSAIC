@@ -1,6 +1,7 @@
 "use client";
 import { useActionState, useState } from "react";
 import { createShareAction, type ShareState } from "@/app/actions/sharing";
+import { drawQrCard } from "@/lib/qr-card";
 
 export interface ShareCreatorText {
   create: string;
@@ -13,13 +14,44 @@ export interface ShareCreatorText {
   qrAlt: string;
   copy: string;
   copied: string;
+  /** The QR as a picture: the button, the file name, and what the picture says ({name}, {date}). */
+  save: string;
+  saving: string;
+  cardFrom: string;
+  cardLead: string;
+  cardHow: string;
+  cardUntil: string;
   errors: Record<string, string>;
 }
 
 /** One tap shows a QR with the default options (7 days, no use limit); the options sit behind "more". */
-export function ShareCreator({ tx }: { tx: ShareCreatorText }) {
+export function ShareCreator({ tx, name }: { tx: ShareCreatorText; name: string }) {
   const [state, action, pending] = useActionState<ShareState, FormData>(createShareAction, null);
   const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
+  // The QR with MOSAIC's mark and who it is from, saved as a picture (made on this phone).
+  const save = async (qr: string, expiresAt: string) => {
+    setSaving(true);
+    try {
+      const date = expiresAt.slice(0, 10);
+      const blob = await drawQrCard(qr, {
+        from: tx.cardFrom.replace("{name}", name),
+        lead: tx.cardLead,
+        how: tx.cardHow,
+        until: tx.cardUntil.replace("{date}", date),
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `MOSAIC-QR-${date}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    } finally {
+      setSaving(false);
+    }
+  };
   const input = "w-full rounded-2xl border border-stone-300 bg-white px-3 py-2";
   return (
     <div className="space-y-3">
@@ -27,6 +59,16 @@ export function ShareCreator({ tx }: { tx: ShareCreatorText }) {
         <div className="space-y-3 text-center" data-testid="share-result">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={state.qr} alt={tx.qrAlt} className="mx-auto aspect-square w-full max-w-72 animate-[zoomIn_.4s_ease-out] rounded-3xl bg-white p-2 shadow-md motion-reduce:animate-none" />
+          <button
+            type="button"
+            onClick={() => save(state.qr, state.expiresAt)}
+            disabled={saving}
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-teal-700 text-sm font-bold text-white shadow-sm hover:bg-teal-800 disabled:opacity-60"
+            data-testid="qr-save"
+          >
+            <span aria-hidden>⬇</span>
+            {saving ? tx.saving : tx.save}
+          </button>
           <p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">{tx.once}</p>
           <input readOnly value={state.url} className={`${input} text-xs`} data-testid="share-url" onFocus={(e) => e.currentTarget.select()} />
           <button
