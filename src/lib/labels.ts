@@ -1,18 +1,29 @@
 /**
- * What a post is about, read from its own words (no AI, nothing leaves the server): a decision,
- * an achievement, a goal or dream, a regret, a feeling, a value, a memory or a thought. A post
- * can be several; none is fine (a plain note). Clear wording is caught; subtle wording may be
+ * What a post is about, read from its own words (no AI, nothing leaves the server). Two groups:
+ * everyday things (a passing word, the day, a memo, something funny, something liked or found),
+ * light and never read as who you are; and getting to know yourself (a decision, an achievement,
+ * a goal or dream, a regret, a feeling, a value, a memory or a thought), which the manual and the
+ * reflections draw on. A post can be several. Clear wording is caught; subtle wording may be
  * missed, so the owner can confirm or correct it, and what they set is kept as theirs.
  */
-export const LABELS = ["achievement", "decision", "goal", "dream", "regret", "feeling", "value", "memory", "thought"] as const;
+export const DAILY_LABELS = ["note", "daily", "memo", "fun", "like"] as const;
+export const SELF_LABELS = ["achievement", "decision", "goal", "dream", "regret", "feeling", "value", "memory", "thought"] as const;
+export const LABELS = [...DAILY_LABELS, ...SELF_LABELS] as const;
 export type Label = (typeof LABELS)[number];
+type SelfLabel = (typeof SELF_LABELS)[number];
+type DailyLabel = (typeof DAILY_LABELS)[number];
+
+/** The post's kind (an older, single field): its first getting-to-know-yourself label, else a note. */
+export function kindOf(labels: readonly string[]): string {
+  return labels.find((l) => (SELF_LABELS as readonly string[]).includes(l)) ?? "note";
+}
 
 /** How someone felt, asked once after posting (optional). */
 export const FEELINGS = ["happy", "calm", "grateful", "sad", "frustrated", "anxious"] as const;
 export type Feeling = (typeof FEELINGS)[number];
 export const FEELING_EMOJI: Record<Feeling, string> = { happy: "😊", calm: "😌", grateful: "🥰", sad: "😢", frustrated: "😤", anxious: "😰" };
 
-const RULES: Record<Label, RegExp[]> = {
+const RULES: Record<SelfLabel, RegExp[]> = {
   achievement: [
     /(でき(た|ました)|達成|合格|完走|完成(した|させた)|成功|受賞|優勝|昇進|やり(きった|遂げた|とげた)|うまくいった|初めて.{0,12}(でき|成功))/,
     /\b(i |we )?(finally )?(did it|made it|finished|completed|passed|won|achieved|got promoted|succeeded)\b/i,
@@ -52,11 +63,45 @@ const RULES: Record<Label, RegExp[]> = {
   thought: [/(と思う|と思った|気がする|考えた|考えている|かもしれない|だろうか|なのかな)/, /\b(i think|i wonder|maybe|it seems|i realized|i've been thinking)\b/i, /(tôi nghĩ|có lẽ|tự hỏi|nhận ra)/i],
 };
 
-/** The labels a text reads as, most telling first (a photo of an outing counts as a memory). */
+const DAILY_RULES: Record<Exclude<DailyLabel, "note">, RegExp[]> = {
+  like: [
+    /(好き|お気に入り|ハマって|はまって|推し|見つけた|発見|気に入った|美味しかった|おいしかった|最高だった)/,
+    /\b(i love|i really like|my favou?rite|obsessed with|found (a|this|the)|discovered|so good)\b/i,
+    /(yêu thích|mê|phát hiện|tìm thấy|ngon quá|thích lắm)/i,
+  ],
+  memo: [
+    /(メモ|覚えておく|忘れないように|忘れないうちに|買うもの|買い物リスト|やること|TODO|ToDo|todo|アイデア|ネタ帳)/,
+    /\b(note to self|memo|to-?do|remember to|shopping list|idea:)\b/i,
+    /(ghi chú|ghi nhớ|nhớ mua|danh sách|ý tưởng)/i,
+  ],
+  fun: [
+    /(笑った|笑える|笑い|\(笑\)|ウケた|ウケる|爆笑|面白|おもしろ|(^|[^a-z])w{2,}($|[^a-z.]))/i,
+    /\b(lol|lmao|haha+|so funny|hilarious|cracked me up)\b/i,
+    /(buồn cười|hài quá|haha)/i,
+  ],
+  daily: [
+    /(今日は|きょうは|朝ごはん|昼ごはん|晩ごはん|夜ごはん|夕飯|お昼|ランチ|仕事帰り|散歩|天気|雨|晴れ|寝坊|早起き)/,
+    /\b(today|this morning|tonight|breakfast|lunch|dinner|weather|commute|overslept)\b/i,
+    /(hôm nay|bữa sáng|bữa trưa|bữa tối|thời tiết|đi dạo|ngủ dậy)/i,
+  ],
+};
+
+/**
+ * The labels a text reads as, most telling first (a photo of an outing counts as a memory).
+ * Getting-to-know-yourself labels come first; a liked or found thing is added beside them; the
+ * other everyday labels only when nothing deeper was read; and anything left is a passing word.
+ */
 export function inferLabels(text: string, opts: { hasMedia?: boolean } = {}): Label[] {
   const t = text.normalize("NFKC");
-  const found = LABELS.filter((l) => RULES[l].some((re) => re.test(t)));
-  if (opts.hasMedia && !found.includes("memory") && !found.some((l) => l === "goal" || l === "dream")) found.push("memory");
+  let self: SelfLabel[] = SELF_LABELS.filter((l) => RULES[l].some((re) => re.test(t)));
+  if (opts.hasMedia && !self.includes("memory") && !self.some((l) => l === "goal" || l === "dream")) self.push("memory");
   // A plain "I think" adds little next to a sharper label.
-  return found.length > 1 ? found.filter((l) => l !== "thought") : found;
+  if (self.length > 1) self = self.filter((l) => l !== "thought");
+  const reads = (l: Exclude<DailyLabel, "note">) => DAILY_RULES[l].some((re) => re.test(t));
+  const daily: DailyLabel[] = [];
+  if (reads("like")) daily.push("like");
+  if (!self.length) for (const l of ["memo", "fun", "daily"] as const) if (reads(l)) daily.push(l);
+  const found: Label[] = [...self, ...daily];
+  if (!found.length && t.trim()) found.push("note");
+  return found;
 }

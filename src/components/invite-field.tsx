@@ -19,7 +19,7 @@ function shareToken(): string | null {
  * sessionStorage). Then the link itself is the invitation, checked again on submit. After a
  * refused attempt (`forceCode`) the code is asked for as usual.
  */
-export function InviteField({ work, codeRequired, fromShare, forceCode, text }: { work: string | null; codeRequired: boolean; fromShare: boolean; forceCode: boolean; text: { label: string; hint: string; invited: string } }) {
+export function InviteField({ work, codeRequired, fromShare, forceCode, code, text }: { work: string | null; codeRequired: boolean; fromShare: boolean; forceCode: boolean; code?: string; text: { label: string; hint: string; invited: string } }) {
   // This tab's share token (none on the server's render).
   const token = useSyncExternalStore(noop, shareToken, () => null);
   const share = !work && codeRequired && fromShare && !forceCode && token ? `share:${token}` : null;
@@ -32,9 +32,12 @@ export function InviteField({ work, codeRequired, fromShare, forceCode, text }: 
       </>
     );
   if (!codeRequired) return null;
+  // Like a ticket: the one thing an invitation brings.
   return (
-    <Field label={text.label} hint={text.hint}>
-      <Input name="inviteCode" autoComplete="off" required maxLength={200} />
-    </Field>
+    <div className="rounded-2xl border border-dashed border-violet-200 bg-violet-50/50 px-3 pb-2 pt-2.5" data-testid="invite-ticket">
+      <Field label={`🎟 ${text.label}`} hint={text.hint}>
+        <Input name="inviteCode" autoComplete="off" required maxLength={200} defaultValue={code} className="tracking-wider" />
+      </Field>
+    </div>
   );
 }

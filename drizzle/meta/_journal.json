@@ -526,6 +526,34 @@
       "when": 1793146465766,
       "tag": "0074_reset_scale_answers",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1793166115473,
+      "tag": "0075_everyday_labels",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1793166747486,
+      "tag": "0076_optional_recipient",
+      "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1793167169803,
+      "tag": "0077_invite_codes",
+      "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1793167175635,
+      "tag": "0078_invite_codes_access",
+      "breakpoints": true
     }
   ]
 }

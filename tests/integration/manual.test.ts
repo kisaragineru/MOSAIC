@@ -93,4 +93,15 @@ describe("self manual", () => {
     expect(JSON.stringify(m)).not.toContain("Aだけの記録");
     expect(AXES.length).toBe(17);
   });
+
+  it("records marked liked or found go into the likes chapter; everyday notes stay out of it", async () => {
+    const u = await makeUser();
+    await createMemory(u.userId, { kind: "note", body: "駅前に好きなパン屋を見つけた" });
+    await createMemory(u.userId, { kind: "note", body: "牛乳と卵、忘れないようにメモ" });
+    const m = await buildManual(u.userId, "ja");
+    const likes = JSON.stringify(m.sections.find((s) => s.id === "likes"));
+    expect(likes).toContain("記録に残した「好き・発見」");
+    expect(likes).toContain("駅前に好きなパン屋を見つけた");
+    expect(JSON.stringify(m.sections)).not.toContain("牛乳と卵");
+  });
 });

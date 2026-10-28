@@ -63,6 +63,10 @@ export interface Reflection {
 const QMAP = new Map(LOCALIZED_BANK.map((q) => [q.id, q]));
 const KIND_LABEL: Record<string, I18nText> = {
   note: { en: "note", vi: "đôi dòng", ja: "ひとこと" },
+  daily: { en: "everyday", vi: "thường ngày", ja: "日常" },
+  memo: { en: "memo", vi: "ghi nhớ", ja: "メモ" },
+  fun: { en: "funny", vi: "vui", ja: "おもしろ" },
+  like: { en: "liked or found", vi: "thích · phát hiện", ja: "好き・発見" },
   thought: { en: "thought", vi: "suy nghĩ", ja: "考え" },
   feeling: { en: "feeling", vi: "cảm xúc", ja: "気持ち" },
   memory: { en: "memory", vi: "kỷ niệm", ja: "思い出" },

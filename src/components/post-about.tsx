@@ -1,5 +1,5 @@
 import { setFeelingAction, setLabelsAction } from "@/app/actions/memories";
-import { FEELINGS, FEELING_EMOJI, LABELS, type Feeling, type Label } from "@/lib/labels";
+import { DAILY_LABELS, FEELINGS, FEELING_EMOJI, SELF_LABELS, type Feeling, type Label } from "@/lib/labels";
 import type { Dict } from "@/lib/i18n/messages/en";
 import { KIND_ICON } from "@/lib/timeline";
 
@@ -53,14 +53,25 @@ export function PostAbout({ t, id, labels, by, feeling, ask }: { t: Dict; id: st
             <summary className="inline-flex min-h-9 cursor-pointer list-none items-center rounded-full border border-stone-200 px-4 text-sm text-stone-700 hover:border-teal-300">✎ {tl.change}</summary>
             <form action={setLabelsAction} className="mt-2 space-y-2">
               <input type="hidden" name="id" value={id} />
-              <div className="flex flex-wrap gap-1.5">
-                {LABELS.map((l) => (
-                  <label key={l} className={chip}>
-                    <input type="checkbox" name="labels" value={l} defaultChecked={labels.includes(l)} className="sr-only" />
-                    {KIND_ICON[l]} {t.memories.kinds[l]}
-                  </label>
-                ))}
-              </div>
+              {/* Two groups: everyday things (light, kept out of the manual) and getting to know yourself. */}
+              {([
+                ["daily", DAILY_LABELS, tl.groupDaily, tl.groupDailySub],
+                ["self", SELF_LABELS, tl.groupSelf, tl.groupSelfSub],
+              ] as const).map(([key, group, title, sub]) => (
+                <fieldset key={key} className="space-y-1.5" data-testid={`labels-${key}`}>
+                  <legend className="text-xs font-semibold text-stone-700">{title}</legend>
+                  <p className="text-[11px] leading-4 text-stone-500">{sub}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {group.map((l) => (
+                      <label key={l} className={chip}>
+                        <input type="checkbox" name="labels" value={l} defaultChecked={labels.includes(l)} className="sr-only" />
+                        {KIND_ICON[l]} {t.memories.kinds[l]}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              ))}
+              <p className="text-[11px] text-stone-500">{tl.noneOk}</p>
               <button type="submit" className="min-h-9 rounded-full bg-teal-700 px-4 text-sm font-semibold text-white hover:bg-teal-800">{tl.save}</button>
             </form>
           </details>

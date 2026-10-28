@@ -5,7 +5,7 @@ import { MEMORY_CIRCLES, MEMORY_KINDS, memoryCircles, memoryEntries, memoryEntry
 import { withUser, type Tx } from "../db/tx";
 import { invalid, notFound } from "../errors";
 import { attachMedia, MAX_MEDIA } from "./media";
-import { FEELINGS, inferLabels, LABELS, type Feeling, type Label } from "@/lib/labels";
+import { FEELINGS, inferLabels, kindOf, LABELS, type Feeling, type Label } from "@/lib/labels";
 
 export const memoryInput = z.object({
   kind: z.enum(MEMORY_KINDS).default("note"),
@@ -57,7 +57,7 @@ export async function createMemory(userId: string, input: unknown) {
     const labels = letter ? [] : withAsked(data.kind, inferLabels(`${data.title ?? ""}\n${data.body}`, { hasMedia: !!data.media?.length }));
     const [entry] = await tx
       .insert(memoryEntries)
-      .values({ userId, kind: letter ? data.kind : (labels[0] ?? "note"), labels, occurredOn: data.occurredOn ?? null, revealOn: data.revealOn ?? null })
+      .values({ userId, kind: letter ? data.kind : kindOf(labels), labels, occurredOn: data.occurredOn ?? null, revealOn: data.revealOn ?? null })
       .returning();
     await tx.insert(memoryEntryVersions).values({
       entryId: entry!.id,
@@ -125,7 +125,7 @@ export async function editMemory(userId: string, entryId: string, input: unknown
     await tx
       .update(memoryEntries)
       .set({
-        kind: letter ? entry.kind : (labels[0] ?? "note"),
+        kind: letter ? entry.kind : kindOf(labels),
         labels,
         occurredOn: data.occurredOn ?? null,
         revealOn: data.revealOn ?? null,
@@ -396,7 +396,9 @@ export async function countMemoriesInRanges(userId: string, ranges: { from: stri
 
 /** A label asked for by the caller (an import, a test persona) comes first. */
 function withAsked(kind: string, read: Label[]): Label[] {
-  return (LABELS as readonly string[]).includes(kind) ? [...new Set([kind as Label, ...read])] : read;
+  // "note" is what the form says when nothing was chosen: the words decide.
+  if (kind === "note" || !(LABELS as readonly string[]).includes(kind)) return read;
+  return [...new Set([kind as Label, ...read.filter((l) => l !== "note")])];
 }
 
 async function hasMedia(tx: Tx, id: string) {
@@ -410,7 +412,7 @@ export async function setMemoryLabels(userId: string, entryId: string, input: un
   await withUser(userId, async (tx) => {
     const r = await tx
       .update(memoryEntries)
-      .set({ labels, labelsBy: "user", kind: labels[0] ?? "note" })
+      .set({ labels, labelsBy: "user", kind: kindOf(labels) })
       .where(and(eq(memoryEntries.id, id), eq(memoryEntries.userId, userId), sql`${memoryEntries.kind} <> 'letter_to_future'`))
       .returning({ id: memoryEntries.id });
     if (!r.length) throw notFound();

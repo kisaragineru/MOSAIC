@@ -294,7 +294,7 @@ export const memoryEntries = pgTable(
     /** private: only you. connections: everyone you're connected with. circles: the relationships in memory_circles. */
     check("memory_visibility_ck", sql`${t.visibility} in ('private','connections','circles')`),
     check("memory_labels_by_ck", sql`${t.labelsBy} in ('auto','user')`),
-    check("memory_labels_ck", sql`${t.labels} <@ array['achievement','decision','goal','dream','regret','feeling','value','memory','thought']::text[]`),
+    check("memory_labels_ck", sql`${t.labels} <@ array['note','daily','memo','fun','like','achievement','decision','goal','dream','regret','feeling','value','memory','thought']::text[]`),
     check("memory_feeling_ck", sql`${t.feeling} is null or ${t.feeling} in ('happy','calm','grateful','sad','frustrated','anxious')`),
   ],
 );
@@ -1418,8 +1418,8 @@ export const workLinks = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     tokenHash: text("token_hash").notNull().unique(),
-    /** Who it's for (only the owner sees this). */
-    recipient: text("recipient").notNull(),
+    /** Who it is for, in the owner's words (only they see it); none is fine. */
+    recipient: text("recipient"),
     /** A few words on the cover (optional). */
     note: text("note"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
@@ -1431,7 +1431,7 @@ export const workLinks = pgTable(
   },
   (t) => [
     index("work_links_owner_idx").on(t.ownerId, t.createdAt),
-    check("work_links_recipient_ck", sql`char_length(${t.recipient}) between 1 and 60`),
+    check("work_links_recipient_ck", sql`${t.recipient} is null or char_length(${t.recipient}) between 1 and 60`),
     check("work_links_note_ck", sql`${t.note} IS NULL OR char_length(${t.note}) <= 300`),
   ],
 );
@@ -1564,4 +1564,33 @@ export const passwordResets = pgTable(
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex("password_resets_token_uq").on(t.tokenHash), index("password_resets_user_idx").on(t.userId), check("password_resets_via_ck", sql`${t.via} in ('admin','email')`)],
+);
+
+/**
+ * Invite codes anyone can make for someone they want to bring in, while sign-up is by invitation:
+ * each lets one person sign up, for 30 days. Only the maker sees their codes (to copy them again).
+ */
+export const inviteCodes = pgTable(
+  "invite_codes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** "ABCD-EFGH" from letters and digits that can't be mistaken for each other. */
+    code: text("code").notNull(),
+    /** Who it is for, in the maker's words (optional, only they see it). */
+    label: text("label"),
+    expiresAt: ts("expires_at").notNull(),
+    usedBy: uuid("used_by").references(() => users.id, { onDelete: "set null" }),
+    usedAt: ts("used_at"),
+    revokedAt: ts("revoked_at"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("invite_codes_code_uq").on(t.code),
+    index("invite_codes_owner_idx").on(t.ownerId, t.createdAt),
+    check("invite_codes_code_ck", sql`${t.code} ~ '^[A-Z0-9]{4}-[A-Z0-9]{4}$'`),
+    check("invite_codes_label_ck", sql`${t.label} is null or char_length(${t.label}) between 1 and 60`),
+  ],
 );

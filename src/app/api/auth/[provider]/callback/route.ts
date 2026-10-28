@@ -39,6 +39,10 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ provider: s
     // A new account starts with the first-run guide, unless it came from somewhere (e.g. a QR link).
     return NextResponse.redirect(new URL(r.created && next === "/home" ? "/welcome" : next, url.origin), 303);
   } catch (e) {
+    // Signing in with an account that isn't here yet, while sign-up is by invitation: not an
+    // error, just the wrong door. Sign-up says so warmly and asks for the code.
+    if (e instanceof AppError && e.code === "invite_required" && from === "/login")
+      return NextResponse.redirect(new URL(`/register?next=${encodeURIComponent(next)}&new=1`, url.origin), 303);
     if (e instanceof AppError) return back(e.code);
     logError(`oauth.${provider}`, e);
     return back("oauth_failed");

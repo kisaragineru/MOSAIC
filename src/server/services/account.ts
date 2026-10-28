@@ -10,6 +10,7 @@ import type { OAuthProfile } from "../auth/oauth";
 import { withAnon, withUser } from "../db/tx";
 import { AppError, invalid, unauthorized } from "../errors";
 import { audit } from "./audit";
+import { inviteCodeOpen, normalizeInviteCode, useInviteCode } from "./invite-codes";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/locales";
 
 export const SESSION_TTL_DAYS = 30;
@@ -32,12 +33,17 @@ export async function invitedThrough(invite: string | undefined): Promise<boolea
   return r.rows[0]?.ok === true;
 }
 
-/** Sign-up needs the code (when REGISTRATION_CODE is set), unless they came through a link someone gave them. */
-async function mayRegister(code: string | undefined, invite: string | undefined): Promise<boolean> {
+/**
+ * Sign-up needs the code (when REGISTRATION_CODE is set): the shared one, an invite code someone
+ * made for them (`personal`, taken by the new account), or a link someone gave them.
+ */
+async function mayRegister(code: string | undefined, invite: string | undefined): Promise<{ ok: boolean; personal?: string }> {
   const expected = process.env.REGISTRATION_CODE;
   // Compare digests so the comparison is constant-time regardless of input length.
-  if (!expected || safeEqual(sha256(code?.trim() ?? ""), sha256(expected))) return true;
-  return invitedThrough(invite);
+  if (!expected || safeEqual(sha256(code?.trim() ?? ""), sha256(expected))) return { ok: true };
+  const personal = normalizeInviteCode(code);
+  if (personal && (await inviteCodeOpen(personal))) return { ok: true, personal };
+  return { ok: await invitedThrough(invite) };
 }
 
 /** When REGISTRATION_CODE is set (e.g. a public test deployment), sign-up requires that code. */
@@ -72,7 +78,8 @@ export async function issueSession(userId: string): Promise<NewSession> {
 export async function register(input: unknown, clientKey: string | null): Promise<NewSession> {
   const data = registerSchema.parse(input);
   await enforceRateLimit("register", clientKey ?? "unknown-client");
-  if (!(await mayRegister(data.inviteCode, data.invite))) throw new AppError("invite_required", 403);
+  const entry = await mayRegister(data.inviteCode, data.invite);
+  if (!entry.ok) throw new AppError("invite_required", 403);
   const taken = await withAnon(async (tx) => {
     const r = await tx.execute<{ taken: boolean }>(sql`select auth_email_taken(${data.email}) as taken`);
     return r.rows[0]?.taken === true;
@@ -85,6 +92,8 @@ export async function register(input: unknown, clientKey: string | null): Promis
       await tx.insert(users).values({ id, email: data.email, passwordHash });
       await tx.insert(profiles).values({ userId: id, displayName: data.displayName, locale: data.locale });
       await tx.insert(notificationPreferences).values({ userId: id });
+      // An invite code is used up by this account (if someone took it meanwhile, nothing is made).
+      if (entry.personal && !(await useInviteCode(tx, entry.personal))) throw new AppError("invite_required", 403);
       await audit(tx, id, "account.register");
       return createSession(tx, id);
     });
@@ -160,7 +169,8 @@ export async function signInWithIdentity(
     }
   }
   await enforceRateLimit("register", opts.clientKey ?? "unknown-client");
-  if (!(await mayRegister(opts.inviteCode, opts.invite))) throw new AppError("invite_required", 403);
+  const entry = await mayRegister(opts.inviteCode, opts.invite);
+  if (!entry.ok) throw new AppError("invite_required", 403);
   const id = randomUUID();
   // Without an address from the provider, a placeholder that can never receive mail (.invalid).
   const userEmail = address ?? `${p.provider}-${p.subject}@users.mosaic.invalid`;
@@ -171,6 +181,7 @@ export async function signInWithIdentity(
     await tx.insert(profiles).values({ userId: id, displayName, locale: opts.locale });
     await tx.insert(notificationPreferences).values({ userId: id });
     await tx.insert(userIdentities).values({ userId: id, provider: p.provider, subject: p.subject, email: address });
+    if (entry.personal && !(await useInviteCode(tx, entry.personal))) throw new AppError("invite_required", 403);
     await audit(tx, id, "account.register", "provider", p.provider);
     return createSession(tx, id);
   });

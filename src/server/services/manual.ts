@@ -286,6 +286,12 @@ export function composeManual(d: ManualInput, locale: Locale): Manual {
     .map((s) => ({ s, items: d.prefs.filter((p) => p.sentiment === s).map((p) => p.label) }))
     .filter((g) => g.items.length);
   if (bySentiment.length) likes.push({ t: "kv", title: L(P.likesFromPrefs), items: bySentiment.map((g) => ({ k: L(P.sentiment[g.s]!), v: g.items.join("、") })) });
+  // Records marked "liked or found": the latest few, in the owner's words.
+  const liked = d.memories.filter((m) => m.labels.includes("like") && !m.sealedUntil && (m.title || m.body)).slice(0, MAX_RECORDS);
+  if (liked.length) {
+    likes.push({ t: "p", text: `— ${L(P.likesFromRecords)}` });
+    for (const m of liked) likes.push({ t: "quote", text: clip([m.title, m.body].filter(Boolean).join(" — ")), cite: m.date });
+  }
   if (!likes.length) likes.push({ t: "locked", text: L(P.lockedLikes), sample: L(P.sample), href: "/discover/chapter/likes", label: L(P.answerMore) });
   add("likes", "core", likes);
 

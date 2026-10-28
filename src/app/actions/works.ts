@@ -24,7 +24,7 @@ export async function handOverAction(form: FormData) {
   const r = await attempt("work.hand", () => handOver(uid, str(form, "workId"), { recipient, note: str(form, "note"), days: str(form, "days") || 14 }));
   revalidatePath(PAGE);
   if (!r.ok) redirect(`${withParam(PAGE, "e", r.error)}#give`);
-  redirect(`${PAGE}?${new URLSearchParams({ link: r.value.token, who: recipient })}#handed`);
+  redirect(`${PAGE}?${new URLSearchParams({ link: r.value.token, ...(recipient.trim() ? { who: recipient.trim() } : {}) })}#handed`);
 }
 
 export async function extendLinkAction(form: FormData) {

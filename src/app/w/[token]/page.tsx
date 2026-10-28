@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { TypeTry } from "@/components/type-try";
 import { WorkEnvelope } from "@/components/work-envelope";
+import { registrationCodeRequired } from "@/server/services/account";
 import { WorkView } from "@/components/work-view";
 import { dateText } from "@/lib/i18n/date-text";
 import { typesById } from "@/lib/tuvi/type-view";
@@ -141,6 +142,8 @@ export default async function WorkLinkPage({ params, searchParams }: { params: P
                   ))}
                 </ul>
                 <p className="mx-auto mt-5 max-w-sm text-sm leading-6 text-stone-600">{w.startLead}</p>
+                {/* While sign-up is by invitation, the link they were given is the invitation. */}
+                {!viewer && registrationCodeRequired() && <p className="mx-auto mt-2 max-w-sm text-xs font-semibold text-violet-800" data-testid="work-invited">{w.startInvited}</p>}
                 <Link href={viewer ? (onboarded ? "/home" : "/welcome") : `/register?next=${encodeURIComponent(`/w/${token}?open=1`)}`} className="mt-5 inline-block rounded-full bg-violet-700 px-6 py-3 text-sm font-bold text-white shadow-md hover:bg-violet-800">
                   {viewer && onboarded ? w.openApp : w.start}
                 </Link>

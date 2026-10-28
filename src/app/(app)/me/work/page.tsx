@@ -39,7 +39,7 @@ export default async function WorkPage({ searchParams }: { searchParams: Promise
 
       {handed && (
         <section id="handed" className="scroll-mt-24 rounded-3xl bg-teal-50 p-4 ring-1 ring-teal-200" data-testid="work-handed">
-          <p className="font-bold text-teal-950">✉️ {w.linkReady(sp.who ?? "")}</p>
+          <p className="font-bold text-teal-950">✉️ {w.linkReady(sp.who?.trim() || null)}</p>
           <p className="mt-1 text-xs leading-5 text-teal-900">{w.linkOnce}</p>
           <div className="mt-3">
             <ShareLink url={`${appOrigin()}/w/${handed}`} title={work?.title ?? ""} text={w.from(work?.content.name ?? "")} labels={{ share: w.share, copy: w.copy, copied: w.copied }} />
@@ -65,7 +65,7 @@ export default async function WorkPage({ searchParams }: { searchParams: Promise
               <input type="hidden" name="workId" value={work.id} />
               <label className="block">
                 <span className="mb-1 block text-sm font-medium text-stone-700">{w.recipient}</span>
-                <input name="recipient" required maxLength={60} placeholder={w.recipientPh} className={input} />
+                <input name="recipient" maxLength={60} placeholder={w.recipientPh} className={input} />
               </label>
               <label className="block">
                 <span className="mb-1 block text-sm font-medium text-stone-700">{w.note}</span>
@@ -90,7 +90,7 @@ export default async function WorkPage({ searchParams }: { searchParams: Promise
                   {links.map((l) => (
                     <li key={l.id} className="py-3">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold text-stone-900">{l.recipient}</span>
+                        <span className={l.recipient ? "font-semibold text-stone-900" : "text-stone-500"}>{l.recipient ?? w.noRecipient}</span>
                         {l.state === "open" ? <Pill tone="teal">{w.until(date(l.expiresAt))}</Pill> : <Pill>{l.state === "expired" ? w.expired : w.revoked}</Pill>}
                         <span className="text-xs text-stone-500">{l.openedAt ? `✓ ${w.opened}` : w.notOpened}</span>
                       </div>

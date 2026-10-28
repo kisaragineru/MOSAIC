@@ -9,6 +9,11 @@ import { requireUser } from "@/server/auth/session";
 import { listComparisons, listShares } from "@/server/services/sharing";
 import { latestWork } from "@/server/services/works";
 import { handOverAction } from "@/app/actions/works";
+import { makeInviteCodeAction, revokeInviteCodeAction } from "@/app/actions/invites";
+import { InviteCodeSend } from "@/components/invite-code-send";
+import { QrFromImage } from "@/components/qr-from-image";
+import { registrationCodeRequired } from "@/server/services/account";
+import { myInviteCodes } from "@/server/services/invite-codes";
 
 export default async function SharePage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
@@ -17,6 +22,10 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
   const shares = await listShares(uid);
   const comps = await listComparisons(uid);
   const work = await latestWork(uid);
+  // While sign-up is by invitation: invite codes anyone can make and send.
+  const inviting = registrationCodeRequired();
+  const codes = inviting ? await myInviteCodes(uid) : [];
+  const origin = process.env.APP_ORIGIN ?? "";
   const w = t.work;
   const s = t.share;
   return (
@@ -24,7 +33,7 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
       <Flash t={t} sp={sp} />
       {/* Two ways, two kinds of people: pick by whether they use MOSAIC. */}
       <p className="text-sm text-stone-600">{s.pick}</p>
-      <nav className="grid grid-cols-2 gap-2" aria-label={s.title} data-testid="share-pick">
+      <nav className={`grid gap-2 ${inviting ? "grid-cols-3" : "grid-cols-2"}`} aria-label={s.title} data-testid="share-pick">
         <a href="#story" className="rounded-2xl bg-violet-50 p-3 ring-1 ring-violet-100 hover:ring-violet-300">
           <span aria-hidden className="text-xl">✉️</span>
           <span className="mt-1 block text-[11px] font-semibold text-violet-700">{s.storyFor}</span>
@@ -35,6 +44,13 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
           <span className="mt-1 block text-[11px] font-semibold text-teal-700">{s.connectFor}</span>
           <span className="block text-sm font-bold text-stone-900">{s.connectTitle} ↓</span>
         </a>
+        {inviting && (
+          <a href="#invite" className="rounded-2xl bg-amber-50 p-3 ring-1 ring-amber-100 hover:ring-amber-300">
+            <span aria-hidden className="text-xl">🎟</span>
+            <span className="mt-1 block text-[11px] font-semibold text-amber-700">{s.inviteFor}</span>
+            <span className="block text-sm font-bold text-stone-900">{s.inviteTitle} ↓</span>
+          </a>
+        )}
       </nav>
 
       {/* Handing over the story: for anyone, MOSAIC or not. */}
@@ -51,7 +67,7 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
           <form action={handOverAction} className="mt-4 flex flex-wrap gap-2">
             <input type="hidden" name="workId" value={work.id} />
             <input type="hidden" name="days" value="14" />
-            <input name="recipient" required maxLength={60} placeholder={w.recipientPh} aria-label={w.recipient} className="min-w-0 flex-1 rounded-full border border-violet-200 bg-white px-4 py-2 text-sm focus:border-violet-500 focus:outline-none" />
+            <input name="recipient" maxLength={60} placeholder={w.recipientPh} aria-label={w.recipient} className="min-w-0 flex-1 rounded-full border border-violet-200 bg-white px-4 py-2 text-sm focus:border-violet-500 focus:outline-none" />
             <button type="submit" className="shrink-0 rounded-full bg-violet-700 px-4 py-2 text-sm font-bold text-white hover:bg-violet-800">{w.give}</button>
           </form>
         ) : (
@@ -86,7 +102,48 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
             }}
           />
         </div>
+        {/* Their QR as a picture (a screenshot, a photo): read it here and connect. */}
+        <div className="mt-3">
+          <QrFromImage tx={{ button: s.qrImage, hint: s.qrImageHint, reading: s.qrReading, notFound: s.qrNotFound, notMosaic: s.qrNotMosaic }} />
+        </div>
       </section>
+
+      {inviting && (
+        <section id="invite" className="scroll-mt-20 rounded-3xl bg-gradient-to-br from-amber-50 to-rose-50 p-5 shadow-sm ring-1 ring-amber-100" data-testid="share-invite">
+          <span className="inline-block rounded-full bg-amber-600 px-2.5 py-0.5 text-[11px] font-bold text-white">{s.inviteTag}</span>
+          <h2 className="mt-2 text-lg font-bold text-stone-900">🎟 {s.inviteTitle}</h2>
+          <p className="mt-1 text-xs leading-5 text-stone-600">{s.inviteLead}</p>
+          <form action={makeInviteCodeAction} className="mt-3 flex flex-wrap gap-2">
+            <input name="label" maxLength={60} placeholder={s.inviteLabelPh} aria-label={s.inviteLabel} className="min-w-0 flex-1 rounded-full border border-amber-200 bg-white px-4 py-2 text-sm focus:border-amber-500 focus:outline-none" />
+            <button type="submit" className="rounded-full bg-amber-600 px-5 py-2 text-sm font-bold text-white shadow-sm hover:bg-amber-700">{s.inviteMake}</button>
+          </form>
+          <h3 className="mt-4 text-xs font-bold text-stone-600">{s.inviteMine}</h3>
+          {codes.length === 0 ? (
+            <p className="mt-1 text-xs text-stone-500">{s.inviteNone}</p>
+          ) : (
+            <ul className="mt-2 space-y-2" data-testid="invite-codes">
+              {codes.map((c) => (
+                <li key={c.id} className={`rounded-2xl p-3 ring-1 ${c.state === "open" ? "bg-white/90 ring-amber-100" : "bg-white/50 ring-stone-100"} ${sp.made === c.id ? "ring-2 ring-amber-400" : ""}`}>
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className={c.label ? "font-semibold text-stone-900" : "text-stone-500"}>{c.label ?? s.inviteNoName}</span>
+                    <Pill tone={c.state === "open" ? "amber" : c.state === "used" ? "teal" : "stone"}>{s.inviteState[c.state]}</Pill>
+                    {c.state === "open" && <span className="text-xs text-stone-500">{s.inviteUntil(c.expiresAt.toISOString().slice(0, 10))}</span>}
+                  </div>
+                  {c.state === "open" && (
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                      <InviteCodeSend code={c.code} message={s.inviteMessage(`${origin}/register?code=${c.code}`, c.code)} tx={{ copy: s.inviteCopy, copied: s.inviteCopied, send: s.inviteSend }} />
+                      <form action={revokeInviteCodeAction}>
+                        <input type="hidden" name="id" value={c.id} />
+                        <ConfirmButton message={t.common.confirmDelete} bare className="text-xs text-stone-500 underline underline-offset-4 hover:text-rose-700">{s.inviteRevoke}</ConfirmButton>
+                      </form>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       <h2 className="pt-2 text-xs font-bold uppercase tracking-wider text-stone-500">{s.history}</h2>
       <Card title={t.share.comparisons}>

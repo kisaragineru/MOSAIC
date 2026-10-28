@@ -1,0 +1,2 @@
+ALTER TABLE "memory_entries" DROP CONSTRAINT "memory_labels_ck";--> statement-breakpoint
+ALTER TABLE "memory_entries" ADD CONSTRAINT "memory_labels_ck" CHECK ("memory_entries"."labels" <@ array['note','daily','memo','fun','like','achievement','decision','goal','dream','regret','feeling','value','memory','thought']::text[]);

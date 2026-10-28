@@ -134,6 +134,7 @@ export const MANUAL_PHRASE = {
   wordsFromOthers: { ja: "寄せられた言葉", en: "In their words", vi: "Lời họ viết" } as I18nText,
   likesFromAnswers: { ja: "質問への答えから", en: "From your answers", vi: "Từ câu trả lời" } as I18nText,
   likesFromPrefs: { ja: "あなたが登録した「好き」", en: "Favourites you saved", vi: "Những điều bạn đã lưu" } as I18nText,
+  likesFromRecords: { ja: "記録に残した「好き・発見」", en: "Things you liked or found, from your records", vi: "Những điều bạn thích hay phát hiện, từ ghi chép" } as I18nText,
   sentiment: {
     love: { ja: "大好き", en: "Love", vi: "Rất thích" },
     like: { ja: "好き", en: "Like", vi: "Thích" },

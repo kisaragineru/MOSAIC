@@ -18,8 +18,23 @@ describe("what a post is about, from its words", () => {
     expect(inferLabels(text)).toEqual(labels);
   });
 
-  it("leaves plain notes alone, and counts a photo as a memory", () => {
-    expect(inferLabels("お昼はカレー。")).toEqual([]);
+  it("everyday things: light labels when nothing deeper is read, a passing word otherwise", () => {
+    expect(inferLabels("お昼はカレー。")).toEqual(["daily"]);
+    expect(inferLabels("牛乳と卵、忘れないようにメモ")).toEqual(["memo"]);
+    expect(inferLabels("猫の寝相で爆笑した")).toEqual(["fun"]);
+    expect(inferLabels("駅前に好きなパン屋を見つけた")).toEqual(["like"]);
+    expect(inferLabels("ねむい")).toEqual(["note"]);
+    expect(inferLabels("lol my cat")).toEqual(["fun"]);
+    expect(inferLabels("see www.example.com")).toEqual(["note"]);
+  });
+
+  it("deeper labels come first; a liked thing stays beside them; the light ones give way", () => {
+    expect(inferLabels("今日は不安で眠れない。")).toEqual(["feeling"]);
+    expect(inferLabels("友だちとカフェに行った。好きな店になった。")).toEqual(["memory", "like"]);
+  });
+
+  it("counts a photo as a memory, and leaves an empty post without a label", () => {
     expect(inferLabels("", { hasMedia: true })).toEqual(["memory"]);
+    expect(inferLabels("   ")).toEqual([]);
   });
 });

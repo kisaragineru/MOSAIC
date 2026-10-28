@@ -105,7 +105,7 @@ export async function latestWork(userId: string): Promise<MyWork | null> {
 
 export const LINK_DAYS = [7, 14, 30, 90] as const;
 const linkSchema = z.object({
-  recipient: z.string().trim().min(1).max(60),
+  recipient: z.string().trim().max(60).optional().transform((x) => x || null),
   note: z.string().trim().max(300).optional().transform((x) => x || null),
   days: z.coerce.number().pipe(z.union(LINK_DAYS.map((n) => z.literal(n)) as unknown as [z.ZodLiteral<7>, z.ZodLiteral<14>, z.ZodLiteral<30>, z.ZodLiteral<90>])).default(14),
 });
@@ -129,7 +129,7 @@ export async function handOver(userId: string, workId: string, input: unknown): 
 export interface WorkLink {
   id: string;
   workId: string;
-  recipient: string;
+  recipient: string | null;
   note: string | null;
   expiresAt: Date;
   revokedAt: Date | null;
@@ -173,7 +173,7 @@ export async function revokeLink(userId: string, linkId: string) {
 }
 
 /** Links someone opened that I haven't been told about yet (Home says it once). */
-export async function newOpens(userId: string): Promise<{ id: string; recipient: string }[]> {
+export async function newOpens(userId: string): Promise<{ id: string; recipient: string | null }[]> {
   return withUser(userId, (tx) =>
     tx.select({ id: workLinks.id, recipient: workLinks.recipient }).from(workLinks).where(and(eq(workLinks.ownerId, userId), isNotNull(workLinks.openedAt), isNull(workLinks.openedSeenAt))),
   );
@@ -323,9 +323,9 @@ export async function readOffer(userId: string, offerId: string): Promise<Opened
 }
 
 /** For the writer: who connected through a work, and who started their own story (said once). */
-export async function writerNews(userId: string): Promise<{ connected: string[]; started: string[] }> {
+export async function writerNews(userId: string): Promise<{ connected: (string | null)[]; started: (string | null)[] }> {
   const rows = await run(userId, (tx) =>
-    tx.execute<{ recipient: string; accepted: boolean; started: boolean }>(sql`
+    tx.execute<{ recipient: string | null; accepted: boolean; started: boolean }>(sql`
       select l.recipient,
              (o.accepted_at is not null and o.accepted_seen_at is null) as accepted,
              (o.start_answer = 'told' and o.start_seen_at is null) as started

@@ -173,9 +173,9 @@ describe("labels and feelings", () => {
     expect((await getMemory(u.userId, id)).feeling).toBe("grateful");
     await expect(setMemoryFeeling(other.userId, id, "sad")).rejects.toMatchObject({ code: "not_found" });
     await expect(setMemoryLabels(other.userId, id, ["goal"])).rejects.toMatchObject({ code: "not_found" });
-    // A plain note has none, and isn't filtered as anything.
+    // An everyday post gets a light label; its kind stays a plain note.
     const plain = await createMemory(u.userId, { body: "お昼はカレー。" });
-    expect(await getMemory(u.userId, plain)).toMatchObject({ kind: "note", labels: [] });
+    expect(await getMemory(u.userId, plain)).toMatchObject({ kind: "note", labels: ["daily"] });
     expect((await listMemories(u.userId, { kind: "goal" })).map((x) => x.id)).toEqual([id]);
   });
 });

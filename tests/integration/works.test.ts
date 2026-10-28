@@ -72,4 +72,14 @@ describe("works: the story, handed to someone as a work", () => {
     await expect(revokeLink(sora.userId, linkId)).rejects.toMatchObject({ code: "not_found" });
     await expect(handOver(hana.userId, workId, { recipient: "x", days: 3 })).rejects.toThrow(); // only the offered lengths
   });
+
+  it("a link needs no name: blank is kept as none", async () => {
+    const hana = await makeUser("ハナ");
+    await saveBirthProfile(hana.userId, { calendarInput: "solar", solarDate: "1990-06-07", timeKnown: false, timeZone: "Asia/Ho_Chi_Minh" });
+    const workId = await makeWork(hana.userId, "ja", { title: "ハナの物語", answerIds: [] });
+    const { id } = await handOver(hana.userId, workId, { recipient: "  ", days: 14 });
+    const link = (await myLinks(hana.userId)).find((l) => l.id === id)!;
+    expect(link.recipient).toBeNull();
+    await expect(handOver(hana.userId, workId, { recipient: "x".repeat(61), days: 14 })).rejects.toThrow();
+  });
 });
