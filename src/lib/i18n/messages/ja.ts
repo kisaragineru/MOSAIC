@@ -375,6 +375,7 @@ export const ja: Dict = {
     },
     media: {
       add: "写真・動画を追加",
+      camera: "カメラで撮る",
       help: "5つまで。写真は自動で軽くします。動画は30MBまで。公開範囲は記録と同じです。",
       remove: "取り除く",
       moveEarlier: "前へ",

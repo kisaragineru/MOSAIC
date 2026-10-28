@@ -4,6 +4,8 @@ import type { MediaItem } from "@/server/services/media";
 
 export interface MediaPickerText {
   add: string;
+  /** Straight to the camera (phones). */
+  camera: string;
   help: string;
   remove: string;
   moveEarlier: string;
@@ -213,11 +215,19 @@ export function MediaPicker({ tx, initial = [], resetKey, onCount }: { tx: Media
         </ul>
       )}
       {tiles.length < MAX && (
-        <label className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full border border-dashed border-stone-300 bg-white px-4 text-sm font-semibold text-stone-700 transition hover:border-teal-400 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-400">
-          <span aria-hidden>📷</span>
-          {tx.add}
-          <input type="file" accept="image/*,video/*" multiple className="sr-only" onChange={(e) => (choose(e.target.files), (e.target.value = ""))} />
-        </label>
+        <div className="flex flex-wrap gap-2">
+          {/* On a phone: the camera itself, for a photo taken now (the other button may only open the gallery). */}
+          <label className="hidden min-h-10 cursor-pointer items-center gap-1.5 rounded-full border border-dashed border-stone-300 bg-white px-4 text-sm font-semibold text-stone-700 transition hover:border-teal-400 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-400 pointer-coarse:inline-flex">
+            <span aria-hidden>📸</span>
+            {tx.camera}
+            <input type="file" accept="image/*" capture="environment" className="sr-only" data-testid="media-camera" onChange={(e) => (choose(e.target.files), (e.target.value = ""))} />
+          </label>
+          <label className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full border border-dashed border-stone-300 bg-white px-4 text-sm font-semibold text-stone-700 transition hover:border-teal-400 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-400">
+            <span aria-hidden>📷</span>
+            {tx.add}
+            <input type="file" accept="image/*,video/*" multiple className="sr-only" onChange={(e) => (choose(e.target.files), (e.target.value = ""))} />
+          </label>
+        </div>
       )}
       <p className="text-[11px] leading-5 text-stone-500">{busy ? tx.uploading : tx.help}</p>
     </div>

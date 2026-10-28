@@ -373,6 +373,7 @@ export const en = {
     },
     media: {
       add: "Add photos or videos",
+      camera: "Take a photo",
       help: "Up to 5. Photos are made lighter automatically; videos up to 30 MB. Seen by the same people as the record.",
       remove: "Remove",
       moveEarlier: "Move earlier",

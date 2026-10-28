@@ -375,6 +375,7 @@ export const vi: Dict = {
     },
     media: {
       add: "Thêm ảnh/video",
+      camera: "Chụp ảnh",
       help: "Tối đa 5. Ảnh được tự động làm nhẹ; video tối đa 30 MB. Cùng phạm vi chia sẻ với ghi chép.",
       remove: "Bỏ",
       moveEarlier: "Lên trước",

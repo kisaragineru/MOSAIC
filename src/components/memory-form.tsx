@@ -12,7 +12,7 @@ import { Button, Field, Input, Textarea } from "./ui";
 /** The picker's words, from the dictionary (a client component can't take functions). */
 export function mediaPickerText(t: Dict): MediaPickerText {
   const m = t.memories.media;
-  return { add: m.add, help: m.help, remove: m.remove, moveEarlier: m.moveEarlier, uploading: m.uploading, waitUpload: m.waitUpload, failed: m.failed, retry: m.retry, video: m.video, errors: t.errors };
+  return { add: m.add, camera: m.camera, help: m.help, remove: m.remove, moveEarlier: m.moveEarlier, uploading: m.uploading, waitUpload: m.waitUpload, failed: m.failed, retry: m.retry, video: m.video, errors: t.errors };
 }
 
 /** Who a post is for, in the dictionary's words. */

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { expect, test, type Browser, type Page } from "@playwright/test";
+import { devices, expect, test, type Browser, type Page } from "@playwright/test";
 import { confirm } from "./confirm";
 import { setDate } from "./date";
 
@@ -392,7 +392,7 @@ test("photos on a record: uploaded as chosen, a tidy block on the timeline, whol
   await hana.goto("/memories/new");
   await hana.getByLabel("あったこと・考えていること").fill("海に行った。");
   const picker = hana.getByTestId("media-picker");
-  await picker.locator('input[type="file"]').setInputFiles(["tests/e2e/fixtures-photo.jpg", "tests/e2e/fixtures-photo.jpg", "tests/e2e/fixtures-photo.jpg"]);
+  await picker.locator('input[type="file"][multiple]').setInputFiles(["tests/e2e/fixtures-photo.jpg", "tests/e2e/fixtures-photo.jpg", "tests/e2e/fixtures-photo.jpg"]);
   await expect(picker.locator('input[name="media"]')).toHaveCount(3);
   await hana.getByRole("radio", { name: /つながっている全員/ }).check({ force: true });
   await hana.getByRole("button", { name: "投稿する" }).click();
@@ -425,11 +425,27 @@ test("photos on a record: uploaded as chosen, a tidy block on the timeline, whol
   await hana.goto("/memories");
   await hana.getByTestId("compose-fab").click();
   const sheet = hana.getByRole("dialog");
-  await sheet.getByTestId("media-picker").locator('input[type="file"]').setInputFiles("tests/e2e/fixtures-photo.jpg");
+  await sheet.getByTestId("media-picker").locator('input[type="file"][multiple]').setInputFiles("tests/e2e/fixtures-photo.jpg");
   await expect(sheet.locator('input[name="media"]')).toHaveCount(1);
   await sheet.getByRole("button", { name: "投稿する" }).click();
   await expect(hana.getByRole("dialog", { name: "新しい投稿" })).toHaveCount(0);
   await expect(hana.locator('[data-testid="media-grid"][data-count="1"]').first()).toBeVisible();
+  // On a phone, a photo can also be taken with the camera straight away.
+  await hana.getByTestId("compose-fab").click();
+  const camera = hana.getByRole("dialog").getByTestId("media-camera");
+  await expect(hana.getByRole("dialog").getByText("カメラで撮る")).toBeVisible();
+  await expect(camera).toHaveAttribute("capture", "environment");
+  await camera.setInputFiles("tests/e2e/fixtures-photo.jpg");
+  await expect(hana.getByRole("dialog").locator('input[name="media"]')).toHaveCount(1);
+  await hana.getByRole("dialog").getByRole("button", { name: "投稿する" }).click();
+  await expect(hana.getByRole("dialog", { name: "新しい投稿" })).toHaveCount(0);
+  // On a computer there is only the one button.
+  const desk = await (await browser.newContext({ ...devices["Desktop Chrome"], locale: "ja-JP", storageState: await hana.context().storageState() })).newPage();
+  await desk.goto("/memories");
+  await desk.getByTestId("compose-fab").click();
+  await expect(desk.getByRole("dialog").getByText("写真・動画を追加")).toBeVisible();
+  await expect(desk.getByRole("dialog").getByText("カメラで撮る")).toBeHidden();
+  await desk.context().close();
 });
 
 test("videos are served in parts by range, only to those who may see them", async ({ browser }) => {
