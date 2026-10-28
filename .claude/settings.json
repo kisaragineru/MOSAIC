@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'ユーザーへの返答は、短い一言や途中の説明も含めて、必ず日本語で書くこと（CLAUDE.md の「言葉」を参照）。'"
+          }
+        ]
+      }
+    ]
+  }
+}
