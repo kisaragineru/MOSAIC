@@ -3,9 +3,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/server/auth/session";
 import {
-  connectGiftWriter, createGiftBox, deleteGiftEntry, deliverAsBook, inviteGiftWriter, issueReceiveCode, joinGiftBox, receiveGift, removeGiftWriter,
+  connectGiftWriter, createGiftBox, linkCode, receivePath, deleteGiftEntry, deliverAsBook, inviteGiftWriter, issueReceiveCode, joinGiftBox, receiveGift, removeGiftWriter,
   saveGiftEntry, updateGiftBox,
 } from "@/server/services/gift-boxes";
+import { appOrigin } from "@/server/services/sharing";
 import { attempt, str, withParam } from "./util";
 
 const boxUrl = (id: string, tab?: string) => `/gifts/${id}${tab ? `?tab=${tab}` : ""}`;
@@ -35,9 +36,12 @@ export async function joinGiftBoxAction(form: FormData) {
 
 export async function receiveGiftAction(form: FormData) {
   const uid = await requireUser();
-  const r = await attempt("gift.receive", () => receiveGift(uid, str(form, "code")));
+  const code = str(form, "code");
+  const r = await attempt("gift.receive", () => receiveGift(uid, code));
   revalidatePath("/gifts");
-  redirect(r.ok ? withParam(boxUrl(r.value), "ok", "saved") : `/gifts?e=${r.error}`);
+  // From a receive link: a refusal is said on the link's own page.
+  const link = str(form, "from") === "link" ? linkCode(code) : null;
+  redirect(r.ok ? withParam(boxUrl(r.value), "ok", "saved") : link ? `/g/${link}?e=${r.error}` : `/gifts?e=${r.error}`);
 }
 
 /** The child connects with one of the box's writers; the book page shows where they stand. */
@@ -93,7 +97,8 @@ export async function deliverAsBookAction(form: FormData) {
   redirect(r.ok ? `/gifts/${id}/book` : withParam(boxUrl(id, "manage"), "e", r.error));
 }
 
-export type CodeState = { code?: string; error?: string };
+/** `link`: the same code as a link to send (receive codes only). */
+export type CodeState = { code?: string; link?: string; error?: string };
 
 export async function inviteCodeAction(_prev: CodeState, form: FormData): Promise<CodeState> {
   const uid = await requireUser();
@@ -105,5 +110,5 @@ export async function receiveCodeAction(_prev: CodeState, form: FormData): Promi
   const uid = await requireUser();
   const r = await attempt("gift.code", () => issueReceiveCode(uid, str(form, "boxId")));
   revalidatePath(`/gifts/${str(form, "boxId")}`);
-  return r.ok ? { code: r.value } : { error: r.error };
+  return r.ok ? { code: r.value, link: `${appOrigin()}${receivePath(r.value)}` } : { error: r.error };
 }

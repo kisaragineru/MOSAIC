@@ -31,7 +31,9 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   // Came from a story link someone gave them (and it's still open): that link is the invitation.
   const w = /^\/w\/([A-Za-z0-9_-]{16,64})/.exec(next)?.[1];
-  const work = w && (await invitedThrough(`work:${w}`)) ? `work:${w}` : null;
+  // …or a gift box's receive link.
+  const g = /^\/g\/([A-Z0-9]{12})$/.exec(next)?.[1];
+  const work = w && (await invitedThrough(`work:${w}`)) ? `work:${w}` : g && (await invitedThrough(`gift:${g}`)) ? `gift:${g}` : null;
   return (
     <AuthShell t={t} locale={locale} back={`/register?next=${encodeURIComponent(next)}`} trial={!!trial}>
       <Card title={t.auth.registerTitle}>

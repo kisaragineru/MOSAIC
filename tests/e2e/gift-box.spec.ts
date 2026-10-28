@@ -165,11 +165,27 @@ test("a box handed over as a book reaches the child's account later: a code from
   const later = mom.getByTestId("gift-book-to-account");
   await expect(later).toContainText("ソラがMOSAICを始めたら");
   await later.getByRole("button", { name: "受け取りコードを出す" }).click();
-  const code = (await later.getByTestId("one-time-code").innerText()).trim();
+  // With the code comes a link to send (LINE, mail).
+  const link = await later.getByTestId("receive-link").locator("input").inputValue();
+  expect(link).toMatch(/\/g\/[A-Z2-9]{12}$/);
+  const path = new URL(link).pathname;
 
-  const child = await user(browser, "ソラ");
-  await child.goto("/gifts");
-  await child.getByLabel("コード", { exact: true }).last().fill(code);
+  // Sora opens it before having an account: the cover, then sign-up (no invite code), then receive.
+  const ctx = await browser.newContext({ locale: "ja-JP", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.4.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
+  const child = await ctx.newPage();
+  await child.goto(path.toLowerCase()); // however it's typed
+  await child.waitForURL(new RegExp(`${path}$`));
+  const cover = child.getByTestId("gift-link-cover");
+  await expect(cover).toContainText("ソラへ");
+  await expect(cover).toContainText("ママより");
+  await expect(child.getByText("はじめての海。")).toHaveCount(0); // nothing inside before receiving
+  await child.getByRole("link", { name: "アカウントをつくって受け取る" }).click();
+  await child.waitForURL(/\/register/);
+  await child.getByLabel("なんと呼べばいいですか？").fill("ソラ");
+  await child.getByLabel("メールアドレス").fill(`${randomUUID().slice(0, 8)}@example.test`);
+  await child.getByLabel(/^パスワード/).fill("e2e correct horse battery");
+  await child.getByRole("button", { name: "アカウントを作成" }).click();
+  await child.waitForURL(new RegExp(`${path}$`));
   await child.getByRole("button", { name: "受け取る" }).click();
   await child.waitForURL(/\/gifts\/[0-9a-f-]+\/book$/);
   await expect(child.getByTestId("gift-in-records")).toContainText("あなたの記録にも入りました");
@@ -179,4 +195,7 @@ test("a box handed over as a book reaches the child's account later: a code from
 
   await mom.goto(boxUrl);
   await expect(mom.getByTestId("gift-book-to-account")).toContainText("ソラのアカウントにも渡しました。");
+  // Used once: the link now says so.
+  await child.goto(path);
+  await expect(child.getByTestId("gift-link-closed")).toContainText("このリンクは使えません");
 });

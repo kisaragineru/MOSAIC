@@ -13,7 +13,7 @@ import { isoDate, optionalDate, uuid } from "@/lib/validation/common";
 import { sha256 } from "../auth/crypto";
 import { enforceRateLimit } from "../auth/rate-limit";
 import { GIFT_ROLES, people } from "../db/schema";
-import { withUser } from "../db/tx";
+import { withAnon, withUser } from "../db/tx";
 import { AppError, mapDbError, notFound } from "../errors";
 import { audit } from "./audit";
 import type { MediaItem } from "./media";
@@ -86,6 +86,30 @@ export function newCode(): string {
 }
 /** Hash of a code as typed: case, spaces and dashes don't matter. */
 export const codeHash = (code: string) => sha256(`gift:${code.toUpperCase().replace(/[^A-Z0-9]/g, "")}`);
+
+/** A code as it goes in a receive link (12 characters, no dashes), or null if it can't be one. */
+export function linkCode(code: string | undefined): string | null {
+  const c = (code ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return /^[A-HJ-NP-Z2-9]{12}$/.test(c) ? c : null;
+}
+/** The receive link's path for a code: sent with LINE or mail, opened before signing in. */
+export const receivePath = (code: string) => `/g/${linkCode(code)}`;
+/** For display: XXXX-XXXX-XXXX. */
+export const dashed = (c: string) => `${c.slice(0, 4)}-${c.slice(4, 8)}-${c.slice(8)}`;
+
+export interface GiftCover {
+  childName: string;
+  writers: { label: string | null; role: GiftRole }[];
+}
+
+/** A receive link's cover, while it can be received: the child's name and who it's from. */
+export async function peekGiftLink(code: string): Promise<GiftCover | null> {
+  const c = linkCode(code);
+  if (!c) return null;
+  const r = await withAnon((tx) => tx.execute<{ child_name: string; writers: GiftCover["writers"] }>(sql`select * from gift_link_peek(${codeHash(c)})`));
+  const row = r.rows[0];
+  return row ? { childName: row.child_name, writers: row.writers } : null;
+}
 
 async function call<T = unknown>(userId: string, q: ReturnType<typeof sql>, action?: string, target?: string): Promise<T[]> {
   return withUser(userId, async (tx) => {

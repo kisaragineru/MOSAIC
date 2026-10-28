@@ -589,6 +589,13 @@
       "when": 1793201754713,
       "tag": "0083_gift_book_then_account",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1793204166872,
+      "tag": "0084_gift_receive_link",
+      "breakpoints": true
     }
   ]
 }

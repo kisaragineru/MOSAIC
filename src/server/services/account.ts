@@ -10,6 +10,7 @@ import type { OAuthProfile } from "../auth/oauth";
 import { withAnon, withUser } from "../db/tx";
 import { AppError, invalid, unauthorized } from "../errors";
 import { audit } from "./audit";
+import { codeHash, linkCode } from "./gift-boxes";
 import { inviteCodeOpen, normalizeInviteCode, useInviteCode } from "./invite-codes";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/locales";
 
@@ -21,15 +22,18 @@ export const registerSchema = z.object({
   displayName: z.string().trim().min(1).max(80),
   locale: z.enum(SUPPORTED_LOCALES).default("en"),
   inviteCode: z.string().max(200).optional(),
-  /** Arrived through a story or share link ("work:<token>" / "share:<token>"): no code needed. */
+  /** Arrived through a story, share or receive link ("work:<token>" / "share:<token>" / "gift:<code>"): no code needed. */
   invite: z.string().max(200).optional(),
 });
 
-/** "work:<token>" / "share:<token>": a story or share link someone was given, still open. */
+/** "work:<token>" / "share:<token>" / "gift:<code>": a story, share or gift box receive link someone was given, still open. */
 export async function invitedThrough(invite: string | undefined): Promise<boolean> {
+  const g = /^gift:(.+)$/.exec(invite ?? "");
+  const code = g ? linkCode(g[1]) : null;
   const m = /^(work|share):([A-Za-z0-9_-]{16,100})$/.exec(invite ?? "");
-  if (!m) return false;
-  const r = await withAnon((tx) => tx.execute<{ ok: boolean }>(sql`select invite_valid(${m[1]}, ${sha256(m[2]!)}) as ok`));
+  if (!m && !code) return false;
+  const [kind, hash] = code ? ["gift", codeHash(code)] : [m![1], sha256(m![2]!)];
+  const r = await withAnon((tx) => tx.execute<{ ok: boolean }>(sql`select invite_valid(${kind}, ${hash}) as ok`));
   return r.rows[0]?.ok === true;
 }
 

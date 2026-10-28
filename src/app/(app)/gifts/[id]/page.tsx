@@ -41,6 +41,7 @@ export default async function GiftBoxPage({ params, searchParams }: { params: Pr
   const from13 = box.child_birthday ? `${Number(box.child_birthday.slice(0, 4)) + 13}${box.child_birthday.slice(4)}` : null;
   const open = box.status === "open";
   const base = `/gifts/${box.id}`;
+  const linkText = { lead: g.link.lead, title: g.link.title(box.child_name), text: g.link.text(box.child_name), share: g.link.share, copy: g.link.copy, copied: g.copied };
 
   return (
     <Page title={g.forChild(box.child_name)} back="/gifts">
@@ -83,7 +84,7 @@ export default async function GiftBoxPage({ params, searchParams }: { params: Pr
                     {from13 && from13 > todayIso() ? (
                       <p className="rounded-2xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">{g.bookToAccountFrom13(from13)}</p>
                     ) : (
-                      <OneTimeCode action={receiveCodeAction} hidden={{ boxId: box.id }} button={g.handoverCode} labels={{ once: g.codeOnce, copy: g.copy, copied: g.copied, errors: t.errors }} />
+                      <OneTimeCode action={receiveCodeAction} hidden={{ boxId: box.id }} button={g.handoverCode} labels={{ once: g.codeOnce, copy: g.copy, copied: g.copied, errors: t.errors }} linkText={linkText} />
                     )}
                   </>
                 )}
@@ -149,7 +150,7 @@ export default async function GiftBoxPage({ params, searchParams }: { params: Pr
                       <p className="mb-2 text-sm leading-6 text-stone-700">{g.handoverCodeHelp}</p>
                       {box.code_active && <p className="mb-2 text-xs text-teal-800">✓ {g.codeActive}</p>}
                       {from13 && from13 > todayIso() && <p className="mb-2 rounded-2xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900" data-testid="gift-from13">{g.accountFrom13(from13)}</p>}
-                      <OneTimeCode action={receiveCodeAction} hidden={{ boxId: box.id }} button={g.handoverCode} labels={{ once: g.codeOnce, copy: g.copy, copied: g.copied, errors: t.errors }} />
+                      <OneTimeCode action={receiveCodeAction} hidden={{ boxId: box.id }} button={g.handoverCode} labels={{ once: g.codeOnce, copy: g.copy, copied: g.copied, errors: t.errors }} linkText={linkText} />
                     </div>
                     <form action={deliverAsBookAction} className="space-y-2 border-t border-stone-100 pt-4">
                       <input type="hidden" name="boxId" value={box.id} />

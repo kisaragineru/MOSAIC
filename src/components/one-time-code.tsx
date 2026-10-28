@@ -1,20 +1,23 @@
 "use client";
 import { useActionState, useState, type ReactNode } from "react";
 import type { CodeState } from "@/app/actions/gift-boxes";
+import { ShareLink } from "./share-link";
 
-/** A form that asks the server for a one-time code and shows it once, with a copy button. */
+/** A form that asks the server for a one-time code and shows it once, with a copy button (and, when the server gives one, the same code as a link to send). */
 export function OneTimeCode({
   action,
   hidden,
   children,
   button,
   labels,
+  linkText,
 }: {
   action: (prev: CodeState, form: FormData) => Promise<CodeState>;
   hidden: Record<string, string>;
   children?: ReactNode;
   button: string;
   labels: { once: string; copy: string; copied: string; errors: Record<string, string> };
+  linkText?: { lead: string; title: string; text: string; share: string; copy: string; copied: string };
 }) {
   const [state, run, pending] = useActionState(action, {});
   const [copied, setCopied] = useState(false);
@@ -39,6 +42,12 @@ export function OneTimeCode({
               {copied ? labels.copied : labels.copy}
             </button>
           </p>
+          {state.link && linkText && (
+            <div className="space-y-2 border-t border-teal-200 pt-3" data-testid="receive-link">
+              <p className="text-xs leading-5 text-teal-900">{linkText.lead}</p>
+              <ShareLink url={state.link} title={linkText.title} text={linkText.text} labels={{ share: linkText.share, copy: linkText.copy, copied: linkText.copied }} />
+            </div>
+          )}
         </div>
       )}
     </form>

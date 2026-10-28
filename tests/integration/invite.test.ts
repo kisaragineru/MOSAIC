@@ -4,6 +4,7 @@ import { register } from "@/server/services/account";
 import { saveBirthProfile } from "@/server/services/tuvi";
 import { createShare, revokeShare } from "@/server/services/sharing";
 import { handOver, makeWork, revokeLink } from "@/server/services/works";
+import { createGiftBox, deliverAsBook, inviteGiftWriter, issueReceiveCode, joinGiftBox, linkCode, peekGiftLink, receiveGift, receivePath } from "@/server/services/gift-boxes";
 import { makeUser } from "../helpers/factory";
 
 const env = { ...process.env };
@@ -39,6 +40,39 @@ describe("sign-up while invite-only", () => {
     await revokeShare(hana.userId, share.id);
     await expect(signUp({ invite: `work:${story.token}` })).rejects.toMatchObject({ code: "invite_required" });
     await expect(signUp({ invite: `share:${share.token}` })).rejects.toMatchObject({ code: "invite_required" });
+  });
+
+  it("a gift box's receive link: its cover while it can be received, an invitation, then closed once received", async () => {
+    const mom = await makeUser("Mai");
+    const dad = await makeUser("Duc");
+    const box = await createGiftBox(mom.userId, { childName: "ハナ", childBirthday: "2008-05-05", deliverOn: "2020-04-01", role: "mother", label: "ママ" });
+    await joinGiftBox(dad.userId, await inviteGiftWriter(mom.userId, box, "father"));
+    process.env.REGISTRATION_CODE = "secret-code";
+    await expect(signUp({ invite: "gift:ABCDEFGHJKLM" })).rejects.toMatchObject({ code: "invite_required" });
+
+    const code = await issueReceiveCode(mom.userId, box);
+    const c = linkCode(code)!;
+    expect(receivePath(code)).toBe(`/g/${c}`);
+    expect(linkCode(code.toLowerCase())).toBe(c);
+    expect(linkCode("IIII-OOOO-1111")).toBeNull();
+    // The cover only: whom it's for and who it's from (dad's label unset: his role).
+    expect(await peekGiftLink(c)).toEqual({ childName: "ハナ", writers: [{ label: "ママ", role: "mother" }, { label: null, role: "father" }] });
+    expect(await peekGiftLink("ABCDEFGHJKLM")).toBeNull();
+    const child = await signUp({ invite: `gift:${c}` });
+    expect(await receiveGift(child.userId, c)).toBe(box);
+    // Used: no cover, no invitation.
+    expect(await peekGiftLink(c)).toBeNull();
+    await expect(signUp({ invite: `gift:${c}` })).rejects.toMatchObject({ code: "invite_required" });
+  });
+
+  it("a book's later receive link works the same", async () => {
+    const mom = await makeUser("Mai");
+    const box = await createGiftBox(mom.userId, { childName: "ソラ", childBirthday: "2008-05-05", deliverOn: "2020-04-01", role: "mother" });
+    await deliverAsBook(mom.userId, box);
+    const c = linkCode(await issueReceiveCode(mom.userId, box))!;
+    expect(await peekGiftLink(c)).toMatchObject({ childName: "ソラ" });
+    process.env.REGISTRATION_CODE = "secret-code";
+    await expect(signUp({ invite: `gift:${c}` })).resolves.toHaveProperty("userId");
   });
 
   it("no code set: anyone may sign up", async () => {
