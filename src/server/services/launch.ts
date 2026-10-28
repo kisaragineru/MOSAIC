@@ -15,7 +15,8 @@ export function launchChecklist(): LaunchItem[] {
   return [
     { key: "origin", ok: origin.startsWith("https://") && !origin.includes(".netlify.app"), required: true },
     { key: "admins", ok: adminEmails().length > 0, required: true },
-    { key: "devtools", ok: !devToolsEnabled(), required: true },
+    // Off, or kept for the admins alone (with admins named, no one else ever gets them).
+    { key: "devtools", ok: !devToolsEnabled() || adminEmails().length > 0, required: true },
     { key: "contact", ok: !!process.env.CONTACT_EMAIL?.trim(), required: true },
     { key: "google", ok: enabledProviders().includes("google"), required: false },
     { key: "push", ok: pushConfigured(), required: false },

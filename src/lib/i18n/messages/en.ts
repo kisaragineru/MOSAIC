@@ -16,7 +16,7 @@ export const en = {
     launch: {
       origin: { label: "Own domain (APP_ORIGIN)", todo: "Set APP_ORIGIN to your own domain, starting with https://." },
       admins: { label: "Admins (ADMIN_EMAILS)", todo: "Put the admins' email addresses in ADMIN_EMAILS." },
-      devtools: { label: "Development tools off (DEV_TOOLS)", todo: "Remove DEV_TOOLS (test companions and the other development tools go away)." },
+      devtools: { label: "Development tools for admins only (DEV_TOOLS)", todo: "Name the admins in ADMIN_EMAILS and the development tools are theirs alone. If you don't use them, remove DEV_TOOLS." },
       contact: { label: "Contact (CONTACT_EMAIL)", todo: "Set CONTACT_EMAIL. It shows on the privacy policy, the terms and the forgotten-password page." },
       google: { label: "Sign in with Google", todo: "Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET." },
       push: { label: "Notifications", todo: "Make the keys under “Push notifications” above and set the three VAPID_… values." },

@@ -18,7 +18,7 @@ export const ja: Dict = {
     launch: {
       origin: { label: "正式なドメイン（APP_ORIGIN）", todo: "APP_ORIGIN を https:// で始まる独自ドメインにします。" },
       admins: { label: "管理者（ADMIN_EMAILS）", todo: "ADMIN_EMAILS に管理者のメールアドレスを入れます。" },
-      devtools: { label: "開発用ツールをオフ（DEV_TOOLS）", todo: "DEV_TOOLS を削除します（テスト相手などの開発用ツールが消えます）。" },
+      devtools: { label: "開発用ツールは管理者だけ（DEV_TOOLS）", todo: "ADMIN_EMAILS に管理者を入れると、開発用ツールは管理者だけのものになります。使わないなら DEV_TOOLS を削除します。" },
       contact: { label: "問い合わせ先（CONTACT_EMAIL）", todo: "CONTACT_EMAIL に連絡先を入れます。プライバシーポリシーと利用規約、パスワードを忘れた方の画面に出ます。" },
       google: { label: "Googleでログイン", todo: "GOOGLE_CLIENT_ID と GOOGLE_CLIENT_SECRET を入れます。" },
       push: { label: "スマホへの通知", todo: "上の「スマホへの通知」で鍵をつくり、VAPID_… の3つを入れます。" },

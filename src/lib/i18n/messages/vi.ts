@@ -18,7 +18,7 @@ export const vi: Dict = {
     launch: {
       origin: { label: "Tên miền riêng (APP_ORIGIN)", todo: "Đặt APP_ORIGIN là tên miền riêng, bắt đầu bằng https://." },
       admins: { label: "Quản trị viên (ADMIN_EMAILS)", todo: "Nhập email của quản trị viên vào ADMIN_EMAILS." },
-      devtools: { label: "Tắt công cụ phát triển (DEV_TOOLS)", todo: "Xóa DEV_TOOLS (người thử nghiệm và các công cụ phát triển khác sẽ biến mất)." },
+      devtools: { label: "Công cụ phát triển chỉ dành cho quản trị viên (DEV_TOOLS)", todo: "Ghi quản trị viên vào ADMIN_EMAILS thì công cụ phát triển chỉ dành cho họ. Nếu không dùng, hãy xóa DEV_TOOLS." },
       contact: { label: "Liên hệ (CONTACT_EMAIL)", todo: "Đặt CONTACT_EMAIL. Địa chỉ này hiện trên chính sách quyền riêng tư, điều khoản và trang quên mật khẩu." },
       google: { label: "Đăng nhập bằng Google", todo: "Đặt GOOGLE_CLIENT_ID và GOOGLE_CLIENT_SECRET." },
       push: { label: "Thông báo", todo: "Tạo khóa ở mục “Thông báo đẩy” phía trên và đặt ba giá trị VAPID_…." },
