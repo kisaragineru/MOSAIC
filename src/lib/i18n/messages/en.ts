@@ -1835,8 +1835,6 @@ export const en = {
     status: { pending: "Waiting", answered: "Answered", declined: "Declined", cancelled: "Cancelled", withdrawn: "Withdrawn" },
     resultsTitle: "Map of how you're seen",
     noResults: "No answers yet. When they arrive, they'll appear here next to your own answers.",
-    giftNote: "🎁 The views written in gift boxes you received are here too: you, as the writer saw you back then.",
-    fromGift: (who: string) => `${who} (from a gift box)`,
     anonPending: (n: number) => `${n} anonymous answer${n === 1 ? " has" : "s have"} arrived. They appear together once there are three.`,
     anonShown: (n: number) => `${n} anonymous answers are shown together.`,
     windows: {

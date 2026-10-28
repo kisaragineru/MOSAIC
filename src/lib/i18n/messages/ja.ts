@@ -1837,8 +1837,6 @@ export const ja: Dict = {
     status: { pending: "回答待ち", answered: "回答あり", declined: "見送り", cancelled: "取り消し", withdrawn: "取り下げ" },
     resultsTitle: "見え方の地図",
     noResults: "まだ回答がありません。届くと、ここにあなたの答えと並べて表示します。",
-    giftNote: "🎁 受け取ったギフトボックスの「あなたの見方」も入っています。書いた人が、そのころに見ていたあなたです。",
-    fromGift: (who: string) => `${who}（ギフトボックスより）`,
     anonPending: (n: number) => `匿名の回答が${n}件届いています。3件そろうと、まとめて表示します。`,
     anonShown: (n: number) => `匿名の回答${n}件は、まとめて表示しています。`,
     windows: {

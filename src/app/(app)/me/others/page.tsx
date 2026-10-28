@@ -28,9 +28,8 @@ export default async function OthersPage({ searchParams }: { searchParams: Promi
   const mine = (await myPeerRequests(uid)).filter((r) => r.role === "owner");
   const { axes, results } = await johari(uid);
   const hasAny = results.responders > 0 || results.anonymous.n > 0;
-  const who = (n: (typeof results.named)[number]) => (n.gift ? p.fromGift(n.name || t.giftBox.roles[n.gift.role]) : n.name);
   const comments = [
-    ...results.named.filter((n) => n.comment).map((n) => ({ who: who(n), text: n.comment! })),
+    ...results.named.filter((n) => n.comment).map((n) => ({ who: n.name, text: n.comment! })),
     ...results.anonymous.comments.map((c) => ({ who: null, text: c })),
   ];
   return (
@@ -74,7 +73,6 @@ export default async function OthersPage({ searchParams }: { searchParams: Promi
       </Card>
 
       <h2 className="pt-2 text-lg font-semibold text-stone-900">{p.resultsTitle}</h2>
-      {results.named.some((n) => n.gift) && <p className="text-xs leading-5 text-stone-600" data-testid="peers-gift-note">{p.giftNote}</p>}
       {results.anonymous.n > 0 && (
         <Notice kind="info">{results.anonymous.counts ? p.anonShown(results.anonymous.n) : p.anonPending(results.anonymous.n)}</Notice>
       )}

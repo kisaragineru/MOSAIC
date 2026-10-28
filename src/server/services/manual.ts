@@ -498,7 +498,7 @@ const day = (d: Date) => d.toISOString().slice(0, 10);
 export async function gatherManual(userId: string, locale: Locale): Promise<ManualInput> {
   const profile = await withUser(userId, async (tx) => (await tx.select({ name: profiles.displayName, bio: profiles.bio }).from(profiles).where(eq(profiles.userId, userId)))[0]);
   const claims = await listTendencies(userId);
-  const peer = await johari(userId, { gifts: false });
+  const peer = await johari(userId);
   const history = await getHistory(userId);
   const prefs = await listPreferences(userId, null);
   const memories = await listMemories(userId, { limit: 200 });
