@@ -19,7 +19,7 @@ It is not a social network and it does not tell you who you are; it keeps your r
 | QR & comparison | Revocable share links/QR, two-sided scoped consent, comparison in three areas without any total score, revoke anytime. |
 | Your data | JSON export of everything, per-record deletion, full account deletion. |
 
-Languages: Tiếng Việt, English (structure ready for 日本語).
+Languages: 日本語, English, Tiếng Việt.
 
 ## Stack
 Next.js 16 (App Router, Server Actions) · TypeScript · PostgreSQL 16 with Row Level Security ·
@@ -50,7 +50,7 @@ src/lib/compare/      comparison logic (pure)
 src/content/          question bank, preference categories
 drizzle/              SQL migrations (0001 = RLS, roles' grants, SECURITY DEFINER functions)
 tests/unit|integration|e2e
-docs/                 TUVI_RULESET.md · SECURITY.md · DEPLOYMENT.md · STATUS.md
+docs/                 see Documentation below
 ```
 
 ## Documentation
@@ -58,5 +58,9 @@ docs/                 TUVI_RULESET.md · SECURITY.md · DEPLOYMENT.md · STATUS.
 - [Security & privacy design](docs/SECURITY.md)
 - [Deployment, environment variables, backup & restore](docs/DEPLOYMENT.md)
 - [Implementation status — implemented / not implemented / not verified](docs/STATUS.md)
+- [Handover notes for a new session (Japanese)](docs/引き継ぎ.md)
+- Concept, decisions and the philosophy review (Japanese): [CONCEPT](docs/CONCEPT.md) ·
+  [DECISIONS](docs/DECISIONS.md) · [PHILOSOPHY_REVIEW](docs/PHILOSOPHY_REVIEW.md)
+- [Gift boxes (Japanese)](docs/ギフトボックス仕様.md) · [External services the operator sets up (Japanese)](docs/外部サービス設定.md)
 
 Tử Vi content is a traditional interpretation, not scientific fact or prediction.

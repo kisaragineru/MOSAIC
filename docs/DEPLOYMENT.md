@@ -51,9 +51,10 @@ Any Node host works (VM, container, Render, Fly, Railway…). Serverless platfor
 a pooled Postgres endpoint (PgBouncer in transaction mode is compatible: identity is set with
 `set_config(..., true)` inside each transaction).
 
-### Netlify + Neon (test deployment)
-Verified so far: migrations, seed and `next build` through `netlify build` (local); the
-Netlify-side deploy itself must be checked on the first real deploy.
+### Netlify + Neon (production: https://mosaicdiary.app)
+Deployed from Git: a push to the working branch starts a production deploy. `netlify.toml` runs
+migrations → seed → tendency rebuild → `next build`. After pushing, check that the deploy reached
+`ready` for that commit before calling it published.
 1. Neon: create a project, open the SQL editor on `neondb`, run `scripts/neon-bootstrap.sql`
    with two long random passwords. (Tested against a simulated non-superuser admin with
    `CREATEROLE CREATEDB`; Neon's real admin role is not verified.)
@@ -61,9 +62,12 @@ Netlify-side deploy itself must be checked on the first real deploy.
 3. Environment variables (Netlify UI → Project configuration → Environment variables):
    - `MIGRATION_DATABASE_URL` = owner URL on the **direct** host, scope **Builds only**
    - `DATABASE_URL` = app URL on the **`-pooler`** host, scope Functions/Runtime, `?sslmode=require`
-   - `APP_ORIGIN` = `https://<site>.netlify.app`, `RATE_LIMIT_SALT`, `REGISTRATION_CODE`,
+   - `APP_ORIGIN` = the site's own https domain (production: `https://mosaicdiary.app`; the old
+     `*.netlify.app` address is redirected to it), `RATE_LIMIT_SALT`, `REGISTRATION_CODE`,
      `TRUST_PROXY=1`, `CLIENT_IP_HEADER=x-nf-client-connection-ip`, `DATABASE_POOL_MAX=3`
-4. Free plans cannot password-protect the site: keep `REGISTRATION_CODE` set and use test data only.
+4. While the site is being tried it sits behind a shared password (`BASIC_AUTH_USER` /
+   `BASIC_AUTH_PASSWORD`); keep `REGISTRATION_CODE` set for invite-only sign-up. What else the
+   operator sets (Google, Turnstile, Resend, `CONTACT_EMAIL`) is in `docs/外部サービス設定.md`.
 
 Deploy order for upgrades: backup → `db:migrate` → `db:seed` → deploy new build.
 

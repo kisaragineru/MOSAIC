@@ -123,7 +123,7 @@ of these exist; turning them away early just keeps them from costing server time
 ## Before opening the site (removing the shared password)
 The admin page shows this as a checklist, read from the deployment's settings (names only).
 - `APP_ORIGIN` is the site's own https domain; Google sign-in's redirect URI matches it.
-- `ADMIN_EMAILS` set; `DEV_TOOLS` removed.
+- `ADMIN_EMAILS` set. `DEV_TOOLS` may stay on: its tools are the admins' alone (remove it when no longer needed).
 - `CONTACT_EMAIL` set (privacy policy, terms, forgotten-password page).
 - Optional: Google sign-in keys, push keys (`VAPID_…`), email (`RESEND_API_KEY`, `MAIL_FROM`) for
   password resets by email, Cloudflare Turnstile (`TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`).
