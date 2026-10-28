@@ -49,6 +49,8 @@ export interface GiftBox {
   delivered_via: "account" | "pdf" | null;
   delivered_at: string | null;
   code_active: boolean;
+  /** The child has it in their account (also a box handed over as a book first). */
+  received: boolean;
   my_role: "owner" | "writer" | "child";
   me: string;
   owner_name: string;
@@ -185,7 +187,7 @@ export async function saveGiftView(userId: string, boxId: string, input: unknown
   await call(userId, sql`select gift_view_save(${id}, ${JSON.stringify(d.answers)}::jsonb, ${d.comment ?? null})`, "gift.view_saved", id);
 }
 
-/** Once the date has come: a one-time code for the child (the raw code is returned once). */
+/** Once the date has come (also later, for a box handed over as a book): a one-time code for the child (the raw code is returned once). */
 export async function issueReceiveCode(userId: string, boxId: string): Promise<string> {
   const id = uuid.parse(boxId);
   const code = newCode();

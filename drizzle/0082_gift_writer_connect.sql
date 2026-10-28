@@ -10,7 +10,7 @@ RETURNS TABLE (user_id uuid, name text, label text, role text, session_id uuid, 
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public, pg_temp AS $$
 DECLARE me uuid := gift_me();
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM gift_boxes b WHERE b.id = p_box AND b.delivered_to = me AND b.delivered_via = 'account') THEN
+  IF NOT EXISTS (SELECT 1 FROM gift_boxes b WHERE b.id = p_box AND b.delivered_to = me) THEN
     RAISE EXCEPTION 'not_found' USING ERRCODE = 'P0002';
   END IF;
   RETURN QUERY
@@ -41,7 +41,7 @@ CREATE OR REPLACE FUNCTION gift_writer_connect(p_box uuid, p_writer uuid) RETURN
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 DECLARE me uuid := gift_me(); s comparison_sessions%ROWTYPE; sid uuid;
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM gift_boxes b WHERE b.id = p_box AND b.delivered_to = me AND b.delivered_via = 'account')
+  IF NOT EXISTS (SELECT 1 FROM gift_boxes b WHERE b.id = p_box AND b.delivered_to = me)
      OR NOT EXISTS (SELECT 1 FROM gift_writers w WHERE w.box_id = p_box AND w.user_id = p_writer AND w.removed_at IS NULL)
      OR p_writer = me THEN
     RAISE EXCEPTION 'not_found' USING ERRCODE = 'P0002';

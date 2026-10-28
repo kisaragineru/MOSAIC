@@ -148,7 +148,8 @@ describe("gift boxes", () => {
     expect(b.entries.map((e) => e.body)).toEqual(["パパの手紙"]);
     // Each writer keeps their own copy.
     expect((await readGiftBox(dad.userId, box)).entries.map((e) => e.body)).toEqual(["パパの手紙"]);
-    await expect(issueReceiveCode(mom.userId, box)).rejects.toThrow(/gift_delivered/);
+    // It may reach the child's account later, but only from 13 (see below).
+    await expect(issueReceiveCode(mom.userId, box)).rejects.toThrow(/gift_too_young/);
   });
 
   it("validates its input", async () => {
@@ -267,5 +268,37 @@ describe("gift boxes", () => {
     await expect(connectGiftWriter(child.userId, box, dad.userId)).rejects.toThrow(/connection_ended/);
     expect((await writersForChild(child.userId, box)).find((w) => w.role === "grandmother")).toMatchObject({ offer: true });
     expect((await listPeople(grandma.userId)).length).toBe(0);
+  });
+
+  it("handed over as a book first, it can reach the child's account later (from 13): records copied, the owner still reads it all", async () => {
+    const { mom, dad, box } = await family(PAST, TEEN);
+    await saveGiftEntry(mom.userId, box, { kind: "growth", occurredOn: "2010-06-01", body: "3歩。" });
+    await saveGiftEntry(dad.userId, box, { kind: "letter", body: "パパの手紙" });
+    await deliverAsBook(mom.userId, box);
+    expect(await readGiftBox(mom.userId, box)).toMatchObject({ status: "delivered", delivered_via: "pdf", received: false, hidden_letters: 0 });
+    // Only the owner issues the code; writing stays closed.
+    await expect(issueReceiveCode(dad.userId, box)).rejects.toThrow();
+    await expect(saveGiftEntry(mom.userId, box, { kind: "growth", body: "もう一つ" })).rejects.toThrow(/gift_delivered/);
+
+    const child = await makeUser("Hana");
+    expect(await receiveGift(child.userId, await issueReceiveCode(mom.userId, box))).toBe(box);
+    expect(await readGiftBox(child.userId, box)).toMatchObject({ my_role: "child", status: "delivered", delivered_via: "pdf", received: true });
+    expect((await listMemories(child.userId)).map((m) => m.body).sort()).toEqual(["3歩。", "パパの手紙"]);
+    expect((await writersForChild(child.userId, box)).map((w) => w.name)).toEqual(["ママ", "パパ", "おばあちゃん"]);
+    // The owner keeps the whole book; it can't be handed to a second account.
+    const asMom = await readGiftBox(mom.userId, box);
+    expect(asMom).toMatchObject({ my_role: "owner", received: true, hidden_letters: 0 });
+    expect(asMom.entries.map((e) => e.body).sort()).toEqual(["3歩。", "パパの手紙"]);
+    await expect(issueReceiveCode(mom.userId, box)).rejects.toThrow(/gift_delivered/);
+  });
+
+  it("a book handed over before 13 waits for the birthday; a box received in an account gets no second code", async () => {
+    const young = await family(PAST);
+    await deliverAsBook(young.mom.userId, young.box);
+    await expect(issueReceiveCode(young.mom.userId, young.box)).rejects.toThrow(/gift_too_young/);
+
+    const { mom, box } = await family(PAST, TEEN);
+    await receiveGift((await makeUser()).userId, await issueReceiveCode(mom.userId, box));
+    await expect(issueReceiveCode(mom.userId, box)).rejects.toThrow(/gift_delivered/);
   });
 });

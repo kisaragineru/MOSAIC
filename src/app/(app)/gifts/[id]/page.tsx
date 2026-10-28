@@ -71,10 +71,32 @@ export default async function GiftBoxPage({ params, searchParams }: { params: Pr
       </section>
 
       {!open ? (
-        <Card>
-          <p className="text-sm text-stone-700">{g.closedNote}</p>
-          <Link href={`${base}/book`} className="mt-3 inline-block rounded-full bg-teal-700 px-5 py-2 text-sm font-semibold text-white">📖 {g.openBook}</Link>
-        </Card>
+        <>
+          <Card>
+            <p className="text-sm text-stone-700">{g.closedNote}</p>
+            <Link href={`${base}/book`} className="mt-3 inline-block rounded-full bg-teal-700 px-5 py-2 text-sm font-semibold text-white">📖 {g.openBook}</Link>
+          </Card>
+          {/* Handed over as a book: it can still reach the child's account later (from 13). */}
+          {box.my_role === "owner" && box.delivered_via === "pdf" && (
+            <Card title={`🎁 ${g.bookToAccountTitle}`}>
+              <div data-testid="gift-book-to-account">
+                {box.received ? (
+                  <p className="text-sm text-teal-800">✓ {g.bookToAccountDone(box.child_name)}</p>
+                ) : (
+                  <>
+                    <p className="mb-2 text-sm leading-6 text-stone-700">{g.bookToAccountHelp(box.child_name)}</p>
+                    {box.code_active && <p className="mb-2 text-xs text-teal-800">✓ {g.codeActive}</p>}
+                    {from13 && from13 > todayIso() ? (
+                      <p className="rounded-2xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">{g.bookToAccountFrom13(from13)}</p>
+                    ) : (
+                      <OneTimeCode action={receiveCodeAction} hidden={{ boxId: box.id }} button={g.handoverCode} labels={{ once: g.codeOnce, copy: g.copy, copied: g.copied, errors: t.errors }} />
+                    )}
+                  </>
+                )}
+              </div>
+            </Card>
+          )}
+        </>
       ) : (
         <>
           <SegmentedTabs current={`${base}?tab=${tab}`} items={tabs.map((x) => ({ href: `${base}?tab=${x}`, label: g.tabs[x] }))} />

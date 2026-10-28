@@ -34,7 +34,7 @@ export default async function GiftBookPage({ params, searchParams }: { params: P
   const nameOf = (x: Parameters<typeof writerName>[1]) => writerName(box, x, g.roles);
   const media = await giftMedia(uid, box.id);
   // Received into an account: the writers, to connect with in one tap (those whose connection ended aren't offered).
-  const received = box.my_role === "child" && box.delivered_via === "account";
+  const received = box.my_role === "child";
   const kin = received ? (await writersForChild(uid, box.id)).filter((w) => w.offer || w.sessionId) : [];
   const writers = box.writers.filter((w) => !w.removed || box.entries.some((e) => e.author_id === w.user_id));
   const names = writers.map((w) => w.label ?? g.roles[w.role]).join(locale === "ja" ? "・" : ", ");

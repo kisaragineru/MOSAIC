@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Browser } from "@playwright/test";
+import { confirm } from "./confirm";
 import { setDate } from "./date";
 
 async function user(browser: Browser, name: string) {
@@ -139,4 +140,47 @@ test("a gift box: parents write, letters stay private, the child receives it as 
   const stranger = await user(browser, "X");
   const r = await stranger.goto(boxUrl);
   expect(r?.status()).toBe(404);
+});
+
+test("a box handed over as a book reaches the child's account later: a code from the owner, the records in the child's own", async ({ browser }) => {
+  const today = new Date().toISOString().slice(0, 10);
+  const mom = await user(browser, "マイ");
+  await mom.goto("/gifts");
+  await mom.getByLabel("子どもの名前（呼び名）").fill("ソラ");
+  await setDate(mom, "子どもの誕生日（任意）", "2008-05-05");
+  await setDate(mom, "渡す日", today);
+  await mom.getByLabel("あなたとの関係").selectOption("mother");
+  await mom.getByLabel(/子どもからの呼ばれ方/).first().fill("ママ");
+  await mom.getByRole("button", { name: "新しくつくる" }).click();
+  await mom.waitForURL(/\/gifts\/[0-9a-f-]+\?ok=saved/);
+  const boxUrl = new URL(mom.url()).pathname;
+  const form = mom.getByTestId("gift-growth-form");
+  await form.getByLabel("本文").fill("はじめての海。");
+  await form.getByRole("button", { name: "追加", exact: true }).click();
+  await expect(mom.getByText("はじめての海。").first()).toBeVisible();
+
+  // Handed over as a book first.
+  await mom.goto(`${boxUrl}?tab=manage`);
+  await mom.getByRole("button", { name: /本（PDF）にして渡す/ }).click();
+  await confirm(mom);
+  await mom.waitForURL(/\/book$/);
+  // Later, the box page offers the account too.
+  await mom.goto(boxUrl);
+  const later = mom.getByTestId("gift-book-to-account");
+  await expect(later).toContainText("ソラがMOSAICを始めたら");
+  await later.getByRole("button", { name: "受け取りコードを出す" }).click();
+  const code = (await later.getByTestId("one-time-code").innerText()).trim();
+
+  const child = await user(browser, "ソラ");
+  await child.goto("/gifts");
+  await child.getByLabel("コード", { exact: true }).last().fill(code);
+  await child.getByRole("button", { name: "受け取る" }).click();
+  await child.waitForURL(/\/gifts\/[0-9a-f-]+\/book$/);
+  await expect(child.getByTestId("gift-in-records")).toContainText("あなたの記録にも入りました");
+  await expect(child.getByTestId("gift-writers")).toContainText("ママ");
+  await child.goto("/memories");
+  await expect(child.getByText("🎁 ママより").first()).toBeVisible();
+
+  await mom.goto(boxUrl);
+  await expect(mom.getByTestId("gift-book-to-account")).toContainText("ソラのアカウントにも渡しました。");
 });
