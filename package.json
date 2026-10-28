@@ -14,7 +14,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "db:migrate": "tsx scripts/migrate.ts",
+    "db:migrate": "tsx scripts/migrate.ts && tsx scripts/recompute-tendencies.ts",
     "db:seed": "tsx scripts/seed.ts",
     "db:setup": "tsx scripts/migrate.ts && tsx scripts/seed.ts",
     "test": "vitest run",

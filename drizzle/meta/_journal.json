@@ -519,6 +519,13 @@
       "when": 1793119944374,
       "tag": "0073_password_reset_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1793146465766,
+      "tag": "0074_reset_scale_answers",
+      "breakpoints": true
     }
   ]
 }

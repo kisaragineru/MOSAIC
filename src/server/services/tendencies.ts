@@ -93,7 +93,7 @@ export async function recomputeTendencies(tx: Tx, userId: string, now = new Date
     await tx.delete(tendencyEvidence).where(eq(tendencyEvidence.claimId, e.id));
     await tx
       .update(tendencyClaims)
-      .set({ isValid: false, evidenceCount: 0, supportCount: 0, contradictCount: 0, confidence: 0, newestEvidenceAt: null, updatedAt: now })
+      .set({ isValid: false, modelVersion: MODEL_VERSION, evidenceCount: 0, supportCount: 0, contradictCount: 0, confidence: 0, newestEvidenceAt: null, updatedAt: now })
       .where(eq(tendencyClaims.id, e.id));
   }
 }
