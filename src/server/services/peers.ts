@@ -13,6 +13,7 @@ import { uuid } from "@/lib/validation/common";
 import { withUser } from "../db/tx";
 import { mapDbError } from "../errors";
 import { audit } from "./audit";
+import { receivedGifts, type GiftRole } from "./gift-boxes";
 import { listTendencies } from "./tendencies";
 
 export type PeerStatus = "pending" | "answered" | "declined" | "cancelled" | "withdrawn";
@@ -99,7 +100,8 @@ export async function myPeerRequests(userId: string): Promise<PeerRequestRow[]> 
 }
 
 export interface PeerResults {
-  named: { name: string; answers: Partial<Record<TendencyKey, -1 | 0 | 1>>; comment: string | null; answeredAt: Date }[];
+  /** `gift`: written in a gift box this user received (how a parent or grandparent saw them then). */
+  named: { name: string; answers: Partial<Record<TendencyKey, -1 | 0 | 1>>; comment: string | null; answeredAt: Date; gift?: { role: GiftRole } }[];
   /** Anonymous answers: counts per axis and comments once there are three or more; else how many wait. */
   anonymous: { n: number; counts: Partial<Record<TendencyKey, [number, number, number]>> | null; comments: string[] };
   responders: number;
@@ -129,9 +131,33 @@ export interface JohariAxis {
   window: Window;
 }
 
-/** Per axis: your own reading beside what the people you asked said (shown answers only). */
-export async function johari(userId: string): Promise<{ axes: JohariAxis[]; results: PeerResults }> {
-  const results = await peerResults(userId);
+/** "Your view" from the gift boxes I received, as named answers under the name each writer wrote as. */
+async function giftViews(userId: string): Promise<PeerResults["named"]> {
+  return (await receivedGifts(userId)).flatMap((b) =>
+    b.views
+      .filter((v) => Object.keys(v.answers).length > 0 || v.comment)
+      .map((v) => {
+        const w = v.author_id ? b.writers.find((x) => x.user_id === v.author_id) : undefined;
+        return {
+          name: (w ? w.label ?? w.name : v.author_label) ?? "",
+          answers: v.answers,
+          comment: v.comment,
+          answeredAt: new Date(b.delivered_at ?? Date.now()),
+          gift: { role: (w?.role ?? v.author_role ?? "parent") as GiftRole },
+        };
+      }),
+  );
+}
+
+/**
+ * Per axis: your own reading beside what the people you asked said (shown answers only), and by
+ * default the views written in gift boxes you received. The manual leaves those out (`gifts: false`):
+ * a box's words count for no chapter but the story's.
+ */
+export async function johari(userId: string, opts: { gifts?: boolean } = {}): Promise<{ axes: JohariAxis[]; results: PeerResults }> {
+  const asked = await peerResults(userId);
+  const fromGifts = opts.gifts === false ? [] : await giftViews(userId);
+  const results: PeerResults = { ...asked, named: [...asked.named, ...fromGifts], responders: asked.responders + fromGifts.length };
   const claims = await listTendencies(userId);
   const axes = AXES.map((key) => {
     const counts: PeerCounts = { pos: 0, neutral: 0, neg: 0 };

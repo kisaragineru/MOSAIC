@@ -1837,6 +1837,8 @@ export const vi: Dict = {
     status: { pending: "Đang chờ", answered: "Đã trả lời", declined: "Từ chối", cancelled: "Đã hủy", withdrawn: "Đã rút lại" },
     resultsTitle: "Bản đồ cách bạn được nhìn nhận",
     noResults: "Chưa có câu trả lời. Khi có, chúng sẽ hiện ở đây cạnh câu trả lời của bạn.",
+    giftNote: "🎁 Cách nhìn được viết trong các hộp quà bạn nhận cũng có ở đây: bạn, như người viết đã thấy lúc ấy.",
+    fromGift: (who: string) => `${who} (từ hộp quà)`,
     anonPending: (n: number) => `Đã có ${n} câu trả lời ẩn danh. Đủ ba câu sẽ hiện cùng lúc.`,
     anonShown: (n: number) => `${n} câu trả lời ẩn danh được hiện gộp chung.`,
     windows: {

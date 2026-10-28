@@ -124,6 +124,12 @@ test("a gift box: parents write, letters stay private, the child receives it as 
   await expect(child.getByRole("heading", { level: 1, name: "ママ" })).toBeVisible();
   await expect(child.getByTestId("person-hero")).toContainText("家族");
   await child.goBack();
+  // Dad's view joins the child's "how others see you", saying where it came from.
+  await child.goto("/me/others");
+  await expect(child.getByTestId("peers-gift-note")).toBeVisible();
+  await expect(child.getByText("やさしくて、よく笑う子。")).toBeVisible();
+  await expect(child.getByText("— パパ（ギフトボックスより）")).toBeVisible();
+  await child.goBack();
   // A real PDF comes out of it (A5 pages).
   await child.emulateMedia({ media: "print" });
   const pdf = await child.pdf({ preferCSSPageSize: true, printBackground: true });

@@ -4,6 +4,7 @@ import {
   newCode, readGiftBox, receiveGift, removeGiftWriter, saveGiftEntry, saveGiftView, updateGiftBox, writersForChild,
 } from "@/server/services/gift-boxes";
 import { listPeople } from "@/server/services/people";
+import { johari, peerResults } from "@/server/services/peers";
 import { activeConnectionsWith, getComparison, revokeComparison } from "@/server/services/sharing";
 import { buildExport } from "@/server/services/export";
 import { buildManual } from "@/server/services/manual";
@@ -300,5 +301,25 @@ describe("gift boxes", () => {
     const { mom, box } = await family(PAST, TEEN);
     await receiveGift((await makeUser()).userId, await issueReceiveCode(mom.userId, box));
     await expect(issueReceiveCode(mom.userId, box)).rejects.toThrow(/gift_delivered/);
+  });
+
+  it("its views join the child's 'how others see you', under the name each wrote as; not the manual's", async () => {
+    const { mom, dad, box } = await family(PAST, TEEN);
+    await saveGiftView(dad.userId, box, { answers: { planning: 1, calm: -1 }, comment: "慎重な子" });
+    await saveGiftView(mom.userId, box, { answers: {} }); // nothing said: left out
+    const child = await makeUser("Hana");
+    expect((await johari(child.userId)).results.responders).toBe(0);
+    await receiveGift(child.userId, await issueReceiveCode(mom.userId, box));
+
+    const { axes, results } = await johari(child.userId);
+    expect(results.named).toEqual([expect.objectContaining({ name: "パパ", comment: "慎重な子", gift: { role: "father" } })]);
+    expect(results.responders).toBe(1);
+    expect(axes.find((a) => a.key === "planning")!.counts).toEqual({ pos: 1, neutral: 0, neg: 0 });
+    expect(axes.find((a) => a.key === "calm")!.counts).toEqual({ pos: 0, neutral: 0, neg: 1 });
+    // Asked answers stay as they were; the manual reads without the box's views.
+    expect((await peerResults(child.userId)).named).toEqual([]);
+    expect((await johari(child.userId, { gifts: false })).results.responders).toBe(0);
+    // Nobody else gets them.
+    expect((await johari(mom.userId)).results.responders).toBe(0);
   });
 });
