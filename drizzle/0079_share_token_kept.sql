@@ -1,0 +1,1 @@
+ALTER TABLE "profile_shares" ADD COLUMN "token" text;

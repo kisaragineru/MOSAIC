@@ -18,7 +18,7 @@ async function user(browser: Browser, name: string) {
 async function connect(a: Page, b: Page) {
   await a.goto("/share");
   await a.getByRole("button", { name: "QRを表示" }).click();
-  const url = await a.getByTestId("share-url").inputValue();
+  const url = await a.getByTestId("share-url").first().inputValue();
   await b.goto(url.replace(/^https?:\/\/[^/]+/, ""));
   await b.getByRole("button", { name: "続ける" }).click();
   await b.waitForURL(/\/compare\//);
@@ -34,7 +34,11 @@ async function connect(a: Page, b: Page) {
 
 async function sendText(p: Page, text: string) {
   await p.getByLabel("メッセージを入力…").fill(text);
-  await p.getByRole("button", { name: "送信", exact: true }).click();
+  // The message shows at once (sent in the background): wait for the server to have it too.
+  await Promise.all([
+    p.waitForResponse((r) => r.request().method() === "POST" && /^\/api\/dm\/[^/]+\/send$/.test(new URL(r.url()).pathname)),
+    p.getByRole("button", { name: "送信", exact: true }).click(),
+  ]);
   await expect(p.getByText(text, { exact: true }).last()).toBeVisible();
 }
 

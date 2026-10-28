@@ -24,13 +24,13 @@ export interface ShareCreatorText {
   errors: Record<string, string>;
 }
 
-/** One tap shows a QR with the default options (7 days, no use limit); the options sit behind "more". */
-export function ShareCreator({ tx, name }: { tx: ShareCreatorText; name: string }) {
-  const [state, action, pending] = useActionState<ShareState, FormData>(createShareAction, null);
+/** A link's QR, its address to copy, and the QR saved as a picture (just made, or shown again). */
+export function ShareResult({ url, qr, expiresAt, name, tx, note }: { url: string; qr: string; expiresAt: string; name: string; tx: ShareCreatorText; note?: string }) {
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
+  const input = "w-full rounded-2xl border border-stone-300 bg-white px-3 py-2";
   // The QR with MOSAIC's mark and who it is from, saved as a picture (made on this phone).
-  const save = async (qr: string, expiresAt: string) => {
+  const save = async () => {
     setSaving(true);
     try {
       const date = expiresAt.slice(0, 10);
@@ -40,48 +40,56 @@ export function ShareCreator({ tx, name }: { tx: ShareCreatorText; name: string 
         how: tx.cardHow,
         until: tx.cardUntil.replace("{date}", date),
       });
-      const url = URL.createObjectURL(blob);
+      const href = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
+      a.href = href;
       a.download = `MOSAIC-QR-${date}.png`;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      setTimeout(() => URL.revokeObjectURL(href), 10_000);
     } finally {
       setSaving(false);
     }
   };
+  return (
+    <div className="space-y-3 text-center" data-testid="share-result">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={qr} alt={tx.qrAlt} className="mx-auto aspect-square w-full max-w-72 animate-[zoomIn_.4s_ease-out] rounded-3xl bg-white p-2 shadow-md motion-reduce:animate-none" />
+      <button
+        type="button"
+        onClick={save}
+        disabled={saving}
+        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-teal-700 text-sm font-bold text-white shadow-sm hover:bg-teal-800 disabled:opacity-60"
+        data-testid="qr-save"
+      >
+        <span aria-hidden>⬇</span>
+        {saving ? tx.saving : tx.save}
+      </button>
+      {note && <p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">{note}</p>}
+      <input readOnly value={url} className={`${input} text-xs`} data-testid="share-url" onFocus={(e) => e.currentTarget.select()} />
+      <button
+        type="button"
+        className="min-h-10 w-full rounded-full border border-stone-300 bg-white text-sm"
+        onClick={async () => {
+          await navigator.clipboard?.writeText(url);
+          setCopied(true);
+        }}
+      >
+        {copied ? tx.copied : tx.copy}
+      </button>
+    </div>
+  );
+}
+
+/** One tap shows a QR with the default options (7 days, no use limit); the options sit behind "more". */
+export function ShareCreator({ tx, name }: { tx: ShareCreatorText; name: string }) {
+  const [state, action, pending] = useActionState<ShareState, FormData>(createShareAction, null);
   const input = "w-full rounded-2xl border border-stone-300 bg-white px-3 py-2";
   return (
     <div className="space-y-3">
       {state && "url" in state ? (
-        <div className="space-y-3 text-center" data-testid="share-result">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={state.qr} alt={tx.qrAlt} className="mx-auto aspect-square w-full max-w-72 animate-[zoomIn_.4s_ease-out] rounded-3xl bg-white p-2 shadow-md motion-reduce:animate-none" />
-          <button
-            type="button"
-            onClick={() => save(state.qr, state.expiresAt)}
-            disabled={saving}
-            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-teal-700 text-sm font-bold text-white shadow-sm hover:bg-teal-800 disabled:opacity-60"
-            data-testid="qr-save"
-          >
-            <span aria-hidden>⬇</span>
-            {saving ? tx.saving : tx.save}
-          </button>
-          <p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">{tx.once}</p>
-          <input readOnly value={state.url} className={`${input} text-xs`} data-testid="share-url" onFocus={(e) => e.currentTarget.select()} />
-          <button
-            type="button"
-            className="min-h-10 w-full rounded-full border border-stone-300 bg-white text-sm"
-            onClick={async () => {
-              await navigator.clipboard?.writeText(state.url);
-              setCopied(true);
-            }}
-          >
-            {copied ? tx.copied : tx.copy}
-          </button>
-        </div>
+        <ShareResult url={state.url} qr={state.qr} expiresAt={state.expiresAt} name={name} tx={tx} note={tx.once} />
       ) : (
         <form action={action}>
           <button

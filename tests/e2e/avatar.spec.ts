@@ -53,7 +53,7 @@ test("profile photo: choose, place by dragging and zooming, save, shown to conne
   // Connected people can.
   await hana.goto("/share");
   await hana.getByRole("button", { name: "QRを表示" }).click();
-  const url = await hana.getByTestId("share-url").inputValue();
+  const url = await hana.getByTestId("share-url").first().inputValue();
   await sora.goto(url.replace(/^https?:\/\/[^/]+/, ""));
   await sora.getByRole("button", { name: "続ける" }).click();
   await sora.waitForURL(/\/compare\//);

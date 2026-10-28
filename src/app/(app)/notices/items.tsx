@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { setCardAction } from "@/app/actions/sharing";
+import { addPersonFromConnectionAction, setCardAction } from "@/app/actions/sharing";
 import { acceptOfferAction, answerStartAction, dismissOfferAction, storyAskAction } from "@/app/actions/works";
 import { dmOpenForConnectionAction } from "@/app/actions/dm";
 import { questionReminderAction } from "@/app/actions/notices";
@@ -17,7 +17,7 @@ import { getDaily } from "@/server/services/discovery";
 import { lookBackDue, monthKey } from "@/server/services/monthly";
 import { noticeKey, questionClosedStreak, visibleNotices } from "@/server/services/notices";
 import { recentAnniversaries } from "@/server/services/pair-history";
-import { upcomingDates } from "@/server/services/people";
+import { listPeople, upcomingDates } from "@/server/services/people";
 import { myPeerRequests } from "@/server/services/peers";
 import { replyInbox } from "@/server/services/replies";
 import { listComparisons } from "@/server/services/sharing";
@@ -32,7 +32,7 @@ import { markOpensSeen, markStoryPagesSeen, markWriterNewsSeen, myOffers, newOpe
  */
 export async function noticeItems(uid: string, t: Dict, locale: Locale): Promise<{ all: TrayItem[]; showing: Set<string> }> {
   // Everything read at once; what is told once is marked seen after (in the same request).
-  const [account, daily, upcoming, np, tv, comparisons, peerRequests, lookBack, opens, offers, news, story, inbox, card, jar] = await Promise.all([
+  const [account, daily, upcoming, np, tv, comparisons, peerRequests, lookBack, opens, offers, news, story, inbox, card, jar, people] = await Promise.all([
     getAccount(uid),
     getDaily(uid),
     upcomingDates(uid, 366),
@@ -48,6 +48,7 @@ export async function noticeItems(uid: string, t: Dict, locale: Locale): Promise
     replyInbox(uid),
     myCard(uid),
     cookies(),
+    listPeople(uid),
   ]);
   const [birthday, anniversaries] = await Promise.all([yearStoryDue(uid, daily.day), recentAnniversaries(uid, account.profile.timeZone)]);
   await Promise.all([
@@ -64,6 +65,9 @@ export async function noticeItems(uid: string, t: Dict, locale: Locale): Promise
   const pendingOffer = offers.find((x) => !x.accepted && !x.dismissed);
   const startAsk = chart ? offers.find((x) => x.startAnswer === null) : undefined;
   const newReplies = inbox.filter((x) => x.unread > 0);
+  // Connected, but not yet among my people: who are they to me? (sharing by relationship reaches them then)
+  const linked = new Set(people.map((p) => p.connectionSessionId).filter(Boolean));
+  const unplaced = comparisons.filter((c) => c.status === "active" && !linked.has(c.id)).slice(0, 3);
   const btn = "rounded-full px-3 py-1.5 text-xs font-semibold";
   const go = (href: string, label: string) => <Link href={href} className="mt-1 inline-block text-xs font-semibold text-teal-800 underline underline-offset-4">{label} →</Link>;
   const cardUndecided = card === null;
@@ -107,6 +111,23 @@ export async function noticeItems(uid: string, t: Dict, locale: Locale): Promise
         </form>
       </div>
     ) }] : []),
+    ...unplaced.map((c) => ({ ref: { key: `rel:${c.id}`, kind: "action" as const }, icon: "🤝", body: (
+      <div data-testid="rel-ask">
+        <p className="font-semibold">{t.notices.relAsk(c.otherName)}</p>
+        <p className="text-xs leading-5 text-stone-500">{t.notices.relAskLead}</p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {(["partner", "family", "friend", "colleague"] as const).map((r) => (
+            <form key={r} action={addPersonFromConnectionAction}>
+              <input type="hidden" name="sessionId" value={c.id} />
+              <input type="hidden" name="relationship" value={r} />
+              <input type="hidden" name="back" value="/home" />
+              <button type="submit" className={`${btn} bg-white text-teal-800 ring-1 ring-teal-200 hover:ring-teal-400`}>{t.people.relationships[r]}</button>
+            </form>
+          ))}
+        </div>
+        {people.some((p) => !p.connectionSessionId) && go("/people", t.notices.relAskExisting)}
+      </div>
+    ) })),
     ...(cardUndecided ? [{ ref: { key: "card", kind: "action" as const }, icon: "🪪", body: (
       <div data-testid="card-ask">
         <p className="font-semibold">{t.card.askTitle}</p>

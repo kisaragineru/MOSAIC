@@ -174,9 +174,9 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   // QR share link
   await pa.goto("/share");
   await pa.getByRole("button", { name: "Show QR" }).click();
-  await expect(pa.getByTestId("share-result")).toBeVisible();
+  await expect(pa.getByTestId("share-result").first()).toBeVisible();
   await expect(pa.getByRole("img", { name: "QR code for your share link" })).toBeVisible();
-  const shareUrl = await pa.getByTestId("share-url").inputValue();
+  const shareUrl = await pa.getByTestId("share-url").first().inputValue();
   expect(shareUrl).toMatch(/\/s#[A-Za-z0-9_-]{43}$/);
 
   // --- User B ---

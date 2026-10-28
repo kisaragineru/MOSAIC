@@ -94,6 +94,12 @@ export async function addPersonFromConnectionAction(form: FormData) {
       })
     : await attempt("person.fromConnection", () => addPersonFromConnection(uid, id, str(form, "relationship") || "friend"));
   revalidatePath("/people");
+  // From Home's tray: stay on Home (the notice goes away on its own once they are placed).
+  const back = str(form, "back");
+  if (r.ok && back === "/home") {
+    revalidatePath("/home");
+    redirect("/home?ok=saved");
+  }
   redirect(r.ok ? `/people/${r.value}?ok=saved` : `/compare/${id}?e=${r.error}`);
 }
 

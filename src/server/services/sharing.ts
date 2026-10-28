@@ -95,13 +95,14 @@ export async function createShare(userId: string, input: unknown = {}) {
       .values({
         userId,
         tokenHash: sha256(token),
+        token,
         label: d.label ?? null,
         expiresAt: new Date(Date.now() + d.expiresInDays * 86400_000),
         maxUses: d.maxUses ?? null,
       })
       .returning();
     await audit(tx, userId, "share.created", "profile_share", row!.id);
-    // The raw token is returned exactly once and is not recoverable afterwards.
+    // Kept for the owner alone, to show the QR again while the link lasts.
     return { id: row!.id, token, url: shareUrl(token), expiresAt: row!.expiresAt };
   });
 }
@@ -117,6 +118,7 @@ export async function listShares(userId: string) {
         useCount: profileShares.useCount,
         revokedAt: profileShares.revokedAt,
         createdAt: profileShares.createdAt,
+        token: profileShares.token,
         status: sql<"active" | "revoked" | "expired" | "used_up">`case
           when ${profileShares.revokedAt} is not null then 'revoked'
           when ${profileShares.expiresAt} <= now() then 'expired'

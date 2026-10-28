@@ -781,7 +781,7 @@ export function ChatView({
             )}
           </div>
           {counts.size > 0 && (
-            <div className={`-mt-1.5 flex gap-1 ${mine ? "mr-2" : "ml-2"}`}>
+            <div className={`relative z-10 -mt-1.5 flex gap-1 ${mine ? "mr-2" : "ml-2"}`}>
               {[...counts].map(([e, n]) => (
                 <button
                   key={e}

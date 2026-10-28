@@ -36,7 +36,7 @@ test("full charts shared by both: partner chart, readings by relationship, no bi
   const b = await user(browser, "ソラ", { date: "1992-03-15", time: "21:10", sex: "male" });
   await a.goto("/share");
   await a.getByRole("button", { name: "QRを表示" }).click();
-  const url = await a.getByTestId("share-url").inputValue();
+  const url = await a.getByTestId("share-url").first().inputValue();
   await b.goto(url.replace(/^https?:\/\/[^/]+/, ""));
   await b.getByRole("button", { name: "続ける" }).click();
   await b.waitForURL(/\/compare\//);

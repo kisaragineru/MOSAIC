@@ -2,11 +2,12 @@ import Link from "next/link";
 import { revokeShareAction } from "@/app/actions/sharing";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
-import { ShareCreator } from "@/components/share-creator";
+import QRCode from "qrcode";
+import { ShareCreator, ShareResult } from "@/components/share-creator";
 import { Card, Empty, Page, Pill } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
-import { listComparisons, listShares } from "@/server/services/sharing";
+import { listComparisons, listShares, shareUrl } from "@/server/services/sharing";
 import { latestWork } from "@/server/services/works";
 import { handOverAction } from "@/app/actions/works";
 import { makeInviteCodeAction, revokeInviteCodeAction } from "@/app/actions/invites";
@@ -19,6 +20,8 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
   const uid = await requireUser();
   const sp = await searchParams;
   const { t } = await getT();
+  const w = t.work;
+  const s = t.share;
   const shares = await listShares(uid);
   const comps = await listComparisons(uid);
   const work = await latestWork(uid);
@@ -27,8 +30,28 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
   const inviting = registrationCodeRequired();
   const codes = inviting ? await myInviteCodes(uid) : [];
   const origin = process.env.APP_ORIGIN ?? "";
-  const w = t.work;
-  const s = t.share;
+  const shareTx = {
+    create: s.create,
+    advanced: s.advanced,
+    createCustom: s.createCustom,
+    label: s.label,
+    expires: s.expires,
+    maxUses: s.maxUses,
+    once: s.once,
+    qrAlt: s.qrAlt,
+    copy: s.copy,
+    copied: s.copied,
+    save: s.save,
+    saving: s.saving,
+    cardFrom: s.cardFrom,
+    cardLead: s.cardLead,
+    cardHow: s.cardHow,
+    cardUntil: s.cardUntil,
+    errors: t.errors,
+  };
+  // A link still open can be shown again (its QR made here), unless it predates keeping links.
+  const qrOf = async (token: string) => `data:image/svg+xml;base64,${Buffer.from(await QRCode.toString(shareUrl(token), { type: "svg", errorCorrectionLevel: "M", margin: 2 })).toString("base64")}`;
+  const again = new Map(await Promise.all(shares.filter((x) => x.status === "active" && x.token).map(async (x) => [x.id, await qrOf(x.token!)] as const)));
   return (
     <Page title={s.title}>
       <Flash t={t} sp={sp} />
@@ -89,25 +112,7 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
         <div className="mt-4 rounded-2xl bg-white/80 p-4">
           <ShareCreator
             name={account.profile.displayName}
-            tx={{
-              create: s.create,
-              advanced: s.advanced,
-              createCustom: s.createCustom,
-              label: s.label,
-              expires: s.expires,
-              maxUses: s.maxUses,
-              once: s.once,
-              qrAlt: s.qrAlt,
-              copy: s.copy,
-              copied: s.copied,
-              save: s.save,
-              saving: s.saving,
-              cardFrom: s.cardFrom,
-              cardLead: s.cardLead,
-              cardHow: s.cardHow,
-              cardUntil: s.cardUntil,
-              errors: t.errors,
-            }}
+            tx={shareTx}
           />
         </div>
         {/* Their QR as a picture (a screenshot, a photo): read it here and connect. */}
@@ -180,16 +185,29 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
             {shares.map((s) => {
               const status = s.status;
               return (
-                <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-stone-200 p-2 text-sm">
-                  <div>
-                    <p className="font-medium">{s.label ?? s.createdAt.toISOString().slice(0, 10)}</p>
-                    <p className="text-xs text-stone-500">{t.share.uses(s.useCount, s.maxUses)} · {t.share.expiresOn(s.expiresAt.toISOString().slice(0, 10))}</p>
+                <li key={s.id} className="rounded-xl border border-stone-200 p-2 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-medium">{s.label ?? s.createdAt.toISOString().slice(0, 10)}</p>
+                      <p className="text-xs text-stone-500">{t.share.uses(s.useCount, s.maxUses)} · {t.share.expiresOn(s.expiresAt.toISOString().slice(0, 10))}</p>
+                    </div>
+                    <Pill tone={status === "active" ? "teal" : "stone"}>{t.share.status[status]}</Pill>
                   </div>
-                  <Pill tone={status === "active" ? "teal" : "stone"}>{t.share.status[status]}</Pill>
+                  {status === "active" &&
+                    (s.token && again.has(s.id) ? (
+                      <details className="group mt-2" data-testid="share-again">
+                        <summary className="inline-flex min-h-9 cursor-pointer list-none items-center rounded-full bg-teal-50 px-3 text-xs font-semibold text-teal-800 ring-1 ring-teal-100">▸ {t.share.showAgain}</summary>
+                        <div className="mt-3">
+                          <ShareResult url={shareUrl(s.token)} qr={again.get(s.id)!} expiresAt={s.expiresAt.toISOString()} name={account.profile.displayName} tx={shareTx} />
+                        </div>
+                      </details>
+                    ) : (
+                      <p className="mt-1 text-[11px] text-stone-500">{t.share.noAgain}</p>
+                    ))}
                   {status !== "revoked" && (
-                    <form action={revokeShareAction}>
+                    <form action={revokeShareAction} className="mt-2 text-right">
                       <input type="hidden" name="shareId" value={s.id} />
-                      <ConfirmButton message={t.common.confirmDelete} className="min-h-8 px-2 py-1 text-xs">{t.share.revoke}</ConfirmButton>
+                      <ConfirmButton message={t.common.confirmDelete} bare className="text-xs text-stone-500 underline underline-offset-4 hover:text-rose-700">{t.share.revoke}</ConfirmButton>
                     </form>
                   )}
                 </li>

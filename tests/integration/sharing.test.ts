@@ -55,15 +55,17 @@ async function setupPair() {
 }
 
 describe("share links", () => {
-  it("stores only a token hash; token is high-entropy and returned once", async () => {
+  it("looks links up by hash; keeps the high-entropy token for its owner alone (to show the QR again)", async () => {
     const a = await makeUser();
+    const b = await makeUser();
     const s = await createShare(a.userId, { label: "Coffee chat" });
     expect(s.token).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(s.url).toContain(`/s#${s.token}`); // fragment: never sent to servers
     const rows = await owner<{ token_hash: string }>("select token_hash from profile_shares where id=$1", [s.id]);
     expect(rows[0]!.token_hash).not.toContain(s.token);
-    const listed = await listShares(a.userId);
-    expect(JSON.stringify(listed)).not.toContain(s.token);
+    // The owner can show it again; nobody else ever lists it.
+    expect((await listShares(a.userId)).find((x) => x.id === s.id)?.token).toBe(s.token);
+    expect(JSON.stringify(await listShares(b.userId))).not.toContain(s.token);
   });
 
   it("opening a link reveals only the owner's display name and grants no data access", async () => {

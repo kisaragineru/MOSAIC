@@ -710,8 +710,13 @@ export const profileShares = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: userRef(),
-    /** sha256(token). The raw token is shown once and never stored. */
+    /** sha256(token): how a link is looked up. */
     tokenHash: text("token_hash").notNull(),
+    /**
+     * The link itself, so its owner can show the QR again while it lasts (only they can read it;
+     * opening it still needs their consent to connect). Links made before this have none.
+     */
+    token: text("token"),
     label: text("label"),
     expiresAt: ts("expires_at").notNull(),
     maxUses: integer("max_uses"),

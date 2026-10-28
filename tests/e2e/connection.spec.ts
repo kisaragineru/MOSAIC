@@ -43,11 +43,15 @@ test("QR connection: preview of what others see, who is waiting, results first",
 
   await a.goto("/share");
   await a.getByRole("button", { name: "QRを表示" }).click();
-  const url = await a.getByTestId("share-url").inputValue();
+  const url = await a.getByTestId("share-url").first().inputValue();
   // The QR can be kept as a picture, made on the phone: MOSAIC's, and from Hana.
-  const [download] = await Promise.all([a.waitForEvent("download"), a.getByTestId("qr-save").click()]);
+  const [download] = await Promise.all([a.waitForEvent("download"), a.getByTestId("qr-save").first().click()]);
   expect(download.suggestedFilename()).toMatch(/^MOSAIC-QR-\d{4}-\d{2}-\d{2}\.png$/);
   if (process.env.E2E_SAVE_QR) await download.saveAs(process.env.E2E_SAVE_QR);
+  // While it lasts, the same QR and link can be shown again from the list.
+  await a.goto("/share");
+  await a.getByTestId("share-again").first().locator("summary").click();
+  await expect(a.getByTestId("share-again").first().getByTestId("share-url")).toHaveValue(url);
 
   // Sora reads the saved picture in MOSAIC (as if from the gallery) and lands on the invitation.
   await b.goto("/share");
@@ -115,4 +119,14 @@ test("QR connection: preview of what others see, who is waiting, results first",
   await b.goto("/people");
   await expect(b.getByText("QRでつながった人")).toBeVisible();
   await expect(b.getByRole("link", { name: /つながっている/ })).toHaveCount(0);
+
+  // Connected but not placed yet: Home asks who she is to Sora, one tap, and stays on Home.
+  await b.goto("/home");
+  const ask = b.getByTestId("rel-ask");
+  await expect(ask).toContainText("ハナさんとつながりました。ハナさんは、あなたにとって？");
+  await ask.getByRole("button", { name: "友人" }).click();
+  await b.waitForURL(/\/home\?ok=saved/);
+  await expect(b.getByTestId("rel-ask")).toHaveCount(0);
+  await b.goto("/people");
+  await expect(b.getByRole("link", { name: /ハナ.*つながっている/ })).toBeVisible();
 });
