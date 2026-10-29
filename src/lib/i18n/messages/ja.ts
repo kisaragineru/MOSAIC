@@ -1598,6 +1598,7 @@ export const ja: Dict = {
     placeholder: "メッセージを入力…",
     send: "送信",
     attach: "写真を追加",
+    tools: "写真・カメラ",
     removePhoto: "写真を外す",
     like: "❤️ を送る",
     replyingTo: (name: string) => `${name}に返信`,

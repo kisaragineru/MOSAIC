@@ -41,6 +41,7 @@ export default async function ConversationPage({ params, searchParams }: { param
     placeholder: tm.placeholder,
     send: tm.send,
     attach: tm.attach,
+    tools: tm.tools,
     removePhoto: tm.removePhoto,
     like: tm.like,
     replyingTo: tm.replyingTo(P),

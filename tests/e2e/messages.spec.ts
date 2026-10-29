@@ -115,6 +115,14 @@ test("direct messages: send, read, reply, react, edit, unsend, photos", async ({
   await expect(hana.getByText("メッセージの送信が取り消されました")).toBeVisible({ timeout: 15_000 });
 
   // A photo: only members can load it. (On a phone there is also the camera, next to the gallery.)
+  // While typing, the photo buttons tuck into one "›" (as in Messenger); "›" brings them back.
+  const box = hana.getByLabel("メッセージを入力…");
+  await box.fill("x");
+  await expect(hana.getByTestId("dm-tools")).toBeVisible();
+  await expect(hana.getByRole("button", { name: "カメラで撮る" })).toHaveCount(0);
+  await box.fill("");
+  await hana.getByTestId("dm-tools").click();
+  await expect(box).toBeFocused();
   await expect(hana.getByRole("button", { name: "カメラで撮る" })).toBeVisible();
   await expect(hana.getByTestId("dm-camera")).toHaveAttribute("capture", "environment");
   await hana.locator('input[type="file"][multiple]').setInputFiles({ name: "dot.png", mimeType: "image/png", buffer: PNG });

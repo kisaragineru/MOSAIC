@@ -1598,6 +1598,7 @@ export const vi: Dict = {
     placeholder: "Nhắn tin…",
     send: "Gửi",
     attach: "Thêm ảnh",
+    tools: "Ảnh và máy ảnh",
     removePhoto: "Bỏ ảnh",
     like: "Gửi ❤️",
     replyingTo: (name: string) => `Trả lời ${name}`,

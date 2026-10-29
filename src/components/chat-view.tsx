@@ -25,6 +25,8 @@ export interface ChatText {
   placeholder: string;
   send: string;
   attach: string;
+  /** The tucked-away photo buttons, while typing. */
+  tools: string;
   /** Straight to the camera (phones). */
   camera: string;
   removePhoto: string;
@@ -174,6 +176,10 @@ export function ChatView({
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [replyTo, setReplyTo] = useState<Msg | null>(null);
   const [editing, setEditing] = useState<Msg | null>(null);
+  // While typing (keyboard up, or words in the box) the photo buttons tuck into one "›", as in
+  // Messenger, so the box gets the width; "›" brings them back until the next keystroke.
+  const [focused, setFocused] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const [menu, setMenu] = useState<Msg | null>(null);
   // Translations the reader asked for, by message: shown under the original until turned off.
   // Each remembers the text it translated, so an edited message drops its old translation.
@@ -934,8 +940,23 @@ export function ChatView({
                 ))}
               </div>
             )}
+            <input ref={fileInput} type="file" accept="image/*" multiple hidden onChange={(e) => void pickPhotos(e.target.files)} />
+            <input ref={cameraInput} type="file" accept="image/*" capture="environment" hidden data-testid="dm-camera" onChange={(e) => void pickPhotos(e.target.files)} />
             <div className="flex items-end gap-2">
-              {!editing && (
+              {!editing && !toolsOpen && (focused || !!draft.trim()) ? (
+                <button
+                  type="button"
+                  aria-label={tx.tools}
+                  aria-expanded={false}
+                  data-testid="dm-tools"
+                  // Keep the keyboard up: the box keeps its focus.
+                  onPointerDown={(e) => e.preventDefault()}
+                  onClick={() => setToolsOpen(true)}
+                  className="flex h-11 w-8 shrink-0 items-center justify-center rounded-full text-2xl font-bold text-teal-700 transition hover:bg-teal-50 active:scale-90"
+                >
+                  ›
+                </button>
+              ) : !editing && (
                 <>
                   <button
                     type="button"
@@ -946,7 +967,6 @@ export function ChatView({
                   >
                     🖼
                   </button>
-                  <input ref={fileInput} type="file" accept="image/*" multiple hidden onChange={(e) => void pickPhotos(e.target.files)} />
                   {/* On a phone: the camera itself, for a photo taken now. */}
                   <button
                     type="button"
@@ -957,13 +977,20 @@ export function ChatView({
                   >
                     📷
                   </button>
-                  <input ref={cameraInput} type="file" accept="image/*" capture="environment" hidden data-testid="dm-camera" onChange={(e) => void pickPhotos(e.target.files)} />
                 </>
               )}
               <textarea
                 ref={area}
                 value={draft}
-                onChange={(e) => onType(e.target.value)}
+                onChange={(e) => {
+                  setToolsOpen(false);
+                  onType(e.target.value);
+                }}
+                onFocus={() => setFocused(true)}
+                onBlur={() => {
+                  setFocused(false);
+                  setToolsOpen(false);
+                }}
                 onKeyDown={onKey}
                 rows={1}
                 maxLength={4000}

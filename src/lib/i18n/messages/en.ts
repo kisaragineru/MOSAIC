@@ -1596,6 +1596,7 @@ export const en = {
     placeholder: "Message…",
     send: "Send",
     attach: "Add photos",
+    tools: "Photos and camera",
     removePhoto: "Remove photo",
     like: "Send ❤️",
     replyingTo: (name: string) => `Replying to ${name}`,
