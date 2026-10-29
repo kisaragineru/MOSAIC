@@ -19,7 +19,7 @@ export interface Policy {
   contact: (email: string | null) => string;
 }
 
-export const PRIVACY_UPDATED = "2026-10-27";
+export const PRIVACY_UPDATED = "2026-10-29";
 
 export const PRIVACY: Record<Locale, Policy> = {
   ja: {
@@ -33,7 +33,7 @@ export const PRIVACY: Record<Locale, Policy> = {
         list: [
           "アカウントの情報：表示名、メールアドレス、パスワード（元に戻せない形に変換して保存し、そのままでは保存しません）、言語、タイムゾーン。",
           "Googleでログインした場合：Googleから受け取るのは、名前、メールアドレス、Googleのアカウント識別番号だけです。",
-          "あなたが入力したもの：記録（文章・写真・動画・気分・タグなど）、質問への答え、好きなもの、生年月日と出生時刻（Tử Viの命盤のため）、自己紹介、プロフィール写真、大切な人の情報、物語や作品、未来への手紙。",
+          "あなたが入力したもの：記録（文章・写真・動画・気分・タグなど）、質問への答え、好きなもの、生年月日と出生時刻（Tử Viの命盤のため）、自己紹介、プロフィール写真、大切な人の情報、物語（渡すために決めた物語を含む）、未来への手紙。",
           "つながりとやりとり：つながった相手、メッセージ（文章・写真・リアクション）、記録への返信、物語を渡したリンク。",
           "自動で記録されるもの：ログイン状態、安全のための主な操作の記録（ログイン、設定の変更など）、不正防止のための回数の記録（IPアドレスは元に戻せない形に変換して使います）、サイトを配信する事業者のアクセスログ（IPアドレスやブラウザの種類を含みます）。",
           "通知をオンにした場合：通知を届けるために、お使いのブラウザが発行する宛先の情報。",
@@ -54,7 +54,7 @@ export const PRIVACY: Record<Locale, Policy> = {
           "記録は、最初はあなただけが見られます。公開範囲を選んだ記録だけが、選んだ相手に見えます。",
           "つながった相手には、あなたの名前と写真、「つながっている全員」に公開した記録が見えます。",
           "Tử Viや好みなどの分野は、つながりごとに、お二人とも「見せる」と選んだものだけが見えます。",
-          "物語を渡すリンクを受け取った人は、そのリンクの有効期限まで、その作品を読めます。",
+          "物語を渡すリンクを受け取った人は、そのリンクの有効期限まで、その物語を読めます。",
           "見える範囲は、いつでも変えられます。",
         ],
       },
@@ -64,7 +64,7 @@ export const PRIVACY: Record<Locale, Policy> = {
         list: [
           "Netlify：本サービスの配信と実行。",
           "Neon：データベース。あなたのデータはここに保存されます。",
-          "Anthropic（AI）：次の場面でだけ、必要な文章を送ります。①あなたがAIを使う設定をオンにして、AIのボタンを押したとき（振り返り・紹介文・取扱説明書の書き直し・1年の物語など）。②あなたがメッセージの「翻訳」を押したとき（そのメッセージの文章）。③渡された物語を読む人が翻訳を求めたとき（その作品の文章。翻訳結果は保存されます）。Anthropicの規約では、APIで送られたデータはAIの学習に使われないとされています（本ページ作成時点）。",
+          "Anthropic（AI）：次の場面でだけ、必要な文章を送ります。①あなたがAIを使う設定をオンにして、AIのボタンを押したとき（振り返り・紹介文・取扱説明書の書き直し・1年の物語など）。②あなたがメッセージの「翻訳」を押したとき（そのメッセージの文章）。③物語を渡すときに、あなたが相手の言語を選んだとき、または渡された物語を読む人が翻訳を求めたとき（その物語の文章。翻訳結果は、そのリンクのために保存されます）。Anthropicの規約では、APIで送られたデータはAIの学習に使われないとされています（本ページ作成時点）。",
           "Google：Googleでログインを選んだ場合のみ。",
           "通知の配信サービス（お使いのブラウザにより、Google・Apple・Mozillaなど）：通知の中身は暗号化して送り、配信サービスには読めない形で届きます。通知に表示されるのは、最初は送り主の名前だけです（文面を表示するかは設定で選べます）。",
           "リンクのプレビュー：メッセージにWebページのURLを書くと、本サービスのサーバーがそのページを読みに行き、タイトルや画像を表示します。そのサイトに伝わるのは本サービスのサーバーからのアクセスで、あなたの情報は伝わりません。",
@@ -113,7 +113,7 @@ export const PRIVACY: Record<Locale, Policy> = {
         list: [
           "Account details: display name, email address, password (stored only in a form that can't be turned back into it), language and time zone.",
           "If you sign in with Google: from Google we receive only your name, email address and Google account ID.",
-          "What you enter: records (text, photos, videos, moods, tags and so on), answers to questions, likes, birth date and time (for your Tử Vi chart), your introduction, profile photo, people you add, stories and works, letters to your future self.",
+          "What you enter: records (text, photos, videos, moods, tags and so on), answers to questions, likes, birth date and time (for your Tử Vi chart), your introduction, profile photo, people you add, stories (including the versions you decided to hand over), letters to your future self.",
           "Connections and conversations: who you're connected with, messages (text, photos, reactions), replies to records, links you've made to hand over your story.",
           "Recorded automatically: whether you're signed in, a log of key actions for safety (sign-in, settings changes and the like), counts to prevent abuse (IP addresses are used only in a form that can't be turned back), and the hosting provider's access logs (which include IP addresses and browser type).",
           "If you turn on notifications: the delivery address your browser issues for them.",
@@ -134,7 +134,7 @@ export const PRIVACY: Record<Locale, Policy> = {
           "Records are visible only to you at first. Only records you choose to share are shown, to the people you choose.",
           "People you're connected with see your name and photo, and records you shared with everyone you're connected with.",
           "Areas like Tử Vi or likes are visible, per connection, only when you both choose to show them.",
-          "Someone given a link to your story can read that work until the link expires.",
+          "Someone given a link to your story can read that story until the link expires.",
           "You can change any of this at any time.",
         ],
       },
@@ -144,7 +144,7 @@ export const PRIVACY: Record<Locale, Policy> = {
         list: [
           "Netlify: serving and running the service.",
           "Neon: the database, where your data is stored.",
-          "Anthropic (AI): only the text needed, only when ① you have turned AI on and press an AI button (reflections, introductions, rewriting your manual, the story of your year, and so on); ② you tap “translate” on a message (that message's text); ③ someone reading a story handed to them asks for a translation (the text of that work; the translation is kept). Under Anthropic's terms, data sent through its API is not used to train its models (as of this writing).",
+          "Anthropic (AI): only the text needed, only when ① you have turned AI on and press an AI button (reflections, introductions, rewriting your manual, the story of your year, and so on); ② you tap “translate” on a message (that message's text); ③ you choose the reader's language when handing a story over, or someone reading a story handed to them asks for a translation (the text of that story; the translation is kept for that link). Under Anthropic's terms, data sent through its API is not used to train its models (as of this writing).",
           "Google: only if you choose to sign in with Google.",
           "Push services (Google, Apple, Mozilla and others, depending on your browser): notifications are encrypted so the push service can't read them. By default a notification shows only who wrote (you can choose to show the text).",
           "Link previews: when a message contains a web address, the service's server fetches that page to show its title and image. The site sees a visit from the service's server, not from you.",
@@ -193,7 +193,7 @@ export const PRIVACY: Record<Locale, Policy> = {
         list: [
           "Thông tin tài khoản: tên hiển thị, email, mật khẩu (chỉ lưu ở dạng không thể khôi phục lại), ngôn ngữ và múi giờ.",
           "Nếu bạn đăng nhập bằng Google: chúng tôi chỉ nhận tên, email và mã tài khoản Google của bạn.",
-          "Những gì bạn nhập: ghi chép (văn bản, ảnh, video, tâm trạng, thẻ…), câu trả lời, sở thích, ngày và giờ sinh (để lập lá số Tử Vi), lời giới thiệu, ảnh hồ sơ, thông tin người thân, câu chuyện và tác phẩm, thư gửi tương lai.",
+          "Những gì bạn nhập: ghi chép (văn bản, ảnh, video, tâm trạng, thẻ…), câu trả lời, sở thích, ngày và giờ sinh (để lập lá số Tử Vi), lời giới thiệu, ảnh hồ sơ, thông tin người thân, câu chuyện (kể cả bản bạn đã chọn để trao), thư gửi tương lai.",
           "Kết nối và trò chuyện: những người bạn kết nối, tin nhắn (văn bản, ảnh, cảm xúc), phản hồi dưới ghi chép, đường dẫn bạn tạo để trao câu chuyện.",
           "Tự động ghi nhận: trạng thái đăng nhập, nhật ký các thao tác chính để bảo đảm an toàn (đăng nhập, thay đổi cài đặt…), số lần truy cập để chống lạm dụng (địa chỉ IP chỉ được dùng ở dạng không thể khôi phục), và nhật ký truy cập của nhà cung cấp máy chủ (gồm địa chỉ IP và loại trình duyệt).",
           "Nếu bạn bật thông báo: địa chỉ nhận thông báo do trình duyệt của bạn cấp.",
@@ -214,7 +214,7 @@ export const PRIVACY: Record<Locale, Policy> = {
           "Ban đầu, ghi chép chỉ mình bạn thấy. Chỉ những ghi chép bạn chọn chia sẻ mới hiện cho người bạn chọn.",
           "Người đã kết nối thấy tên, ảnh của bạn và các ghi chép bạn chia sẻ với mọi người đã kết nối.",
           "Các mục như Tử Vi hay sở thích chỉ hiện, theo từng kết nối, khi cả hai cùng chọn cho xem.",
-          "Người nhận đường dẫn câu chuyện của bạn có thể đọc tác phẩm đó cho đến khi đường dẫn hết hạn.",
+          "Người nhận đường dẫn câu chuyện của bạn có thể đọc câu chuyện đó cho đến khi đường dẫn hết hạn.",
           "Bạn có thể thay đổi những điều này bất cứ lúc nào.",
         ],
       },
@@ -224,7 +224,7 @@ export const PRIVACY: Record<Locale, Policy> = {
         list: [
           "Netlify: phân phối và vận hành dịch vụ.",
           "Neon: cơ sở dữ liệu, nơi lưu dữ liệu của bạn.",
-          "Anthropic (AI): chỉ gửi đoạn văn bản cần thiết, chỉ khi ① bạn đã bật AI và nhấn nút AI (suy ngẫm, lời giới thiệu, viết lại cẩm nang, câu chuyện một năm…); ② bạn nhấn “dịch” ở một tin nhắn (văn bản của tin nhắn đó); ③ người đọc câu chuyện được trao yêu cầu bản dịch (văn bản của tác phẩm đó; bản dịch được lưu lại). Theo điều khoản của Anthropic, dữ liệu gửi qua API không được dùng để huấn luyện mô hình (tại thời điểm viết).",
+          "Anthropic (AI): chỉ gửi đoạn văn bản cần thiết, chỉ khi ① bạn đã bật AI và nhấn nút AI (suy ngẫm, lời giới thiệu, viết lại cẩm nang, câu chuyện một năm…); ② bạn nhấn “dịch” ở một tin nhắn (văn bản của tin nhắn đó); ③ bạn chọn ngôn ngữ của người nhận khi trao câu chuyện, hoặc người đọc câu chuyện được trao yêu cầu bản dịch (văn bản của câu chuyện đó; bản dịch được lưu cho đường dẫn đó). Theo điều khoản của Anthropic, dữ liệu gửi qua API không được dùng để huấn luyện mô hình (tại thời điểm viết).",
           "Google: chỉ khi bạn chọn đăng nhập bằng Google.",
           "Dịch vụ gửi thông báo (Google, Apple, Mozilla… tùy trình duyệt): thông báo được mã hóa nên dịch vụ gửi không đọc được. Mặc định, thông báo chỉ cho biết ai đã nhắn (bạn có thể chọn hiện nội dung).",
           "Xem trước đường dẫn: khi tin nhắn có địa chỉ trang web, máy chủ của dịch vụ sẽ tải trang đó để hiện tiêu đề và hình ảnh. Trang web đó chỉ thấy truy cập từ máy chủ của dịch vụ, không phải từ bạn.",

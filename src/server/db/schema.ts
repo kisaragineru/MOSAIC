@@ -1444,6 +1444,8 @@ export const workLinks = pgTable(
     recipient: text("recipient"),
     /** A few words on the cover (optional). */
     note: text("note"),
+    /** The reader's language, chosen by the owner (null: links made before; the reader's own). */
+    locale: text("locale"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
     /** First opened (told to the owner once). */
@@ -1455,6 +1457,7 @@ export const workLinks = pgTable(
     index("work_links_owner_idx").on(t.ownerId, t.createdAt),
     check("work_links_recipient_ck", sql`${t.recipient} is null or char_length(${t.recipient}) between 1 and 60`),
     check("work_links_note_ck", sql`${t.note} IS NULL OR char_length(${t.note}) <= 300`),
+    check("work_links_locale_ck", sql`${t.locale} is null or ${t.locale} in ('ja','en','vi')`),
   ],
 );
 

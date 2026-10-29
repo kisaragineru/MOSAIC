@@ -8,7 +8,7 @@
 import { and, desc, eq, gt, isNull, isNotNull } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
-import { LOCALE_NAMES, type Locale } from "@/lib/i18n/locales";
+import { LOCALE_NAMES, SUPPORTED_LOCALES, type Locale } from "@/lib/i18n/locales";
 import type { MainStarId } from "@/lib/tuvi/stars";
 import { uuid } from "@/lib/validation/common";
 import { randomToken, sha256 } from "../auth/crypto";
@@ -108,22 +108,31 @@ const linkSchema = z.object({
   recipient: z.string().trim().max(60).optional().transform((x) => x || null),
   note: z.string().trim().max(300).optional().transform((x) => x || null),
   days: z.coerce.number().pipe(z.union(LINK_DAYS.map((n) => z.literal(n)) as unknown as [z.ZodLiteral<7>, z.ZodLiteral<14>, z.ZodLiteral<30>, z.ZodLiteral<90>])).default(14),
+  /** The reader's language (the owner picks it; the story is translated into it once). */
+  lang: z.enum(SUPPORTED_LOCALES).optional(),
 });
 
-/** Hand a work to someone: a link of their own (its token is shown once). */
-export async function handOver(userId: string, workId: string, input: unknown): Promise<{ id: string; token: string }> {
+/**
+ * Hand a work to someone: a link of their own (its token is shown once), in the language they
+ * read. In another language than the story's, it is translated by AI now, so it opens ready
+ * (`translated: false` when that failed: the reader can still ask for it on the page).
+ */
+export async function handOver(userId: string, workId: string, input: unknown): Promise<{ id: string; token: string; translated: boolean }> {
   const id = uuid.parse(workId);
   const d = linkSchema.parse(input);
   await enforceRateLimit("write", userId);
   const token = randomToken(24);
-  return withUser(userId, async (tx) => {
+  const made = await withUser(userId, async (tx) => {
     const [l] = await tx
       .insert(workLinks)
-      .values({ workId: id, ownerId: userId, tokenHash: sha256(token), recipient: d.recipient, note: d.note, expiresAt: new Date(Date.now() + d.days * 86_400_000) })
+      .values({ workId: id, ownerId: userId, tokenHash: sha256(token), recipient: d.recipient, note: d.note, locale: d.lang ?? null, expiresAt: new Date(Date.now() + d.days * 86_400_000) })
       .returning({ id: workLinks.id });
+    const [w] = await tx.select({ locale: works.locale }).from(works).where(eq(works.id, id));
     await audit(tx, userId, "work.handed", "work_link", l!.id);
-    return { id: l!.id, token };
+    return { id: l!.id, workLocale: w?.locale };
   });
+  const translated = !d.lang || d.lang === made.workLocale || !!(await translatedWork(token, userId, d.lang, true).catch(() => null));
+  return { id: made.id, token, translated };
 }
 
 export interface WorkLink {
@@ -131,6 +140,8 @@ export interface WorkLink {
   workId: string;
   recipient: string | null;
   note: string | null;
+  /** The reader's language, when the owner chose one. */
+  locale: Locale | null;
   expiresAt: Date;
   revokedAt: Date | null;
   openedAt: Date | null;
@@ -145,6 +156,7 @@ export async function myLinks(userId: string): Promise<WorkLink[]> {
     workId: l.workId,
     recipient: l.recipient,
     note: l.note,
+    locale: (l.locale as Locale | null) ?? null,
     expiresAt: l.expiresAt,
     revokedAt: l.revokedAt,
     openedAt: l.openedAt,
@@ -224,7 +236,7 @@ export async function markWorkOpened(token: string, viewerId: string | null) {
 
 export type OpenedWork =
   | { status: "closed" }
-  | { status: "open"; linkId: string; ownerId: string; mine: boolean; title: string; locale: string; content: WorkContent; note: string | null; expiresAt: Date };
+  | { status: "open"; linkId: string; ownerId: string; mine: boolean; title: string; locale: string; linkLocale: Locale | null; content: WorkContent; note: string | null; expiresAt: Date };
 
 const TOKEN = /^[A-Za-z0-9_-]{16,64}$/;
 const as = (viewerId: string | null) => (viewerId ? <T,>(fn: Parameters<typeof withAnon<T>>[0]) => withUser(viewerId, fn) : withAnon);
@@ -246,6 +258,7 @@ export async function openWork(token: string, viewerId: string | null): Promise<
     mine: !!w.mine,
     title: w.title as string,
     locale: w.locale as string,
+    linkLocale: (w.link_locale as Locale | null) ?? null,
     content: w.content as WorkContent,
     note: (w.note as string | null) ?? null,
     expiresAt: new Date(w.expires_at as string),
@@ -319,7 +332,7 @@ export async function readOffer(userId: string, offerId: string): Promise<Opened
   const w = r.rows[0]?.w;
   if (!w) return null;
   if (w.status !== "open") return { status: "closed" };
-  return { status: "open", linkId: "", ownerId: "", mine: false, title: w.title as string, locale: w.locale as string, content: w.content as WorkContent, note: (w.note as string | null) ?? null, expiresAt: new Date(0) };
+  return { status: "open", linkId: "", ownerId: "", mine: false, title: w.title as string, locale: w.locale as string, linkLocale: null, content: w.content as WorkContent, note: (w.note as string | null) ?? null, expiresAt: new Date(0) };
 }
 
 /** For the writer: who connected through a work, and who started their own story (said once). */

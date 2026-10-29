@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getLocale } from "@/lib/i18n/server";
 import { currentUserId, requireUser } from "@/server/auth/session";
-import { acceptOffer, answerStart, dismissOffer, extendLink, handOver, makeWork, markStoryAsked, markWorkOpened, revokeLink, translatedWork } from "@/server/services/works";
+import { acceptOffer, answerStart, dismissOffer, extendLink, handOver, makeWork, markStoryAsked, markWorkOpened, openWork, revokeLink, translatedWork } from "@/server/services/works";
 import { attempt, safeNext, str, withParam } from "./util";
 
 const PAGE = "/me/work";
@@ -21,10 +21,10 @@ export async function makeWorkAction(form: FormData) {
 export async function handOverAction(form: FormData) {
   const uid = await requireUser();
   const recipient = str(form, "recipient");
-  const r = await attempt("work.hand", () => handOver(uid, str(form, "workId"), { recipient, note: str(form, "note"), days: str(form, "days") || 14 }));
+  const r = await attempt("work.hand", () => handOver(uid, str(form, "workId"), { recipient, note: str(form, "note"), days: str(form, "days") || 14, lang: str(form, "lang") || undefined }));
   revalidatePath(PAGE);
   if (!r.ok) redirect(`${withParam(PAGE, "e", r.error)}#give`);
-  redirect(`${PAGE}?${new URLSearchParams({ link: r.value.token, ...(recipient.trim() ? { who: recipient.trim() } : {}) })}#handed`);
+  redirect(`${PAGE}?${new URLSearchParams({ link: r.value.token, ...(recipient.trim() ? { who: recipient.trim() } : {}), ...(r.value.translated ? {} : { untranslated: "1" }) })}#handed`);
 }
 
 export async function extendLinkAction(form: FormData) {
@@ -84,6 +84,10 @@ export async function openEnvelopeAction(token: string) {
 export async function translateWorkAction(form: FormData) {
   const token = str(form, "token");
   if (!/^[A-Za-z0-9_-]{16,64}$/.test(token)) redirect("/");
-  const done = await translatedWork(token, await currentUserId(), await getLocale(), true).catch(() => null);
+  // Into the language the writer chose for this link, else the reader's own.
+  const viewer = await currentUserId();
+  const work = await openWork(token, viewer);
+  const lang = (work?.status === "open" && work.linkLocale) || (await getLocale());
+  const done = await translatedWork(token, viewer, lang, true).catch(() => null);
   redirect(`/w/${token}?open=1${done ? "" : "&e=translate_failed"}`);
 }

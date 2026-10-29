@@ -7,7 +7,7 @@ import { registrationCodeRequired } from "@/server/services/account";
 import { WorkView } from "@/components/work-view";
 import { dateText } from "@/lib/i18n/date-text";
 import { allTypes, typesById } from "@/lib/tuvi/type-view";
-import { getT } from "@/lib/i18n/server";
+import { dictFor, getT } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n/locales";
 import { currentUserId } from "@/server/auth/session";
 import { acceptOfferAction, dismissOfferAction, translateWorkAction } from "@/app/actions/works";
@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   const work = await openWork(token, null);
   const base: Metadata = { robots: { index: false, follow: false }, referrer: "no-referrer" };
   if (!work || work.status !== "open") return { ...base, title: "MOSAIC" };
-  const { t } = await getT();
+  const t = work.linkLocale ? dictFor(work.linkLocale) : (await getT()).t;
   const title = `${t.work.ogTitle(work.content.name)} — MOSAIC`;
   const description = t.work.ogDesc(work.content.name);
   return { ...base, title, description, openGraph: { title, description, siteName: "MOSAIC", type: "article" }, twitter: { card: "summary_large_image", title, description } };
@@ -39,15 +39,21 @@ export default async function WorkLinkPage({ params, searchParams }: { params: P
   const viewer = await currentUserId();
   const work = await openWork(token, viewer);
   if (!work) notFound();
-  const { t, locale } = await getT();
+  // In the language the writer chose for this link (also when they preview it), else the reader's own.
+  const chosen = work.status === "open" ? work.linkLocale : null;
+  const own = await getT();
+  const locale = chosen ?? own.locale;
+  const t = chosen ? dictFor(chosen) : own.t;
   const w = t.work;
   const o = t.offer;
   // Signed in and reading a work I was handed: keep the writer's offer to connect.
   const offerId = viewer && work.status === "open" && !work.mine ? await recordOffer(viewer, token) : null;
   const offer = offerId ? (await myOffers(viewer!)).find((x) => x.id === offerId) ?? null : null;
   const onboarded = viewer ? !!(await getAccount(viewer)).profile.onboardedAt : false;
-  // In the reader's language: a kept translation shows unless they asked for the original.
-  const translation = work.status === "open" && !work.mine && work.locale !== locale ? await translatedWork(token, viewer, locale, false) : null;
+  // In the reader's language: a kept translation shows unless they asked for the original. The
+  // writer sees a link's chosen language too, to check the translation before sending it.
+  const translates = work.status === "open" && work.locale !== locale && (!work.mine || !!chosen);
+  const translation = translates ? await translatedWork(token, viewer, locale, false) : null;
   const shown = translation && sp.orig !== "1" ? translation : null;
   const writerType = work.status === "open" ? typesById(work.content.types, locale)[0] : undefined;
   return (
@@ -71,7 +77,7 @@ export default async function WorkLinkPage({ params, searchParams }: { params: P
           )}
           <WorkEnvelope token={token} note={work.note} skip={sp.open === "1" || !!offer} text={{ from: w.envFrom(work.content.name), lead: w.envLead(work.content.name), about: w.envAbout, open: w.envOpen }}>
           {/* Written in another language: read it in yours (translated by AI, once), or the original. */}
-          {work.locale !== locale && !work.mine && (
+          {translates && (
             <div className="mb-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-2xl bg-white/80 px-4 py-3 text-center text-xs text-stone-600 ring-1 ring-stone-200" data-testid="work-translate">
               {shown ? (
                 <>

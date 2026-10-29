@@ -7,7 +7,8 @@ import { ShareLink } from "@/components/share-link";
 import { Card, Page, Pill } from "@/components/ui";
 import { WorkView } from "@/components/work-view";
 import { getT } from "@/lib/i18n/server";
-import type { Locale } from "@/lib/i18n/locales";
+import { LOCALE_NAMES, SUPPORTED_LOCALES, type Locale } from "@/lib/i18n/locales";
+import { SubmitButton } from "@/components/submit-button";
 import { requireUser } from "@/server/auth/session";
 import { getAccount } from "@/server/services/account";
 import { appOrigin } from "@/server/services/sharing";
@@ -41,6 +42,7 @@ export default async function WorkPage({ searchParams }: { searchParams: Promise
         <section id="handed" className="scroll-mt-24 rounded-3xl bg-teal-50 p-4 ring-1 ring-teal-200" data-testid="work-handed">
           <p className="font-bold text-teal-950">✉️ {w.linkReady(sp.who?.trim() || null)}</p>
           <p className="mt-1 text-xs leading-5 text-teal-900">{w.linkOnce}</p>
+          {sp.untranslated === "1" && <p className="mt-2 rounded-2xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">{w.untranslated}</p>}
           <div className="mt-3">
             <ShareLink url={`${appOrigin()}/w/${handed}`} title={work?.title ?? ""} text={w.from(work?.content.name ?? "")} labels={{ share: w.share, copy: w.copy, copied: w.copied }} />
           </div>
@@ -77,7 +79,15 @@ export default async function WorkPage({ searchParams }: { searchParams: Promise
                   {LINK_DAYS.map((n) => <option key={n} value={n}>{w.daysOpt(n)}</option>)}
                 </select>
               </label>
-              <button type="submit" className="rounded-full bg-teal-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-teal-800">{w.give}</button>
+              {/* The reader's language: the story opens in it (translated by AI when it differs). */}
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-stone-700">{w.lang}</span>
+                <select name="lang" defaultValue={work.locale} className={`${input} w-auto`}>
+                  {SUPPORTED_LOCALES.map((l) => <option key={l} value={l}>{LOCALE_NAMES[l]}</option>)}
+                </select>
+                <span className="mt-1 block text-xs leading-5 text-stone-500">{w.langHint}</span>
+              </label>
+              <SubmitButton pending={w.giving} className="px-5 py-2.5 font-bold shadow-sm">{w.give}</SubmitButton>
             </form>
           </Card>
 
@@ -92,6 +102,7 @@ export default async function WorkPage({ searchParams }: { searchParams: Promise
                       <div className="flex flex-wrap items-center gap-2">
                         <span className={l.recipient ? "font-semibold text-stone-900" : "text-stone-500"}>{l.recipient ?? w.noRecipient}</span>
                         {l.state === "open" ? <Pill tone="teal">{w.until(date(l.expiresAt))}</Pill> : <Pill>{l.state === "expired" ? w.expired : w.revoked}</Pill>}
+                        {l.locale && l.locale !== work.locale && <span className="text-xs text-stone-500">🌐 {LOCALE_NAMES[l.locale]}</span>}
                         <span className="text-xs text-stone-500">{l.openedAt ? `✓ ${w.opened}` : w.notOpened}</span>
                       </div>
                       {l.note && <p className="mt-1 line-clamp-1 text-xs text-stone-500">“{l.note}”</p>}

@@ -77,6 +77,15 @@ function anthropic(req, res) {
     else if (system.includes("user manual")) out = { paragraphs: [`[AI] ${JSON.parse(user).chapter?.title ?? ""}を書き直した文章です。`] };
     else if (system.includes("translate one chat message")) out = { same: false, translation: `[AI訳] ${user.replace(/<\/?message>/g, "").trim()}` };
     else if (system.includes("self-introduction")) out = { text: "[AI] 自己紹介の下書きです。" };
+    else if (system.includes("translate a short personal story")) {
+      // Marks each piece with the language asked for, e.g. "[en] ハナの物語".
+      const lang = /\((ja|en|vi)\)/.exec(system)?.[1] ?? "?";
+      const m = (x) => `[${lang}] ${x}`;
+      const u = JSON.parse(user);
+      out = u.paragraphs
+        ? { title: m(u.title), paragraphs: u.paragraphs.map(m) }
+        : { title: m(u.title), subtitle: m(u.subtitle), note: u.note ? m(u.note) : "", summary: u.summary.map(m), answers: u.answers.map((x) => ({ q: m(x.q), a: m(x.a) })) };
+    }
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ id: "msg_e2e", type: "message", role: "assistant", model: body.model, content: [{ type: "text", text: JSON.stringify(out) }], stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 } }));
   });

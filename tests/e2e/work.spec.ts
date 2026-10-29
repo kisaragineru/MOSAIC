@@ -30,10 +30,10 @@ test("hand the story over as a work: read it first, fix it, a link of their own,
   await hana.waitForURL(/\/me\/work$/);
   const draft = hana.getByTestId("work-draft");
   await expect(draft.getByTestId("work")).toContainText("この物語は、こうして生まれました");
-  await draft.getByLabel("作品のタイトル").fill("ハナの物語");
-  await hana.getByRole("button", { name: "この内容で作品にする" }).click();
+  await draft.getByLabel("物語のタイトル").fill("ハナの物語");
+  await hana.getByRole("button", { name: "この内容で決める" }).click();
   await hana.waitForURL(/ok=saved/);
-  await expect(hana.getByText("あなたの作品")).toBeVisible();
+  await expect(hana.getByText("📖 渡す物語")).toBeVisible();
 
   // Hand it to Mum, with a note; the link is shown once.
   await hana.getByLabel(/誰に渡しますか/).fill("母");
@@ -159,8 +159,31 @@ test("hand the story over as a work: read it first, fix it, a link of their own,
   await hana.waitForURL(/ok=saved/);
   // (even for a reader who connected: the writer took it back)
   await guest.goto(url);
-  await expect(guest.getByTestId("work-closed")).toContainText("この作品の公開は終わりました");
+  await expect(guest.getByTestId("work-closed")).toContainText("この物語の公開は終わりました");
   await expect(guest.getByText("あなたに読んでほしくて")).toHaveCount(0);
+
+  // A link for a friend who reads English: translated as it's made, and it opens in English.
+  await hana.goto("/me/work");
+  await hana.getByLabel(/誰に渡しますか/).fill("Emma");
+  await expect(hana.getByLabel("相手が読む言語")).toHaveValue("ja");
+  await hana.getByLabel("相手が読む言語").selectOption("en");
+  await hana.getByRole("button", { name: "渡すリンクをつくる" }).click();
+  await expect(hana.getByTestId("work-handed")).toBeVisible();
+  const enUrl = await hana.getByTestId("work-handed").getByTestId("share-link").getByRole("textbox").inputValue();
+  await expect(hana.getByTestId("work-links")).toContainText("🌐 English");
+  const emma = await (await browser.newContext({ locale: "ja-JP" })).newPage(); // even on a Japanese phone
+  await emma.goto(enUrl);
+  await expect(emma).toHaveTitle("A story from ハナ — MOSAIC");
+  await emma.getByRole("button", { name: /Open/ }).click();
+  await expect(emma.getByRole("heading", { level: 1, name: "[en] ハナの物語" })).toBeVisible();
+  await expect(emma.getByTestId("work-translate")).toContainText("English");
+  // The original is a tap away.
+  await emma.getByTestId("work-translate").getByRole("link").click();
+  await expect(emma.getByRole("heading", { level: 1, name: "ハナの物語" })).toBeVisible();
+  await emma.context().close();
+  // Hana previewing that link sees it as Emma will (to check the translation).
+  await hana.goto(enUrl);
+  await expect(hana.getByTestId("work-back")).toContainText("This is the story you handed over");
 });
 
 test("the story grows: new pages are mentioned once, then one question about handing it to someone", async ({ browser }) => {
