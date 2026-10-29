@@ -55,7 +55,11 @@ export async function listCompanions(ownerId: string) {
   if (!(await devToolsFor(ownerId))) return [];
   const rows = await withUser(ownerId, (tx) => tx.select().from(devCompanions).where(eq(devCompanions.ownerId, ownerId)).orderBy(asc(devCompanions.createdAt)));
   const names = NAMES[await ownerLocale(ownerId)];
-  return rows.map((r, i) => ({ id: r.companionId, name: names[i] ?? `${names[0]} ${i + 1}`, createdAt: r.createdAt }));
+  // The name on its profile (the owner may have changed it, signed in as the companion), else the one it was made with.
+  const shown = await Promise.all(
+    rows.map(async (r) => (await withUser(r.companionId, (tx) => tx.select({ n: profiles.displayName }).from(profiles).where(eq(profiles.userId, r.companionId))))[0]?.n),
+  );
+  return rows.map((r, i) => ({ id: r.companionId, name: shown[i] || (names[i] ?? `${names[0]} ${i + 1}`), createdAt: r.createdAt }));
 }
 
 /** Create a companion connected to the owner; `relationship` is how the owner files it in People. */

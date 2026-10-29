@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { companionGroupMessages, companionsReplyInGroup, companionAnswersAsks, companionAsks, companionAsksOwner, companionComments, companionConnected, companionPending, companionWrites, createCompanion, deleteCompanion, enrichCompanion, listCompanions, reconnectCompanion } from "@/server/services/dev-companion";
-import { getAccount } from "@/server/services/account";
+import { getAccount, updateProfile } from "@/server/services/account";
 import { answerQuestion } from "@/server/services/discovery";
 import { askPeer, myPeerRequests, peerResults } from "@/server/services/peers";
 import { portrait } from "@/server/services/mosaic";
@@ -20,6 +20,15 @@ describe("development test companion", () => {
     const u = await makeUser();
     await expect(createCompanion(u.userId, "friend")).rejects.toMatchObject({ code: "forbidden" });
     expect(await listCompanions(u.userId)).toEqual([]);
+  });
+
+  it("is listed under the name on its profile, once changed there", async () => {
+    process.env.DEV_TOOLS = "on";
+    const u = await makeUser("Owner");
+    const id = await createCompanion(u.userId, "friend");
+    const p = (await getAccount(id)).profile;
+    await updateProfile(id, { displayName: "ハル", bio: p.bio ?? "", locale: p.locale, timeZone: p.timeZone });
+    expect((await listCompanions(u.userId))[0]).toMatchObject({ id, name: "ハル" });
   });
 
   it("connects to the owner and shares records by audience; it can write more and be removed", async () => {
