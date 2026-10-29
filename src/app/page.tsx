@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { IntroFilm } from "@/components/intro-film";
+import { LocalePicker } from "@/components/locale-picker";
 import { getT } from "@/lib/i18n/server";
 import { allTypes } from "@/lib/tuvi/type-view";
 import { currentUserId } from "@/server/auth/session";
@@ -14,6 +15,7 @@ export default async function Root() {
   const { t, locale } = await getT();
   return (
     <main className="h-dvh snap-y snap-proximity overflow-y-auto">
+      <LocalePicker locale={locale} back="/" label={t.common.language} className="fixed right-4 top-4 z-30" />
       <IntroFilm
         tx={t.film}
         types={allTypes(locale).map(({ id, name, persona, lines }) => ({ id, name, persona, lines }))}

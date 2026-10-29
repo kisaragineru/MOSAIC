@@ -4,13 +4,16 @@ import { BrandLockup } from "@/components/brand";
 import { setLocaleCookieAction } from "@/app/actions/auth";
 import { LOCALE_NAMES, SUPPORTED_LOCALES, type Locale } from "@/lib/i18n/locales";
 import type { Dict } from "@/lib/i18n/messages/en";
+import { LocalePicker } from "./locale-picker";
 import { TrialBar } from "./trial-bar";
 
 export function AuthShell({ t, locale, back, trial = false, children }: { t: Dict; locale: Locale; back: string; trial?: boolean; children: ReactNode }) {
   return (
     <>
     {trial && <TrialBar t={t} inAuth />}
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-4 py-10">
+    <main className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-4 py-14">
+      {/* The language, where it's seen first (it's also at the bottom). */}
+      <LocalePicker locale={locale} back={back} label={t.common.language} className="absolute right-4 top-4" />
       <div className="mb-8 text-center">
         <h1><BrandLockup /></h1>
         <p className="mt-4 text-sm text-stone-600">{t.common.tagline}</p>

@@ -232,4 +232,15 @@ test("before signing up, the top page tells MOSAIC as a short film and leads to 
   await expect(film.getByRole("link", { name: "はじめる（約3分）" })).toHaveAttribute("href", "/register");
   await film.getByRole("link", { name: /ログイン/ }).click();
   await page.waitForURL(/\/login/);
+  // The language is top right, before anything else: picked here, the page turns to it.
+  const picker = page.getByTestId("locale-picker");
+  await expect(picker).toContainText("日本語");
+  await picker.locator("summary").click();
+  await picker.getByRole("button", { name: "English" }).click();
+  await page.waitForURL(/\/login/);
+  await expect(page.getByTestId("locale-picker")).toContainText("English");
+  await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  // The top page has it too.
+  await page.goto("/");
+  await expect(page.getByTestId("locale-picker")).toContainText("English");
 });
