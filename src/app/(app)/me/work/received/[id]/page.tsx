@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { dmOpenForConnectionAction } from "@/app/actions/dm";
 import { acceptOfferAction } from "@/app/actions/works";
 import { Flash } from "@/components/flash";
-import { Page } from "@/components/ui";
+import { Page } from "@/components/page";
 import { WorkView } from "@/components/work-view";
 import { getT } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n/locales";

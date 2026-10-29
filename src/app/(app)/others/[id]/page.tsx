@@ -3,7 +3,8 @@ import { answerPeerAction, askPeerAction, declinePeerAction, withdrawPeerAction 
 import { ConfirmButton } from "@/components/confirm-button";
 import { Confetti } from "@/components/confetti";
 import { Flash } from "@/components/flash";
-import { Button, Card, Notice, Page, Textarea } from "@/components/ui";
+import { Button, Card, Notice, Textarea } from "@/components/ui";
+import { Page } from "@/components/page";
 import { AXES, AXIS_CHAPTER, AXIS_CHAPTERS, CHAPTER_INFO, PEER_POLES } from "@/content/axes";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";

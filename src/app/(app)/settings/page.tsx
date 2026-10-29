@@ -4,7 +4,8 @@ import { aiOptInAction, changePasswordAction, deleteAccountAction, notifications
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
 import { TimeZoneSelect } from "@/components/time-zone-select";
-import { Button, Card, Checkbox, Field, Input, Page, Select } from "@/components/ui";
+import { Button, Card, Checkbox, Field, Input, Select } from "@/components/ui";
+import { Page } from "@/components/page";
 import { preferredZone, timeZoneOptions } from "@/lib/timezones";
 import { LOCALE_NAMES, SUPPORTED_LOCALES } from "@/lib/i18n/locales";
 import { getT } from "@/lib/i18n/server";

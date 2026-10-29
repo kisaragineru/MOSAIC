@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BrandLockup } from "@/components/brand";
 import type { Policy } from "@/content/privacy";
 import { LOCALE_NAMES, SUPPORTED_LOCALES, type Locale } from "@/lib/i18n/locales";
+import { dictFor } from "@/lib/i18n/server";
 
 /** A page anyone can read (privacy policy, terms), in each language, switched with ?lang=. */
 export function LegalPage({ path, locale, doc, testId }: { path: string; locale: Locale; doc: Policy; testId: string }) {
@@ -10,7 +11,7 @@ export function LegalPage({ path, locale, doc, testId }: { path: string; locale:
     <main className="mx-auto w-full max-w-2xl px-4 py-10" lang={locale}>
       <div className="mb-6 flex items-center justify-between gap-3">
         <Link href="/" aria-label="MOSAIC"><BrandLockup /></Link>
-        <nav className="flex gap-1 text-sm" aria-label="Language">
+        <nav className="flex gap-1 text-sm" aria-label={dictFor(locale).common.language}>
           {SUPPORTED_LOCALES.map((l) => (
             <Link key={l} href={`${path}?lang=${l}`} aria-current={l === locale ? "page" : undefined} className={`rounded-lg px-2 py-1 ${l === locale ? "bg-stone-200 font-semibold" : "text-stone-500"}`}>
               {LOCALE_NAMES[l]}

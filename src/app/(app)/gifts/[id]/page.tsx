@@ -8,7 +8,8 @@ import {
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
 import { OneTimeCode } from "@/components/one-time-code";
-import { Button, Card, Field, Input, Page, SegmentedTabs, Select, Textarea } from "@/components/ui";
+import { Button, Card, Field, Input, SegmentedTabs, Select, Textarea } from "@/components/ui";
+import { Page } from "@/components/page";
 import { ageAt, daysUntil, todayIso } from "@/lib/gift-dates";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";

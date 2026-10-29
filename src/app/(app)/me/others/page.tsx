@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { askPeerAction, cancelPeerAction } from "@/app/actions/peers";
 import { Flash } from "@/components/flash";
-import { Button, Card, Notice, Page, Pill, widthClass } from "@/components/ui";
+import { Button, Card, Notice, Pill, widthClass } from "@/components/ui";
+import { Page } from "@/components/page";
 import { AXIS_LABEL, PEER_POLES } from "@/content/axes";
 import type { Window } from "@/lib/johari";
 import { getT } from "@/lib/i18n/server";

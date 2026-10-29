@@ -44,7 +44,7 @@ export function PreferenceSection({
           </Select>
         </Field>
         <Field label={t.people.feeling}>
-          <Select name="sentiment" defaultValue="like" aria-label="sentiment">
+          <Select name="sentiment" defaultValue="like">
             {PREFERENCE_SENTIMENTS.map((s) => <option key={s} value={s}>{t.people.sentiments[s]}</option>)}
           </Select>
         </Field>
@@ -80,7 +80,7 @@ export function PreferenceSection({
                     </Select>
                   </Field>
                   <Field label={t.people.feeling}>
-                    <Select name="sentiment" defaultValue={p.current.sentiment} aria-label="sentiment">
+                    <Select name="sentiment" defaultValue={p.current.sentiment}>
                       {PREFERENCE_SENTIMENTS.map((x) => <option key={x} value={x}>{t.people.sentiments[x]}</option>)}
                     </Select>
                   </Field>

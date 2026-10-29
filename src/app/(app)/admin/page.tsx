@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Card, Page } from "@/components/ui";
+import { Card } from "@/components/ui";
+import { Page } from "@/components/page";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { adminStats, devToolsEnabled, devToolsFor } from "@/server/services/admin";

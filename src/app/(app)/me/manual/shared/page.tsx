@@ -26,7 +26,7 @@ export default async function SharedPreviewPage({ searchParams }: { searchParams
   return (
     <main className="mx-auto w-full max-w-2xl space-y-4 px-4 pb-28 pt-4">
       <div className="flex items-center gap-3">
-        <Link href={sp.back?.startsWith("/compare/") ? sp.back : "/me/manual"} className="rounded-full px-2 py-1 text-stone-500 hover:bg-stone-200" aria-label="Back">←</Link>
+        <Link href={sp.back?.startsWith("/compare/") ? sp.back : "/me/manual"} className="rounded-full px-2 py-1 text-stone-500 hover:bg-stone-200" aria-label={t.common.back}>←</Link>
         <p className="flex-1 text-sm font-semibold text-stone-700">👁 {t.manual.previewTitle}</p>
       </div>
       <p className="text-xs text-stone-500">{t.manual.previewNote}</p>

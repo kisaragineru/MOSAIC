@@ -163,7 +163,7 @@ export default async function ManualPage({ searchParams }: { searchParams: Promi
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pb-28 pt-4 print:pb-0">
       <div className="mb-4 flex items-center gap-3 print:hidden">
-        <Link href="/insights" className="rounded-full px-2 py-1 text-stone-500 hover:bg-stone-200" aria-label="Back">←</Link>
+        <Link href="/insights" className="rounded-full px-2 py-1 text-stone-500 hover:bg-stone-200" aria-label={t.common.back}>←</Link>
         <p className="flex-1 text-sm text-stone-500">{tm.title}</p>
         <PrintButton label={tm.print} />
       </div>

@@ -1,7 +1,8 @@
 import { createMemoryAction } from "@/app/actions/memories";
 import { Flash } from "@/components/flash";
 import { MemoryForm } from "@/components/memory-form";
-import { Card, Page } from "@/components/ui";
+import { Card } from "@/components/ui";
+import { Page } from "@/components/page";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { listPeople } from "@/server/services/people";

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Flash } from "@/components/flash";
 import { redirect } from "next/navigation";
-import { Card, Page } from "@/components/ui";
+import { Card } from "@/components/ui";
+import { Page } from "@/components/page";
 import { QuestionForm } from "@/components/question-form";
 import { TypeImage, TypeName, TypePortraits } from "@/components/tuvi-type";
 import { getT } from "@/lib/i18n/server";

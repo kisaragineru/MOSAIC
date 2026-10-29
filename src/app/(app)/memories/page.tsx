@@ -7,7 +7,8 @@ import { composerText } from "@/components/memory-form";
 import { mediaFor } from "@/server/services/media";
 import { myGiftBoxes } from "@/server/services/gift-boxes";
 import { Timeline } from "@/components/timeline";
-import { Button, Card, Empty, Field, Input, LinkButton, Notice, Page, Select } from "@/components/ui";
+import { Button, Card, Empty, Field, Input, LinkButton, Notice, Select } from "@/components/ui";
+import { Page } from "@/components/page";
 import { buildTimeline, type TimelineEntry } from "@/lib/timeline";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
@@ -168,7 +169,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
         <Timeline me={{ name: (await getAccount(uid)).profile.displayName, src: (await myAvatarUrl(uid)) ?? undefined, type: await myTint(uid) }} t={t} locale={locale} tz={tz} days={days} comments={counts} previews={previews} media={media} avatars={await avatarUrls(uid, entries.map((e) => e.ownerId))} tints={await typeTints(uid, entries.map((e) => e.ownerId))} />
       )}
       {(page > 0 || hasOlder) && (
-        <nav className="flex justify-between text-sm" aria-label="pagination">
+        <nav className="flex justify-between text-sm" aria-label={tm.pages}>
           {page > 0 ? <Link className="text-teal-700 underline" href={pageHref(page - 1)}>← {t.memories.newer}</Link> : <span />}
           {hasOlder && <Link className="text-teal-700 underline" href={pageHref(page + 1)}>{t.memories.older} →</Link>}
         </nav>

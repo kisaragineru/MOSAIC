@@ -17,7 +17,7 @@ export default async function TheirManualPage({ params }: { params: Promise<{ id
   const ai = await sharedRewriteFor(uid, id, locale, m).catch(() => null);
   return (
     <main className="mx-auto w-full max-w-2xl space-y-4 px-4 pb-28 pt-4">
-      <Link href={`/compare/${id}`} className="inline-block rounded-full px-2 py-1 text-stone-500 hover:bg-stone-200" aria-label="Back">←</Link>
+      <Link href={`/compare/${id}`} className="inline-block rounded-full px-2 py-1 text-stone-500 hover:bg-stone-200" aria-label={t.common.back}>←</Link>
       <SharedManualView m={m} locale={locale} levels={{ consistent: t.manual.levelConsistent, emerging: t.manual.levelEmerging, mixed: t.manual.levelMixed }} ai={ai} aiNote={t.manual.shareAi.viewerNote} />
     </main>
   );

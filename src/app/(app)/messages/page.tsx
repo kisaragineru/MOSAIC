@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { DmInbox } from "@/components/dm-inbox";
 import { Flash } from "@/components/flash";
-import { Page } from "@/components/ui";
+import { Page } from "@/components/page";
 import { dmPreview, dmTitle } from "@/lib/dm-text";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";

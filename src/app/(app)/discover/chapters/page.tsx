@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Page, ProgressBar, SegmentedTabs } from "@/components/ui";
+import { ProgressBar, SegmentedTabs } from "@/components/ui";
+import { Page } from "@/components/page";
 import { CHAPTER_INFO } from "@/content/axes";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";

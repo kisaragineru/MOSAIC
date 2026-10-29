@@ -1,23 +1,6 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 
-export function Page({ title, children, back, actions }: { title: string; children: ReactNode; back?: string; actions?: ReactNode }) {
-  return (
-    <main className="mx-auto w-full max-w-2xl px-4 pb-28 pt-4">
-      <div className="mb-4 flex items-center gap-3">
-        {back && (
-          <Link href={back} className="rounded-full px-2 py-1 text-stone-500 hover:bg-stone-200" aria-label="Back">
-            ←
-          </Link>
-        )}
-        <h1 className="flex-1 text-2xl font-semibold tracking-tight text-stone-900">{title}</h1>
-        {actions}
-      </div>
-      <div className="stagger space-y-4">{children}</div>
-    </main>
-  );
-}
-
 export function Card({ children, className = "", title }: { children: ReactNode; className?: string; title?: ReactNode }) {
   return (
     <section className={`rounded-3xl border border-white/80 bg-white/85 p-5 shadow-[0_8px_30px_-14px_rgba(110,80,50,0.22)] backdrop-blur-sm ${className}`}>

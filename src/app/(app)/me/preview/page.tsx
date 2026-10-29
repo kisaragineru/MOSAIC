@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Card, Page, Pill } from "@/components/ui";
+import { Card, Pill } from "@/components/ui";
+import { Page } from "@/components/page";
 import { LOCALIZED_BANK } from "@/content/questions-i18n";
 import { privacyAction } from "@/app/actions/discovery";
 import { answerLabel } from "@/lib/discovery/format";

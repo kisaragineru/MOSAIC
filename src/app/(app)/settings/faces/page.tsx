@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { FaceSetter } from "@/components/face-setter";
-import { Card, Page } from "@/components/ui";
+import { Card } from "@/components/ui";
+import { Page } from "@/components/page";
 import { getT } from "@/lib/i18n/server";
 import { TYPE_FACES } from "@/lib/tuvi/faces";
 import { allTypes } from "@/lib/tuvi/type-view";

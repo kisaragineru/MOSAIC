@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { TypeViewer } from "@/components/type-viewer";
-import { Card, Page } from "@/components/ui";
+import { Card } from "@/components/ui";
+import { Page } from "@/components/page";
 import { GUIDE } from "@/content/tuvi-guide";
 import { getT } from "@/lib/i18n/server";
 import { BRANCHES } from "@/lib/tuvi/canchi";

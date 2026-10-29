@@ -1,5 +1,5 @@
 import { NoticeTray } from "@/components/notice-tray";
-import { Page } from "@/components/ui";
+import { Page } from "@/components/page";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { noticeItems } from "./items";

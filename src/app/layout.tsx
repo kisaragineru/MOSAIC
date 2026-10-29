@@ -15,19 +15,23 @@ const emoji = Noto_Emoji({ weight: "variable", subsets: ["emoji"], display: "swa
 
 const SITE = "MOSAIC";
 const TITLE = "MOSAIC — A lifetime, piece by piece.";
-const DESCRIPTION = "あなたの記録と、大切な人のことを、一生ぶん少しずつ。 A private, long-term personal database for your life and the people you care about.";
+const OG_LOCALE = { ja: "ja_JP", en: "en_US", vi: "vi_VN" } as const;
 
-export const metadata: Metadata = {
-  // Absolute links in the share card (og:image etc.) need the site's origin.
-  metadataBase: new URL(process.env.APP_ORIGIN ?? "http://localhost:3000"),
-  title: TITLE,
-  description: DESCRIPTION,
-  applicationName: SITE,
-  robots: { index: false, follow: false },
-  // What LINE, X, Facebook, Slack… show when a MOSAIC link is shared. The image is opengraph-image.tsx.
-  openGraph: { type: "website", siteName: SITE, title: TITLE, description: DESCRIPTION, locale: "ja_JP", alternateLocale: ["en_US", "vi_VN"] },
-  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
-};
+/** The site's card (LINE, X, Facebook, Slack…) in the language of whoever opens it; the image is opengraph-image.tsx. */
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const description = dictFor(locale).common.siteDescription;
+  return {
+    // Absolute links in the share card (og:image etc.) need the site's origin.
+    metadataBase: new URL(process.env.APP_ORIGIN ?? "http://localhost:3000"),
+    title: TITLE,
+    description,
+    applicationName: SITE,
+    robots: { index: false, follow: false },
+    openGraph: { type: "website", siteName: SITE, title: TITLE, description, locale: OG_LOCALE[locale], alternateLocale: Object.values(OG_LOCALE).filter((x) => x !== OG_LOCALE[locale]) },
+    twitter: { card: "summary_large_image", title: TITLE, description },
+  };
+}
 
 // "resizes-content": when the on-screen keyboard opens, the page itself gets shorter (Android
 // Chrome), so sheets and the chat box sit above the keyboard instead of behind it.

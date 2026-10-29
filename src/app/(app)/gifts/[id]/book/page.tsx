@@ -60,7 +60,7 @@ export default async function GiftBookPage({ params, searchParams }: { params: P
   return (
     <main className={`book mx-auto w-full max-w-2xl space-y-6 px-4 pb-28 pt-4 print:max-w-none print:space-y-0 print:p-0 ${mincho.className}`}>
       <div className="flex flex-wrap items-center gap-3 font-sans print:hidden">
-        <Link href={box.my_role === "child" ? "/gifts" : `/gifts/${box.id}`} className="rounded-full px-2 py-1 text-stone-500 hover:bg-stone-200" aria-label="Back">←</Link>
+        <Link href={box.my_role === "child" ? "/gifts" : `/gifts/${box.id}`} className="rounded-full px-2 py-1 text-stone-500 hover:bg-stone-200" aria-label={t.common.back}>←</Link>
         <p className="flex-1 text-xs leading-5 text-stone-500">{b.saveHelp}</p>
         <PrintButton label={b.save} />
       </div>

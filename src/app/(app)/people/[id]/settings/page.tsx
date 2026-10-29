@@ -4,7 +4,8 @@ import { deletePersonAction, mergePeopleAction, updatePersonAction } from "@/app
 import { linkPersonAction, unlinkPersonAction } from "@/app/actions/sharing";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Flash } from "@/components/flash";
-import { Button, Field, Input, Page, Select } from "@/components/ui";
+import { Button, Field, Input, Select } from "@/components/ui";
+import { Page } from "@/components/page";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { visibleCount } from "@/server/services/memory-share";

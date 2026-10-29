@@ -1,6 +1,7 @@
 import { createPersonAction } from "@/app/actions/people";
 import { Flash } from "@/components/flash";
-import { Button, Card, Field, Input, Page, Select } from "@/components/ui";
+import { Button, Card, Field, Input, Select } from "@/components/ui";
+import { Page } from "@/components/page";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 
