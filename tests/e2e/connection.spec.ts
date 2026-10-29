@@ -91,7 +91,7 @@ test("QR connection: preview of what others see, who is waiting, results first",
   await expect(b.getByRole("heading", { name: "ハナさんを知る" })).toBeVisible();
   await expect(b.getByText("お茶と散歩が好きです。")).toBeVisible();
   // ← goes back to the people side (the person's own page, or the list), not to the QR page.
-  await b.getByRole("link", { name: "Back" }).click();
+  await b.getByRole("link", { name: "戻る", exact: true }).click();
   await b.waitForURL(/\/people(\/[0-9a-f-]+)?$/);
   await b.goBack();
   await expect(a.getByRole("heading", { name: "🔐 共有する内容" })).toBeVisible();

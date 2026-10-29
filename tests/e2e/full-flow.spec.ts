@@ -15,7 +15,7 @@ async function newUser(browser: Browser, name: string) {
   await page.getByLabel(/What should we call you|Chúng tôi nên gọi/).fill(name);
   await page.getByLabel("Email").fill(email);
   await page.getByLabel(/^Password|^Mật khẩu/).fill(PASSWORD);
-  await page.getByLabel(/^Language|^Ngôn ngữ/).selectOption("en");
+  await page.locator("select[name=locale]").selectOption("en"); // the account's language (the page's is top right)
   await page.getByRole("button", { name: "Create account" }).click();
   // New accounts start with the welcome guide.
   await page.waitForURL(/welcome/);
