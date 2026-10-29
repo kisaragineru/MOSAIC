@@ -440,6 +440,10 @@ export const vi: Dict = {
     older: "Cũ hơn",
     from: "Từ",
     to: "Đến",
+    filterTag: "Thẻ",
+    filterAny: "Không chọn",
+    period: "Khoảng thời gian",
+    mineOnlyMe: "🔒 Dòng thời gian các ghi chép chỉ mình bạn thấy. Muốn xem cả ghi chép đã chia sẻ, hãy đặt “Ai được đọc” thành “Không chọn” trong bộ lọc.",
     letters: {
       shelf: (n: number) => `${n} lá thư gửi tương lai chưa đến`,
       next: (days: number, date: string) => `Lá tiếp theo sau ${days} ngày (${date})`,

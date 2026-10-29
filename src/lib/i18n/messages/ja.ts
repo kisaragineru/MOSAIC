@@ -440,6 +440,10 @@ export const ja: Dict = {
     older: "以前の記録",
     from: "開始日",
     to: "終了日",
+    filterTag: "タグ",
+    filterAny: "指定なし",
+    period: "期間",
+    mineOnlyMe: "🔒 自分だけの記録のタイムラインです。公開している記録も見るときは、絞り込みの「公開範囲」を「指定なし」にしてください。",
     letters: {
       shelf: (n: number) => `まだ届いていない、未来への手紙 ${n}通`,
       next: (days: number, date: string) => `次は あと${days}日（${date}）`,

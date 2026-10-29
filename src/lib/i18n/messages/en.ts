@@ -438,6 +438,10 @@ export const en = {
     older: "Older",
     from: "From",
     to: "To",
+    filterTag: "Tag",
+    filterAny: "Any",
+    period: "Period",
+    mineOnlyMe: "🔒 Your timeline of records kept to yourself. To see the ones you share too, set “Who can read it” to “Any” in the filter.",
     letters: {
       shelf: (n: number) => `${n} letter${n === 1 ? "" : "s"} to the future, not here yet`,
       next: (days: number, date: string) => `Next in ${days} day${days === 1 ? "" : "s"} (${date})`,

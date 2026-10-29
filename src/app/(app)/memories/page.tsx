@@ -7,7 +7,7 @@ import { composerText } from "@/components/memory-form";
 import { mediaFor } from "@/server/services/media";
 import { myGiftBoxes } from "@/server/services/gift-boxes";
 import { Timeline } from "@/components/timeline";
-import { Button, Card, Empty, Input, LinkButton, Notice, Page, Select } from "@/components/ui";
+import { Button, Card, Empty, Field, Input, LinkButton, Notice, Page, Select } from "@/components/ui";
 import { buildTimeline, type TimelineEntry } from "@/lib/timeline";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
@@ -29,9 +29,14 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
   const sp = await searchParams;
   const { t, locale } = await getT();
   const tz = (await getAccount(uid)).profile.timeZone;
-  const filters = { q: sp.q ?? "", kind: sp.kind ?? "", tag: sp.tag ?? "", personId: sp.personId ?? "", audience: sp.audience === "private" || sp.audience === "shared" ? sp.audience : "", from: sp.from ?? "", to: sp.to ?? "" };
-  const filtering = Object.values(filters).some((v) => v !== "");
   const view = sp.view === "mine" || sp.view === "friends" ? sp.view : "all";
+  // "Mine" opens as a diary: only what is kept to oneself, unless another audience is picked
+  // ("any" = no filter there). Elsewhere no audience is chosen to start with.
+  const audienceParam = sp.audience === "private" || sp.audience === "shared" || (sp.audience === "any" && view === "mine") ? sp.audience : "";
+  const audience = audienceParam === "any" ? "" : audienceParam || (view === "mine" ? "private" : "");
+  const onlyMeByDefault = view === "mine" && !audienceParam;
+  const filters = { q: sp.q ?? "", kind: sp.kind ?? "", tag: sp.tag ?? "", personId: sp.personId ?? "", audience: audienceParam, from: sp.from ?? "", to: sp.to ?? "" };
+  const filtering = Object.values(filters).some((v) => v !== "");
   // ?with=<connection>: one person's shared records only.
   const withWho = view === "friends" && sp.with ? ((await shareTargets(uid)).find((x) => x.sessionId === sp.with) ?? null) : null;
   const page = Math.min(Math.max(Number.parseInt(sp.page ?? "0", 10) || 0, 0), 2000);
@@ -46,7 +51,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
     // One row before the page (where the previous page ended) and one after (is there an older page?).
     let rows: MemorySummary[] = [];
     try {
-      rows = await listMemories(uid, { ...filters, limit: PAGE_SIZE + (page > 0 ? 2 : 1), offset: Math.max(page * PAGE_SIZE - 1, 0) });
+      rows = await listMemories(uid, { ...filters, audience, letters: view === "mine", limit: PAGE_SIZE + (page > 0 ? 2 : 1), offset: Math.max(page * PAGE_SIZE - 1, 0) });
     } catch {
       filterError = true;
     }
@@ -75,6 +80,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
   const tags = await listTags(uid);
   const people = await listPeople(uid);
   const tl = t.memories.timeline;
+  const tm = t.memories;
   const targets = await shareTargets(uid);
   const canShare = targets.length > 0;
   return (
@@ -109,27 +115,43 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
           <Input name="q" defaultValue={filters.q} placeholder={t.memories.searchPlaceholder} aria-label={t.common.search} />
           <details open={!!(filters.kind || filters.tag || filters.personId || filters.audience || filters.from || filters.to)}>
             <summary className="cursor-pointer text-sm text-stone-600">{t.common.filter}</summary>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <Select name="kind" defaultValue={filters.kind} aria-label={t.memories.labels.title}>
-                <option value="">{t.memories.labels.title}: {t.common.all}</option>
-                {[...LABELS, "letter_to_future" as const].map((k) => <option key={k} value={k}>{t.memories.kinds[k]}</option>)}
-              </Select>
-              <Select name="tag" defaultValue={filters.tag} aria-label="tag">
-                <option value="">#</option>
-                {tags.map((x) => <option key={x.tag} value={x.tag}>#{x.tag} ({x.n})</option>)}
-              </Select>
-              <Select name="personId" defaultValue={filters.personId} aria-label={t.memories.fields.people}>
-                <option value="">{t.memories.fields.people}</option>
-                {people.map((p) => <option key={p.id} value={p.id}>{p.nickname}</option>)}
-              </Select>
-              {/* Who can see it: only me, or shared with someone. */}
-              <Select name="audience" defaultValue={filters.audience} aria-label={t.memories.audience.label}>
-                <option value="">{t.memories.audience.label}: {t.common.all}</option>
-                <option value="private">🔒 {t.memories.audience.private}</option>
-                <option value="shared">{t.recordsAudience.tabs.shared}</option>
-              </Select>
-              <div className="col-span-2"><DateSelect label={t.memories.from} name="from" text={dateText(t)} defaultValue={filters.from} /></div>
-              <div className="col-span-2"><DateSelect label={t.memories.to} name="to" text={dateText(t)} defaultValue={filters.to} /></div>
+            {/* Each picker says what it is above it, and starts at "any". */}
+            <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-3">
+              <Field label={t.memories.labels.title}>
+                <Select name="kind" defaultValue={filters.kind}>
+                  <option value="">{tm.filterAny}</option>
+                  {[...LABELS, "letter_to_future" as const].map((k) => <option key={k} value={k}>{t.memories.kinds[k]}</option>)}
+                </Select>
+              </Field>
+              <Field label={tm.filterTag}>
+                <Select name="tag" defaultValue={filters.tag}>
+                  <option value="">{tm.filterAny}</option>
+                  {tags.map((x) => <option key={x.tag} value={x.tag}>#{x.tag} ({x.n})</option>)}
+                </Select>
+              </Field>
+              <Field label={t.memories.fields.people}>
+                <Select name="personId" defaultValue={filters.personId}>
+                  <option value="">{tm.filterAny}</option>
+                  {people.map((p) => <option key={p.id} value={p.id}>{p.nickname}</option>)}
+                </Select>
+              </Field>
+              {/* Who can see it: only me, or shared with someone. "Mine" starts at only me. */}
+              <Field label={t.memories.audience.label}>
+                <Select name="audience" defaultValue={audienceParam || (view === "mine" ? "private" : "")}>
+                  <option value={view === "mine" ? "any" : ""}>{tm.filterAny}</option>
+                  <option value="private">🔒 {t.memories.audience.private}</option>
+                  <option value="shared">{t.recordsAudience.tabs.shared}</option>
+                </Select>
+              </Field>
+              <fieldset className="col-span-2 space-y-2">
+                <legend className="mb-1 text-sm font-medium text-stone-700">{tm.period}</legend>
+                <div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2">
+                  <span className="text-xs text-stone-500">{t.memories.from}</span>
+                  <DateSelect label={t.memories.from} hideLabel name="from" text={dateText(t)} defaultValue={filters.from} />
+                  <span className="text-xs text-stone-500">{t.memories.to}</span>
+                  <DateSelect label={t.memories.to} hideLabel name="to" text={dateText(t)} defaultValue={filters.to} />
+                </div>
+              </fieldset>
             </div>
           </details>
           <div className="flex gap-2">
@@ -139,6 +161,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
         </form>
       </Card>}
       {view === "all" && filtering && <Notice>{tl.filteredMineOnly}</Notice>}
+      {onlyMeByDefault && <p className="px-1 text-xs leading-5 text-stone-500" data-testid="mine-only-me">{tm.mineOnlyMe}</p>}
       {days.length === 0 ? (
         <Empty>{view === "friends" ? tl.friendsEmpty : t.memories.empty}</Empty>
       ) : (

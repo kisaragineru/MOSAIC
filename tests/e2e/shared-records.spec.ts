@@ -90,6 +90,19 @@ test("records on a timeline, and a record shared with a connection", async ({ br
   await hana.getByRole("button", { name: "検索" }).click();
   await hana.waitForURL(/audience=shared/);
   await expect(hana.getByRole("link", { name: /夕日を見た/ })).toBeVisible();
+  // "Mine" is a diary: what's kept to herself (her letter too), until she picks "any".
+  await hana.goto("/memories?view=mine");
+  await expect(hana.getByTestId("mine-only-me")).toBeVisible();
+  await expect(hana.getByRole("link", { name: /夕日を見た/ })).toHaveCount(0);
+  await expect(hana.getByText(/2031-01-01 まで封印中/)).toBeVisible();
+  await hana.getByText("絞り込み", { exact: true }).click();
+  await expect(hana.getByLabel("公開範囲")).toHaveValue("private");
+  await expect(hana.getByLabel("分類")).toHaveValue("");
+  await hana.getByLabel("公開範囲").selectOption({ label: "指定なし" });
+  await hana.getByRole("button", { name: "検索" }).click();
+  await hana.waitForURL(/view=mine.*audience=any|audience=any.*view=mine/);
+  await expect(hana.getByRole("link", { name: /夕日を見た/ })).toBeVisible();
+  await expect(hana.getByTestId("mine-only-me")).toHaveCount(0);
 
   // Sora sees it on Home and in the timeline, read-only.
   await sora.goto("/home");
@@ -415,7 +428,8 @@ test("photos on a record: uploaded as chosen, a tidy block on the timeline, whol
   expect(res.headers()["content-type"]).toBe("image/jpeg");
 
   // On the timeline: one block of three (one large, two stacked), and the card opens the record.
-  await hana.goto("/memories?view=mine");
+  // (It's shared, so "Mine" shows it with "who can read it" set to any.)
+  await hana.goto("/memories?view=mine&audience=any");
   await expect(hana.locator('[data-testid="media-grid"][data-count="3"]')).toBeVisible();
   await expect(hana.getByRole("img", { name: "写真 1/3" })).toBeVisible();
 
