@@ -53,14 +53,6 @@ test("notifications are offered in Settings, off until turned on; the app can go
   for (const icon of manifest.icons as { src: string }[]) expect((await page.request.get(icon.src)).status()).toBe(200);
 });
 
-test("the app manifest's description follows the browser's language", async ({ playwright, baseURL }) => {
-  // The browser fetches the manifest without cookies, so only Accept-Language is there.
-  for (const [lang, tagline] of [["ja", "ひとかけらずつ、あなたになる。"], ["vi", "Từng mảnh nhỏ, thành chính bạn."], ["en", "A lifetime, piece by piece."]] as const) {
-    const ctx = await playwright.request.newContext({ baseURL, extraHTTPHeaders: { "Accept-Language": lang } });
-    expect(await (await ctx.get("/manifest.webmanifest")).json()).toMatchObject({ description: tagline, lang });
-    await ctx.dispose();
-  }
-});
 
 test("on iPhone outside the home screen, it explains how to add MOSAIC there", async ({ browser }) => {
   const page = await signUp(browser, { ...devices["iPhone 13"] });

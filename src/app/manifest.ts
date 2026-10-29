@@ -1,18 +1,12 @@
 import type { MetadataRoute } from "next";
-import { getT } from "@/lib/i18n/server";
 
-/**
- * Lets MOSAIC be added to the home screen (on iPhone, push notifications need that). The browser
- * fetches this without cookies, so the description follows its Accept-Language.
- */
-export default async function manifest(): Promise<MetadataRoute.Manifest> {
-  const { t, locale } = await getT();
+/** Lets MOSAIC be added to the home screen (on iPhone, push notifications need that). */
+export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "MOSAIC",
     short_name: "MOSAIC",
-    // The opening film's line is the translated one (empty in English, where the brand line is used).
-    description: t.film.tagline || t.common.tagline,
-    lang: locale,
+    // The brand line stays in English in every language.
+    description: "A lifetime, piece by piece.",
     start_url: "/home",
     scope: "/",
     display: "standalone",
