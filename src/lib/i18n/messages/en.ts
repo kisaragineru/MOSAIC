@@ -244,7 +244,7 @@ export const en = {
     cannot_send: "You can't send messages in this conversation.",
     record_to_owner_only: "Someone else's record can only be sent to the person who wrote it.",
     invalid_message: "Please check the message (up to 4000 characters).",
-    edit_window_passed: "Messages can be edited for 15 minutes after sending.",
+    edit_window_passed: "Messages can be edited for 24 hours after sending.",
     invalid_group: "Pick 2 to 30 other people for a group.",
     invalid_title: "Group names are up to 60 characters.",
     invalid_image: "This image can't be sent (JPEG, PNG or WebP only).",

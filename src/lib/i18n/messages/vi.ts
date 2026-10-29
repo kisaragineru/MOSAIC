@@ -246,7 +246,7 @@ export const vi: Dict = {
     cannot_send: "Không thể gửi tin trong cuộc trò chuyện này.",
     record_to_owner_only: "Bản ghi của người khác chỉ gửi được cho chính người đã viết.",
     invalid_message: "Hãy kiểm tra tin nhắn (tối đa 4000 ký tự).",
-    edit_window_passed: "Chỉ sửa được trong 15 phút sau khi gửi.",
+    edit_window_passed: "Chỉ sửa được trong 24 giờ sau khi gửi.",
     invalid_group: "Chọn từ 2 đến 30 người khác để tạo nhóm.",
     invalid_title: "Tên nhóm tối đa 60 ký tự.",
     invalid_image: "Không thể gửi ảnh này (chỉ JPEG, PNG, WebP).",

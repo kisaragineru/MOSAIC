@@ -37,6 +37,8 @@ export interface ChatText {
   /** "A record {name} showed you" (shown in the message only: no page to open). */
   shownBy: string;
   edit: string;
+  /** Under a greyed "Edit" once the window has passed. */
+  editPassed: string;
   editing: string;
   save: string;
   cancel: string;
@@ -613,7 +615,8 @@ export function ChatView({
     setReplyTo(m);
     area.current?.focus();
   };
-  const canEdit = (m: Msg) => m.senderId === me && m.kind === "text" && !m.deleted && !m.pending && now - new Date(m.createdAt).getTime() < editMinutes * 60_000;
+  const editable = (m: Msg) => m.senderId === me && m.kind === "text" && !m.deleted && !m.pending;
+  const canEdit = (m: Msg) => editable(m) && now - new Date(m.createdAt).getTime() < editMinutes * 60_000;
   const actionable = (m: Msg) => m.kind !== "system" && !m.deleted && !m.pending && !m.failed;
 
   const onTap = (m: Msg, at: number) => {
@@ -623,9 +626,10 @@ export function ChatView({
       if (actionable(m)) void react(m, "❤️");
     } else lastTap.current = { id: m.id, at };
   };
+  // A long press opens one menu; while it's open, another press doesn't open it again.
   const pressStart = (m: Msg) => {
-    if (!actionable(m)) return;
-    press.current = window.setTimeout(() => setMenu(m), 450);
+    if (!actionable(m) || menu) return;
+    press.current = window.setTimeout(() => setMenu((cur) => cur ?? m), 450);
   };
   const pressEnd = () => {
     if (press.current) window.clearTimeout(press.current);
@@ -703,13 +707,14 @@ export function ChatView({
             onContextMenu={(e) => {
               if (!actionable(m)) return;
               e.preventDefault();
-              setMenu(m);
+              setMenu((cur) => cur ?? m);
             }}
             onPointerDown={() => pressStart(m)}
             onPointerUp={pressEnd}
             onPointerLeave={pressEnd}
             onPointerMove={pressEnd}
-            className={`group relative select-text outline-none focus-visible:ring-2 focus-visible:ring-teal-400 rounded-3xl`}
+            // No text selection or the phone's own menu on a long press: copying is in our menu.
+            className={`group relative select-none [-webkit-touch-callout:none] outline-none focus-visible:ring-2 focus-visible:ring-teal-400 rounded-3xl`}
           >
             {m.deleted ? (
               <p className="rounded-3xl border border-dashed border-stone-300 px-3.5 py-2 text-sm italic text-stone-500">{mine ? tx.unsentMine : tx.unsent}</p>
@@ -1028,7 +1033,17 @@ export function ChatView({
                   </button>
                 )
               )}
-              {canEdit(menu) && <button type="button" onClick={() => startEdit(menu)} className="rounded-2xl px-4 py-3 text-left font-medium text-stone-800 hover:bg-stone-50">✎ {tx.edit}</button>}
+              {canEdit(menu) ? (
+                <button type="button" onClick={() => startEdit(menu)} className="rounded-2xl px-4 py-3 text-left font-medium text-stone-800 hover:bg-stone-50">✎ {tx.edit}</button>
+              ) : (
+                // Past the window: still there, greyed, saying why.
+                editable(menu) && (
+                  <button type="button" disabled aria-disabled="true" className="cursor-not-allowed rounded-2xl px-4 py-3 text-left" data-testid="edit-passed">
+                    <span className="block font-medium text-stone-400">✎ {tx.edit}</span>
+                    <span className="mt-0.5 block text-[11px] leading-4 text-stone-400">{tx.editPassed}</span>
+                  </button>
+                )
+              )}
               {menu.senderId === me && <button type="button" onClick={() => void unsend(menu)} className="rounded-2xl px-4 py-3 text-left font-medium text-rose-700 hover:bg-rose-50">⟲ {tx.unsend}</button>}
             </div>
           </div>

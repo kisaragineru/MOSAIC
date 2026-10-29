@@ -48,6 +48,7 @@ export default async function ConversationPage({ params, searchParams }: { param
     recordReplyToYou: tm.recordReplyToYou,
     shownBy: tm.shownBy(P),
     edit: tm.edit,
+    editPassed: t.errors.edit_window_passed,
     editing: tm.editing,
     save: tm.save,
     cancel: tm.cancel,

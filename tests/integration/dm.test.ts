@@ -117,10 +117,12 @@ describe("direct messages", () => {
     expect(after.find((m) => m.id === m1)).toMatchObject({ deleted: true, body: null });
     expect(after.find((m) => m.id === r)).toMatchObject({ body: "元気だよ！", edited: true, reply: { deleted: true } });
 
-    // Edits are allowed only for 15 minutes.
+    // Edits are allowed for 24 hours (a typo noticed the next morning), not after.
     const old = await sendMessage(sora.userId, c, { kind: "text", body: "古い" });
     const pool = new Pool({ connectionString: TEST_MIGRATION_DATABASE_URL });
-    await pool.query("update dm_messages set created_at = now() - interval '16 minutes' where id = $1", [old]);
+    await pool.query("update dm_messages set created_at = now() - interval '23 hours' where id = $1", [old]);
+    await editMessage(sora.userId, old, "直した");
+    await pool.query("update dm_messages set created_at = now() - interval '25 hours' where id = $1", [old]);
     await pool.end();
     await expect(editMessage(sora.userId, old, "新しい")).rejects.toMatchObject({ code: "edit_window_passed" });
 

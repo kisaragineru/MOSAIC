@@ -13,7 +13,8 @@ import { invalid, mapDbError, rateLimited } from "../errors";
 import { audit } from "./audit";
 
 export const DM_REACTIONS = ["❤️", "😂", "😮", "😢", "😡", "👍"] as const;
-export const DM_EDIT_MINUTES = 15;
+/** How long a sent text message can be edited (the database holds the same rule, migration 0086). */
+export const DM_EDIT_MINUTES = 24 * 60;
 export const DM_MAX_PHOTOS = 3;
 export const DM_MAX_PHOTO_BYTES = 2_500_000;
 

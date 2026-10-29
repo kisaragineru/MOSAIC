@@ -104,7 +104,7 @@ test("direct messages: send, read, reply, react, edit, unsend, photos", async ({
   await (await actionsFor(hana, "元気だよ")).getByRole("button", { name: "😂" }).click();
   await expect(sora.getByRole("button", { name: "😂" })).toBeVisible({ timeout: 15_000 });
 
-  // Edit (own message, within 15 minutes) and unsend.
+  // Edit (own message, within 24 hours) and unsend.
   await (await actionsFor(hana, "こんにちは！")).getByRole("button", { name: /編集/ }).click();
   await hana.getByLabel("メッセージを入力…").fill("こんにちは、ソラ！");
   await hana.getByRole("button", { name: "保存" }).click();
@@ -127,6 +127,13 @@ test("direct messages: send, read, reply, react, edit, unsend, photos", async ({
   expect((await ren.request.get(src!)).status()).toBe(404);
   // And Ren can't open the conversation at all.
   expect((await ren.goto(thread))?.status()).toBe(404);
+
+  // A day later (the phone's clock 25 hours on): "Edit" is still in the menu, greyed, saying why.
+  await hana.clock.install({ time: new Date(Date.now() + 25 * 3600_000) });
+  await hana.reload();
+  const later = await actionsFor(hana, "こんにちは、ソラ！");
+  await expect(later.getByTestId("edit-passed")).toBeDisabled();
+  await expect(later.getByTestId("edit-passed")).toContainText("編集できるのは、送ってから24時間までです。");
 });
 
 test("group messages: create, notices, who wrote, read counts, leave", async ({ browser }) => {

@@ -246,7 +246,7 @@ export const ja: Dict = {
     cannot_send: "このやりとりには送信できません。",
     record_to_owner_only: "他の人の記録は、その記録を書いた本人にだけ送れます。",
     invalid_message: "メッセージを確認してください（4000文字まで）。",
-    edit_window_passed: "編集できるのは送信から15分以内です。",
+    edit_window_passed: "編集できるのは、送ってから24時間までです。",
     invalid_group: "グループは、自分以外に2〜30人を選んでください。",
     invalid_title: "グループ名は60文字までです。",
     invalid_image: "この画像は送れません（JPEG・PNG・WebPのみ）。",
