@@ -25,7 +25,7 @@ test("what is shared is listed in one place, and many records change at once", a
 
   // From the privacy overview: the list opens on what is shared.
   await page.goto("/me/privacy");
-  await page.getByRole("link", { name: /一覧で見る・まとめて変える/ }).click();
+  await page.locator("#records").getByRole("link", { name: /一覧で見る・まとめて変える/ }).click();
   await page.waitForURL(/\/me\/privacy\/records$/);
   const list = page.getByTestId("audience-list");
   await expect(list.getByRole("listitem")).toHaveCount(2);
@@ -53,4 +53,58 @@ test("what is shared is listed in one place, and many records change at once", a
   // Nothing picked: told, nothing changes.
   await page.getByRole("button", { name: "この範囲にする" }).click();
   await expect(page.getByText("記録を1件以上選んでください。")).toBeVisible();
+});
+
+test("Tử Vi and answers: how much each connection sees, set for many at once", async ({ page }) => {
+  await page.goto("/register");
+  await page.getByLabel("なんと呼べばいいですか？").fill("ハナ");
+  await page.getByLabel("メールアドレス").fill(`${randomUUID().slice(0, 8)}@example.test`);
+  await page.getByLabel(/^パスワード/).fill("e2e correct horse battery");
+  await page.getByRole("button", { name: "アカウントを作成" }).click();
+  await page.waitForURL(/welcome/);
+  // Mina shows everything; Hana chose preferences and values when connecting.
+  await page.goto("/admin");
+  await page.getByRole("button", { name: /テスト相手をつくる/ }).click();
+  await page.waitForURL(/admin\?ok=saved/);
+
+  // Tử Vi: from the overview to its own list (not the profile).
+  await page.goto("/me/privacy");
+  await page.locator("#tuvi").getByRole("link", { name: /一覧で見る・まとめて変える/ }).click();
+  await page.waitForURL(/\/me\/privacy\/tuvi$/);
+  await expect(page.getByText(/まだ命盤がありません/)).toBeVisible();
+  const row = page.getByTestId("level-row").filter({ hasText: "ミナ（テスト）" });
+  await expect(row).toContainText("あなた：見せない");
+  await expect(row).toContainText("Tử Vi：相手は見せてくれている");
+  // Showing more asks for consent first.
+  await row.getByRole("checkbox").check();
+  const bar = page.getByTestId("level-bar-tuvi");
+  await bar.getByRole("combobox").selectOption({ label: "命盤の詳細まで" });
+  await bar.getByRole("button", { name: "この設定にする" }).click();
+  await expect(page.getByText("見せるには、同意にチェックしてください。")).toBeVisible();
+  await page.getByTestId("level-row").filter({ hasText: "ミナ（テスト）" }).getByRole("checkbox").check();
+  await bar.getByRole("combobox").selectOption({ label: "命盤の詳細まで" });
+  await bar.getByRole("checkbox").check();
+  await bar.getByRole("button", { name: "この設定にする" }).click();
+  await page.waitForURL(/ok=saved/);
+  await expect(row).toContainText("あなた：命盤の詳細まで");
+  await expect(row).toContainText("Tử Vi：共有中");
+  await expect(row).toContainText("Tử Vi 命盤の詳細：共有中");
+  await page.goto("/me/privacy");
+  await expect(page.locator("#tuvi")).toContainText("命盤の詳細まで：1人");
+
+  // Answers: which ones and with whom, on their own page; the preview only shows.
+  await page.locator("#answers").getByRole("link", { name: /一覧で見る・まとめて変える/ }).click();
+  await page.waitForURL(/\/me\/privacy\/answers$/);
+  const who = page.getByTestId("level-row").filter({ hasText: "ミナ（テスト）" });
+  await expect(who).toContainText("あなた：好みと価値観");
+  await expect(who).toContainText("好み：共有中");
+  // Showing less needs no consent, and Tử Vi stays as it was.
+  await who.getByRole("checkbox").check();
+  await page.getByTestId("level-bar-answers").getByRole("combobox").selectOption({ label: "価値観だけ" });
+  await page.getByTestId("level-bar-answers").getByRole("button", { name: "この設定にする" }).click();
+  await page.waitForURL(/ok=saved/);
+  await expect(who).toContainText("あなた：価値観だけ");
+  await expect(who).toContainText("好み：相手は見せてくれている");
+  await page.goto("/me/privacy/tuvi");
+  await expect(page.getByTestId("level-row").filter({ hasText: "ミナ（テスト）" })).toContainText("あなた：命盤の詳細まで");
 });

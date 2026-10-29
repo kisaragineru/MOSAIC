@@ -81,7 +81,7 @@ test("preview: the other person's phone, and switching what is shared", async ({
   await ctx.close();
 });
 
-test("preview: answers shown or kept to oneself a section at a time, or picked", async ({ browser }) => {
+test("answer sharing: answers shown or kept to oneself a section at a time, or picked", async ({ browser }) => {
   const { ctx, page } = await newUser(browser);
   for (const [id, pick] of [["f.drink", "お茶"], ["f.sweet_savory", null]] as const) {
     await page.goto(`/discover/q/${id}`);
@@ -91,7 +91,10 @@ test("preview: answers shown or kept to oneself a section at a time, or picked",
     await form.getByRole("button", { name: "回答を保存" }).click();
     await page.waitForURL(/ok=answered/);
   }
-  await page.goto("/me/preview");
+  // The eye on the Questions tabs leads here; the preview itself only shows.
+  await page.goto("/discover/chapters");
+  await page.getByRole("link", { name: "回答を、どれを・誰と見せ合うか" }).click();
+  await page.waitForURL(/\/me\/privacy\/answers$/);
   const likes = page.getByTestId("bulk-preferences");
   const count = page.locator("#choices ~ section").first();
   // A section in one tap, either way.
@@ -116,6 +119,9 @@ test("preview: answers shown or kept to oneself a section at a time, or picked",
   // Picking nothing says so.
   await page.getByRole("button", { name: /選んだものを見せる/ }).click();
   await expect(page.getByText("変えたい回答を選んでください。")).toBeVisible();
+  await page.goto("/me/preview");
+  await expect(page.getByTestId("bulk-preferences")).toHaveCount(0);
+  await expect(page.locator("#choices ~ section").first()).toContainText("2件中1件を見せる");
   await ctx.close();
 });
 

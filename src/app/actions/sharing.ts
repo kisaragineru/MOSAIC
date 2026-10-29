@@ -15,6 +15,7 @@ import {
   openComparison,
   revokeComparison,
   revokeShare,
+  setConnectionLevel,
   unlinkPerson,
 } from "@/server/services/sharing";
 import { attempt, bool, safeNext, str, withParam } from "./util";
@@ -62,6 +63,17 @@ export async function consentAction(form: FormData) {
   const r = await attempt("comparison.consent", () => giveConsent(uid, id, { scopes, agree: bool(form, "agree") }));
   revalidatePath(`/compare/${id}`);
   const back = safeNext(str(form, "back"), `/compare/${id}`);
+  redirect(withParam(back, r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
+}
+
+/** One sharing level for the connections picked in a privacy list (Tử Vi, or answers). */
+export async function connectionLevelAction(form: FormData) {
+  const uid = await requireUser();
+  const back = safeNext(str(form, "back"), "/me/privacy");
+  const r = await attempt("comparison.level", () =>
+    setConnectionLevel(uid, { sessionIds: form.getAll("sessionId"), group: str(form, "group"), level: str(form, "level"), agree: bool(form, "agree") }),
+  );
+  revalidatePath(back.split("?")[0]!.split("#")[0]!);
   redirect(withParam(back, r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
 }
 

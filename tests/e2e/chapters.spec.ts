@@ -38,7 +38,7 @@ test("answer by chapter: badges, private note, progress, feedback, note in histo
   await expect(page.getByTestId("feedback-prompt")).toContainText("✓ 回答を保存しました · 前の質問は？");
   await expect(page.getByText("回答を保存しました。以前の回答も履歴に残っています。")).toHaveCount(0);
   await expect(page.locator("form:has(input[name=questionId])").getByText(/気質/)).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "相手からの見え方と公開設定" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "回答を、どれを・誰と見せ合うか" })).toBeVisible();
   await page.getByRole("button", { name: "👍 よかった" }).click();
   await expect(page.getByText("ありがとうございます。質問をよくするために使います。")).toBeVisible();
 

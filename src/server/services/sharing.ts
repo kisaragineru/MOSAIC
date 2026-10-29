@@ -27,6 +27,7 @@ import {
 import type { Element } from "@/lib/tuvi/canchi";
 import type { Chart } from "@/lib/tuvi/engine";
 import { toSharedChart, type SharedChart } from "@/lib/tuvi/shared-chart";
+import { isScopeGroup, levelScopes, withLevel } from "@/lib/sharing/scope-levels";
 import { uuid } from "@/lib/validation/common";
 import { randomToken, sha256 } from "../auth/crypto";
 import { enforceRateLimit } from "../auth/rate-limit";
@@ -198,6 +199,44 @@ export async function giveConsent(userId: string, sessionId: string, input: unkn
     await audit(tx, userId, "comparison.consented", "comparison_session", id);
     if (status === "active") await computeInTx(tx, id);
     return status;
+  });
+}
+
+/**
+ * One sharing level (see scope-levels) for several connections at once, from the privacy lists.
+ * Only connections I already agreed to are changed (agreeing to a new one stays where it is
+ * asked); the other group's scopes are kept, and an unchanged connection is left alone.
+ */
+export async function setConnectionLevel(userId: string, input: { sessionIds: unknown; group: unknown; level: unknown; agree: unknown }) {
+  if (!isScopeGroup(input.group) || typeof input.level !== "string" || !levelScopes(input.group, input.level)) throw invalid("invalid_choice");
+  const group = input.group;
+  const level = input.level;
+  const ids = z.array(uuid).max(500).safeParse(input.sessionIds);
+  if (!ids.success) throw invalid("invalid_choice");
+  if (ids.data.length === 0) throw invalid("nothing_picked_people");
+  return withUser(userId, async (tx) => {
+    const mine = await tx
+      .select({ sessionId: comparisonConsents.sessionId, scopes: comparisonConsents.scopes })
+      .from(comparisonConsents)
+      .where(and(inArray(comparisonConsents.sessionId, [...new Set(ids.data)]), eq(comparisonConsents.userId, userId), sql`${comparisonConsents.withdrawnAt} is null`));
+    // Showing someone more is a consent; showing less never needs one.
+    if (input.agree !== true && mine.some((c) => withLevel(c.scopes, group, level).some((x) => !c.scopes.includes(x)))) throw invalid("agree_required");
+    let changed = 0;
+    for (const c of mine) {
+      const next = withLevel(c.scopes, group, level);
+      if (next.length === c.scopes.length && next.every((x) => c.scopes.includes(x))) continue;
+      let status: string;
+      try {
+        const r = await tx.execute<{ s: string }>(sql`select comparison_give_consent(${c.sessionId}, ${`{${next.join(",")}}`}::text[], ${CONSENT_TEXT_VERSION}) as s`);
+        status = r.rows[0]!.s;
+      } catch (e) {
+        mapDbError(e);
+      }
+      await audit(tx, userId, "comparison.consented", "comparison_session", c.sessionId);
+      if (status === "active") await computeInTx(tx, c.sessionId);
+      changed++;
+    }
+    return changed;
   });
 }
 

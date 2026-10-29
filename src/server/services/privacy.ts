@@ -19,8 +19,12 @@ export interface PrivacyConnection {
   status: "pending" | "active";
   personId: string | null;
   relationship: string | null;
+  /** Whether I agreed to this connection at all (else it waits on me, and nothing is mine to set here). */
+  iConsented: boolean;
   /** What I agreed to share in this connection. */
   myScopes: string[];
+  /** What they agreed to show me (active connections only). */
+  theirScopes: string[];
   /** What is actually shared: agreed by both. */
   sharedScopes: string[];
   manualPreset: string | null;
@@ -73,7 +77,8 @@ export async function privacyOverview(userId: string): Promise<PrivacyOverview> 
     const rels = personIds.length ? await tx.select({ id: people.id, r: people.relationship }).from(people).where(and(eq(people.userId, userId), inArray(people.id, personIds))) : [];
 
     const connections: PrivacyConnection[] = open.map((c) => {
-      const mine = consents.find((x) => x.sessionId === c.id && x.userId === userId)?.scopes ?? [];
+      const myConsent = consents.find((x) => x.sessionId === c.id && x.userId === userId);
+      const mine = myConsent?.scopes ?? [];
       const theirs = consents.find((x) => x.sessionId === c.id && x.userId !== userId)?.scopes ?? [];
       const relationship = rels.find((r) => r.id === c.personId)?.r ?? null;
       const circle = (MEMORY_CIRCLES as readonly string[]).includes(relationship ?? "") ? (relationship as Circle) : null;
@@ -85,7 +90,9 @@ export async function privacyOverview(userId: string): Promise<PrivacyOverview> 
         status: active ? "active" : "pending",
         personId: c.personId,
         relationship,
+        iConsented: !!myConsent,
         myScopes: mine,
+        theirScopes: active ? theirs : [],
         sharedScopes: active ? mine.filter((s) => theirs.includes(s)) : [],
         manualPreset: presets.find((p) => p.sessionId === c.id)?.preset ?? null,
         // Records reach active connections only.

@@ -10,6 +10,7 @@ import { SHARED_TEXT } from "@/content/manual-text";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { avatarUrls } from "@/server/services/avatars";
+import { levelOf } from "@/lib/sharing/scope-levels";
 import { privacyOverview } from "@/server/services/privacy";
 import { myTint, typeTints } from "@/server/services/card";
 
@@ -48,6 +49,10 @@ export default async function PrivacyPage() {
   const avatars = await avatarUrls(uid, o.connections.map((c) => c.otherId));
   const tints = await typeTints(uid, o.connections.map((c) => c.otherId));
   const scopeList = (s: string[]) => s.map((x) => t.compare.scopeNames[x as keyof typeof t.compare.scopeNames] ?? x).join(t.common.listSeparator);
+  // How many connections see how much of my Tử Vi (by what I chose; it shows once they choose too).
+  const tuviCounts = (["detail", "tuvi", "none"] as const)
+    .map((level) => [level, o.connections.filter((c) => c.iConsented && levelOf("tuvi", c.myScopes) === level).length] as const)
+    .filter(([, n]) => n > 0);
   const done = (ok: boolean) => <Pill tone={ok ? "teal" : "stone"}>{ok ? tp.set : tp.notSet}</Pill>;
   return (
     <Page title={tp.title} back="/me">
@@ -89,12 +94,17 @@ export default async function PrivacyPage() {
       <Section id="answers" title={tp.answersTitle} help={tp.answersHelp}>
         <p className="text-sm text-stone-800">✅ {tp.answersShared(o.answers.shared.preferences, o.answers.shared.values)}</p>
         <p className="text-sm text-stone-800">🔒 {tp.privateAnswers(o.answers.private)}</p>
-        <Link href="/me/preview" className="inline-block text-sm font-semibold text-teal-700">{tp.change} →</Link>
+        <Link href="/me/privacy/answers" className="inline-block text-sm font-semibold text-teal-700">{tp.bulk} →</Link>
       </Section>
 
       <Section id="tuvi" title={tp.tuviTitle} help={tp.tuviHelp}>
         <p className="text-sm text-stone-800">{!o.birth.entered ? tp.tuviNone : o.birth.hasChart ? tp.tuviReady : tp.tuviNoChart}</p>
-        <Link href="/me#birth" className="inline-block text-sm font-semibold text-teal-700">{tp.change} →</Link>
+        {tuviCounts.length > 0 && (
+          <ul className="space-y-1 text-sm text-stone-800">
+            {tuviCounts.map(([level, n]) => <li key={level}>{level === "none" ? "🔒" : "⭐"} {tp.levelCount(t.connectionLevels.tuviLevels[level], n)}</li>)}
+          </ul>
+        )}
+        <Link href="/me/privacy/tuvi" className="inline-block text-sm font-semibold text-teal-700">{tp.bulk} →</Link>
       </Section>
 
       <Section id="connections" title={tp.connectionsTitle} help={tp.connectionsHelp}>

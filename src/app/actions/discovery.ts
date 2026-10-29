@@ -96,7 +96,7 @@ export async function privacyAction(form: FormData) {
 export async function bulkPrivacyAction(form: FormData) {
   const uid = await requireUser();
   const ids = form.getAll("responseId").filter((x): x is string => typeof x === "string" && x !== "");
-  const back = safeNext(str(form, "back"), "/me/preview");
+  const back = safeNext(str(form, "back"), "/me/privacy/answers");
   if (ids.length === 0) redirect(withParam(back, "e", "nothing_picked"));
   const r = await attempt("discover.bulkPrivacy", () => setResponsesPrivacy(uid, ids, str(form, "privacy")));
   revalidatePath(back.split("?")[0]!.split("#")[0]!);
