@@ -555,6 +555,8 @@ export const en = {
     notePlaceholder: "Why you answered this way, what came to mind…",
     informs: "Tiles this answer feeds into",
     feedbackAsk: "How was that question?",
+    feedbackAskShort: "How was it?",
+    savedShort: "Answer saved",
     feedbackGood: "👍 Good",
     feedbackBad: "👎 Not great",
     feedbackThanks: "Thank you — this helps us improve the questions.",

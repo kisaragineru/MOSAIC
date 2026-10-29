@@ -557,6 +557,8 @@ export const ja: Dict = {
     notePlaceholder: "なぜそう答えたか、思い浮かんだこと…",
     informs: "この答えが手がかりになるタイル",
     feedbackAsk: "前の質問はどうでしたか？",
+    feedbackAskShort: "前の質問は？",
+    savedShort: "回答を保存しました",
     feedbackGood: "👍 よかった",
     feedbackBad: "👎 いまいち",
     feedbackThanks: "ありがとうございます。質問をよくするために使います。",

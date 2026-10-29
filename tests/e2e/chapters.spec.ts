@@ -34,6 +34,11 @@ test("answer by chapter: badges, private note, progress, feedback, note in histo
   // The next question of the chapter appears, progress moves, and feedback is asked once.
   await expect(page.getByText(/問中1問/)).toBeVisible();
   await expect(page.locator("form:has(input[name=questionId]) legend")).not.toHaveText(firstPrompt);
+  // "Saved" and "how was it?" in one slim line (no separate notice); the title alone says the chapter.
+  await expect(page.getByTestId("feedback-prompt")).toContainText("✓ 回答を保存しました · 前の質問は？");
+  await expect(page.getByText("回答を保存しました。以前の回答も履歴に残っています。")).toHaveCount(0);
+  await expect(page.locator("form:has(input[name=questionId])").getByText(/気質/)).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "相手からの見え方と公開設定" })).toBeVisible();
   await page.getByRole("button", { name: "👍 よかった" }).click();
   await expect(page.getByText("ありがとうございます。質問をよくするために使います。")).toBeVisible();
 

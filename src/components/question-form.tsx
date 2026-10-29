@@ -11,9 +11,10 @@ import { Button, Input, Textarea } from "./ui";
 const optionCls =
   "flex cursor-pointer items-center gap-2 rounded-2xl border border-stone-200 bg-white/80 px-3 py-2.5 transition-colors hover:border-teal-300 has-[:checked]:border-teal-600 has-[:checked]:bg-teal-50 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-600/30";
 
-export function QuestionForm({ q, t, locale, back, allowSkip = true }: { q: QuestionView; t: Dict; locale: Locale; back: string; allowSkip?: boolean }) {
+/** `showChapter: false` inside a chapter's own page, whose title already says it. */
+export function QuestionForm({ q, t, locale, back, allowSkip = true, showChapter = true }: { q: QuestionView; t: Dict; locale: Locale; back: string; allowSkip?: boolean; showChapter?: boolean }) {
   const def = QUESTION_BANK.find((x) => x.id === q.id);
-  const chapter = def ? chapterOf(def) : null;
+  const chapter = def && showChapter ? chapterOf(def) : null;
   const axes = [...new Set((q.signals ?? []).map((s) => s.claimKey))];
   const d = t.discover;
   return (

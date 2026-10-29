@@ -557,6 +557,8 @@ export const vi: Dict = {
     notePlaceholder: "Vì sao bạn trả lời như vậy, điều gì hiện lên trong đầu…",
     informs: "Ô ghép mà câu trả lời này góp vào",
     feedbackAsk: "Câu hỏi vừa rồi thế nào?",
+    feedbackAskShort: "Câu hỏi vừa rồi thế nào?",
+    savedShort: "Đã lưu câu trả lời",
     feedbackGood: "👍 Hay",
     feedbackBad: "👎 Chưa hay",
     feedbackThanks: "Cảm ơn bạn — điều này giúp chúng tôi cải thiện câu hỏi.",

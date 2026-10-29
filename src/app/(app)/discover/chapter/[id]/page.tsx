@@ -54,31 +54,32 @@ export default async function ChapterPage({ params, searchParams }: { params: Pr
   const nextId = pieceDone ? null : (ap?.nextId ?? c.nextId);
   const next = followUp ?? (nextId ? await getQuestion(uid, nextId).catch(() => null) : null);
   const back = `/discover/chapter/${chapter}${focus ? `?axis=${focus}` : ""}`;
+  const merged = sp.ok === "answered" && !!sp.fb && !sp.fbdone;
   const dot = (k: TendencyKey) => {
     const l = levels.get(k);
     return l === "consistent" ? "bg-teal-600" : l === "emerging" ? "bg-teal-300" : l === "gathering" ? "bg-sky-100 ring-1 ring-sky-300" : l === "mixed" ? "bg-linear-to-br from-sky-300 to-rose-300" : "bg-white ring-1 ring-stone-300";
   };
   return (
     <Page title={`${info.icon} ${info.title[locale]}`} back="/discover/chapters" actions={<AnswerPrivacyLink t={t} />}>
-      <div className="space-y-1">
-        <div className="flex items-center justify-between text-xs text-stone-500">
-          <span>{info.intro[locale]}</span>
-          <span className="shrink-0 pl-2 font-semibold text-teal-800">{d.chapterProgress(c.answered, c.total)}</span>
+      {/* What the chapter is about, then how far along: the count sits at the end of its bar. */}
+      <div className="space-y-2" data-testid="chapter-head">
+        <p className="text-xs leading-5 text-stone-500">{info.intro[locale]}</p>
+        <div className="flex items-center gap-3">
+          <ProgressBar value={c.answered} max={c.total} label={info.title[locale]} className="flex-1" />
+          <span className="shrink-0 text-xs font-semibold text-teal-800">{d.chapterProgress(c.answered, c.total)}</span>
         </div>
-        <ProgressBar value={c.answered} max={c.total} label={info.title[locale]} />
       </div>
       {pieces.length > 0 && (
-        <nav aria-label={d.pieces} className="space-y-1.5">
-          <p className="text-xs font-semibold text-stone-600">🧩 {d.pieces}</p>
-          <div className="flex flex-wrap gap-1.5">
-            <Link href={`/discover/chapter/${chapter}`} aria-current={!focus ? "page" : undefined} className={`rounded-full px-3 py-1 text-xs font-medium ring-1 ${!focus ? "bg-teal-700 text-white ring-teal-700" : "bg-white text-stone-700 ring-stone-200"}`}>{d.allPieces}</Link>
-            {pieces.map((k) => (
-              <Link key={k} href={`/discover/chapter/${chapter}?axis=${k}`} aria-current={focus === k ? "page" : undefined} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ring-1 ${focus === k ? "bg-teal-700 text-white ring-teal-700" : "bg-white text-stone-700 ring-stone-200"}`}>
-                <span aria-hidden className={`h-2.5 w-2.5 rounded-full ${dot(k)}`} />
-                {AXIS_LABEL[k].name[locale]}
-              </Link>
-            ))}
-          </div>
+        // The pieces in one row that scrolls sideways, rather than rows of chips above the question.
+        <nav aria-label={d.pieces} className="-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-testid="chapter-pieces">
+          <span aria-hidden className="shrink-0 text-sm">🧩</span>
+          <Link href={`/discover/chapter/${chapter}`} aria-current={!focus ? "page" : undefined} className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ring-1 ${!focus ? "bg-teal-700 text-white ring-teal-700" : "bg-white text-stone-700 ring-stone-200"}`}>{d.allPieces}</Link>
+          {pieces.map((k) => (
+            <Link key={k} href={`/discover/chapter/${chapter}?axis=${k}`} aria-current={focus === k ? "page" : undefined} className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ring-1 ${focus === k ? "bg-teal-700 text-white ring-teal-700" : "bg-white text-stone-700 ring-stone-200"}`}>
+              <span aria-hidden className={`h-2.5 w-2.5 rounded-full ${dot(k)}`} />
+              {AXIS_LABEL[k].name[locale]}
+            </Link>
+          ))}
         </nav>
       )}
       {focus && ap && !pieceDone && (
@@ -116,8 +117,9 @@ export default async function ChapterPage({ params, searchParams }: { params: Pr
           </div>
         </section>
       )}
-      <Flash t={t} sp={sp} />
-      <FeedbackPrompt sp={sp} back={back} t={t} />
+      {/* Just answered: "saved" and "how was it?" share one slim line, so the next question stays near the top. */}
+      <Flash t={t} sp={merged ? { ...sp, ok: undefined } : sp} />
+      <FeedbackPrompt sp={sp} back={back} t={t} saved={merged} />
       <LikesFollowUp sp={sp} back={back} t={t} locale={locale} />
       {pieceDone ? null : next ? (
         <Card key={next.question.id} className="animate-[fadeUp_.35s_ease-out] motion-reduce:animate-none">
@@ -125,7 +127,7 @@ export default async function ChapterPage({ params, searchParams }: { params: Pr
           {next.latest?.status === "answered" && (
             <p className="mb-2 text-xs text-stone-500">{d.lastAnswer(answerLabel(next.question, next.latest.answer as Answer, locale), next.latest.answeredAt.toISOString().slice(0, 10))}</p>
           )}
-          <QuestionForm q={next.question} t={t} locale={locale} back={back} />
+          <QuestionForm q={next.question} t={t} locale={locale} back={back} showChapter={!!followUp} />
         </Card>
       ) : (
         <Card className="text-center">
