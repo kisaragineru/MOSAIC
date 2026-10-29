@@ -591,7 +591,11 @@ export function ChatView({
   const mentionAt = conv.kind === "group" && !editing && focused ? mentionQuery(draft, caret) : null;
   const mentionChoices = mentionAt
     ? [
-        ...conv.members.filter((x) => x.id !== me && !x.left && fold(x.name).includes(fold(mentionAt.query))).map((x) => ({ id: x.id, name: x.name, all: false })),
+        // By name, so the list is the same every time.
+        ...conv.members
+          .filter((x) => x.id !== me && !x.left && fold(x.name).includes(fold(mentionAt.query)))
+          .sort((a, b) => a.name.localeCompare(b.name, locale))
+          .map((x) => ({ id: x.id, name: x.name, all: false })),
         ...(fold(tx.mentionAll).startsWith(fold(mentionAt.query)) ? [{ id: "@all", name: tx.mentionAll, all: true }] : []),
       ].slice(0, 6)
     : [];
