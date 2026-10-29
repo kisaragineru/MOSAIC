@@ -1,0 +1,2 @@
+ALTER TABLE "birth_profiles" ADD COLUMN "time_basis" text;--> statement-breakpoint
+ALTER TABLE "birth_profiles" ADD CONSTRAINT "birth_time_basis_ck" CHECK ("birth_profiles"."time_basis" is null or "birth_profiles"."time_basis" in ('local','vietnam'));

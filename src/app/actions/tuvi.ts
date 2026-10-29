@@ -27,6 +27,7 @@ export async function saveBirthAction(form: FormData) {
       placeLabel: str(form, "placeLabel"),
       sex: str(form, "sex") || "unspecified",
       lateRatHour: str(form, "lateRatHour"),
+      timeBasis: str(form, "timeBasis"),
       leapMonthRule: str(form, "leapMonthRule"),
     }),
   );

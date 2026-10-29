@@ -39,6 +39,12 @@ import {
 export type Sex = "male" | "female" | "unspecified";
 export type LateRatHour = "next_day" | "same_day";
 export type LeapMonthRule = "same_month" | "next_month" | "split_15";
+/**
+ * Which clock a birth outside Vietnam is read by: the birthplace's own clock ('local', the default
+ * and every chart before engine 1.1.0), or the same moment on Vietnam's clock, UTC+7 ('vietnam':
+ * date and time both, so the lunar day and the hour agree). The user chooses; it is never guessed.
+ */
+export type TimeBasis = "local" | "vietnam";
 
 export interface BirthInput {
   calendar: "solar" | "lunar";
@@ -53,6 +59,8 @@ export interface BirthInput {
   sex: Sex;
   lateRatHour: LateRatHour | null;
   leapMonthRule: LeapMonthRule | null;
+  /** Absent = 'local'. Only applies with a known time and a birthplace outside Vietnam. */
+  timeBasis?: TimeBasis;
 }
 
 export type NeedsDecision = "late_rat_hour" | "leap_month_rule";
@@ -85,7 +93,8 @@ export interface ChartWarning {
     | "hour_unknown"
     | "sex_unspecified"
     | "late_rat_hour_applied"
-    | "leap_month_rule_applied";
+    | "leap_month_rule_applied"
+    | "time_converted_vn";
   detail?: Record<string, unknown>;
 }
 
@@ -177,6 +186,25 @@ function tzOffsetMinutes(timeZone: string, utcMs: number): number {
   return m[1] === "-" ? -v : v;
 }
 
+/** Vietnam's own zones: a birth there is read by its clock whatever the time basis. */
+const VIETNAM_ZONES = new Set(["Asia/Ho_Chi_Minh", "Asia/Saigon"]);
+export const isVietnamZone = (tz: string) => VIETNAM_ZONES.has(tz);
+
+/**
+ * The same moment on Vietnam's clock (UTC+7): the birthplace's local date and time are turned
+ * into an instant with that zone's offset at the time (summer time and past offsets included).
+ */
+export function toVietnamTime(solar: SolarDate, time: { hour: number; minute: number }, timeZone: string): { solar: SolarDate; time: { hour: number; minute: number } } {
+  const wall = Date.UTC(solar.year, solar.month - 1, solar.day, time.hour, time.minute);
+  let off = tzOffsetMinutes(timeZone, wall);
+  off = tzOffsetMinutes(timeZone, wall - off * 60_000);
+  const vn = new Date(wall - off * 60_000 + 7 * 60 * 60_000);
+  return {
+    solar: { year: vn.getUTCFullYear(), month: vn.getUTCMonth() + 1, day: vn.getUTCDate() },
+    time: { hour: vn.getUTCHours(), minute: vn.getUTCMinutes() },
+  };
+}
+
 export function isValidTimeZone(tz: string): boolean {
   try {
     new Intl.DateTimeFormat("en-US", { timeZone: tz });
@@ -229,9 +257,22 @@ export function computeChart(input: BirthInput, rules: Ruleset = DEFAULT_RULESET
     }
   }
 
+  // 1b. Read on Vietnam's clock when the user chose it (date and time together).
+  let time = input.time;
+  const converted = input.timeBasis === "vietnam" && time !== null && !isVietnamZone(input.timeZone);
+  if (converted) {
+    const local = { solar, time: time! };
+    const vn = toVietnamTime(solar, time!, input.timeZone);
+    solar = vn.solar;
+    time = vn.time;
+    const fmt = (d: SolarDate, t: { hour: number; minute: number }) =>
+      `${d.year}-${String(d.month).padStart(2, "0")}-${String(d.day).padStart(2, "0")} ${String(t.hour).padStart(2, "0")}:${String(t.minute).padStart(2, "0")}`;
+    warnings.push({ code: "time_converted_vn", detail: { zone: input.timeZone, local: fmt(local.solar, local.time), vietnam: fmt(solar, time) } });
+  }
+
   // 2. Explicit decisions required by school differences.
   const needs: NeedsDecision[] = [];
-  const lateRat = input.time !== null && input.time.hour === 23;
+  const lateRat = time !== null && time.hour === 23;
   if (lateRat && !input.lateRatHour) needs.push("late_rat_hour");
   const dayForLunar = lateRat && input.lateRatHour === "next_day" ? addDays(solar, 1) : solar;
   const lunar = solarToLunar(dayForLunar, tz);
@@ -264,11 +305,12 @@ export function computeChart(input: BirthInput, rules: Ruleset = DEFAULT_RULESET
     yinYangSex === null ? null : yinYangSex === "duong_nam" || yinYangSex === "am_nu" ? 1 : -1;
   if (direction === null) warnings.push({ code: "sex_unspecified" });
 
-  const h = input.time ? hourBranch(input.time.hour) : null;
-  if (input.time) {
-    const dst = dstWarning(solar, input.time, input.timeZone);
+  const h = time ? hourBranch(time.hour) : null;
+  if (time) {
+    // Read on Vietnam's clock, the birthplace's summer time is already in the conversion.
+    const dst = converted ? null : dstWarning(solar, time, input.timeZone);
     if (dst) warnings.push(dst);
-    const { hour, minute } = input.time;
+    const { hour, minute } = time;
     const minutesToBoundary = hour % 2 === 1 ? minute : 60 - minute; // boundaries at odd hours :00
     if (minutesToBoundary <= 10) warnings.push({ code: "near_hour_boundary", detail: { minutesToBoundary } });
   } else {

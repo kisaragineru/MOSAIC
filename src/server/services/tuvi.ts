@@ -30,6 +30,7 @@ export const birthSchema = z
     sex: z.enum(["male", "female", "unspecified"]).default("unspecified"),
     lateRatHour: z.preprocess(empty, z.enum(["next_day", "same_day"]).optional()),
     leapMonthRule: z.preprocess(empty, z.enum(["same_month", "next_month", "split_15"]).optional()),
+    timeBasis: z.preprocess(empty, z.enum(["local", "vietnam"]).optional()),
   })
   .superRefine((v, ctx) => {
     if (v.calendarInput === "solar" && !v.solarDate) ctx.addIssue({ code: "custom", message: "solar_date_required", path: ["solarDate"] });
@@ -56,6 +57,8 @@ function toEngineInput(p: typeof birthProfiles.$inferSelect): BirthInput {
     sex: p.sex as BirthInput["sex"],
     lateRatHour: (p.lateRatHour as BirthInput["lateRatHour"]) ?? null,
     leapMonthRule: (p.leapMonthRule as BirthInput["leapMonthRule"]) ?? null,
+    // Saved before the choice existed (NULL): the birthplace's clock, as it was computed then.
+    timeBasis: p.timeBasis === "vietnam" ? "vietnam" : "local",
   };
 }
 
@@ -86,6 +89,7 @@ export async function saveBirthProfile(userId: string, input: unknown): Promise<
       sex: v.sex,
       lateRatHour: v.lateRatHour ?? null,
       leapMonthRule: v.leapMonthRule ?? null,
+      timeBasis: v.timeBasis ?? null,
       updatedAt: new Date(),
     };
     const [profile] = await tx

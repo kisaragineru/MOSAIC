@@ -60,6 +60,12 @@ export function BirthForm({ t, p, needs, back, simple = false }: { t: Dict; p: T
         </Select>
       </Field>
       <Field label={t.tuvi.place}><Input name="placeLabel" defaultValue={p?.placeLabel ?? ""} maxLength={120} /></Field>
+      {/* School difference, chosen by the user: Vietnam time for a new entry; a chart saved before the choice keeps its own clock. */}
+      <Field label={t.tuvi.timeBasis} hint={t.tuvi.timeBasisHelp}>
+        <Select name="timeBasis" defaultValue={p?.timeBasis ?? (p ? "local" : "vietnam")}>
+          {(["vietnam", "local"] as const).map((b) => <option key={b} value={b}>{t.tuvi.timeBases[b]}</option>)}
+        </Select>
+      </Field>
     </>
   );
   return (

@@ -14,7 +14,7 @@
  */
 import type { StarId } from "./stars";
 
-export const ENGINE_VERSION = "1.0.0";
+export const ENGINE_VERSION = "1.1.0";
 
 export interface Ruleset {
   id: string;

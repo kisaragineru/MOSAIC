@@ -16,6 +16,7 @@ import { Page } from "@/components/page";
 import { BRANCHES } from "@/lib/tuvi/canchi";
 import { timeZoneOptions, preferredZone } from "@/lib/timezones";
 import { chartView } from "@/lib/tuvi/chart-view";
+import { isVietnamZone } from "@/lib/tuvi/engine";
 import { lifeStages } from "@/lib/tuvi/interpret";
 import { STAR_INFO } from "@/lib/tuvi/stars";
 import { TUVI_TAG } from "@/lib/tuvi/tag";
@@ -129,6 +130,12 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
         <span aria-hidden className="text-violet-700">→</span>
       </Link>
       <Notice kind="info">{t.tuvi.disclaimer}</Notice>
+      {/* Saved before the clock could be chosen, born outside Vietnam: say there is a choice; nothing changes until it's made. */}
+      {c && p && p.timeKnown && p.timeBasis === null && !isVietnamZone(p.timeZone) && (
+        <Notice kind="info">
+          {ui.timeBasisNotice} <Link href="?edit=birth#birth" className="font-semibold underline">{ui.timeBasisNoticeLink} →</Link>
+        </Notice>
+      )}
       {c && themes.length > 0 && (
         <Card title={ui.themesTitle}>
           <p className="mb-3 text-xs text-stone-500">{ui.themesHelp}</p>
@@ -199,7 +206,14 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
           )}
           {c.warnings.length > 0 && (
             <ul className="mt-3 space-y-1">
-              {c.warnings.map((w) => <li key={w.code}><Notice kind="warning">{t.tuvi.warnings[w.code]}</Notice></li>)}
+              {c.warnings.map((w) => (
+                <li key={w.code}>
+                  <Notice kind="warning">
+                    {t.tuvi.warnings[w.code]}
+                    {w.code === "time_converted_vn" && <span className="mt-1 block text-xs">{t.tuvi.convertedDetail(String(w.detail?.local), String(w.detail?.vietnam))}</span>}
+                  </Notice>
+                </li>
+              ))}
             </ul>
           )}
           <details className="mt-3 text-xs text-stone-500">

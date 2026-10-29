@@ -131,6 +131,8 @@ test("Tử Vi: the reading in daily life, a question to write about, and a decad
   await setDate(page, /^生年月日/, "1990-06-07");
   await setBirthTime(page, "06:30");
   await page.getByLabel("伝統的な計算で使う性別").selectOption("male");
+  // A new entry is read on Vietnam's clock when born abroad (this birth is in Vietnam: nothing changes).
+  await expect(page.getByLabel("海外で生まれた場合の時刻の基準")).toHaveValue("vietnam");
   await page.getByRole("button", { name: "保存して計算" }).click();
   await expect(page.getByTestId("essence")).toContainText("タイプ");
   // Thiên Cơ and Cự Môn share the Mệnh palace: read as a pair, then brought into daily life.

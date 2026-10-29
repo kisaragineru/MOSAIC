@@ -15,6 +15,27 @@ const birth = {
 };
 
 describe("Tử Vi service", () => {
+  it("reads a birth abroad on the clock the user chose, and leaves one saved before the choice as it was", async () => {
+    const u = await makeUser();
+    const tokyo = { ...birth, solarDate: "1990-01-02", birthTime: "00:30", timeZone: "Asia/Tokyo" };
+    // Saved without the choice (as before it existed): the birthplace's clock.
+    await saveBirthProfile(u.userId, tokyo);
+    const local = await getTuvi(u.userId, "ja", new Date("2026-10-23T00:00:00Z"));
+    expect(local.profile!.timeBasis).toBeNull();
+    expect(local.chart!.solar).toEqual({ year: 1990, month: 1, day: 2 });
+    expect(local.chart!.warnings.map((w) => w.code)).not.toContain("time_converted_vn");
+    // Chosen: the same moment on Vietnam's clock, a new chart (the old one is kept in the history).
+    const r = await saveBirthProfile(u.userId, { ...tokyo, timeBasis: "vietnam" });
+    expect(r).toMatchObject({ status: "computed", reused: false });
+    const vn = await getTuvi(u.userId, "ja", new Date("2026-10-23T00:00:00Z"));
+    expect(vn.profile!.timeBasis).toBe("vietnam");
+    expect(vn.chart!.solar).toEqual({ year: 1990, month: 1, day: 1 });
+    expect(vn.chart!.warnings.find((w) => w.code === "time_converted_vn")?.detail).toMatchObject({ local: "1990-01-02 00:30", vietnam: "1990-01-01 22:30" });
+    expect((await chartHistory(u.userId)).length).toBe(2);
+    // Age by birthdays beside the nominal age.
+    expect(vn.fullAge).toBe(36);
+  });
+
   it("computes, stores with ruleset/engine version, and reuses for identical input", async () => {
     const u = await makeUser();
     const r1 = await saveBirthProfile(u.userId, birth);
@@ -22,7 +43,7 @@ describe("Tử Vi service", () => {
     const r2 = await saveBirthProfile(u.userId, birth);
     expect(r2).toMatchObject({ status: "computed", reused: true });
     const v = await getTuvi(u.userId, "vi", new Date("2026-10-23T00:00:00Z"));
-    expect(v.chart).toMatchObject({ rulesetId: "vn-ttl-2026.1", engineVersion: "1.0.0", menh: 3, cuc: { number: 5 } });
+    expect(v.chart).toMatchObject({ rulesetId: "vn-ttl-2026.1", engineVersion: "1.1.0", menh: 3, cuc: { number: 5 } });
     expect(v.currentAge).toBe(37); // Bính Ngọ 2026 − Canh Ngọ 1990 + 1
     expect(v.sections.map((s) => s.section)).toEqual(["personality", "relationships", "love", "career", "wealth", "family", "cycles"]);
     expect(v.sections.at(-1)!.paragraphs.some((p) => p.text.startsWith("▶"))).toBe(true);

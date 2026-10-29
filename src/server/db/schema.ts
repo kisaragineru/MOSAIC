@@ -167,6 +167,11 @@ export const birthProfiles = pgTable(
     lateRatHour: text("late_rat_hour"),
     /** Explicit user choice for births in a leap lunar month (school difference). */
     leapMonthRule: text("leap_month_rule"),
+    /**
+     * Which clock a birth outside Vietnam is read by: 'local' (the birthplace's) or 'vietnam' (the
+     * same moment at UTC+7). NULL = saved before the choice existed, read as 'local'.
+     */
+    timeBasis: text("time_basis"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -175,6 +180,7 @@ export const birthProfiles = pgTable(
     ownerUq("birth_profiles_owner_uq", t),
     check("birth_calendar_ck", sql`${t.calendarInput} in ('solar','lunar')`),
     check("birth_sex_ck", sql`${t.sex} in ('male','female','unspecified')`),
+    check("birth_time_basis_ck", sql`${t.timeBasis} is null or ${t.timeBasis} in ('local','vietnam')`),
     check("birth_late_rat_ck", sql`${t.lateRatHour} is null or ${t.lateRatHour} in ('next_day','same_day')`),
     check(
       "birth_leap_rule_ck",

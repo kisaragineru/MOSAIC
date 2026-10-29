@@ -4,7 +4,7 @@ MOSAIC computes Tử Vi Đẩu Số charts with a **deterministic engine** (`src
 No AI is involved in placing stars. Interpretation text is produced by rules
 (`src/lib/tuvi/interpret.ts`) that only describe *traditional associations*.
 
-- Code version: `ENGINE_VERSION = "1.0.0"` (`src/lib/tuvi/ruleset.ts`)
+- Code version: `ENGINE_VERSION = "1.1.0"` (1.1.0 adds the optional Vietnam-time reading; a chart read by the birthplace's clock is identical to 1.0.0) (`src/lib/tuvi/ruleset.ts`)
 - Data version: ruleset id `vn-ttl-2026.1` (tables in `src/lib/tuvi/ruleset.ts`, also stored in
   `tuvi_ruleset_versions.rules` for provenance)
 - Every stored chart records `ruleset_id`, `engine_version` and `input_hash`
@@ -18,8 +18,8 @@ No AI is involved in placing stars. Interpretation text is produced by rules
 | Solar ↔ lunar | Hồ Ngọc Đức astronomical algorithm (Meeus new moon / solar longitude), **UTC+7** (Vietnamese calendar) | Tết dates 1985, 2007, 2020, 2023–2026; leap months 2012/14/17/20/23/25; every day 1901–2099 compared with `lunar-javascript` (independent, UTC+8) — all differences confined to 11 explained months (pre‑1929 Beijing local time; new moon within minutes of midnight). Round-trip of every day 2000–2030. |
 | Year boundary | Lunar New Year (Tết), not Lập Xuân | standard for Tử Vi; asserted in tests |
 | Vietnam vs China | If UTC+7 and UTC+8 give different lunar dates, the chart carries warning `calendar_tz_divergence` (both values recorded). Vietnam used UTC+8 for parts of its history (before 1968 in the North; South Vietnam 1959–1975) — MOSAIC always uses UTC+7 and warns instead of guessing. | tested (1985-02-01) |
-| Birth time | Local clock time at the birthplace, as entered. Not converted to true solar time. | — |
-| DST | If DST was in effect at the birthplace (IANA zone), warning `dst_in_effect` shows the clock-time and standard-time hour branches; no automatic shift. | tested (America/New_York) |
+| Birth time | Local clock time at the birthplace, as entered, by default. Not converted to true solar time. **Engine 1.1.0**: for a birth outside Vietnam the user may choose `time_basis = vietnam` (`birth_profiles.time_basis`): the birthplace's date and time are turned into the same moment at UTC+7 (the zone's offset at the time, summer time included) and the chart is computed from that date and time (warning `time_converted_vn` with both). Births in Vietnam (`Asia/Ho_Chi_Minh`) and unknown times are never converted. School difference, so the user's choice: new entries start on `vietnam` (operator's decision, 2026-10-29); profiles saved before the choice existed (`NULL`) stay on the birthplace's clock until the user chooses and saves. | unit (Tokyo / New York / Saigon 1965 / unknown time) + integration |
+| DST | If DST was in effect at the birthplace (IANA zone), warning `dst_in_effect` shows the clock-time and standard-time hour branches; no automatic shift. With `time_basis = vietnam` the offset (DST included) is part of the conversion and no DST warning is shown. | tested (America/New_York) |
 | Hour boundary | Warning `near_hour_boundary` within 10 min of an hour-branch boundary. | tested |
 
 ### Decisions that are school-dependent → asked, never guessed
