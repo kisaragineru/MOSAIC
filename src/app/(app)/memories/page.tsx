@@ -29,7 +29,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
   const sp = await searchParams;
   const { t, locale } = await getT();
   const tz = (await getAccount(uid)).profile.timeZone;
-  const filters = { q: sp.q ?? "", kind: sp.kind ?? "", tag: sp.tag ?? "", personId: sp.personId ?? "", from: sp.from ?? "", to: sp.to ?? "" };
+  const filters = { q: sp.q ?? "", kind: sp.kind ?? "", tag: sp.tag ?? "", personId: sp.personId ?? "", audience: sp.audience === "private" || sp.audience === "shared" ? sp.audience : "", from: sp.from ?? "", to: sp.to ?? "" };
   const filtering = Object.values(filters).some((v) => v !== "");
   const view = sp.view === "mine" || sp.view === "friends" ? sp.view : "all";
   // ?with=<connection>: one person's shared records only.
@@ -107,7 +107,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
         <form method="get" className="space-y-2" role="search">
           {view !== "all" && <input type="hidden" name="view" value={view} />}
           <Input name="q" defaultValue={filters.q} placeholder={t.memories.searchPlaceholder} aria-label={t.common.search} />
-          <details open={!!(filters.kind || filters.tag || filters.personId || filters.from || filters.to)}>
+          <details open={!!(filters.kind || filters.tag || filters.personId || filters.audience || filters.from || filters.to)}>
             <summary className="cursor-pointer text-sm text-stone-600">{t.common.filter}</summary>
             <div className="mt-2 grid grid-cols-2 gap-2">
               <Select name="kind" defaultValue={filters.kind} aria-label={t.memories.labels.title}>
@@ -121,6 +121,12 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
               <Select name="personId" defaultValue={filters.personId} aria-label={t.memories.fields.people}>
                 <option value="">{t.memories.fields.people}</option>
                 {people.map((p) => <option key={p.id} value={p.id}>{p.nickname}</option>)}
+              </Select>
+              {/* Who can see it: only me, or shared with someone. */}
+              <Select name="audience" defaultValue={filters.audience} aria-label={t.memories.audience.label}>
+                <option value="">{t.memories.audience.label}: {t.common.all}</option>
+                <option value="private">🔒 {t.memories.audience.private}</option>
+                <option value="shared">{t.recordsAudience.tabs.shared}</option>
               </Select>
               <div className="col-span-2"><DateSelect label={t.memories.from} name="from" text={dateText(t)} defaultValue={filters.from} /></div>
               <div className="col-span-2"><DateSelect label={t.memories.to} name="to" text={dateText(t)} defaultValue={filters.to} /></div>

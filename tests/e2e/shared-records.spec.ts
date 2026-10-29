@@ -80,6 +80,16 @@ test("records on a timeline, and a record shared with a connection", async ({ br
   await expect(hana.getByRole("heading", { level: 3 }).first()).toContainText("今日");
   await expect(hana.getByRole("link", { name: /夕日を見た/ })).toContainText(/\d{2}:\d{2}/);
   await expect(hana.getByRole("link", { name: /夕日を見た/ })).toContainText("つながっている人に公開中");
+  // The filter can show only records kept to herself, or only shared ones.
+  await hana.getByText("絞り込み", { exact: true }).click();
+  await hana.getByLabel("公開範囲").selectOption("private");
+  await hana.getByRole("button", { name: "検索" }).click();
+  await hana.waitForURL(/audience=private/);
+  await expect(hana.getByRole("link", { name: /夕日を見た/ })).toHaveCount(0);
+  await hana.getByLabel("公開範囲").selectOption("shared");
+  await hana.getByRole("button", { name: "検索" }).click();
+  await hana.waitForURL(/audience=shared/);
+  await expect(hana.getByRole("link", { name: /夕日を見た/ })).toBeVisible();
 
   // Sora sees it on Home and in the timeline, read-only.
   await sora.goto("/home");
