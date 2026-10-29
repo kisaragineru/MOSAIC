@@ -162,9 +162,9 @@ export const PLAIN_PHRASE = {
     vi: `Lĩnh vực này có hai gương mặt: ${personas.join(" và ")}.`,
   }),
   borrowed: {
-    ja: "この分野の宮には主役の星がいません。こういうときは向かい側の宮の星を借りて読みます。まわりの人や環境によって形が変わりやすい分野、と考えるとわかりやすいでしょう。",
-    en: "This area's palace has no main star of its own, so it borrows the stars of the opposite palace. Think of it as an area that takes its shape from the people and setting around you.",
-    vi: "Cung của lĩnh vực này không có chính tinh, nên mượn sao của cung đối diện để đọc. Hãy hiểu đây là lĩnh vực dễ thay đổi theo người và hoàn cảnh xung quanh.",
+    ja: "この分野の宮には、直接配置された主役の星（主星）がありません。Tử Vi では「無主星（Vô Chính Diệu）」と呼ばれ、何かが欠けているという意味ではなく、向かい側の宮の星を手がかりに読み解きます。まわりの人や環境とのかかわりの中で形づくられやすい分野、と考えるとわかりやすいでしょう。",
+    en: "This area's palace has no main star placed in it directly. Tử Vi calls this Vô Chính Diệu; it doesn't mean anything is missing — the area is read through the stars of the opposite palace. Think of it as an area that tends to take shape through the people and setting around you.",
+    vi: "Cung của lĩnh vực này không có chính tinh tọa thủ. Tử Vi gọi là Vô Chính Diệu; điều này không có nghĩa là thiếu sót gì — lĩnh vực được đọc qua các sao của cung đối diện. Hãy hiểu đây là lĩnh vực dễ thành hình qua những người và hoàn cảnh xung quanh.",
   } as T,
   hoa: {
     loc: { ja: "さらに「化禄」がついています。この分野は、チャンスや楽しみが入ってきやすいところです。", en: "It also carries Hóa Lộc: this is an area where chances and good things tend to come in.", vi: "Ngoài ra có Hóa Lộc: đây là lĩnh vực cơ hội và niềm vui dễ đến." },

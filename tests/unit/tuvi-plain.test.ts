@@ -52,7 +52,9 @@ describe("Tử Vi in plain words", () => {
 
   it("explains a borrowed reading without jargon", () => {
     const p = interpret(borrowedChart(), "en", 30).find((x) => x.section === "personality")!;
-    expect(p.plain!.join(" ")).toMatch(/no main star of its own/);
+    expect(p.plain!.join(" ")).toMatch(/no main star placed in it directly/);
+    // Named, but not as a lack.
+    expect(p.plain!.join(" ")).toMatch(/doesn't mean anything is missing/);
     expect(p.terms!.map((x) => x.term)).toContain(GLOSSARY.vo_chinh_dieu.term.en);
   });
 

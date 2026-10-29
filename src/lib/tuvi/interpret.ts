@@ -11,11 +11,12 @@ import { lunarToSolar } from "./calendar";
 import { BRANCHES } from "./canchi";
 import type { Chart, Palace } from "./engine";
 import { MAIN_EXTRA, PALACE_BY_AGE, PALACE_JA, PALACE_ROLE, PALACE_SHORT } from "./interpret-detail";
+import { lifeBand, PAIRS, PALACE_OPTIONS, pairKey, SECTION_ASK, STAR_LIFE, type LifeBand } from "./insight";
 import { PALACE_CELL, STAR_SHORT } from "./plain-names";
 import { GLOSSARY, PALACE_PLAIN, PLAIN_PHRASE, SECTION_PLAIN, STAR_PLAIN, type GlossaryKey } from "./plain";
 import { HOA_INFO, PALACE_INFO, STAR_INFO, type AuxStarId, type HoaId, type MainStarId, type PalaceId } from "./stars";
 
-export const INTERPRETATION_VERSION = "interp-3";
+export const INTERPRETATION_VERSION = "interp-4";
 
 type T = { en: string; vi: string; ja: string };
 type Domain = "personality" | "love" | "career" | "wealth";
@@ -182,7 +183,11 @@ const DOMAIN_OF: Record<Exclude<Section, "cycles">, Domain | "family" | null> = 
   family: "family",
 };
 
-export type ParagraphKind = "core" | "related" | "strength" | "caution" | "note";
+/**
+ * interp-4 adds: "pair" (two main stars read as a combination), "everyday" (how a star tends to show
+ * in daily life), "try" (one small thing to try) and "ask" (a question to look back with).
+ */
+export type ParagraphKind = "core" | "related" | "strength" | "caution" | "note" | "pair" | "everyday" | "try" | "ask";
 export interface InterpretationParagraph {
   ruleIds: string[];
   text: string;
@@ -377,6 +382,41 @@ function relatedParagraphs(chart: Chart, palaceId: PalaceId, locale: Locale): In
   ];
 }
 
+/** Two main stars in one palace, read as a combination after each star's own meaning. */
+function pairParagraph(palaceId: PalaceId, mains: MainStarId[], locale: Locale): InterpretationParagraph[] {
+  if (mains.length !== 2) return [];
+  const key = pairKey(mains[0]!, mains[1]!);
+  const pair = PAIRS[key];
+  if (!pair) return [];
+  const [a, b] = mains.map((m) => STAR_INFO[m].vi);
+  const intro = pick(
+    {
+      ja: `${a}と${b}が同じ宮に並ぶ組み合わせは「${pair.name}」と呼ばれます。`,
+      en: `${a} and ${b} sharing a palace is known as “${pair.name}”. `,
+      vi: `${a} và ${b} đồng cung, gọi là “${pair.name}”. `,
+    },
+    locale,
+  );
+  return [{ ruleIds: [`${palaceId}.pair.${key}`], kind: "pair", text: `${intro}${pick(pair.reading, locale)}` }];
+}
+
+/**
+ * The reading brought into daily life (interp-4): for the Mệnh palace, how each lead star tends
+ * to show, one thing to try and a question per star; for the other themes, one question around the
+ * lead stars' traits in that area of life.
+ */
+function lifeParagraphs(section: Exclude<Section, "cycles">, palaceId: PalaceId, mains: MainStarId[], locale: Locale): InterpretationParagraph[] {
+  if (mains.length === 0) return [];
+  if (section === "personality") {
+    return [
+      ...mains.map((m) => ({ ruleIds: [`${palaceId}.everyday.${m}`], kind: "everyday" as const, text: pick(STAR_LIFE[m].everyday, locale) })),
+      ...mains.map((m) => ({ ruleIds: [`${palaceId}.try.${m}`], kind: "try" as const, text: pick(STAR_LIFE[m].tryThis, locale) })),
+      ...mains.map((m) => ({ ruleIds: [`${palaceId}.ask.${m}`], kind: "ask" as const, text: pick(STAR_LIFE[m].ask, locale) })),
+    ];
+  }
+  return [{ ruleIds: [`${palaceId}.ask.${section}`], kind: "ask", text: SECTION_ASK[section](traitWords(mains, locale), locale) }];
+}
+
 function adviceParagraphs(chart: Chart, palaceId: PalaceId, locale: Locale): InterpretationParagraph[] {
   const head = mainsOf(chart, palaceId);
   if (!head) return [];
@@ -441,8 +481,13 @@ export function interpret(chart: Chart, locale: Locale, currentAge?: number): In
       });
     }
     const primary = SECTION_PALACES[section][0]!;
-    paragraphs.push(...relatedParagraphs(chart, primary, locale), ...adviceParagraphs(chart, primary, locale));
     const head = mainsOf(chart, primary);
+    paragraphs.push(
+      ...pairParagraph(primary, head?.mains ?? [], locale),
+      ...relatedParagraphs(chart, primary, locale),
+      ...adviceParagraphs(chart, primary, locale),
+      ...lifeParagraphs(section, primary, head?.mains ?? [], locale),
+    );
     sections.push({
       section,
       title: pick(SECTION_TITLES[section], locale),
@@ -596,6 +641,19 @@ function decadeQuestion(
         ),
       };
     }
+    if (state === "current") {
+      return {
+        mode: "ahead",
+        text: pick(
+          {
+            vi: `Trong mười năm này, bạn muốn trân trọng điều gì trong ${a.vi}?`,
+            en: `Over these ten years, what would you like to treasure in ${a.en}?`,
+            ja: `この10年、「${a.ja}」でどんなことを大切にしていきたいですか？`,
+          },
+          locale,
+        ),
+      };
+    }
     return {
       mode: "ahead",
       text: pick(
@@ -670,7 +728,14 @@ export interface LifeStage {
     notes: string[];
     /** The period's related palaces (tam phương tứ chính): where each sits and its main stars, in plain words. */
     support: { label: string; where: "trine" | "opposite"; stars: string[] }[];
+    /**
+     * Ways people of this age tend to meet the palace's theme (MOSAIC's guide on top of the traditional
+     * theme, never changing it): only for periods now or ahead, from adolescence to 94.
+     */
+    options: string[];
   };
+  /** Age band the options are worded for; null when there are none (childhood, 95+). */
+  band: LifeBand | null;
 }
 
 const iso = (d: { year: number; month: number; day: number }) =>
@@ -726,9 +791,12 @@ export function lifeStages(chart: Chart, locale: Locale, currentAge?: number | n
           ),
         );
       }
+      const band = lifeBand(from, to);
+      const options = p.palace && band && state !== "past" ? PALACE_OPTIONS[p.palace][band][locale] : [];
       return {
         from,
         to,
+        band,
         branch: p.branch,
         label: palaceLabel(p.palace, p.branch, locale),
         role: p.palace ? pick(PALACE_ROLE[p.palace], locale) : "",
@@ -754,6 +822,7 @@ export function lifeStages(chart: Chart, locale: Locale, currentAge?: number | n
             const q = chart.palaces[b]!;
             return { label: areaName(q.palace, q.branch, locale), where: i < 2 ? ("trine" as const) : ("opposite" as const), stars: q.mainStars.map((x) => starPlain(x.id as MainStarId, locale)) };
           }),
+          options,
         },
       };
     });

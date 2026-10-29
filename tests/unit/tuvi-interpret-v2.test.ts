@@ -15,7 +15,7 @@ function chartOf(input: BirthInput) {
 
 describe("Tử Vi interpretation v2", () => {
   it("bumps the interpretation version", () => {
-    expect(INTERPRETATION_VERSION).toBe("interp-3");
+    expect(INTERPRETATION_VERSION).toBe("interp-4");
   });
 
   it("has every content entry in all three languages", () => {

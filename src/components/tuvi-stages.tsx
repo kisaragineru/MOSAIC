@@ -25,6 +25,8 @@ const COL = ["col-start-1", "col-start-2", "col-start-3", "col-start-4", "col-st
 
 export type StageView = LifeStage & {
   ageText: string;
+  /** The same years as ages by birthdays, roughly (nominal age n is about n − 1). */
+  fullAgeText: string;
   borrowedText: string | null;
   yearText: string;
   records: { count: number; countText: string; href: string; writeHref: string } | null;
@@ -56,6 +58,9 @@ export interface StageLabels {
   aheadTitle: string;
   reference: string;
   noMain: string;
+  optionsTitle: string;
+  optionsLead: string;
+  optionsNote: string;
 }
 
 function Toggle({ title, children }: { title: string; children: React.ReactNode }) {
@@ -178,6 +183,7 @@ export function TuviStages({ stages, labels, currentAge }: { stages: StageView[]
       <div key={s.branch} className="animate-[fadeUp_.3s_ease-out] space-y-3 rounded-3xl border border-stone-200/80 bg-white/80 p-4 text-sm motion-reduce:animate-none">
         <div>
           <p className="text-xs font-semibold text-amber-800">{s.ageText} · {s.yearText}</p>
+          <p className="text-[11px] text-stone-500">{s.fullAgeText}</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <p className="text-base font-bold text-stone-900">{s.label}</p>
             <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${tone(s).chip}`}>{s.short}</span>
@@ -242,6 +248,15 @@ export function TuviStages({ stages, labels, currentAge }: { stages: StageView[]
           </Toggle>
         )}
 
+        {/* The theme as it tends to look at this age: possibilities to choose from, never the period's rule. */}
+        {s.hints.options.length > 0 && (
+          <div className="rounded-2xl bg-linear-to-br from-sky-50 to-teal-50 p-3" data-testid="stage-options">
+            <p className="text-xs font-semibold text-sky-800">🧭 {labels.optionsTitle}</p>
+            <p className="mt-1 text-[13px] leading-6 text-stone-700">{labels.optionsLead}</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-stone-800">{s.hints.options.map((o) => <li key={o}>{o}</li>)}</ul>
+            <p className="mt-2 text-[11px] leading-5 text-stone-500">{labels.optionsNote}</p>
+          </div>
+        )}
         {s.hints.reflection && (
           <div className="rounded-2xl bg-linear-to-br from-violet-50 to-sky-50 p-3">
             <p className="text-xs font-semibold text-violet-800">{s.hints.reflection.mode === "ahead" ? labels.aheadTitle : labels.reflectTitle}</p>

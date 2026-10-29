@@ -18,6 +18,7 @@ import { timeZoneOptions, preferredZone } from "@/lib/timezones";
 import { chartView } from "@/lib/tuvi/chart-view";
 import { lifeStages } from "@/lib/tuvi/interpret";
 import { STAR_INFO } from "@/lib/tuvi/stars";
+import { TUVI_TAG } from "@/lib/tuvi/tag";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { countMemoriesInRanges } from "@/server/services/memories";
@@ -45,6 +46,7 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
     return {
       ...x,
       ageText: ui.ageRange(x.from, x.to),
+      fullAgeText: ui.fullAgeRange(Math.max(0, x.from - 1), x.to - 1),
       borrowedText: x.borrowedFrom ? ui.borrowedFrom(x.borrowedFrom) : null,
       yearText: ui.yearsAbout(x.yearFrom, x.yearTo),
       records: lived[i]
@@ -130,7 +132,11 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
       {c && themes.length > 0 && (
         <Card title={ui.themesTitle}>
           <p className="mb-3 text-xs text-stone-500">{ui.themesHelp}</p>
-          <TuviThemes sections={themes} labels={themeLabels(t)} />
+          <TuviThemes sections={themes} labels={themeLabels(t)} own />
+          {/* What the reader wrote from these readings: their own words, kept apart from the reading. */}
+          <Link href={`/memories?tag=${encodeURIComponent(TUVI_TAG)}`} className="mt-3 inline-block text-xs font-semibold text-teal-700 underline underline-offset-4" data-testid="tuvi-notes">
+            📓 {ui.myNotes} →
+          </Link>
         </Card>
       )}
       {c && c.menh !== null && (
@@ -171,6 +177,9 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
                   aheadTitle: ui.aheadTitle,
                   reference: ui.reference,
                   noMain: ui.noMain,
+                  optionsTitle: ui.optionsTitle,
+                  optionsLead: ui.optionsLead,
+                  optionsNote: ui.optionsNote,
                 }}
               />
             ) : (
@@ -182,7 +191,12 @@ export default async function TuviPage({ searchParams }: { searchParams: Promise
       {c && (
         <Card title={t.tuvi.chart}>
           <TuviChart chart={c} details={details} center={view!.center} currentAge={v.currentAge} cells={view!.cells} labels={view!.labels} />
-          {v.currentAge !== null && <p className="mt-2 text-xs text-stone-500">{t.tuvi.currentAge(v.currentAge)}</p>}
+          {v.currentAge !== null && (
+            <p className="mt-2 text-xs text-stone-500">
+              {t.tuvi.currentAge(v.currentAge)}
+              {v.fullAge !== null && <> · {t.tuvi.fullAge(v.fullAge)}</>}
+            </p>
+          )}
           {c.warnings.length > 0 && (
             <ul className="mt-3 space-y-1">
               {c.warnings.map((w) => <li key={w.code}><Notice kind="warning">{t.tuvi.warnings[w.code]}</Notice></li>)}

@@ -153,6 +153,8 @@ export interface TuviView {
   error: string | null;
   sections: InterpretationSection[];
   currentAge: number | null;
+  /** Age by birthdays (completed years) today, beside the nominal age the chart uses. */
+  fullAge: number | null;
   currentLunarYear: number;
 }
 
@@ -173,7 +175,7 @@ async function getTuviUncached(userId: string, locale: Locale, now = new Date())
     const [p] = await tx.select({ tz: profiles.timeZone }).from(profiles).where(eq(profiles.userId, userId));
     const [y, m, d] = todayIn(p?.tz ?? "Asia/Ho_Chi_Minh", now).split("-").map(Number) as [number, number, number];
     const currentLunarYear = solarToLunar({ year: y, month: m, day: d }, DEFAULT_RULESET.calendarTimeZone).year;
-    if (!profile) return { profile: null, chart: null, needs: [], error: null, sections: [], currentAge: null, currentLunarYear };
+    if (!profile) return { profile: null, chart: null, needs: [], error: null, sections: [], currentAge: null, fullAge: null, currentLunarYear };
     const [row] = await tx.select().from(tuviCharts).where(and(eq(tuviCharts.userId, userId), eq(tuviCharts.isCurrent, true)));
     if (!row) {
       const outcome = computeChart(toEngineInput(profile));
@@ -184,11 +186,13 @@ async function getTuviUncached(userId: string, locale: Locale, now = new Date())
         error: !outcome.ok && "error" in outcome ? outcome.error : null,
         sections: [],
         currentAge: null,
+        fullAge: null,
         currentLunarYear,
       };
     }
     const chart = row.chart as Chart;
     const currentAge = nominalAge(chart.lunar.year, currentLunarYear);
+    const fullAge = y - chart.solar.year - (m < chart.solar.month || (m === chart.solar.month && d < chart.solar.day) ? 1 : 0);
     // Re-render interpretation with the current age (cycles section marks "now").
     const sections = interpret(chart, locale, currentAge);
     return {
@@ -198,6 +202,7 @@ async function getTuviUncached(userId: string, locale: Locale, now = new Date())
       error: null,
       sections,
       currentAge,
+      fullAge,
       currentLunarYear,
     };
   });

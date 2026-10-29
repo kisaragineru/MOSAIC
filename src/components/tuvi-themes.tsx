@@ -1,6 +1,8 @@
 "use client";
+import Link from "next/link";
 import { useState } from "react";
 import type { InterpretationParagraph, InterpretationSection } from "@/lib/tuvi/interpret";
+import { TUVI_TAG } from "@/lib/tuvi/tag";
 
 export interface ThemeLabels {
   quoteOpen: string;
@@ -14,6 +16,14 @@ export interface ThemeLabels {
   plain: string;
   detail: string;
   terms: string;
+  pair: string;
+  everyday: string;
+  tryThis: string;
+  ask: string;
+  /** Link from a question to a new record. */
+  write: string;
+  /** The new record's title; "{theme}" is the theme's name. */
+  writeTitle: string;
 }
 
 const ICON: Record<string, string> = {
@@ -46,7 +56,17 @@ function Lines({ items }: { items: InterpretationParagraph[] }) {
   );
 }
 
-export function TuviThemes({ sections, labels }: { sections: InterpretationSection[]; labels: ThemeLabels }) {
+/** A new record that starts with the question (the reader's own words follow; the reading itself is not copied). */
+function writeHref(labels: ThemeLabels, theme: string, question: string) {
+  const q = new URLSearchParams({ title: labels.writeTitle.replace("{theme}", theme), body: `${question}\n\n`, tags: TUVI_TAG });
+  return `/memories/new?${q.toString()}`;
+}
+
+/**
+ * The readings by theme. `own` is the reader's own chart: only then are the parts addressed to
+ * "you" shown (daily life, something to try, a question to look back with, and writing it down).
+ */
+export function TuviThemes({ sections, labels, own = false }: { sections: InterpretationSection[]; labels: ThemeLabels; own?: boolean }) {
   const [current, setCurrent] = useState(sections[0]?.section);
   const s = sections.find((x) => x.section === current) ?? sections[0];
   if (!s) return null;
@@ -89,6 +109,18 @@ export function TuviThemes({ sections, labels }: { sections: InterpretationSecti
           </div>
         )}
         <div className="text-sm leading-relaxed text-stone-800"><Lines items={by("core")} /></div>
+        {by("pair").length > 0 && (
+          <div className="rounded-2xl bg-linear-to-br from-violet-50 to-rose-50 p-4 text-sm text-stone-800 ring-1 ring-violet-100" data-testid="tuvi-pair-reading">
+            <p className="mb-1 text-xs font-semibold text-violet-700">✦ {labels.pair}</p>
+            <Lines items={by("pair")} />
+          </div>
+        )}
+        {own && by("everyday").length > 0 && (
+          <div className="rounded-2xl bg-white/80 p-4 text-sm text-stone-800 ring-1 ring-stone-200">
+            <p className="mb-1 text-xs font-semibold text-sky-700">☀ {labels.everyday}</p>
+            <Lines items={by("everyday")} />
+          </div>
+        )}
         {by("strength").length > 0 && (
           <div className="rounded-2xl bg-linear-to-br from-teal-50 to-emerald-50 p-4 text-sm text-teal-950">
             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-teal-700">{labels.strength}</p>
@@ -99,6 +131,23 @@ export function TuviThemes({ sections, labels }: { sections: InterpretationSecti
           <div className="rounded-2xl bg-linear-to-br from-amber-50 to-orange-50 p-4 text-sm text-amber-950">
             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-amber-700">{labels.caution}</p>
             <Lines items={by("caution")} />
+          </div>
+        )}
+        {own && by("try").length > 0 && (
+          <div className="rounded-2xl bg-linear-to-br from-sky-50 to-teal-50 p-4 text-sm text-stone-800">
+            <p className="mb-1 text-xs font-semibold text-sky-700">🌱 {labels.tryThis}</p>
+            <Lines items={by("try")} />
+          </div>
+        )}
+        {own && by("ask").length > 0 && (
+          <div className="space-y-2 rounded-2xl bg-linear-to-br from-violet-50 to-sky-50 p-4 text-sm text-stone-800" data-testid="tuvi-ask">
+            <p className="text-xs font-semibold text-violet-700">💭 {labels.ask}</p>
+            {by("ask").map((p) => (
+              <div key={p.text}>
+                <p className="leading-6">{p.text}</p>
+                <Link href={writeHref(labels, s.title, p.text)} className="mt-1 inline-block text-xs font-semibold text-teal-700 underline underline-offset-4">✎ {labels.write} →</Link>
+              </div>
+            ))}
           </div>
         )}
         {by("related").length > 0 && <Toggle title={labels.related}><Lines items={by("related")} /></Toggle>}

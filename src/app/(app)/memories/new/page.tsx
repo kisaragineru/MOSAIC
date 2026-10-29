@@ -11,6 +11,8 @@ import { myGiftBoxes } from "@/server/services/gift-boxes";
 
 /** Prefill only well-formed dates (links from the Tử Vi life stages). */
 const dateParam = (v: string | undefined) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
+/** A starting title, text or tags (links from a Tử Vi question): plain text, kept short; the form edits it. */
+const textParam = (v: string | undefined, max: number) => (v && v.trim() ? v.slice(0, max) : undefined);
 
 export default async function NewMemoryPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const uid = await requireUser();
@@ -24,7 +26,14 @@ export default async function NewMemoryPage({ searchParams }: { searchParams: Pr
     <Page title={letter ? t.memories.post.letter : t.memories.post.title} back="/memories">
       <Flash t={t} sp={sp} />
       <Card>
-        <MemoryForm t={t} action={createMemoryAction} people={people} back="/memories/new" d={{ kind: sp.kind, revealOn: dateParam(sp.reveal), occurredOn: dateParam(sp.occurred) }} canShare={canShare} giftBoxes={giftBoxes} />
+        <MemoryForm t={t} action={createMemoryAction} people={people} back="/memories/new" d={{
+            kind: sp.kind,
+            revealOn: dateParam(sp.reveal),
+            occurredOn: dateParam(sp.occurred),
+            title: textParam(sp.title, 200),
+            body: textParam(sp.body, 1000),
+            tags: textParam(sp.tags, 100)?.split(",").map((x) => x.trim()).filter(Boolean).slice(0, 5),
+          }} canShare={canShare} giftBoxes={giftBoxes} />
       </Card>
     </Page>
   );

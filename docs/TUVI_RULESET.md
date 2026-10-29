@@ -119,6 +119,30 @@ Branch indices Tý=0 … Hợi=11; months/hours counted as in the classical text
   - A period without main stars says so and names the opposite palace whose stars are used
     (vô chính diệu), instead of borrowing them silently.
 
+- `interp-4` makes the reading personal and concrete without touching the chart or the period
+  boundaries (content: `src/lib/tuvi/insight.ts`):
+  - **Pairs**: the 24 pairs of main stars that can share a palace (enumerated from the engine and
+    tested) get a reading as a combination (`<palace>.pair.<a+b>`), after each star's own meaning.
+    The pair's traditional short name is kept (e.g. Cơ Cự, Nhật Nguyệt) in every language.
+  - **Daily life** for the Mệnh palace: per lead star, how it tends to show (`menh.everyday.<star>`),
+    one small thing to try (`menh.try.<star>`) and a question to look back with (`menh.ask.<star>`).
+    The other themes end with one question around their lead stars' traits (`<palace>.ask.<theme>`).
+    These are addressed to the reader, so they are shown only on the reader's own chart and are
+    left out of the manual and of what others see.
+  - **10-year periods, two layers**: (A) the traditional layer is unchanged (palace, stars, Tứ Hóa,
+    ages from the engine); (B) for periods now or ahead, examples of how people of that age tend to
+    meet the palace's theme, by the period's middle age: young < 30, prime < 55, transition < 70,
+    elder < 95 (`lifeBand`; MOSAIC's guide, not a Tử Vi rule, and separate from `lifePhase`).
+    They are possibilities to choose from, never instructions; nothing assumes health, family or
+    money, and age is never a reason to rule something out (an elder period still offers new places
+    and learning, "in a way that suits you").
+  - The later-life question for the **current** period is worded for now ("over these ten years"),
+    not "when you reach this age".
+  - Ages: the chart uses nominal ages (tuổi âm); the page also shows the age by birthdays.
+  - A question can start a record (title, the question, tag `Tử Vi`): the reader's own words are
+    stored as an ordinary record, apart from the reading, and are never rewritten by it.
+  - Like interp-2/3, these texts are **not reviewed by a practitioner** (section 4).
+
 ## 3b. Readings for two connected people (`pair-1`)
 
 Shown only when both people agreed to the `tuvi_detail` scope (whole chart). Source:

@@ -573,7 +573,8 @@ export async function gatherManual(userId: string, locale: Locale): Promise<Manu
       ? {
           summary: personality?.summary ?? null,
           keywords: personality?.keywords ?? [],
-          paragraphs: (personality?.paragraphs ?? []).filter((p) => p.kind !== "note").map((p) => p.text),
+          // The reading only: not the notes, nor the prompts addressed to the reader (interp-4).
+          paragraphs: (personality?.paragraphs ?? []).filter((p) => !["note", "everyday", "try", "ask"].includes(p.kind ?? "core")).map((p) => p.text),
           now: cycles?.paragraphs.find((p) => p.text.startsWith("▶"))?.text ?? null,
           yearName: tv.chart.yearPillar.name,
           napAm: tv.chart.napAm.name,

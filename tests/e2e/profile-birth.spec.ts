@@ -44,7 +44,8 @@ test("birth details can be entered from the profile, the Tử Vi chart follows, 
   await expect(page.locator("#tuvi").getByText("命盤ができています。")).toBeVisible();
   await expect(page.locator("#profile").getByText("ミナ")).toBeVisible();
   await expect(page.getByText("まだ誰ともつながっていません。")).toBeVisible();
-  await page.locator("#tuvi").getByRole("link", { name: "変更する →" }).click();
-  await page.waitForURL(/\/me#birth$/);
+  // Tử Vi sharing is set per connection on its own list (birth details stay on the profile).
+  await page.locator("#tuvi").getByRole("link", { name: /一覧で見る・まとめて変える/ }).click();
+  await page.waitForURL(/\/me\/privacy\/tuvi$/);
   await ctx.close();
 });

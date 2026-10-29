@@ -125,6 +125,45 @@ test("answer sharing: answers shown or kept to oneself a section at a time, or p
   await ctx.close();
 });
 
+test("Tử Vi: the reading in daily life, a question to write about, and a decade read for your age", async ({ browser }) => {
+  const { ctx, page } = await newUser(browser);
+  await page.goto("/tuvi");
+  await setDate(page, /^生年月日/, "1990-06-07");
+  await setBirthTime(page, "06:30");
+  await page.getByLabel("伝統的な計算で使う性別").selectOption("male");
+  await page.getByRole("button", { name: "保存して計算" }).click();
+  await expect(page.getByTestId("essence")).toContainText("タイプ");
+  // Thiên Cơ and Cự Môn share the Mệnh palace: read as a pair, then brought into daily life.
+  await expect(page.getByTestId("tuvi-pair-reading")).toContainText("「Cơ Cự」");
+  await expect(page.getByText("☀ 日常では、たとえば")).toBeVisible();
+  await expect(page.getByText("🌱 試してみること")).toBeVisible();
+  const ask = page.getByTestId("tuvi-ask");
+  await expect(ask).toContainText("考え抜いた計画や工夫がうまくいった経験はありますか？");
+  // A question starts a record of one's own: titled, tagged, the reading itself not copied.
+  await ask.getByRole("link", { name: /この問いについて書き残す/ }).first().click();
+  await page.waitForURL(/\/memories\/new\?/);
+  await expect(page.getByRole("textbox", { name: /タイトル/ })).toHaveValue("Tử Vi「性格」を読んで");
+  await expect(page.locator('textarea[name="body"]')).toHaveValue(/^考え抜いた計画や工夫がうまくいった経験はありますか？/);
+  await expect(page.locator('input[name="tags"]')).toHaveValue("Tử Vi");
+  await page.locator('textarea[name="body"]').fill("考え抜いた計画や工夫がうまくいった経験はありますか？\n\n去年の引っ越しの段取り。");
+  await page.getByRole("button", { name: "投稿する" }).click();
+  await page.waitForURL(/\/memories\/[0-9a-f-]+\?ok=saved/);
+  await page.goto("/tuvi");
+  await page.getByTestId("tuvi-notes").click();
+  await expect(page.getByText(/去年の引っ越しの段取り/)).toBeVisible();
+
+  // The decade now: ages by birthdays beside nominal ages, and ways of living its theme at this age.
+  await page.goto("/tuvi#stages");
+  const stages = page.locator("#stages");
+  await expect(stages.getByText(/満年齢ではおよそ/)).toBeVisible();
+  await expect(stages.getByTestId("stage-options")).toContainText("この年代での、テーマとの付き合い方の例");
+  await expect(stages.getByTestId("stage-options")).toContainText("MOSAIC が添えている例");
+  // What others see of the chart has no questions addressed to the reader.
+  await page.goto("/me/preview");
+  await expect(page.getByTestId("tuvi-ask")).toHaveCount(0);
+  await ctx.close();
+});
+
 test("Tử Vi: plain words first, and a guide for beginners", async ({ browser }) => {
   const { ctx, page } = await newUser(browser);
   await page.goto("/tuvi");
