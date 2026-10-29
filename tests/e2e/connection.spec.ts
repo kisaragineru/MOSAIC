@@ -33,11 +33,15 @@ test("QR connection: preview of what others see, who is waiting, results first",
   await a.getByRole("link", { name: /相手からの見え方/ }).click();
   await expect(a.getByText("「ハナさんからつながりの招待が届いています。」— 表示名だけです。")).toBeVisible();
   await expect(a.getByText("いつもの飲みものは？").last()).toBeVisible();
-  // Each comparable answer can be switched between shown and only-me right here.
+  // The preview only shows; each comparable answer is switched on the answer sharing page it links to.
+  await expect(a.getByRole("button", { name: /いつもの飲みものは？: 自分だけにする/ })).toHaveCount(0);
+  await a.getByRole("link", { name: /回答の公開設定で変える/ }).click();
+  await a.waitForURL(/\/me\/privacy\/answers$/);
   await a.getByRole("button", { name: /いつもの飲みものは？: 自分だけにする/ }).click();
   await expect(a.getByRole("button", { name: /いつもの飲みものは？: 見せるにする/ })).toBeVisible();
   await a.getByRole("button", { name: /いつもの飲みものは？: 見せるにする/ }).click();
   await expect(a.getByRole("button", { name: /いつもの飲みものは？: 自分だけにする/ })).toBeVisible();
+  await a.goto("/me/preview");
   await expect(a.getByText("お茶と散歩が好きです。").last()).toBeVisible();
   await expect(a.getByText("命盤をまだ作っていないため、表示されません。").first()).toBeVisible();
 
