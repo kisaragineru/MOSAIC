@@ -32,7 +32,7 @@ function gate(request: NextRequest): NextResponse | null {
  * icons, the service worker that shows notifications), or needed by anyone before signing in
  * (the privacy policy and terms, which sign-in providers check): open, as they say nothing about anyone.
  */
-const OPEN = new Set(["/manifest.webmanifest", "/sw.js", "/icon.png", "/apple-icon.png", "/privacy", "/terms"]);
+const OPEN = new Set(["/manifest.webmanifest", "/sw.js", "/icon.png", "/icon-192.png", "/icon-maskable.png", "/apple-icon.png", "/privacy", "/terms"]);
 /** The open pages (not files): they go on with their security headers. */
 const OPEN_PAGES = new Set(["/privacy", "/terms"]);
 
