@@ -390,6 +390,26 @@ export async function setResponsePrivacy(userId: string, responseId: string, pri
   });
 }
 
+/**
+ * Many at once: a section's "show all" / "only me", or the answers picked. Only comparable
+ * questions can be shown. Returns how many were set.
+ */
+export async function setResponsesPrivacy(userId: string, responseIds: unknown, privacy: unknown): Promise<number> {
+  const ids = [...new Set(z.array(uuid).min(1).max(500).parse(responseIds))];
+  const p = z.enum(["private", "comparable"]).parse(privacy);
+  return withUser(userId, async (tx) => {
+    const rows = await tx
+      .select({ id: questionResponses.id, comparable: questionDefinitions.comparable })
+      .from(questionResponses)
+      .innerJoin(questionDefinitions, eq(questionDefinitions.id, questionResponses.questionId))
+      .where(and(inArray(questionResponses.id, ids), eq(questionResponses.userId, userId)));
+    if (rows.length !== ids.length) throw notFound();
+    if (p === "comparable" && rows.some((r) => !r.comparable)) throw invalid("not_comparable");
+    await tx.update(questionResponses).set({ privacy: p }).where(inArray(questionResponses.id, ids));
+    return ids.length;
+  });
+}
+
 /** Permanently delete a single response (e.g. regretted answer). Tendencies are recomputed. */
 export async function deleteResponse(userId: string, responseId: string) {
   const id = uuid.parse(responseId);

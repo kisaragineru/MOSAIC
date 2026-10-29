@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Card, Pill } from "@/components/ui";
 import { Page } from "@/components/page";
 import { LOCALIZED_BANK } from "@/content/questions-i18n";
-import { privacyAction } from "@/app/actions/discovery";
+import { bulkPrivacyAction, privacyAction } from "@/app/actions/discovery";
+import { Flash } from "@/components/flash";
 import { answerLabel } from "@/lib/discovery/format";
 import { getT } from "@/lib/i18n/server";
 import { BRANCHES, ELEMENT_NAMES, STEMS } from "@/lib/tuvi/canchi";
@@ -47,6 +48,18 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
   const shownAnswers = p.choices.filter((a) => a.shared && on.has(a.scope));
   const initial = Array.from(p.displayName.trim())[0]?.toUpperCase() ?? "?";
   const scopes = (["preferences", "values"] as const).map((scope) => ({ scope, items: p.choices.filter((a) => a.scope === scope) }));
+  // Picking several answers at once (?pick=1, or ?pick=all with every box ticked), keeping ?s=.
+  const picking = sp.pick === "1" || sp.pick === "all";
+  const here = (pick?: string, hash = true) => {
+    const q = new URLSearchParams();
+    if (sp.s !== undefined) q.set("s", sp.s);
+    if (pick) q.set("pick", pick);
+    const qs = q.toString();
+    return `/me/preview${qs ? `?${qs}` : ""}${hash ? "#choices" : ""}`;
+  };
+  // Where a change comes back to (a plain path: still picking, if picking).
+  const back = here(picking ? "1" : undefined, false);
+  const smallBtn = "rounded-full border border-stone-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-stone-700 hover:border-teal-300";
   return (
     <Page title={t.preview.title} back="/me">
       <p className="text-sm text-stone-600">{t.preview.intro}</p>
@@ -217,13 +230,49 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
               <p className="text-sm text-stone-500">{t.preview.tuviNone}</p>
             )}
           </section>
-          <p className="text-xs text-stone-500">{t.preview.choicesHelp}</p>
+          <div id="choices" className="scroll-mt-24 space-y-2">
+            <p className="text-xs text-stone-500">{t.preview.choicesHelp}</p>
+            <Flash t={t} sp={sp} />
+            {p.choices.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2" data-testid="pick-bar">
+                <Link href={here(picking ? undefined : "1")} scroll={false} className={`rounded-full px-3 py-1 text-xs font-semibold ${picking ? "bg-stone-700 text-white" : "border border-teal-300 bg-white text-teal-800"}`}>
+                  {picking ? `✓ ${t.preview.pickDone}` : `☑ ${t.preview.pick}`}
+                </Link>
+                {picking && (
+                  <Link href={here(sp.pick === "all" ? "1" : "all")} scroll={false} className="text-xs font-semibold text-teal-800 underline underline-offset-4">
+                    {sp.pick === "all" ? t.preview.pickNone : t.preview.pickAll}
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
           {scopes.map(({ scope, items }) => (
             <section key={scope}>
-              <p className="mb-1 flex items-center gap-2 text-sm font-semibold text-stone-800">
+              <div className="mb-1 flex flex-wrap items-center gap-2 text-sm font-semibold text-stone-800">
                 <Pill tone={scope === "values" ? "amber" : "teal"}>{t.compare.scopeNames[scope]}</Pill>
                 {items.length > 0 && <span className="text-xs font-normal text-stone-500">{t.preview.sharedCount(items.filter((a) => a.shared).length, items.length)}</span>}
-              </p>
+                {/* The whole section in one tap, either way. */}
+                {!picking && items.length > 0 && (
+                  <span className="ml-auto flex gap-1.5" data-testid={`bulk-${scope}`}>
+                    {items.some((a) => !a.shared) && (
+                      <form action={bulkPrivacyAction}>
+                        {items.filter((a) => !a.shared).map((a) => <input key={a.responseId} type="hidden" name="responseId" value={a.responseId} />)}
+                        <input type="hidden" name="privacy" value="comparable" />
+                        <input type="hidden" name="back" value={back} />
+                        <button className={smallBtn}>👁 {t.preview.showAll}</button>
+                      </form>
+                    )}
+                    {items.some((a) => a.shared) && (
+                      <form action={bulkPrivacyAction}>
+                        {items.filter((a) => a.shared).map((a) => <input key={a.responseId} type="hidden" name="responseId" value={a.responseId} />)}
+                        <input type="hidden" name="privacy" value="private" />
+                        <input type="hidden" name="back" value={back} />
+                        <button className={smallBtn}>🔒 {t.preview.hideAll}</button>
+                      </form>
+                    )}
+                  </span>
+                )}
+              </div>
               {items.length === 0 ? (
                 <p className="text-sm text-stone-500">
                   {t.preview.noAnswers} <Link href="/discover" className="text-teal-700 underline">{t.preview.answerMore} →</Link>
@@ -234,11 +283,25 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
                     const q = QMETA.get(a.questionId);
                     return (
                       <li key={a.questionId} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${a.shared ? "border-teal-200 bg-teal-50/50" : "border-stone-200 bg-white/60"}`}>
+                        {picking && (
+                          // Belongs to the picking form below the lists (forms can't nest).
+                          <input
+                            // A new box when "pick all" flips, so it takes its new default.
+                            key={sp.pick}
+                            type="checkbox"
+                            name="responseId"
+                            value={a.responseId}
+                            form="bulk-privacy"
+                            defaultChecked={sp.pick === "all"}
+                            aria-label={q ? q.prompt[locale] : a.questionId}
+                            className="h-5 w-5 shrink-0 accent-teal-700"
+                          />
+                        )}
                         <div className="min-w-0 flex-1">
                           <p className="text-stone-600">{q ? q.prompt[locale] : a.questionId}</p>
                           <p className="font-medium text-stone-900">{answerLabel(q, a.answer, locale)}</p>
                         </div>
-                        <form action={privacyAction} className="shrink-0">
+                        {!picking && <form action={privacyAction} className="shrink-0">
                           <input type="hidden" name="responseId" value={a.responseId} />
                           <input type="hidden" name="privacy" value={a.shared ? "private" : "comparable"} />
                           <input type="hidden" name="back" value="/me/preview" />
@@ -248,7 +311,7 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
                           >
                             {a.shared ? `👁 ${t.preview.shown}` : `🔒 ${t.preview.hidden}`}
                           </button>
-                        </form>
+                        </form>}
                       </li>
                     );
                   })}
@@ -256,6 +319,13 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
               )}
             </section>
           ))}
+          {picking && (
+            <form id="bulk-privacy" action={bulkPrivacyAction} className="sticky bottom-24 z-10 flex flex-wrap gap-2 rounded-2xl bg-white/95 p-2 shadow-lg ring-1 ring-stone-200" data-testid="pick-actions">
+              <input type="hidden" name="back" value={back} />
+              <button name="privacy" value="comparable" className="flex-1 rounded-full bg-teal-700 px-3 py-2 text-xs font-bold text-white hover:bg-teal-800">👁 {t.preview.showPicked}</button>
+              <button name="privacy" value="private" className="flex-1 rounded-full border border-stone-300 bg-white px-3 py-2 text-xs font-bold text-stone-700 hover:border-stone-400">🔒 {t.preview.hidePicked}</button>
+            </form>
+          )}
         </div>
       </Card>
 

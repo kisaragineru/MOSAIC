@@ -8,6 +8,7 @@ import {
   requestAnotherQuestion,
   setChangeKind,
   setResponsePrivacy,
+  setResponsesPrivacy,
   skipQuestion,
 } from "@/server/services/discovery";
 import { listTendencies, setTendencyFeedback } from "@/server/services/tendencies";
@@ -100,6 +101,27 @@ describe("Daily Discovery", () => {
     await owner.end();
     const other = await makeUser();
     await expect(setResponsePrivacy(other.userId, r.responseId, "private")).rejects.toMatchObject({ code: "not_found" });
+  });
+
+  it("several answers shown or kept to oneself at once; only comparable ones can be shown, only one's own", async () => {
+    const u = await makeUser();
+    const a = (await answerQuestion(u.userId, { questionId: "f.spicy", questionVersion: 1, answer: { scale: 4 } })).responseId;
+    const b = (await answerQuestion(u.userId, { questionId: "f.drink", questionVersion: 1, answer: { choice: "tea" } })).responseId;
+    const c = (await answerQuestion(u.userId, { questionId: "c.mood_week", questionVersion: 1, answer: { scale: 3 } })).responseId;
+    const owner = new Pool({ connectionString: TEST_MIGRATION_DATABASE_URL });
+    const privacy = async () => Object.fromEntries((await owner.query("select id, privacy from question_responses where id = any($1)", [[a, b, c]])).rows.map((x) => [x.id, x.privacy]));
+    expect(await setResponsesPrivacy(u.userId, [a, b, a], "comparable")).toBe(2);
+    expect(await privacy()).toEqual({ [a]: "comparable", [b]: "comparable", [c]: "private" });
+    // Keeping to oneself works for any answer; showing one that can't be compared refuses the batch.
+    await expect(setResponsesPrivacy(u.userId, [a, c], "private")).resolves.toBe(2);
+    await expect(setResponsesPrivacy(u.userId, [b, c], "comparable")).rejects.toMatchObject({ code: "not_comparable" });
+    expect((await privacy())[b]).toBe("comparable");
+    // Someone else's answer among them: refused as a whole.
+    const other = await makeUser();
+    await expect(setResponsesPrivacy(other.userId, [b], "private")).rejects.toMatchObject({ code: "not_found" });
+    expect((await privacy())[b]).toBe("comparable");
+    await expect(setResponsesPrivacy(u.userId, [], "private")).rejects.toThrow();
+    await owner.end();
   });
 });
 

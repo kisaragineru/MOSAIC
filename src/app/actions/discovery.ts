@@ -9,6 +9,7 @@ import {
   requestAnotherQuestion,
   setChangeKind,
   setResponsePrivacy,
+  setResponsesPrivacy,
   skipQuestion,
 } from "@/server/services/discovery";
 import { setTendencyFeedback } from "@/server/services/tendencies";
@@ -88,6 +89,17 @@ export async function privacyAction(form: FormData) {
   const r = await attempt("discover.privacy", () => setResponsePrivacy(uid, str(form, "responseId"), str(form, "privacy")));
   const back = safeNext(str(form, "back"), "/discover/history");
   revalidatePath(back);
+  redirect(withParam(back, r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
+}
+
+/** Many answers shown or kept to oneself at once (a section's buttons, or the ones picked). */
+export async function bulkPrivacyAction(form: FormData) {
+  const uid = await requireUser();
+  const ids = form.getAll("responseId").filter((x): x is string => typeof x === "string" && x !== "");
+  const back = safeNext(str(form, "back"), "/me/preview");
+  if (ids.length === 0) redirect(withParam(back, "e", "nothing_picked"));
+  const r = await attempt("discover.bulkPrivacy", () => setResponsesPrivacy(uid, ids, str(form, "privacy")));
+  revalidatePath(back.split("?")[0]!.split("#")[0]!);
   redirect(withParam(back, r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
 }
 

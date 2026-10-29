@@ -81,6 +81,44 @@ test("preview: the other person's phone, and switching what is shared", async ({
   await ctx.close();
 });
 
+test("preview: answers shown or kept to oneself a section at a time, or picked", async ({ browser }) => {
+  const { ctx, page } = await newUser(browser);
+  for (const [id, pick] of [["f.drink", "お茶"], ["f.sweet_savory", null]] as const) {
+    await page.goto(`/discover/q/${id}`);
+    const form = page.locator("form:has(input[name=questionId])");
+    if (pick) await form.getByLabel(pick, { exact: true }).check();
+    else await form.locator('input[type="radio"]').first().check();
+    await form.getByRole("button", { name: "回答を保存" }).click();
+    await page.waitForURL(/ok=answered/);
+  }
+  await page.goto("/me/preview");
+  const likes = page.getByTestId("bulk-preferences");
+  const count = page.locator("#choices ~ section").first();
+  // A section in one tap, either way.
+  if (await likes.getByRole("button", { name: /すべて自分だけ/ }).count()) {
+    await likes.getByRole("button", { name: /すべて自分だけ/ }).click();
+    await page.waitForURL(/ok=saved/);
+  }
+  await expect(count).toContainText("2件中0件を見せる");
+  await page.getByTestId("bulk-preferences").getByRole("button", { name: /すべて見せる/ }).click();
+  await page.waitForURL(/ok=saved/);
+  await expect(count).toContainText("2件中2件を見せる");
+  // Or pick: every box ticked with "pick all", then one unticked, and the rest kept to oneself.
+  await page.getByRole("link", { name: /選んで変える/ }).click();
+  await page.waitForURL(/pick=1/);
+  await expect(page.getByTestId("bulk-preferences")).toHaveCount(0);
+  await page.getByRole("link", { name: "すべて選ぶ" }).click();
+  await page.waitForURL(/pick=all/);
+  await page.getByRole("checkbox", { name: "いつもの飲みものは？" }).uncheck();
+  await page.getByRole("button", { name: /選んだものを自分だけに/ }).click();
+  await page.waitForURL(/ok=saved/);
+  await expect(count).toContainText("2件中1件を見せる");
+  // Picking nothing says so.
+  await page.getByRole("button", { name: /選んだものを見せる/ }).click();
+  await expect(page.getByText("変えたい回答を選んでください。")).toBeVisible();
+  await ctx.close();
+});
+
 test("Tử Vi: plain words first, and a guide for beginners", async ({ browser }) => {
   const { ctx, page } = await newUser(browser);
   await page.goto("/tuvi");
