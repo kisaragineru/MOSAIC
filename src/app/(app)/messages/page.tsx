@@ -47,6 +47,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
         <DmInbox
           searchLabel={t.messages.search}
           mutedLabel={t.messages.mutedNote}
+          mentionedLabel={t.messages.mentioned}
           rows={inbox.map((c) => ({
             id: c.id,
             title: dmTitle(c, t),
@@ -59,6 +60,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
             unread: c.unread,
             muted: c.muted,
             inactive: !c.canSend,
+            mentioned: c.mentioned,
           }))}
         />
       )}

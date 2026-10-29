@@ -183,6 +183,51 @@ test("group messages: create, notices, who wrote, read counts, leave", async ({ 
   await expect(hana.getByText("レンが退出しました")).toBeVisible({ timeout: 15_000 });
 });
 
+test("group mentions: @ lists the members (and everyone), the person mentioned sees it in the list and the message", async ({ browser }) => {
+  test.setTimeout(180_000);
+  const hana = await user(browser, "ハナ");
+  const sora = await user(browser, "ソラ");
+  const ren = await user(browser, "レン");
+  await connect(hana, sora);
+  await connect(hana, ren);
+  await hana.goto("/messages/new");
+  await hana.getByLabel("ソラ").check();
+  await hana.getByLabel("レン").check();
+  await hana.getByLabel("グループ名（任意）").fill("週末の計画");
+  await hana.getByRole("button", { name: "はじめる" }).click();
+  await hana.waitForURL(/\/messages\/[0-9a-f-]+$/);
+  const group = new URL(hana.url()).pathname;
+
+  // "@" opens the members and "everyone"; typing narrows them; picking one writes "@name ".
+  const box = hana.getByLabel("メッセージを入力…");
+  await box.click();
+  await box.pressSequentially("土曜は@");
+  const list = hana.getByTestId("mention-list");
+  await expect(list.getByRole("button")).toHaveText([/@ソラ/, /@レン/, /@全員/]);
+  await box.pressSequentially("ソ");
+  await expect(list.getByRole("button")).toHaveText([/@ソラ/]);
+  await list.getByRole("button", { name: /@ソラ/ }).click();
+  await expect(box).toHaveValue("土曜は@ソラ ");
+  await expect(list).toHaveCount(0);
+  await box.pressSequentially("来られる？");
+  await Promise.all([
+    hana.waitForResponse((r) => r.request().method() === "POST" && /^\/api\/dm\/[^/]+\/send$/.test(new URL(r.url()).pathname)),
+    hana.getByRole("button", { name: "送信", exact: true }).click(),
+  ]);
+
+  // Sora: an "@" in the list, the message marked for them, the name marked in it.
+  await sora.goto("/messages");
+  await expect(sora.getByTestId("inbox-mentioned")).toBeVisible();
+  await sora.goto(group);
+  const mine = sora.locator("[data-mentions-me]");
+  await expect(mine).toHaveText("土曜は@ソラ 来られる？");
+  await expect(mine.locator("[data-mention]")).toHaveText("@ソラ");
+  // Ren was not mentioned.
+  await ren.goto(group);
+  await expect(ren.getByText("土曜は@ソラ 来られる？")).toBeVisible();
+  await expect(ren.locator("[data-mentions-me]")).toHaveCount(0);
+});
+
 test("sending feels instant: shown at once while the server is slow; a failure says so and can be resent", async ({ browser }) => {
   const hana = await user(browser, "ハナ");
   const sora = await user(browser, "ソラ");

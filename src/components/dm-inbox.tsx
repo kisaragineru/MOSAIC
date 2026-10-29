@@ -18,10 +18,12 @@ export interface InboxRow {
   unread: number;
   muted: boolean;
   inactive: boolean;
+  /** Something unread mentions me. */
+  mentioned?: boolean;
 }
 
 /** The conversation list: filter by name, and refresh itself while it's on screen. */
-export function DmInbox({ rows, searchLabel, mutedLabel }: { rows: InboxRow[]; searchLabel: string; mutedLabel: string }) {
+export function DmInbox({ rows, searchLabel, mutedLabel, mentionedLabel }: { rows: InboxRow[]; searchLabel: string; mutedLabel: string; mentionedLabel: string }) {
   const router = useRouter();
   const [q, setQ] = useState("");
   useEffect(() => {
@@ -55,8 +57,12 @@ export function DmInbox({ rows, searchLabel, mutedLabel }: { rows: InboxRow[]; s
                   {r.preview} <span className="font-normal text-stone-400">· {r.when}</span>
                 </span>
               </span>
+              {/* Mentioned: called out even in a muted group. */}
+              {r.mentioned && (
+                <span aria-label={mentionedLabel} title={mentionedLabel} data-testid="inbox-mentioned" className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">@</span>
+              )}
               {r.unread > 0 && (
-                <span className={`flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-bold text-white ${r.muted ? "bg-stone-400" : "bg-rose-600"}`}>{r.unread > 99 ? "99+" : r.unread}</span>
+                <span className={`flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-bold text-white ${r.muted && !r.mentioned ? "bg-stone-400" : "bg-rose-600"}`}>{r.unread > 99 ? "99+" : r.unread}</span>
               )}
             </Link>
           </li>

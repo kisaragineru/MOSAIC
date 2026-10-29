@@ -57,10 +57,10 @@ export async function setPushPreview(userId: string, on: boolean) {
   );
 }
 
-const WORDS: Record<Locale, { from: (n: string) => string; inGroup: (n: string, g: string) => string; photo: string; record: string; someone: string; group: string }> = {
-  ja: { from: (n) => `${n}さんからメッセージ`, inGroup: (n, g) => `${g}：${n}さんからメッセージ`, photo: "📷 写真", record: "📄 記録", someone: "だれか", group: "グループ" },
-  en: { from: (n) => `A message from ${n}`, inGroup: (n, g) => `${g}: a message from ${n}`, photo: "📷 Photo", record: "📄 A record", someone: "Someone", group: "Group" },
-  vi: { from: (n) => `Tin nhắn từ ${n}`, inGroup: (n, g) => `${g}: tin nhắn từ ${n}`, photo: "📷 Ảnh", record: "📄 Ghi chép", someone: "Ai đó", group: "Nhóm" },
+const WORDS: Record<Locale, { from: (n: string) => string; inGroup: (n: string, g: string) => string; mentioned: (n: string, g: string) => string; photo: string; record: string; someone: string; group: string }> = {
+  ja: { from: (n) => `${n}さんからメッセージ`, inGroup: (n, g) => `${g}：${n}さんからメッセージ`, mentioned: (n, g) => `${g}：${n}さんがあなたをメンションしました`, photo: "📷 写真", record: "📄 記録", someone: "だれか", group: "グループ" },
+  en: { from: (n) => `A message from ${n}`, inGroup: (n, g) => `${g}: a message from ${n}`, mentioned: (n, g) => `${g}: ${n} mentioned you`, photo: "📷 Photo", record: "📄 A record", someone: "Someone", group: "Group" },
+  vi: { from: (n) => `Tin nhắn từ ${n}`, inGroup: (n, g) => `${g}: tin nhắn từ ${n}`, mentioned: (n, g) => `${g}: ${n} đã nhắc đến bạn`, photo: "📷 Ảnh", record: "📄 Ghi chép", someone: "Ai đó", group: "Nhóm" },
 };
 
 export type PushTarget = {
@@ -75,13 +75,15 @@ export type PushTarget = {
   sender_name: string | null;
   msg_kind: "text" | "image" | "record";
   body: string | null;
+  /** The message mentions this reader (reaches them even in a muted group). */
+  mentioned?: boolean;
 };
 
 /** What the notification says, in the reader's language: who (and, if they chose, what). */
 export function pushPayload(t: PushTarget) {
   const w = WORDS[(["ja", "en", "vi"] as const).find((l) => l === t.locale) ?? "ja"];
   const name = t.sender_name ?? w.someone;
-  const title = t.conv_kind === "group" ? w.inGroup(name, t.conv_title ?? w.group) : w.from(name);
+  const title = t.conv_kind !== "group" ? w.from(name) : t.mentioned ? w.mentioned(name, t.conv_title ?? w.group) : w.inGroup(name, t.conv_title ?? w.group);
   // The text only for those who chose to see it (the SQL leaves it out otherwise).
   const what = t.msg_kind === "image" ? (t.body ? `${w.photo} ${t.body}` : w.photo) : t.msg_kind === "record" ? w.record : (t.body ?? "");
   return { title: "MOSAIC", body: t.body !== null || t.msg_kind !== "text" ? `${title}\n${what}`.trim() : title, url: `/messages/${t.conversation_id}`, tag: `dm-${t.conversation_id}` };

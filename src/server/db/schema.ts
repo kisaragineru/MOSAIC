@@ -1195,6 +1195,10 @@ export const dmMessages = pgTable(
     updatedAt: updatedAt(),
     editedAt: ts("edited_at"),
     deletedAt: ts("deleted_at"),
+    /** Members named with "@name" in a group message (set from the body by a trigger, migration 0088). */
+    mentions: uuid("mentions").array().notNull().default(sql`'{}'::uuid[]`),
+    /** "@all" (全員 / tất cả): every member is mentioned. */
+    mentionsAll: boolean("mentions_all").notNull().default(false),
   },
   (t) => [
     index("dm_messages_conv_time_idx").on(t.conversationId, t.createdAt),

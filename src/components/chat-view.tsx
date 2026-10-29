@@ -7,6 +7,7 @@ import type { DmMessage } from "@/server/services/dm";
 import { DmAvatar } from "./dm-avatar";
 import { PersonLink } from "./person-link";
 import { firstUrl, LinkCard } from "./link-card";
+import { insertMention, mentionParts, mentionQuery } from "@/lib/dm-mentions";
 import type { MainStarId } from "@/lib/tuvi/stars";
 
 export interface ChatText {
@@ -23,6 +24,10 @@ export interface ChatText {
   recordHidden: string;
   openRecord: string;
   placeholder: string;
+  /** The word "@" + this mentions everyone (全員 / all / tất cả). */
+  mentionAll: string;
+  mentionAllHint: string;
+  mentionList: string;
   send: string;
   attach: string;
   /** The tucked-away photo buttons, while typing. */
@@ -141,6 +146,23 @@ function Linkified({ text }: { text: string }) {
   );
 }
 
+/** A message's text with its mentions marked ("@name", "@all"), links kept clickable. */
+function WithMentions({ text, names, all, mine }: { text: string; names: string[]; all: boolean; mine: boolean }) {
+  return (
+    <>
+      {mentionParts(text, names, all).map((p, i) =>
+        p.mention ? (
+          <span key={i} data-mention className={`font-semibold ${mine ? "underline decoration-white/60 underline-offset-2" : "text-teal-700"}`}>
+            {p.text}
+          </span>
+        ) : (
+          <Linkified key={i} text={p.text} />
+        ),
+      )}
+    </>
+  );
+}
+
 export function ChatView({
   me,
   conv: initialConv,
@@ -188,6 +210,8 @@ export function ChatView({
   const [error, setError] = useState<string | null>(null);
   const list = useRef<HTMLDivElement>(null);
   const area = useRef<HTMLTextAreaElement>(null);
+  // Where the caret is in the box: an "@…" just before it opens the member list (groups only).
+  const [caret, setCaret] = useState(0);
   const fileInput = useRef<HTMLInputElement>(null);
   const cameraInput = useRef<HTMLInputElement>(null);
   const stickToBottom = useRef(true);
@@ -483,7 +507,7 @@ export function ChatView({
         ...cur,
         ...saved
           .filter((j) => !cur.some((m) => m.id === j.id))
-          .map((j) => ({ id: j.id, senderId: me, senderName: null, kind: "text" as const, body: j.body, meta: null, createdAt: at, updatedAt: at, edited: false, deleted: false, record: null, attachments: [], reactions: [], reply: null, failed: tx.failed })),
+          .map((j) => ({ id: j.id, senderId: me, senderName: null, kind: "text" as const, body: j.body, meta: null, createdAt: at, updatedAt: at, edited: false, deleted: false, record: null, attachments: [], reactions: [], mentions: [], mentionsAll: false, reply: null, failed: tx.failed })),
       ]);
       void sync();
     });
@@ -532,7 +556,7 @@ export function ChatView({
         ...cur,
         {
           id: recJob.id, senderId: me, senderName: null, kind: "record", body: body || null, meta: null, createdAt: at, updatedAt: at,
-          edited: false, deleted: false, record: { ...rec, mine: false }, attachments: [], reactions: [], pending: true, reply: null,
+          edited: false, deleted: false, record: { ...rec, mine: false }, attachments: [], reactions: [], mentions: [], mentionsAll: false, pending: true, reply: null,
         },
       ]);
       setAboutRecord(null);
@@ -552,7 +576,7 @@ export function ChatView({
       ...cur,
       {
         id: job.id, senderId: me, senderName: null, kind: photos.length ? "image" : "text", body: text || null, meta: null, createdAt: at, updatedAt: at,
-        edited: false, deleted: false, record: null, attachments: [], reactions: [], pending: true, localPhotos: photos.map((p) => p.url),
+        edited: false, deleted: false, record: null, attachments: [], reactions: [], mentions: [], mentionsAll: false, pending: true, localPhotos: photos.map((p) => p.url),
         reply: reply ? { id: reply.id, senderName: names.get(reply.senderId ?? "") ?? null, kind: reply.kind, body: reply.body, deleted: reply.deleted } : null,
       },
     ]);
@@ -562,7 +586,34 @@ export function ChatView({
     enqueue(job);
   };
 
+  // ── Mentions (groups): "@" opens the members (and "everyone"); picking one writes "@name ". ──
+  const fold = (v: string) => v.normalize("NFKC").toLowerCase();
+  const mentionAt = conv.kind === "group" && !editing && focused ? mentionQuery(draft, caret) : null;
+  const mentionChoices = mentionAt
+    ? [
+        ...conv.members.filter((x) => x.id !== me && !x.left && fold(x.name).includes(fold(mentionAt.query))).map((x) => ({ id: x.id, name: x.name, all: false })),
+        ...(fold(tx.mentionAll).startsWith(fold(mentionAt.query)) ? [{ id: "@all", name: tx.mentionAll, all: true }] : []),
+      ].slice(0, 6)
+    : [];
+  const pickMention = (name: string) => {
+    if (!mentionAt) return;
+    const r = insertMention(draft, mentionAt, name);
+    setDraft(r.text);
+    setCaret(r.caret);
+    requestAnimationFrame(() => {
+      area.current?.focus();
+      area.current?.setSelectionRange(r.caret, r.caret);
+    });
+  };
+  const mentionsMe = (m: Msg) => m.senderId !== me && (m.mentionsAll || m.mentions.some((x) => x.id === me));
+
   const onKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // While the member list is open, Enter picks the first one.
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && mentionChoices.length) {
+      e.preventDefault();
+      pickMention(mentionChoices[0]!.name);
+      return;
+    }
     // Enter sends on a keyboard (not while composing Japanese, not on touch screens); Shift+Enter is a new line.
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && !window.matchMedia("(pointer: coarse)").matches) {
       e.preventDefault();
@@ -775,8 +826,11 @@ export function ChatView({
                     </Link>
                   ))}
                 {m.body && (
-                  <p className={`whitespace-pre-wrap break-words rounded-3xl px-3.5 py-2 text-[15px] leading-relaxed ${bubble} ${corner} ${m.kind === "image" || m.kind === "record" ? "mt-1" : ""}`}>
-                    <Linkified text={m.body} />
+                  <p
+                    data-mentions-me={mentionsMe(m) || undefined}
+                    className={`whitespace-pre-wrap break-words rounded-3xl px-3.5 py-2 text-[15px] leading-relaxed ${mentionsMe(m) ? "bg-amber-50 text-stone-900 ring-2 ring-amber-300" : bubble} ${corner} ${m.kind === "image" || m.kind === "record" ? "mt-1" : ""}`}
+                  >
+                    <WithMentions text={m.body} names={m.mentions.map((x) => x.name)} all={m.mentionsAll} mine={mine} />
                   </p>
                 )}
                 {m.body && translationOf(m) && <Translation x={translationOf(m)!} tx={tx} mine={mine} onClose={() => untranslate(m)} />}
@@ -942,6 +996,28 @@ export function ChatView({
             )}
             <input ref={fileInput} type="file" accept="image/*" multiple hidden onChange={(e) => void pickPhotos(e.target.files)} />
             <input ref={cameraInput} type="file" accept="image/*" capture="environment" hidden data-testid="dm-camera" onChange={(e) => void pickPhotos(e.target.files)} />
+            {mentionChoices.length > 0 && (
+              <div role="group" aria-label={tx.mentionList} data-testid="mention-list" className="mb-2 max-h-56 overflow-y-auto rounded-2xl bg-white py-1 shadow-lg ring-1 ring-stone-200">
+                {mentionChoices.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    // Keep the keyboard up: the box keeps its focus.
+                    onPointerDown={(e) => e.preventDefault()}
+                    onClick={() => pickMention(c.name)}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition hover:bg-teal-50 active:bg-teal-100"
+                  >
+                    {c.all ? (
+                      <span aria-hidden className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-800">@</span>
+                    ) : (
+                      <DmAvatar names={[c.name]} srcs={[conv.avatars[c.id] ?? null]} types={[conv.tints?.[c.id] ?? null]} size="sm" />
+                    )}
+                    <span className="font-semibold text-stone-900">@{c.name}</span>
+                    {c.all && <span className="truncate text-xs text-stone-500">{tx.mentionAllHint}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="flex items-end gap-2">
               {!editing && !toolsOpen && (focused || !!draft.trim()) ? (
                 <button
@@ -985,7 +1061,9 @@ export function ChatView({
                 onChange={(e) => {
                   setToolsOpen(false);
                   onType(e.target.value);
+                  setCaret(e.target.selectionStart);
                 }}
+                onSelect={(e) => setCaret(e.currentTarget.selectionStart)}
                 onFocus={() => setFocused(true)}
                 onBlur={() => {
                   setFocused(false);

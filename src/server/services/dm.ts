@@ -33,6 +33,8 @@ export interface DmInboxItem {
   muted: boolean;
   canSend: boolean;
   leftGroup: boolean;
+  /** Something unread mentions me ("@my name" or "@all"). */
+  mentioned: boolean;
 }
 
 export interface DmMember extends DmPerson {
@@ -72,6 +74,9 @@ export interface DmMessage {
   record: { id: string; mine: boolean; shown?: boolean; ownerName: string; kind: string; title: string | null; body: string | null } | { hidden: true } | null;
   attachments: { id: string; w: number; h: number }[];
   reactions: { userId: string; emoji: string }[];
+  /** Members this group message mentions (their names as they are now), and whether it says "@all". */
+  mentions: DmPerson[];
+  mentionsAll: boolean;
 }
 
 async function run<T>(userId: string, fn: (tx: Tx) => Promise<T>) {
@@ -106,6 +111,8 @@ const toMessage = (j: Record<string, unknown>): DmMessage => {
         : { id: record.id as string, mine: !!record.mine, ...(record.shown ? { shown: true } : {}), ownerName: record.owner_name as string, kind: record.kind as string, title: (record.title as string | null) ?? null, body: (record.body as string | null) ?? null },
     attachments: ((j.attachments as { id: string; w: number; h: number }[]) ?? []).map((a) => ({ id: a.id, w: a.w, h: a.h })),
     reactions: ((j.reactions as { user_id: string; emoji: string }[]) ?? []).map((r) => ({ userId: r.user_id, emoji: r.emoji })),
+    mentions: ((j.mentions as DmPerson[]) ?? []).map((x) => ({ id: x.id, name: x.name })),
+    mentionsAll: !!j.mentions_all,
   };
 };
 
@@ -117,7 +124,7 @@ async function inboxUncached(userId: string): Promise<DmInboxItem[]> {
   const r = await run(userId, (tx) =>
     tx.execute<{
       id: string; kind: "direct" | "group"; title: string | null; others: DmPerson[]; last_kind: DmMessage["kind"]; last_body: string | null; last_meta: DmSystemMeta | null;
-      last_sender: string | null; last_sender_name: string | null; last_deleted: boolean; last_at: string | Date; unread: number; muted: boolean; can_send: boolean; left_group: boolean;
+      last_sender: string | null; last_sender_name: string | null; last_deleted: boolean; last_at: string | Date; unread: number; muted: boolean; can_send: boolean; left_group: boolean; mentioned: boolean;
     }>(sql`select * from dm_inbox()`),
   );
   return r.rows.map((x) => ({
@@ -130,6 +137,7 @@ async function inboxUncached(userId: string): Promise<DmInboxItem[]> {
     muted: x.muted,
     canSend: x.can_send,
     leftGroup: x.left_group,
+    mentioned: !!x.mentioned,
   }));
 }
 /** Read once per page render. */
