@@ -531,6 +531,7 @@ export const vi: Dict = {
     },
     timeline: {
       ahead: {
+        letter: (written: string) => `✉ Lá thư bạn viết ngày ${written} sẽ đến (đang niêm phong)`,
         title: "Sắp tới",
         count: (n: number) => `${n} mục`,
         next: (days: number, date: string, what: string) => `Tiếp theo: ${date} ${what} (còn ${days} ngày)`,

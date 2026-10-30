@@ -116,7 +116,8 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
         </nav>
       )}
       {withWho && targets.length <= 1 && <p className="px-1 text-sm font-semibold text-rose-900">{tl.onlyFrom(withWho.name)}</p>}
-      {view !== "friends" && page === 0 && <LetterShelf letters={await sealedLetters(uid)} arrived={await arrivedLetters(uid)} today={todayIn(tz)} t={t} locale={locale} />}
+      {/* Letters that have arrived wait here until read; those still on their way are on the line ahead. */}
+      {view !== "friends" && page === 0 && <LetterShelf letters={[]} arrived={await arrivedLetters(uid)} today={today} t={t} locale={locale} />}
       {view !== "friends" && <Card>
         <form method="get" className="space-y-2" role="search">
           {view !== "all" && <input type="hidden" name="view" value={view} />}
@@ -171,7 +172,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
       </Card>}
       {view === "all" && filtering && <Notice>{tl.filteredMineOnly}</Notice>}
       {onlyMeByDefault && <p className="px-1 text-xs leading-5 text-stone-500" data-testid="mine-only-me">{tm.mineOnlyMe}</p>}
-      <AheadLine entries={ahead} today={today} t={t} locale={locale} />
+      <AheadLine entries={ahead} letters={view === "friends" || page > 0 || filtering ? [] : await sealedLetters(uid)} today={today} t={t} locale={locale} />
       {days.length === 0 ? (
         <Empty>{view === "friends" ? tl.friendsEmpty : t.memories.empty}</Empty>
       ) : (

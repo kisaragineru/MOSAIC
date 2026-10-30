@@ -67,9 +67,10 @@ test("records on a timeline, and a record shared with a connection", async ({ br
   await hana.waitForURL(/\/memories\/[0-9a-f-]+\?ok=saved/);
   // Still sealed: a sealed envelope on the timeline, and on its own shelf with only its dates.
   await hana.goto("/memories");
-  const shelf = hana.getByTestId("letter-shelf");
-  await expect(shelf).toContainText("まだ届いていない、未来への手紙 1通");
-  await expect(shelf).toContainText(/次は あと\d+日/);
+  // On its way: on the line ahead of today, with only when it was written.
+  const ahead = hana.getByTestId("ahead");
+  await expect(ahead).toContainText("これから");
+  await expect(ahead).toContainText(/次は .*に書いた手紙が届く（封印中）/);
   await expect(hana.getByText(/2031-01-01 まで封印中/)).toBeVisible();
   await expect(hana.getByText("5年後の私へ。元気にしてる？")).toHaveCount(0);
   await hana.goto(record);

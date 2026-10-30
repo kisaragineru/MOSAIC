@@ -529,6 +529,7 @@ export const en = {
     },
     timeline: {
       ahead: {
+        letter: (written: string) => `✉ A letter you wrote on ${written} arrives (sealed)`,
         title: "Ahead",
         count: (n: number) => `${n}`,
         next: (days: number, date: string, what: string) => `Next: ${date} ${what} (in ${days} day${days === 1 ? "" : "s"})`,

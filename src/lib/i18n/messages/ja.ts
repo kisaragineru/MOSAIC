@@ -531,6 +531,7 @@ export const ja: Dict = {
     },
     timeline: {
       ahead: {
+        letter: (written: string) => `✉ ${written}に書いた手紙が届く（封印中）`,
         title: "これから",
         count: (n: number) => `${n}件`,
         next: (days: number, date: string, what: string) => `次は ${date} ${what}（あと${days}日）`,
