@@ -182,6 +182,7 @@ export function composerText(t: Dict): ComposerText {
     close: t.memories.composer.close,
     discard: t.memories.composer.discard,
     more: p.more,
+    morePhotos: t.memories.composer.morePhotos,
     otherWays: p.otherWays,
     letter: p.letter,
     letterDesc: p.letterDesc,

@@ -433,6 +433,7 @@ export const ja: Dict = {
       title: "いま、書く",
       close: "閉じる",
       discard: "書いた内容を消して閉じますか？",
+      morePhotos: "写真や動画は「詳しく書く」に引き継げません。文章だけを引き継いで移りますか？",
       more: "詳しく書く",
       saving: "記録中…",
       record: "記録する",

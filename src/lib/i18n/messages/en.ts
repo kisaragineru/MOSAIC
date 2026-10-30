@@ -431,6 +431,7 @@ export const en = {
       title: "Write it down",
       close: "Close",
       discard: "Discard what you wrote?",
+      morePhotos: "Photos and videos can't be carried over to the full form. Move on with just the text?",
       more: "More options",
       saving: "Saving…",
       record: "Add to journal",

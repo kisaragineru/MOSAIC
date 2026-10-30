@@ -1,5 +1,6 @@
 import { createMemoryAction } from "@/app/actions/memories";
 import { Flash } from "@/components/flash";
+import { DraftCarry } from "@/components/draft-carry";
 import { MemoryForm } from "@/components/memory-form";
 import { Card } from "@/components/ui";
 import { Page } from "@/components/page";
@@ -25,6 +26,8 @@ export default async function NewMemoryPage({ searchParams }: { searchParams: Pr
   return (
     <Page title={letter ? t.memories.post.letter : t.memories.post.title} back="/memories">
       <Flash t={t} sp={sp} />
+      {/* From the quick composer: its text, carried here (a plain new post only). */}
+      {!letter && !sp.body && <DraftCarry />}
       <Card>
         <MemoryForm t={t} action={createMemoryAction} people={people} back="/memories/new" d={{
             kind: sp.kind,

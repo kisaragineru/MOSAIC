@@ -1,6 +1,8 @@
 "use client";
 import { askConfirm, confirming } from "@/lib/confirm";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { carryDraft } from "@/lib/draft-carry";
 import { useActionState, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { quickMemoryAction, type QuickState } from "@/app/actions/memories";
 import type { AudienceText } from "./audience-field";
@@ -19,6 +21,8 @@ export interface ComposerText {
   close: string;
   discard: string;
   more: string;
+  /** Asked before "more" when photos were picked: they can't go along, only the text. */
+  morePhotos: string;
   otherWays: string;
   letter: string;
   letterDesc: string;
@@ -61,6 +65,7 @@ export function QuickComposer({ tx, canShare, giftBoxes = [], trigger = "fab" }:
   // The post just made, for the one question after it.
   const [ask, setAsk] = useState<string | null>(null);
   const area = useRef<HTMLTextAreaElement>(null);
+  const router = useRouter();
 
   // Posted: close and start the next one empty (the list refreshes from the server).
   if (state?.ok && state.at !== handled) {
@@ -152,7 +157,22 @@ export function QuickComposer({ tx, canShare, giftBoxes = [], trigger = "fab" }:
               <MediaPicker tx={tx.media} resetKey={handled} onCount={setPhotos} />
               {state && !state.ok && <p role="alert" className="text-sm text-rose-700">{tx.errors[state.error] ?? tx.errors.generic}</p>}
               <PostFooter key={String(handled)} tx={tx.audience} canShare={canShare} submit={tx.submit} pendingLabel={tx.posting} pending={pending} disabled={!text.trim() && photos === 0} />
-              <Link href="/memories/new" className="block text-center text-sm text-stone-500 underline-offset-2 hover:text-stone-800 hover:underline">{tx.more} →</Link>
+              {/* The text goes along to the full form; picked photos can't, so that is asked first. */}
+              <Link
+                href="/memories/new"
+                onClick={(e) => {
+                  if (photos === 0) return carryDraft(text);
+                  e.preventDefault();
+                  void (async () => {
+                    if (!(await askConfirm(tx.morePhotos))) return;
+                    carryDraft(text);
+                    router.push("/memories/new");
+                  })();
+                }}
+                className="block text-center text-sm text-stone-500 underline-offset-2 hover:text-stone-800 hover:underline"
+              >
+                {tx.more} →
+              </Link>
             </form>
             <section className="mt-4 space-y-2 border-t border-stone-100 pt-3" aria-label={tx.otherWays}>
               <p className="text-xs font-semibold text-stone-500">{tx.otherWays}</p>

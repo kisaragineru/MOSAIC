@@ -160,6 +160,15 @@ test("write in place from the floating button, or close it with ✕", async ({ b
   await confirm(page);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByText("下書き")).toHaveCount(0);
+
+  // "Write in more detail" takes the text along to the full form, once.
+  await page.getByTestId("compose-fab").click();
+  await page.getByRole("dialog").getByLabel("あったこと・考えていること").fill("続きは詳しく書きたい。");
+  await page.getByRole("dialog").getByRole("link", { name: /詳しく書く/ }).click();
+  await page.waitForURL(/\/memories\/new$/);
+  await expect(page.locator('form.memory-form textarea[name="body"]')).toHaveValue("続きは詳しく書きたい。");
+  await page.reload();
+  await expect(page.locator('form.memory-form textarea[name="body"]')).toHaveValue("");
 });
 
 test("share by relationship, and a test companion from settings (development)", async ({ browser }) => {

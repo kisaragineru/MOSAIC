@@ -433,6 +433,7 @@ export const vi: Dict = {
       title: "Viết ngay",
       close: "Đóng",
       discard: "Bỏ nội dung vừa viết?",
+      morePhotos: "Ảnh và video không thể chuyển sang biểu mẫu chi tiết. Chỉ mang theo phần chữ và tiếp tục?",
       more: "Viết chi tiết",
       saving: "Đang lưu…",
       record: "Ghi lại",
