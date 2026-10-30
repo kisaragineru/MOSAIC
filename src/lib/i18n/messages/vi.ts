@@ -2197,7 +2197,7 @@ export const vi: Dict = {
       bio: ["Giới thiệu", "Lời giới thiệu bạn viết"],
       summary: ["Bản hướng dẫn: tóm tắt", "Phần tóm tắt đầu bản hướng dẫn"],
       likes: ["Sở thích", "Chương thích và không thích"],
-      manual: ["Bản hướng dẫn (cho bạn bè)", "Toàn bộ bản hướng dẫn cho bạn bè"],
+      manual: ["Bản hướng dẫn (bản cơ bản)", "Toàn bộ bản hướng dẫn cơ bản"],
     },
     chartNote: "🔒 Lá số đầy đủ hay chi tiết không bao giờ có ở đây (có thể lộ ngày giờ sinh). Hãy chọn người được xem ở trang của từng kết nối.",
     save: "Lưu",

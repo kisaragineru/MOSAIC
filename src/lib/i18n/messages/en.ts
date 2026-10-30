@@ -2195,7 +2195,7 @@ export const en = {
       bio: ["Bio", "The bio you wrote"],
       summary: ["Manual: in a nutshell", "The summary at the top of your manual"],
       likes: ["Likes", "The likes and dislikes chapter"],
-      manual: ["Manual (for friends)", "Your whole manual for friends"],
+      manual: ["Manual (basic)", "Your whole basic manual"],
     },
     chartNote: "🔒 Your whole chart or its details are never on it (they could reveal your birth date and time). Choose who sees them on each connection's page.",
     save: "Save",

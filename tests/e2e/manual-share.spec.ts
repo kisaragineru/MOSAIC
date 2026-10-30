@@ -46,9 +46,9 @@ test("show your manual to a connection: friend preset, preview, and stop", async
   await hana.goto(compare);
   const card = hana.locator("#manual");
   await expect(card.getByRole("radio", { name: /見せない/ })).toBeChecked();
-  await card.getByRole("radio", { name: /^友人向け/ }).check();
+  await card.getByRole("radio", { name: /^基本版/ }).check();
   await card.getByRole("button", { name: "保存" }).click();
-  await expect(hana.locator("#manual").getByText("いまは「友人向け」で見せています")).toBeVisible();
+  await expect(hana.locator("#manual").getByText("いまは「基本版」で見せています")).toBeVisible();
 
   // Hana checks what Sora will see.
   await hana.locator("#manual").getByRole("link", { name: /相手にどう見えるか確認/ }).first().click();
@@ -59,7 +59,7 @@ test("show your manual to a connection: friend preset, preview, and stop", async
   await sora.reload();
   await sora.getByRole("link", { name: /ハナさんの取扱説明書/ }).click();
   await sora.waitForURL(/\/compare\/.+\/manual$/);
-  await expect(sora.getByRole("heading", { level: 1, name: "ハナさんの取扱説明書（友人向け）" })).toBeVisible();
+  await expect(sora.getByRole("heading", { level: 1, name: "ハナさんの取扱説明書（基本版）" })).toBeVisible();
   await expect(sora.getByText("ハナさんは「先に計画を立てる」ことが多いようです。").first()).toBeVisible();
   await expect(sora.getByText("ハナさんから").first()).toBeVisible();
   const manualUrl = new URL(sora.url()).pathname;

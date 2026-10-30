@@ -198,10 +198,10 @@ export const PRESET_CHAPTERS: Record<ManualPreset, Chapter[]> = {
 };
 
 export const SHARED_TEXT = {
-  presetName: { friend: { ja: "友人向け", en: "For friends", vi: "Dành cho bạn bè" }, partner: { ja: "パートナー向け", en: "For a partner", vi: "Dành cho người thương" } } as Record<ManualPreset, I18nText>,
+  presetName: { friend: { ja: "基本版", en: "Basic", vi: "Bản cơ bản" }, partner: { ja: "くわしい版", en: "In depth", vi: "Bản chi tiết" } } as Record<ManualPreset, I18nText>,
   presetWhat: {
     friend: { ja: "ひとことで言うと・気質・人との関わり・好きなもの・付き合うためのヒント", en: "In a few words, temperament, with other people, favourites, and tips for getting along", vi: "Tóm tắt, khí chất, cách đối xử với mọi người, sở thích và gợi ý để hòa hợp" },
-    partner: { ja: "友人向けの内容に加えて、考え方（決め方・挑戦）と暮らし・価値観（お金・向上心・伝統）", en: "Everything for friends, plus how you think (deciding, risk) and life and values (money, drive, tradition)", vi: "Mọi nội dung dành cho bạn bè, thêm cách suy nghĩ (quyết định, mạo hiểm) và cuộc sống, giá trị (tiền bạc, động lực, truyền thống)" },
+    partner: { ja: "基本版の内容に加えて、考え方（決め方・挑戦）と暮らし・価値観（お金・向上心・伝統）", en: "Everything in Basic, plus how you think (deciding, risk) and life and values (money, drive, tradition)", vi: "Mọi nội dung của bản cơ bản, thêm cách suy nghĩ (quyết định, mạo hiểm) và cuộc sống, giá trị (tiền bạc, động lực, truyền thống)" },
   } as Record<ManualPreset, I18nText>,
   never: {
     ja: "どちらの場合も、記録・メモ・自由記述の答え・「自分だけ」にした答え・周りの人からの声・Tử Vi は含まれません（Tử Vi は比べる内容の同意で別に決めます）。",
@@ -210,8 +210,8 @@ export const SHARED_TEXT = {
   } as I18nText,
   heading: (name: string, preset: ManualPreset): I18nText => ({
     ja: `${name}さんの取扱説明書（${SHARED_PRESET_JA[preset]}）`,
-    en: `${name}'s manual (${preset === "friend" ? "for friends" : "for a partner"})`,
-    vi: `Cẩm nang về ${name} (${preset === "friend" ? "dành cho bạn bè" : "dành cho người thương"})`,
+    en: `${name}'s manual (${preset === "friend" ? "basic" : "in depth"})`,
+    vi: `Cẩm nang về ${name} (${preset === "friend" ? "bản cơ bản" : "bản chi tiết"})`,
   }),
   lead: (name: string): I18nText => ({
     ja: `${name}さんが、あなたに見せることにした部分です。${name}さん自身の答えから見えてきた傾向で、決めつけではありません。`,
@@ -230,6 +230,6 @@ export const SHARED_TEXT = {
     vi: `Đây chỉ là phần ${name} chọn chia sẻ. Cách chắc chắn nhất để hiểu ${name} vẫn là hỏi trực tiếp.`,
   }),
 };
-const SHARED_PRESET_JA: Record<ManualPreset, string> = { friend: "友人向け", partner: "パートナー向け" };
+const SHARED_PRESET_JA: Record<ManualPreset, string> = { friend: "基本版", partner: "くわしい版" };
 
 export const MANUAL_CHAPTERS: Chapter[] = ["self", "mind", "people", "life"];
