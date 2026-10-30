@@ -2,7 +2,7 @@ import { and, asc, desc, eq, inArray, lte, gte, sql, type SQL } from "drizzle-or
 import type { GiftOrigin } from "@/lib/timeline";
 import { z } from "zod";
 import { escapeLike, isoDate, optionalDate, optionalText, tagList, todayIn, uuid } from "@/lib/validation/common";
-import { MEMORY_CIRCLES, MEMORY_KINDS, memoryCircles, memoryEntries, memoryEntryVersions, memoryPeople, memoryTagNotes, memoryTags, people, profiles } from "../db/schema";
+import { MEMORY_CIRCLES, MEMORY_KINDS, memoryAudiencePeople, memoryCircles, memoryEntries, memoryEntryVersions, memoryPeople, memoryTagNotes, memoryTags, people, profiles } from "../db/schema";
 import { mergeTags, normalizeTag, tagKey } from "@/lib/tags";
 import { withUser, type Tx } from "../db/tx";
 import { invalid, notFound } from "../errors";
@@ -183,6 +183,8 @@ export interface MemorySummary {
   visibility: "private" | "connections" | "circles";
   /** For "circles": the relationships it is shown to. */
   circles: (typeof MEMORY_CIRCLES)[number][];
+  /** For "circles": the people (user ids) chosen to see it, besides any relationships. */
+  audience: string[];
   labels: Label[];
   labelsBy: "auto" | "user";
   feeling: Feeling | null;
@@ -330,6 +332,7 @@ async function hydrate(
         .where(inArray(memoryPeople.entryId, ids))
     : [];
   const circleRows = ids.length ? await tx.select().from(memoryCircles).where(inArray(memoryCircles.entryId, ids)) : [];
+  const audienceRows = ids.length ? await tx.select({ entryId: memoryAudiencePeople.entryId, userId: memoryAudiencePeople.userId }).from(memoryAudiencePeople).where(inArray(memoryAudiencePeople.entryId, ids)) : [];
   return rows.map(({ e, v }) => {
     const sealed = e.revealOn !== null && e.revealOn > today;
     return {
@@ -349,6 +352,7 @@ async function hydrate(
       people: personRows.filter((p) => p.entryId === e.id).map(({ id, nickname }) => ({ id, nickname })),
       visibility: e.visibility as MemorySummary["visibility"],
       circles: MEMORY_CIRCLES.filter((c) => circleRows.some((r) => r.entryId === e.id && r.circle === c)),
+      audience: audienceRows.filter((r) => r.entryId === e.id).map((r) => r.userId),
       labels: sealed ? [] : (e.labels as Label[]),
       labelsBy: e.labelsBy as "auto" | "user",
       feeling: sealed ? null : (e.feeling as Feeling | null),

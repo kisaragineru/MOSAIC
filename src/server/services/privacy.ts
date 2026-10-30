@@ -5,7 +5,7 @@
  * answers marked "comparable"). Read-only: every change still happens where it lives.
  */
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { MEMORY_CIRCLES, birthProfiles, comparisonConsents, manualShares, memoryCircles, memoryEntries, people, profiles, tuviCharts } from "../db/schema";
+import { MEMORY_CIRCLES, birthProfiles, memoryAudiencePeople, comparisonConsents, manualShares, memoryCircles, memoryEntries, people, profiles, tuviCharts } from "../db/schema";
 import { withUser } from "../db/tx";
 import { myAvatarUrl } from "./avatars";
 import { listComparisons, listShares, sharedPreview } from "./sharing";
@@ -34,7 +34,7 @@ export interface PrivacyConnection {
 
 export interface PrivacyOverview {
   profile: { name: string; hasPhoto: boolean; hasBio: boolean; hasIntro: boolean };
-  records: { total: number; private: number; everyone: number; byCircle: Record<Circle, number>; letters: number };
+  records: { total: number; private: number; everyone: number; byCircle: Record<Circle, number>; letters: number; /** Shown to people chosen by name. */ toPeople: number };
   answers: { shared: { preferences: number; values: number }; private: number };
   birth: { entered: boolean; hasChart: boolean };
   connections: PrivacyConnection[];
@@ -53,9 +53,12 @@ export async function privacyOverview(userId: string): Promise<PrivacyOverview> 
 
     // Records: one row per record with its circles, counted here.
     const recs = (
-      await tx.execute<{ kind: string; visibility: string; circles: string[] | null }>(sql`
-        select e.kind, e.visibility, array_remove(array_agg(mc.circle), null) as circles
-        from ${memoryEntries} e left join ${memoryCircles} mc on mc.entry_id = e.id
+      await tx.execute<{ kind: string; visibility: string; circles: string[] | null; people: string[] | null }>(sql`
+        select e.kind, e.visibility, array_remove(array_agg(distinct mc.circle), null) as circles,
+               array_remove(array_agg(distinct ap.user_id::text), null) as people
+        from ${memoryEntries} e
+        left join ${memoryCircles} mc on mc.entry_id = e.id
+        left join ${memoryAudiencePeople} ap on ap.entry_id = e.id
         where e.user_id = ${userId}
         group by e.id, e.kind, e.visibility`)
     ).rows;
@@ -95,8 +98,10 @@ export async function privacyOverview(userId: string): Promise<PrivacyOverview> 
         theirScopes: active ? theirs : [],
         sharedScopes: active ? mine.filter((s) => theirs.includes(s)) : [],
         manualPreset: presets.find((p) => p.sessionId === c.id)?.preset ?? null,
-        // Records reach active connections only.
-        recordsVisible: active ? everyone + (circle ? byCircle[circle] : 0) : 0,
+        // Records reach active connections only: to everyone, to their relationship, or to them by name.
+        recordsVisible: active
+          ? everyone + shareable.filter((r) => r.visibility === "circles" && ((circle && r.circles?.includes(circle)) || (c.otherId && r.people?.includes(c.otherId)))).length
+          : 0,
       };
     });
 
@@ -109,6 +114,7 @@ export async function privacyOverview(userId: string): Promise<PrivacyOverview> 
         everyone,
         byCircle,
         letters: recs.length - shareable.length,
+        toPeople: shareable.filter((r) => r.visibility === "circles" && (r.people?.length ?? 0) > 0).length,
       },
       answers: {
         shared: { preferences: answers.filter((a) => a.shared && a.scope === "preferences").length, values: answers.filter((a) => a.shared && a.scope === "values").length },

@@ -8,6 +8,7 @@ import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { listMemories, type MemorySummary } from "@/server/services/memories";
 import { privacyOverview } from "@/server/services/privacy";
+import { shareTargets } from "@/server/services/memory-share";
 
 const CIRCLES = ["partner", "family", "friend", "colleague"] as const;
 const PAGE = 100;
@@ -25,6 +26,8 @@ export default async function RecordsAudiencePage({ searchParams }: { searchPara
   const show: Show = sp.show === "private" || sp.show === "all" ? sp.show : "shared";
   const limit = Math.min(Math.max(Number.parseInt(sp.n ?? "", 10) || PAGE, PAGE), 2000);
   const o = await privacyOverview(uid);
+  const targets = await shareTargets(uid);
+  const names = new Map(targets.map((x) => [x.otherId, x.name]));
   const sharedN = o.records.everyone + CIRCLES.reduce((n, c) => n + o.records.byCircle[c], 0);
   const counts: Record<Show, number> = { shared: sharedN, private: o.records.private, all: sharedN + o.records.private };
   // listMemories pages by 200 at most: gather up to `limit` (+1 to know there's more).
@@ -38,7 +41,7 @@ export default async function RecordsAudiencePage({ searchParams }: { searchPara
   const list = rows.slice(0, limit);
   const who = (m: MemorySummary) =>
     m.visibility === "connections" ? { tone: "teal" as const, text: `🌐 ${t.memories.audience.connections}` }
-    : m.visibility === "circles" ? { tone: "amber" as const, text: `👥 ${m.circles.map((c) => t.people.relationships[c]).join("・")}` }
+    : m.visibility === "circles" ? { tone: "amber" as const, text: `👥 ${[...m.circles.map((c) => t.people.relationships[c]), ...m.audience.map((id) => names.get(id)).filter(Boolean)].join(t.common.listSeparator)}` }
     : { tone: "stone" as const, text: `🔒 ${t.memories.audience.private}` };
   const text = (m: MemorySummary) => {
     const s = (m.title || m.body || "").trim().replace(/\s+/g, " ");
@@ -92,6 +95,7 @@ export default async function RecordsAudiencePage({ searchParams }: { searchPara
               <option value="private">🔒 {t.memories.audience.private}</option>
               <option value="connections">🌐 {t.memories.audience.connections}</option>
               {CIRCLES.map((c) => <option key={c} value={`circle:${c}`}>👥 {tr.toCircle(t.people.relationships[c])}</option>)}
+              {targets.map((x) => <option key={x.otherId} value={`person:${x.otherId}`}>👤 {tr.toCircle(x.name)}</option>)}
             </select>
             <button type="submit" className="shrink-0 rounded-full bg-teal-700 px-4 py-2 text-sm font-bold text-white hover:bg-teal-800">{tr.apply}</button>
           </div>

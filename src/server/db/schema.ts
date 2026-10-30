@@ -1123,6 +1123,28 @@ export const memoryCircles = pgTable(
   (t) => [primaryKey({ columns: [t.entryId, t.circle] }), check("memory_circles_ck", sql`${t.circle} in ('partner','family','friend','colleague')`)],
 );
 
+/**
+ * People chosen to see a record ("circles" visibility: chosen relationships and/or people). Only
+ * people I'm connected with can be chosen, and only while connected do they see it (migration 0091).
+ * Written only by memory_set_audience(); its owner may read it.
+ */
+export const memoryAudiencePeople = pgTable(
+  "memory_audience_people",
+  {
+    entryId: uuid("entry_id")
+      .notNull()
+      .references(() => memoryEntries.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.entryId, t.userId] }), index("memory_audience_people_user_idx").on(t.userId)],
+);
+
 /** Development only (DEV_TOOLS=on): test companions an account created, so it can remove them. */
 export const devCompanions = pgTable(
   "dev_companions",

@@ -28,6 +28,7 @@ export function audienceText(t: Dict): AudienceText {
     circles: a.circles,
     circleNames: { partner: r.partner, family: r.family, friend: r.friend, colleague: r.colleague },
     circlesHelp: a.circlesHelp,
+    peopleLabel: a.peopleLabel,
     noConnections: a.noConnections,
     hint: { private: p.hintPrivate, connections: p.hintConnections, circles: p.hintCircles, chooseCircle: p.chooseCircle },
     listSeparator: t.common.listSeparator,
@@ -47,6 +48,8 @@ export interface MemoryDefaults {
   personIds?: string[];
   visibility?: "private" | "connections" | "circles";
   circles?: string[];
+  /** People chosen by name (user ids). */
+  audience?: string[];
   media?: MediaItem[];
 }
 
@@ -98,6 +101,7 @@ export function MemoryForm({
   canShare = false,
   giftBoxes = [],
   knownTags = [],
+  audiencePeople = [],
 }: {
   t: Dict;
   action: (f: FormData) => Promise<void>;
@@ -111,6 +115,8 @@ export function MemoryForm({
   giftBoxes?: { id: string; label: string }[];
   /** My tags so far, most used first (offered while typing a tag). */
   knownTags?: { tag: string; n: number }[];
+  /** People I'm connected with, who can be chosen to see it by name. */
+  audiencePeople?: { id: string; name: string }[];
 }) {
   const p = t.memories.post;
   const isLetter = d.kind === "letter_to_future";
@@ -166,7 +172,7 @@ export function MemoryForm({
               )}
             </div>
           </details>
-          <PostFooter tx={audienceText(t)} canShare={canShare} visibility={d.visibility} circles={d.circles} submit={submitLabel ?? p.submit} />
+          <PostFooter tx={audienceText(t)} canShare={canShare} visibility={d.visibility} circles={d.circles} people={audiencePeople} audience={d.audience} submit={submitLabel ?? p.submit} />
           {canShare && <p className="-mt-2 text-[11px] leading-5 text-stone-500">{t.memories.audience.help}</p>}
           {!d.id && <OtherWays t={t} giftBoxes={giftBoxes} />}
         </>

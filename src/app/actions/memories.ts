@@ -32,10 +32,13 @@ function fromForm(f: FormData) {
  */
 function audienceFromForm(f: FormData) {
   const v = str(f, "visibility");
-  if (v.startsWith("circle:")) return { visibility: "circles", circles: [v.slice(7)] };
+  if (v.startsWith("circle:")) return { visibility: "circles", circles: [v.slice(7)], people: [] };
+  // One person by name (the privacy page's bulk change).
+  if (v.startsWith("person:")) return { visibility: "circles", circles: [], people: [v.slice(7)] };
   return {
     visibility: v === "connections" || v === "circles" ? v : "private",
     circles: v === "circles" ? f.getAll("circles").filter((x): x is string => typeof x === "string" && x !== "") : [],
+    people: v === "circles" ? f.getAll("people").filter((x): x is string => typeof x === "string" && x !== "") : [],
   };
 }
 

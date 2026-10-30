@@ -23,6 +23,8 @@ export interface TimelineEntry {
   createdAt: Date;
   audience: Audience;
   circles: string[];
+  /** Mine, shown to people chosen by name: their names. */
+  readers?: string[];
   version: number;
   tags: string[];
   people: { id: string; nickname: string }[];

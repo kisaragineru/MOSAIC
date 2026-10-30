@@ -66,6 +66,7 @@ export function QuickComposer({
   giftBoxes = [],
   trigger = "fab",
   knownTags = [],
+  audiencePeople = [],
 }: {
   tx: ComposerText;
   canShare: boolean;
@@ -73,6 +74,8 @@ export function QuickComposer({
   trigger?: "fab" | "inline";
   /** My tags so far, most used first: "#" in the text offers them. */
   knownTags?: { tag: string; n: number }[];
+  /** People I'm connected with, who can be chosen by name. */
+  audiencePeople?: { id: string; name: string }[];
 }) {
   const hydrated = useSyncExternalStore(noop, () => true, () => false);
   const [open, setOpen] = useState(false);
@@ -210,7 +213,7 @@ export function QuickComposer({
               )}
               <MediaPicker tx={tx.media} resetKey={handled} onCount={setPhotos} />
               {state && !state.ok && <p role="alert" className="text-sm text-rose-700">{tx.errors[state.error] ?? tx.errors.generic}</p>}
-              <PostFooter key={String(handled)} tx={tx.audience} canShare={canShare} submit={tx.submit} pendingLabel={tx.posting} pending={pending} disabled={!text.trim() && photos === 0} />
+              <PostFooter key={String(handled)} tx={tx.audience} canShare={canShare} people={audiencePeople} submit={tx.submit} pendingLabel={tx.posting} pending={pending} disabled={!text.trim() && photos === 0} />
               {/* The text goes along to the full form; picked photos can't, so that is asked first. */}
               <Link
                 href="/memories/new"

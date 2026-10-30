@@ -59,7 +59,8 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
     const before = page > 0 ? rows.shift() : undefined;
     hasOlder = rows.length > PAGE_SIZE;
     const mine = rows.slice(0, PAGE_SIZE);
-    entries = mine.map(mineToEntry);
+    const names = new Map((await shareTargets(uid)).map((x) => [x.otherId, x.name]));
+    entries = mine.map((m) => mineToEntry(m, names));
     if (view === "all" && !filtering) {
       const eff = (m: MemorySummary | undefined) => m?.timelineOn ?? null;
       const theirs = await feedForPage(uid, { previousOldest: eff(before), oldest: eff(mine.at(-1)), first: page === 0, last: !hasOlder });
@@ -180,6 +181,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
       <QuickComposer
         canShare={canShare}
         knownTags={tags}
+        audiencePeople={targets.map((x) => ({ id: x.otherId, name: x.name }))}
         tx={composerText(t)}
         giftBoxes={(await myGiftBoxes(uid)).filter((b) => b.status === "open" && b.my_role !== "child").map((b) => ({ id: b.id, label: t.memories.composer.toGift(b.child_name) }))}
       />

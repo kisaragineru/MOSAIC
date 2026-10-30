@@ -185,7 +185,7 @@ test("share by relationship, and a test companion from settings (development)", 
   await expect(hana.getByText("あなたの記録のうち 0 件が見えています")).toBeVisible();
   await hana.goto("/memories/new");
   await hana.getByLabel("あったこと・考えていること").fill("家族だけに伝えたいこと。");
-  await hana.getByRole("radio", { name: /関係で選ぶ/ }).check({ force: true });
+  await hana.getByRole("radio", { name: /関係や人を選ぶ/ }).check({ force: true });
   await hana.getByRole("checkbox", { name: /家族/ }).check({ force: true });
   await hana.getByRole("button", { name: "投稿する" }).click();
   await hana.waitForURL(/ok=saved/);
@@ -227,6 +227,28 @@ test("share by relationship, and a test companion from settings (development)", 
   await confirm(hana);
   await hana.waitForURL(/ok=deleted/);
   await expect(hana.getByText("ミナ（テスト）")).toHaveCount(0);
+});
+
+test("share with chosen people by name: only they see it", async ({ browser }) => {
+  const hana = await user(browser, "ハナ");
+  const sora = await user(browser, "ソラ");
+  const ren = await user(browser, "レン");
+  await connect(hana, sora);
+  await connect(hana, ren);
+
+  await hana.goto("/memories/new");
+  await hana.getByLabel("あったこと・考えていること").fill("ソラにだけ話したいこと。");
+  await hana.getByRole("radio", { name: /関係や人を選ぶ/ }).check({ force: true });
+  await hana.getByTestId("audience-people").getByRole("checkbox", { name: /ソラ/ }).check({ force: true });
+  await expect(hana.getByTestId("post-audience")).toHaveText("👪 ソラに届きます");
+  await hana.getByRole("button", { name: "投稿する" }).click();
+  await hana.waitForURL(/ok=saved/);
+  await expect(hana.getByText(/👤ソラに公開中/)).toBeVisible();
+
+  await sora.goto("/memories?view=friends");
+  await expect(sora.getByText("ソラにだけ話したいこと。")).toBeVisible();
+  await ren.goto("/memories?view=friends");
+  await expect(ren.getByText("ソラにだけ話したいこと。")).toHaveCount(0);
 });
 
 test("someone written about before connecting: the connection attaches to them", async ({ browser }) => {

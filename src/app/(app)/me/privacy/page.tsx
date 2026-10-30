@@ -86,6 +86,7 @@ export default async function PrivacyPage() {
           {CIRCLES.filter((c) => o.records.byCircle[c] > 0).map((c) => (
             <li key={c}>👥 {tp.circle(t.people.relationships[c], o.records.byCircle[c])}</li>
           ))}
+          {o.records.toPeople > 0 && <li>👤 {tp.toPeople(o.records.toPeople)}</li>}
           <li>🔒 {tp.privateOnly(o.records.private)}</li>
         </ul>
         <Link href="/me/privacy/records" className="inline-block text-sm font-semibold text-teal-700">{tp.bulk} →</Link>

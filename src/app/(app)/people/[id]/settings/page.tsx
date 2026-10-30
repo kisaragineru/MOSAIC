@@ -27,7 +27,7 @@ export default async function PersonSettingsPage({ params, searchParams }: { par
   const { person } = data;
   const connection = await connectionForPerson(uid, person.connectionSessionId);
   const circle = (["partner", "family", "friend", "colleague"] as const).find((c) => c === person.relationship) ?? null;
-  const seen = connection && connection.status === "active" ? await visibleCount(uid, circle) : null;
+  const seen = connection && connection.status === "active" ? await visibleCount(uid, circle, connection.otherId ?? null) : null;
   const others = (await listPeople(uid)).filter((p) => p.id !== person.id && !(p.connectionSessionId && person.connectionSessionId));
   const linkable = connection ? [] : (await listComparisons(uid)).filter((c) => c.status !== "revoked" && !c.personId);
   const here = `/people/${person.id}/settings`;

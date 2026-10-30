@@ -21,7 +21,8 @@ export default async function NewMemoryPage({ searchParams }: { searchParams: Pr
   const sp = await searchParams;
   const { t } = await getT();
   const people = await listPeople(uid);
-  const canShare = (await shareTargets(uid)).length > 0;
+  const targets = await shareTargets(uid);
+  const canShare = targets.length > 0;
   const letter = sp.kind === "letter_to_future";
   const giftBoxes = letter ? [] : (await myGiftBoxes(uid)).filter((b) => b.status === "open" && b.my_role !== "child").map((b) => ({ id: b.id, label: t.memories.composer.toGift(b.child_name) }));
   return (
@@ -37,7 +38,7 @@ export default async function NewMemoryPage({ searchParams }: { searchParams: Pr
             title: textParam(sp.title, 200),
             body: textParam(sp.body, 1000),
             tags: textParam(sp.tags, 100)?.split(",").map((x) => x.trim()).filter(Boolean).slice(0, 5),
-          }} canShare={canShare} giftBoxes={giftBoxes} knownTags={await listTags(uid)} />
+          }} canShare={canShare} giftBoxes={giftBoxes} knownTags={await listTags(uid)} audiencePeople={targets.map((x) => ({ id: x.otherId, name: x.name }))} />
       </Card>
     </Page>
   );

@@ -44,7 +44,8 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
   const editing = sp.edit === "1" && !m.sealed;
   const media = m.sealed ? [] : ((await mediaFor(uid, [m.id])).get(m.id) ?? []);
   const people = await listPeople(uid);
-  const canShare = (await shareTargets(uid)).length > 0;
+  const targets = await shareTargets(uid);
+  const canShare = targets.length > 0;
   const ta = t.memories.audience;
   const replies = m.sealed || m.kind === "letter_to_future" ? [] : await readReplies(uid, m.id);
   const replyAvatars = await avatarUrls(uid, replies.map((x) => x.authorId));
@@ -81,7 +82,7 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
             ? `🔒 ${ta.private}`
             : m.visibility === "connections"
               ? `🔗 ${t.memories.timeline.sharedAll}`
-              : `👪 ${t.memories.timeline.sharedCircles(m.circles.map((c) => `${CIRCLE_ICON[c]}${t.people.relationships[c]}`).join(locale === "ja" ? "・" : ", "))}`}
+              : `👪 ${t.memories.timeline.sharedCircles([...m.circles.map((c) => `${CIRCLE_ICON[c]}${t.people.relationships[c]}`), ...m.audience.map((id) => targets.find((x) => x.otherId === id)?.name).filter((x): x is string => !!x).map((n) => `👤${n}`)].join(locale === "ja" ? "・" : ", "))}`}
         </p>
       )}
       {m.sealed ? (
@@ -97,6 +98,7 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
               back={`/memories/${m.id}?edit=1`}
               d={{ ...m, personIds: m.people.map((p) => p.id), body: m.body, reason: m.reason, media }}
               canShare={canShare}
+              audiencePeople={targets.map((x) => ({ id: x.otherId, name: x.name }))}
               knownTags={await listTags(uid)}
               submitLabel={m.kind === "letter_to_future" ? t.common.save : t.memories.post.saveChanges}
             />

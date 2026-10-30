@@ -113,7 +113,7 @@ function Mine({ t, locale, it, compact, c, p, media, me }: { t: Dict; locale: Lo
           (m.labels ?? []).slice(0, 2).map((l) => <Pill key={l} tone="teal">{t.memories.kinds[l as keyof Dict["memories"]["kinds"]]}</Pill>)
         )}
         {m.audience !== "private" && (
-          <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-800">{m.audience === "connections" ? `🔗 ${tl.sharedAll}` : `👪 ${tl.sharedCircles(m.circles.map((c) => t.people.relationships[c as keyof Dict["people"]["relationships"]]).join(locale === "ja" ? "・" : ", "))}`}</span>
+          <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-800">{m.audience === "connections" ? `🔗 ${tl.sharedAll}` : `👪 ${tl.sharedCircles([...m.circles.map((c) => t.people.relationships[c as keyof Dict["people"]["relationships"]]), ...(m.readers ?? [])].join(locale === "ja" ? "・" : ", "))}`}</span>
         )}
         {c && <CommentCount t={t} c={c} />}
         {!compact && m.version > 1 && <Pill>v{m.version}</Pill>}

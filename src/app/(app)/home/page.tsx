@@ -91,7 +91,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         done={{ chart: !!chart, answers: know.parts.answers >= 3, bio: know.parts.bio, record: know.parts.records > 0 }}
       />}
       {/* Posting: the same sheet as on records. */}
-      <QuickComposer trigger="inline" knownTags={await listTags(uid)} tx={composerText(t)} canShare={targets.length > 0} giftBoxes={boxes.filter((b) => b.status === "open" && b.my_role !== "child").map((b) => ({ id: b.id, label: t.memories.composer.toGift(b.child_name) }))} />
+      <QuickComposer trigger="inline" knownTags={await listTags(uid)} audiencePeople={targets.map((x) => ({ id: x.otherId, name: x.name }))} tx={composerText(t)} canShare={targets.length > 0} giftBoxes={boxes.filter((b) => b.status === "open" && b.my_role !== "child").map((b) => ({ id: b.id, label: t.memories.composer.toGift(b.child_name) }))} />
       <Card title={t.home.recent}>
         {recent.length === 0 ? (
           <p className="text-sm text-stone-500">{t.memories.empty}</p>

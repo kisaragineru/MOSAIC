@@ -152,4 +152,41 @@ describe("records shared with connections", () => {
     expect((await getMemory(b.userId, other)).visibility).toBe("private");
     await expect(setMemoriesAudience(a.userId, [], { visibility: "private" })).rejects.toThrow();
   });
+  it("reaches the people chosen by name, alone or with relationships, and only while connected", async () => {
+    const a = await makeUser("Hana");
+    const b = await makeUser("Sora");
+    const c = await makeUser("Ren");
+    const stranger = await makeUser("X");
+    const ab = await connect(a.userId, b.userId);
+    const ac = await connect(a.userId, c.userId);
+    const id = await createMemory(a.userId, { kind: "thought", body: "ソラにだけ" });
+
+    // Sora by name only: Ren (a connection too) doesn't see it.
+    await setMemoryAudience(a.userId, id, { visibility: "circles", people: [b.userId] });
+    expect((await getMemory(a.userId, id)).audience).toEqual([b.userId]);
+    expect((await connectionFeed(b.userId)).map((x) => x.id)).toEqual([id]);
+    expect(await connectionFeed(c.userId)).toEqual([]);
+    expect(await visibleCount(a.userId, null, b.userId)).toBe(1);
+    expect(await visibleCount(a.userId, null, c.userId)).toBe(0);
+
+    // Relationships and people together: Ren as a friend, Sora by name.
+    await addPersonFromConnection(a.userId, ac, "friend");
+    await setMemoryAudience(a.userId, id, { visibility: "circles", circles: ["friend"], people: [b.userId] });
+    expect((await connectionFeed(c.userId)).map((x) => x.id)).toEqual([id]);
+    expect((await connectionFeed(b.userId)).map((x) => x.id)).toEqual([id]);
+
+    // Only people I'm connected with can be chosen.
+    await expect(setMemoryAudience(a.userId, id, { visibility: "circles", people: [stranger.userId] })).rejects.toMatchObject({ code: "not_connected" });
+
+    // Back to relationships only: Sora's name is dropped.
+    await setMemoryAudience(a.userId, id, { visibility: "circles", circles: ["friend"] });
+    expect((await getMemory(a.userId, id)).audience).toEqual([]);
+    expect(await connectionFeed(b.userId)).toEqual([]);
+
+    // Once the connection ends, a record chosen for them stops reaching them.
+    await setMemoryAudience(a.userId, id, { visibility: "circles", people: [b.userId] });
+    await revokeComparison(b.userId, ab);
+    expect(await connectionFeed(b.userId)).toEqual([]);
+    expect(await connectionFeed(stranger.userId)).toEqual([]);
+  });
 });

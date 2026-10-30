@@ -108,7 +108,7 @@ describe("memories & timeline", () => {
     // Date filters follow the opening day, not the writing day.
     expect((await listMemories(u.userId, { from: "2026-06-01", to: "2026-06-30" })).map((m) => m.id)).toEqual([letter]);
     expect((await listMemories(u.userId, { from: "2026-03-01", to: "2026-03-31" })).map((m) => m.id)).toEqual([]);
-    const [day] = buildTimeline(all.map(mineToEntry), "UTC");
+    const [day] = buildTimeline(all.map((m) => mineToEntry(m)), "UTC");
     expect(day!.day).toBe("2026-06-15");
     expect(day!.items[0]!.letter).toEqual({ writtenOn: "2026-03-01", days: 106 });
     expect(day!.items[0]!.writtenOn).toBeNull();

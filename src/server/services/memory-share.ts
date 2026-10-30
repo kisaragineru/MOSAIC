@@ -10,7 +10,7 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { uuid } from "@/lib/validation/common";
-import { MEMORY_CIRCLES, MEMORY_KINDS, memoryCircles, memoryEntries, memoryEntryVersions, people } from "../db/schema";
+import { MEMORY_CIRCLES, MEMORY_KINDS, memoryAudiencePeople, memoryCircles, memoryEntries, memoryEntryVersions, people } from "../db/schema";
 import { withUser } from "../db/tx";
 import { invalid, mapDbError } from "../errors";
 import { audit } from "./audit";
@@ -40,15 +40,23 @@ export interface FeedItem {
 const dateStr = (v: string | Date) => (typeof v === "string" ? v.slice(0, 10) : `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, "0")}-${String(v.getDate()).padStart(2, "0")}`);
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
-const audienceSchema = z.object({ visibility: z.enum(VISIBILITIES), circles: z.array(z.enum(MEMORY_CIRCLES)).max(4).default([]) });
+const audienceSchema = z.object({
+  visibility: z.enum(VISIBILITIES),
+  circles: z.array(z.enum(MEMORY_CIRCLES)).max(4).default([]),
+  /** People I'm connected with, chosen besides (or instead of) relationships (user ids). */
+  people: z.array(uuid).max(100).default([]),
+});
+const chosen = (d: z.output<typeof audienceSchema>) => d.visibility !== "circles" || d.circles.length > 0 || d.people.length > 0;
+const setAudience = (id: string, d: z.output<typeof audienceSchema>) =>
+  sql`select memory_set_audience(${id}, ${d.visibility}, ${`{${d.circles.join(",")}}`}::text[], ${`{${[...new Set(d.people)].join(",")}}`}::uuid[])`;
 
 export async function setMemoryAudience(userId: string, entryId: string, input: unknown) {
   const id = uuid.parse(entryId);
   const d = audienceSchema.parse(input);
-  if (d.visibility === "circles" && d.circles.length === 0) throw invalid("choose_audience");
+  if (!chosen(d)) throw invalid("choose_audience");
   await withUser(userId, async (tx) => {
     try {
-      await tx.execute(sql`select memory_set_audience(${id}, ${d.visibility}, ${`{${d.circles.join(",")}}`}::text[])`);
+      await tx.execute(setAudience(id, d));
     } catch (e) {
       mapDbError(e);
     }
@@ -60,11 +68,11 @@ export async function setMemoryAudience(userId: string, entryId: string, input: 
 export async function setMemoriesAudience(userId: string, entryIds: string[], input: unknown) {
   const ids = z.array(uuid).min(1).max(200).parse(entryIds);
   const d = audienceSchema.parse(input);
-  if (d.visibility === "circles" && d.circles.length === 0) throw invalid("choose_audience");
+  if (!chosen(d)) throw invalid("choose_audience");
   await withUser(userId, async (tx) => {
     for (const id of ids) {
       try {
-        await tx.execute(sql`select memory_set_audience(${id}, ${d.visibility}, ${`{${d.circles.join(",")}}`}::text[])`);
+        await tx.execute(setAudience(id, d));
       } catch (e) {
         mapDbError(e);
       }
@@ -75,6 +83,8 @@ export async function setMemoriesAudience(userId: string, entryIds: string[], in
 
 export interface ShareTarget {
   sessionId: string;
+  /** Their user id (to choose them as a reader). */
+  otherId: string;
   name: string;
   personId: string | null;
   /** The relationship on the linked person; null when the connection isn't in "people" yet. */
@@ -90,19 +100,21 @@ export async function shareTargets(userId: string): Promise<ShareTarget[]> {
     : [];
   return active.map((c) => {
     const r = rel.find((x) => x.id === c.personId)?.r;
-    return { sessionId: c.id, name: c.otherName, personId: c.personId, circle: (MEMORY_CIRCLES as readonly string[]).includes(r ?? "") ? (r as Circle) : null };
+    return { sessionId: c.id, otherId: c.otherId!, name: c.otherName, personId: c.personId, circle: (MEMORY_CIRCLES as readonly string[]).includes(r ?? "") ? (r as Circle) : null };
   });
 }
 
-/** How many of my records a connection can read now (for the person page). */
-export async function visibleCount(userId: string, circle: Circle | null): Promise<number> {
+/** How many of my records a connection can read now (for the person page): to everyone, to their relationship, or to them by name. */
+export async function visibleCount(userId: string, circle: Circle | null, otherId: string | null = null): Promise<number> {
   return withUser(userId, async (tx) => {
     const r = await tx.execute<{ n: number }>(sql`
       select count(*)::int as n from ${memoryEntries} e
       where e.user_id = ${userId} and e.kind <> 'letter_to_future'
         and (e.visibility = 'connections'
              or (e.visibility = 'circles' and ${circle}::text is not null
-                 and exists (select 1 from ${memoryCircles} mc where mc.entry_id = e.id and mc.circle = ${circle})))`);
+                 and exists (select 1 from ${memoryCircles} mc where mc.entry_id = e.id and mc.circle = ${circle}))
+             or (e.visibility = 'circles' and ${otherId}::uuid is not null
+                 and exists (select 1 from ${memoryAudiencePeople} ap where ap.entry_id = e.id and ap.user_id = ${otherId}::uuid)))`);
     return r.rows[0]?.n ?? 0;
   });
 }
@@ -150,7 +162,8 @@ export async function connectionFeed(
   });
 }
 
-export const mineToEntry = (m: MemorySummary): TimelineEntry => ({
+/** My record on the timeline; `names` (user id → name) names the people chosen to see it. */
+export const mineToEntry = (m: MemorySummary, names: Map<string, string> = new Map()): TimelineEntry => ({
   id: m.id,
   mine: true,
   ownerName: null,
@@ -163,6 +176,7 @@ export const mineToEntry = (m: MemorySummary): TimelineEntry => ({
   createdAt: m.createdAt,
   audience: m.visibility,
   circles: m.circles,
+  readers: m.audience.map((id) => names.get(id)).filter((x): x is string => !!x),
   version: m.version,
   tags: m.tags,
   people: m.people,
@@ -202,7 +216,8 @@ export async function feedForPage(userId: string, page: { previousOldest: string
 
 /** The newest few, mine and theirs together (Home). */
 export async function recentTimeline(userId: string, n = 6): Promise<TimelineEntry[]> {
-  const mine = (await listMemories(userId, { limit: n })).map(mineToEntry);
+  const names = new Map((await shareTargets(userId)).map((x) => [x.otherId, x.name]));
+  const mine = (await listMemories(userId, { limit: n })).map((m) => mineToEntry(m, names));
   const theirs = (await connectionFeed(userId, { limit: n })).map(feedToEntry);
   // Newest by the day each sits on (an opened letter counts from its opening day), then by time written.
   const day = (e: TimelineEntry) => timelineDay(e) ?? e.createdAt.toISOString().slice(0, 10);
