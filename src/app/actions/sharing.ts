@@ -63,7 +63,9 @@ export async function consentAction(form: FormData) {
   const r = await attempt("comparison.consent", () => giveConsent(uid, id, { scopes, agree: bool(form, "agree") }));
   revalidatePath(`/compare/${id}`);
   const back = safeNext(str(form, "back"), `/compare/${id}`);
-  redirect(withParam(back, r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
+  // Saying yes for the first time is a moment of its own: connected now, or my side reached them.
+  const ok = r.ok && bool(form, "first") ? (r.value === "active" ? "connected" : "reached") : "saved";
+  redirect(withParam(back, r.ok ? "ok" : "e", r.ok ? ok : r.error));
 }
 
 /** One sharing level for the connections picked in a privacy list (Tử Vi, or answers). */

@@ -1,3 +1,4 @@
+import { ConnectedMoment } from "@/components/connected-moment";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { TopicsSection } from "@/components/topics-section";
@@ -143,6 +144,15 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
     // Back to where this is reached from: the person's own page (notes, gifts), else the people list.
     <Page title={cc.title(v.otherName)} back={personId ? `/people/${personId}` : "/people"}>
       <Flash t={t} sp={sp} />
+      {(sp.ok === "connected" || sp.ok === "reached") && v.status !== "revoked" && (
+        <ConnectedMoment
+          t={t}
+          kind={sp.ok === "connected" && active ? "connected" : "reached"}
+          sessionId={v.id}
+          me={{ name: myName || (await getAccount(uid)).profile.displayName, src: pics.get(uid), type: await myTint(uid) }}
+          other={{ name: v.otherName, src: pics.get(other ?? ""), type: (await typeTints(uid, [other])).get(other ?? "") }}
+        />
+      )}
 
       {/* Who: the two of you, how you're connected, and where to go on this page. */}
       <section className="rounded-3xl bg-linear-to-br from-rose-50 via-white to-teal-50 p-5 shadow-sm ring-1 ring-white/80">
@@ -214,6 +224,7 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
           <form action={consentAction}>
             <input type="hidden" name="sessionId" value={v.id} />
             <input type="hidden" name="agree" value="on" />
+            <input type="hidden" name="first" value="on" />
             <button type="submit" className="flex min-h-12 w-full items-center justify-center rounded-full bg-teal-700 px-4 text-base font-bold text-white shadow-md transition hover:bg-teal-800 active:scale-[0.98]">
               {t.compare.connectNow}
             </button>
@@ -228,7 +239,7 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
           <Card title={t.compare.chooseTitle}>
             <p className="mb-2 text-xs text-stone-500">{t.compare.chooseLater}</p>
             <p className="mb-3 text-sm text-stone-600">{PURPOSE_TEXT[locale]}</p>
-            {v.myConsent && <p className="mb-2 text-sm"><Pill tone="teal">✓</Pill> {t.compare.yourConsent(scopeNames(v.myConsent.scopes))}</p>}
+            {v.myConsent && <p className="mb-2 text-sm"><Pill tone="teal">✓</Pill> {t.compare.yourConsent(v.myConsent.scopes.length ? scopeNames(v.myConsent.scopes) : t.compare.noneChosen)}</p>}
             <p className="mb-3 text-sm">{v.otherConsented ? `✓ ${t.compare.otherConsented}` : `⏳ ${t.compare.waiting}`}</p>
             <form id="choose" action={consentAction} className="space-y-2 scroll-mt-24">
               <input type="hidden" name="sessionId" value={v.id} />

@@ -319,7 +319,8 @@ test("a connection not agreed by both yet: marked as waiting, with whose turn it
   await expect(hana.getByTestId("connect-choice")).toContainText("急がなくて大丈夫です");
   await expect(hana.getByRole("checkbox", { name: /^好み/ })).toHaveCount(0);
   await hana.getByRole("button", { name: "つながる", exact: true }).click();
-  await expect(hana.getByRole("button", { name: "つながる", exact: true })).toHaveCount(0);
+  await expect(hana.getByTestId("connected-moment")).toContainText("あなたの気持ちは届きました");
+  await expect(hana.getByText("保存しました。")).toHaveCount(0);
 
   // Now Sora's turn.
   await hana.goto(person);
@@ -329,7 +330,10 @@ test("a connection not agreed by both yet: marked as waiting, with whose turn it
 
   await sora.goto(compare);
   await sora.getByRole("button", { name: "つながる", exact: true }).click();
-  await expect(sora.getByRole("button", { name: "つながる", exact: true })).toHaveCount(0);
+  // Both said yes: the moment, and a way to say hello.
+  const moment = sora.getByTestId("connected-moment");
+  await expect(moment).toContainText("ハナさんとつながりました");
+  await expect(moment.getByRole("button", { name: "💬 最初のメッセージを送る" })).toBeVisible();
   await hana.goto("/people");
   await expect(hana.getByTestId("person-pending")).toHaveCount(0);
   await expect(hana.getByText(/^🔗\s*つながっている$/)).toBeVisible();
