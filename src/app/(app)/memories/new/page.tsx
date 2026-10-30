@@ -1,4 +1,5 @@
 import { createMemoryAction } from "@/app/actions/memories";
+import { listTags } from "@/server/services/memories";
 import { Flash } from "@/components/flash";
 import { DraftCarry } from "@/components/draft-carry";
 import { MemoryForm } from "@/components/memory-form";
@@ -36,7 +37,7 @@ export default async function NewMemoryPage({ searchParams }: { searchParams: Pr
             title: textParam(sp.title, 200),
             body: textParam(sp.body, 1000),
             tags: textParam(sp.tags, 100)?.split(",").map((x) => x.trim()).filter(Boolean).slice(0, 5),
-          }} canShare={canShare} giftBoxes={giftBoxes} />
+          }} canShare={canShare} giftBoxes={giftBoxes} knownTags={await listTags(uid)} />
       </Card>
     </Page>
   );

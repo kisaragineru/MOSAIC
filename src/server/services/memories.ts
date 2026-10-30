@@ -2,7 +2,8 @@ import { and, asc, desc, eq, inArray, lte, gte, sql, type SQL } from "drizzle-or
 import type { GiftOrigin } from "@/lib/timeline";
 import { z } from "zod";
 import { escapeLike, isoDate, optionalDate, optionalText, tagList, todayIn, uuid } from "@/lib/validation/common";
-import { MEMORY_CIRCLES, MEMORY_KINDS, memoryCircles, memoryEntries, memoryEntryVersions, memoryPeople, memoryTags, people, profiles } from "../db/schema";
+import { MEMORY_CIRCLES, MEMORY_KINDS, memoryCircles, memoryEntries, memoryEntryVersions, memoryPeople, memoryTagNotes, memoryTags, people, profiles } from "../db/schema";
+import { mergeTags, normalizeTag, tagKey } from "@/lib/tags";
 import { withUser, type Tx } from "../db/tx";
 import { invalid, notFound } from "../errors";
 import { attachMedia, MAX_MEDIA } from "./media";
@@ -69,7 +70,8 @@ export async function createMemory(userId: string, input: unknown) {
       reason: data.reason ?? null,
       mood: data.mood ?? null,
     });
-    await replaceLinks(tx, userId, entry!.id, data.tags, data.personIds);
+    // "#tag" in the text is a tag too.
+    await replaceLinks(tx, userId, entry!.id, mergeTags(data.tags, `${data.title ?? ""}\n${data.body}`), data.personIds);
     if (data.media?.length) await attachMedia(tx, entry!.id, data.media);
     return entry!.id;
   });
@@ -134,7 +136,7 @@ export async function editMemory(userId: string, entryId: string, input: unknown
         updatedAt: new Date(),
       })
       .where(eq(memoryEntries.id, id));
-    await replaceLinks(tx, userId, id, data.tags, data.personIds);
+    await replaceLinks(tx, userId, id, mergeTags(data.tags, `${data.title ?? ""}\n${data.body}`), data.personIds);
     if (data.media !== undefined) await attachMedia(tx, id, data.media);
     return { version, contentChanged };
   });
@@ -224,7 +226,7 @@ export async function listMemories(userId: string, filters: unknown = {}): Promi
     if (f.to) conds.push(lte(onTimeline, f.to));
     if (f.tag) {
       conds.push(
-        sql`exists (select 1 from ${memoryTags} where ${memoryTags.entryId} = ${memoryEntries.id} and ${memoryTags.tag} = ${f.tag.toLowerCase()})`,
+        sql`exists (select 1 from ${memoryTags} where ${memoryTags.entryId} = ${memoryEntries.id} and ${memoryTags.tag} = ${normalizeTag(f.tag)})`,
       );
     }
     if (f.personId) {
@@ -232,7 +234,13 @@ export async function listMemories(userId: string, filters: unknown = {}): Promi
         sql`exists (select 1 from ${memoryPeople} where ${memoryPeople.entryId} = ${memoryEntries.id} and ${memoryPeople.personId} = ${f.personId})`,
       );
     }
-    if (f.q) {
+    if (f.q && /^[#＃]/.test(f.q.trim())) {
+      // "#…": tags only, loosely (kana, width, accents): my tags that match, then their records.
+      const key = tagKey(f.q);
+      const mine = await tx.selectDistinct({ tag: memoryTags.tag }).from(memoryTags).where(eq(memoryTags.userId, userId));
+      const hits = mine.map((x) => x.tag).filter((tag) => tagKey(tag).includes(key));
+      conds.push(hits.length ? sql`exists (select 1 from ${memoryTags} where ${memoryTags.entryId} = ${memoryEntries.id} and ${inArray(memoryTags.tag, hits)})` : sql`false`);
+    } else if (f.q) {
       const pattern = `%${escapeLike(f.q)}%`;
       // Sealed letters are never searchable by content before their reveal date.
       conds.push(sql`(
@@ -374,15 +382,90 @@ export async function getMemory(userId: string, entryId: string) {
   });
 }
 
-export async function listTags(userId: string) {
+/** My tags, most used first, with when each was last used (its latest record's timeline date). */
+export async function listTags(userId: string): Promise<{ tag: string; n: number; last: string }[]> {
   return withUser(userId, async (tx) => {
     const r = await tx
-      .select({ tag: memoryTags.tag, n: sql<number>`count(*)::int` })
+      .select({ tag: memoryTags.tag, n: sql<number>`count(*)::int`, last: sql<string>`max(${effectiveDate})::text` })
       .from(memoryTags)
+      .innerJoin(memoryEntries, eq(memoryEntries.id, memoryTags.entryId))
       .where(eq(memoryTags.userId, userId))
       .groupBy(memoryTags.tag)
       .orderBy(desc(sql`count(*)`), asc(memoryTags.tag));
     return r;
+  });
+}
+
+export interface TagDetail {
+  tag: string;
+  n: number;
+  /** Timeline dates of the first and the latest record with it. */
+  first: string | null;
+  last: string | null;
+  feelings: Partial<Record<Feeling, number>>;
+  note: string | null;
+}
+
+/** One tag of mine: how much, over what time, with which feelings, and my note on it. */
+export async function tagDetail(userId: string, raw: string): Promise<TagDetail> {
+  const tag = normalizeTag(raw);
+  return withUser(userId, async (tx) => {
+    const rows = await tx
+      .select({ date: sql<string>`${effectiveDate}::text`, feeling: memoryEntries.feeling })
+      .from(memoryTags)
+      .innerJoin(memoryEntries, eq(memoryEntries.id, memoryTags.entryId))
+      .where(and(eq(memoryTags.userId, userId), eq(memoryTags.tag, tag)));
+    const [note] = await tx.select({ note: memoryTagNotes.note }).from(memoryTagNotes).where(and(eq(memoryTagNotes.userId, userId), eq(memoryTagNotes.tag, tag)));
+    const dates = rows.map((r) => r.date).sort();
+    const feelings: Partial<Record<Feeling, number>> = {};
+    for (const r of rows) if (r.feeling) feelings[r.feeling as Feeling] = (feelings[r.feeling as Feeling] ?? 0) + 1;
+    return { tag, n: rows.length, first: dates[0] ?? null, last: dates.at(-1) ?? null, feelings, note: note?.note ?? null };
+  });
+}
+
+/**
+ * Rename a tag on every record that has it. To a tag already used, it is a merge: records with
+ * both keep one, and the notes are put together. Returns the tag's new name.
+ */
+export async function renameTag(userId: string, rawFrom: string, rawTo: string): Promise<string> {
+  const from = normalizeTag(rawFrom);
+  const to = normalizeTag(rawTo);
+  if (!from || !to) throw invalid("invalid_tag");
+  if (from === to) return to;
+  return withUser(userId, async (tx) => {
+    await tx.execute(sql`
+      delete from ${memoryTags} a using ${memoryTags} b
+      where a.user_id = ${userId} and a.tag = ${from} and b.user_id = ${userId} and b.tag = ${to} and b.entry_id = a.entry_id`);
+    await tx.update(memoryTags).set({ tag: to }).where(and(eq(memoryTags.userId, userId), eq(memoryTags.tag, from)));
+    const notes = await tx.select().from(memoryTagNotes).where(and(eq(memoryTagNotes.userId, userId), inArray(memoryTagNotes.tag, [from, to])));
+    const old = notes.find((x) => x.tag === from);
+    if (old) {
+      const kept = notes.find((x) => x.tag === to);
+      await tx.delete(memoryTagNotes).where(and(eq(memoryTagNotes.userId, userId), eq(memoryTagNotes.tag, from)));
+      const note = (kept ? `${kept.note}\n${old.note}` : old.note).slice(0, 1000);
+      await tx.insert(memoryTagNotes).values({ userId, tag: to, note }).onConflictDoUpdate({ target: [memoryTagNotes.userId, memoryTagNotes.tag], set: { note, updatedAt: new Date() } });
+    }
+    return to;
+  });
+}
+
+/** Take a tag off every record (the records stay), with its note. */
+export async function deleteTag(userId: string, raw: string) {
+  const tag = normalizeTag(raw);
+  await withUser(userId, async (tx) => {
+    await tx.delete(memoryTags).where(and(eq(memoryTags.userId, userId), eq(memoryTags.tag, tag)));
+    await tx.delete(memoryTagNotes).where(and(eq(memoryTagNotes.userId, userId), eq(memoryTagNotes.tag, tag)));
+  });
+}
+
+/** My note on a tag; empty removes it. */
+export async function setTagNote(userId: string, raw: string, rawNote: unknown) {
+  const tag = normalizeTag(raw);
+  const note = z.string().trim().max(1000).parse(rawNote ?? "");
+  if (!tag) throw invalid("invalid_tag");
+  await withUser(userId, async (tx) => {
+    if (!note) await tx.delete(memoryTagNotes).where(and(eq(memoryTagNotes.userId, userId), eq(memoryTagNotes.tag, tag)));
+    else await tx.insert(memoryTagNotes).values({ userId, tag, note }).onConflictDoUpdate({ target: [memoryTagNotes.userId, memoryTagNotes.tag], set: { note, updatedAt: new Date() } });
   });
 }
 

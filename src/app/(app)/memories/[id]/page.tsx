@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { deleteMemoryAction, editMemoryAction } from "@/app/actions/memories";
 import { ConfirmButton } from "@/components/confirm-button";
@@ -9,7 +10,8 @@ import { FromGift } from "@/components/timeline";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { AppError } from "@/server/errors";
-import { getMemory, markLetterRead } from "@/server/services/memories";
+import { getMemory, listTags, markLetterRead } from "@/server/services/memories";
+import { tagHref } from "@/lib/tag-href";
 import { getAccount } from "@/server/services/account";
 import { listPeople } from "@/server/services/people";
 import { shareTargets } from "@/server/services/memory-share";
@@ -55,7 +57,11 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
         {m.occurredOn && <span>{m.occurredOn}</span>}
         <span>{t.common.created} {new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: tz }).format(m.createdAt)}</span>
         <span>{t.common.version} {m.version}</span>
-        {m.tags.map((x) => <Pill key={x}>#{x}</Pill>)}
+        {m.tags.map((x) => (
+          <Link key={x} href={tagHref(x)} className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-teal-800 hover:bg-teal-50" data-testid="post-tag">
+            #{x}
+          </Link>
+        ))}
         {m.people.map((p) => <Pill key={p.id} tone="rose">{p.nickname}</Pill>)}
       </div>
       {m.kind === "letter_to_future" && !m.sealed && m.revealOn && (
@@ -91,6 +97,7 @@ export default async function MemoryPage({ params, searchParams }: { params: Pro
               back={`/memories/${m.id}?edit=1`}
               d={{ ...m, personIds: m.people.map((p) => p.id), body: m.body, reason: m.reason, media }}
               canShare={canShare}
+              knownTags={await listTags(uid)}
               submitLabel={m.kind === "letter_to_future" ? t.common.save : t.memories.post.saveChanges}
             />
           </div>

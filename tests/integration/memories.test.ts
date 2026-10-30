@@ -73,7 +73,7 @@ describe("memories & timeline", () => {
     const all = await listMemories(u.userId);
     expect(all[0]!.body).toBe("Run a marathon");
     expect(all.at(-1)!.body).toBe("Ăn phở với mẹ ở Hà Nội");
-    expect(await listTags(u.userId)).toEqual([
+    expect((await listTags(u.userId)).map(({ tag, n }) => ({ tag, n }))).toEqual([
       { tag: "food", n: 1 },
       { tag: "health", n: 1 },
     ]);

@@ -155,9 +155,10 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
               </fieldset>
             </div>
           </details>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <Button type="submit">{t.common.search}</Button>
             <LinkButton href={view === "all" ? "/memories" : `/memories?view=${view}`}>{t.common.clear}</LinkButton>
+            {tags.length > 0 && <Link href="/memories/tags" className="ml-auto text-sm font-semibold text-teal-700" data-testid="tags-link"># {t.memories.tags.cloudLink} →</Link>}
           </div>
         </form>
       </Card>}
@@ -178,6 +179,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
       {/* Writing is the main thing here: a floating button that opens a composer in place. */}
       <QuickComposer
         canShare={canShare}
+        knownTags={tags}
         tx={composerText(t)}
         giftBoxes={(await myGiftBoxes(uid)).filter((b) => b.status === "open" && b.my_role !== "child").map((b) => ({ id: b.id, label: t.memories.composer.toGift(b.child_name) }))}
       />

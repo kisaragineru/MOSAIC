@@ -3,7 +3,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { splitTags } from "@/lib/validation/common";
 import { requireUser } from "@/server/auth/session";
-import { createMemory, deleteMemory, editMemory, setMemoryFeeling, setMemoryLabels } from "@/server/services/memories";
+import { createMemory, deleteMemory, deleteTag, editMemory, renameTag, setMemoryFeeling, setMemoryLabels, setTagNote } from "@/server/services/memories";
+import { tagHref } from "@/lib/tag-href";
 import { setMemoriesAudience, setMemoryAudience } from "@/server/services/memory-share";
 import { attempt, safeNext, str, withParam } from "./util";
 
@@ -139,4 +140,29 @@ export async function bulkAudienceAction(form: FormData) {
   const r = await attempt("memory.bulk_audience", () => setMemoriesAudience(uid, ids, audienceFromForm(form)));
   revalidatePath("/", "layout");
   redirect(withParam(back, r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
+}
+
+/** Rename (or merge into) another tag; back to the tag under its new name. */
+export async function renameTagAction(form: FormData) {
+  const uid = await requireUser();
+  const from = str(form, "tag");
+  const r = await attempt("memories.tag.rename", () => renameTag(uid, from, str(form, "to")));
+  revalidatePath("/memories");
+  redirect(r.ok ? `${tagHref(r.value)}?ok=saved` : `${tagHref(from)}?e=${r.error}`);
+}
+
+/** Take a tag off every record (the records stay). */
+export async function deleteTagAction(form: FormData) {
+  const uid = await requireUser();
+  const tag = str(form, "tag");
+  const r = await attempt("memories.tag.delete", () => deleteTag(uid, tag));
+  revalidatePath("/memories");
+  redirect(r.ok ? "/memories/tags?ok=deleted" : `${tagHref(tag)}?e=${r.error}`);
+}
+
+export async function tagNoteAction(form: FormData) {
+  const uid = await requireUser();
+  const tag = str(form, "tag");
+  const r = await attempt("memories.tag.note", () => setTagNote(uid, tag, str(form, "note")));
+  redirect(withParam(tagHref(tag), r.ok ? "ok" : "e", r.ok ? "saved" : r.error));
 }

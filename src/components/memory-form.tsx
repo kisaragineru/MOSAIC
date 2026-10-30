@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Dict } from "@/lib/i18n/messages/en";
 import type { MediaItem } from "@/server/services/media";
 import type { AudienceText } from "./audience-field";
+import { TagInput, type TagInputText } from "./tag-input";
 import { MediaPicker, type MediaPickerText } from "./media-picker";
 import { PostFooter } from "./post-footer";
 import type { ComposerText } from "./quick-composer";
@@ -96,6 +97,7 @@ export function MemoryForm({
   submitLabel,
   canShare = false,
   giftBoxes = [],
+  knownTags = [],
 }: {
   t: Dict;
   action: (f: FormData) => Promise<void>;
@@ -107,6 +109,8 @@ export function MemoryForm({
   canShare?: boolean;
   /** Gift boxes I write in (a new post offers them below). */
   giftBoxes?: { id: string; label: string }[];
+  /** My tags so far, most used first (offered while typing a tag). */
+  knownTags?: { tag: string; n: number }[];
 }) {
   const p = t.memories.post;
   const isLetter = d.kind === "letter_to_future";
@@ -142,9 +146,11 @@ export function MemoryForm({
             <summary className="cursor-pointer text-sm text-stone-600">{p.more}</summary>
             <div className="mt-3 space-y-3">
               <DateSelect label={t.memories.fields.occurredOn} name="occurredOn" text={dateText(t)} defaultValue={d.occurredOn ?? ""} />
-              <Field label={t.memories.fields.tags}>
-                <Input name="tags" defaultValue={(d.tags ?? []).join(", ")} />
-              </Field>
+              <fieldset>
+                <legend className="mb-1 text-sm font-medium text-stone-700">{t.memories.fields.tags}</legend>
+                <TagInput initial={d.tags ?? []} known={knownTags} tx={tagInputText(t)} />
+                <p className="mt-1 text-[11px] leading-5 text-stone-500">{t.memories.tags.inTextHelp}</p>
+              </fieldset>
               {people.length > 0 && (
                 <fieldset>
                   <legend className="text-sm font-medium text-stone-700">{t.memories.fields.people}</legend>
@@ -170,6 +176,11 @@ export function MemoryForm({
 }
 
 /** The composer sheet's words (Home and records use the same one). */
+export function tagInputText(t: Dict): TagInputText {
+  const x = t.memories.tags;
+  return { label: t.memories.fields.tags, placeholder: x.placeholder, add: x.add, remove: x.remove, similar: x.similar, count: x.count };
+}
+
 export function composerText(t: Dict): ComposerText {
   const p = t.memories.post;
   return {
@@ -183,6 +194,8 @@ export function composerText(t: Dict): ComposerText {
     discard: t.memories.composer.discard,
     more: p.more,
     morePhotos: t.memories.composer.morePhotos,
+    tagSuggest: t.memories.tags.suggest,
+    tagCount: t.memories.tags.count,
     otherWays: p.otherWays,
     letter: p.letter,
     letterDesc: p.letterDesc,

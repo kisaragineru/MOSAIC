@@ -3,6 +3,7 @@ import { askConfirm, confirming } from "@/lib/confirm";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { carryDraft } from "@/lib/draft-carry";
+import { normalizeTag, suggestTags, tagQuery } from "@/lib/tags";
 import { useActionState, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { quickMemoryAction, type QuickState } from "@/app/actions/memories";
 import type { AudienceText } from "./audience-field";
@@ -23,6 +24,10 @@ export interface ComposerText {
   more: string;
   /** Asked before "more" when photos were picked: they can't go along, only the text. */
   morePhotos: string;
+  /** Label of the tag suggestions shown after "#". */
+  tagSuggest: string;
+  /** "{n}": records with the tag. */
+  tagCount: string;
   otherWays: string;
   letter: string;
   letterDesc: string;
@@ -55,7 +60,20 @@ const noop = () => () => {};
  * letter and the gift box, which work differently, are offered below it. Before the page is
  * interactive the trigger is a plain link to the full form.
  */
-export function QuickComposer({ tx, canShare, giftBoxes = [], trigger = "fab" }: { tx: ComposerText; canShare: boolean; giftBoxes?: ComposerGiftBox[]; trigger?: "fab" | "inline" }) {
+export function QuickComposer({
+  tx,
+  canShare,
+  giftBoxes = [],
+  trigger = "fab",
+  knownTags = [],
+}: {
+  tx: ComposerText;
+  canShare: boolean;
+  giftBoxes?: ComposerGiftBox[];
+  trigger?: "fab" | "inline";
+  /** My tags so far, most used first: "#" in the text offers them. */
+  knownTags?: { tag: string; n: number }[];
+}) {
   const hydrated = useSyncExternalStore(noop, () => true, () => false);
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
@@ -66,6 +84,23 @@ export function QuickComposer({ tx, canShare, giftBoxes = [], trigger = "fab" }:
   const [ask, setAsk] = useState<string | null>(null);
   const area = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
+  // "#…" just before the caret offers the tags already used (one meaning, one spelling).
+  const [caret, setCaret] = useState(0);
+  const tagAt = open ? tagQuery(text, caret) : null;
+  const tagChoices = tagAt ? suggestTags(tagAt.query, knownTags).filter((x) => x.tag !== normalizeTag(tagAt.query) || tagAt.query === "") : [];
+  const pickTag = (tag: string) => {
+    if (!tagAt) return;
+    const before = text.slice(0, tagAt.start);
+    const after = text.slice(tagAt.start + 1 + tagAt.query.length);
+    const insert = `#${tag} `;
+    setText(before + insert + after.replace(/^ /, ""));
+    const at = before.length + insert.length;
+    setCaret(at);
+    requestAnimationFrame(() => {
+      area.current?.focus();
+      area.current?.setSelectionRange(at, at);
+    });
+  };
 
   // Posted: close and start the next one empty (the list refreshes from the server).
   if (state?.ok && state.at !== handled) {
@@ -149,11 +184,30 @@ export function QuickComposer({ tx, canShare, giftBoxes = [], trigger = "fab" }:
                 maxLength={20000}
                 rows={4}
                 value={text}
-                onChange={(e) => setText(e.target.value)}
+                onChange={(e) => {
+                  setText(e.target.value);
+                  setCaret(e.target.selectionStart);
+                }}
+                onSelect={(e) => setCaret(e.currentTarget.selectionStart)}
                 placeholder={tx.prompt}
                 aria-label={tx.body}
                 className="w-full resize-none rounded-2xl border border-stone-200 bg-stone-50/60 px-3.5 py-3 text-base leading-relaxed text-stone-900 placeholder:text-stone-500 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20"
               />
+              {tagChoices.length > 0 && (
+                <div role="group" aria-label={tx.tagSuggest} data-testid="quick-tag-suggestions" className="-mt-2 flex flex-wrap gap-1.5">
+                  {tagChoices.map((x) => (
+                    <button
+                      key={x.tag}
+                      type="button"
+                      onPointerDown={(e) => e.preventDefault()}
+                      onClick={() => pickTag(x.tag)}
+                      className="rounded-full bg-teal-50 px-2.5 py-1 text-xs text-teal-900 ring-1 ring-teal-100 transition hover:bg-teal-100"
+                    >
+                      #{x.tag} <span className="text-teal-700/60">{tx.tagCount.replace("{n}", String(x.n))}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
               <MediaPicker tx={tx.media} resetKey={handled} onCount={setPhotos} />
               {state && !state.ok && <p role="alert" className="text-sm text-rose-700">{tx.errors[state.error] ?? tx.errors.generic}</p>}
               <PostFooter key={String(handled)} tx={tx.audience} canShare={canShare} submit={tx.submit} pendingLabel={tx.posting} pending={pending} disabled={!text.trim() && photos === 0} />

@@ -335,6 +335,18 @@ export const memoryEntryVersions = pgTable(
   ],
 );
 
+/** A note on one of my tags ("ideas for presents"): mine only, shown on the tag's page (migration 0089). */
+export const memoryTagNotes = pgTable(
+  "memory_tag_notes",
+  {
+    userId: userRef(),
+    tag: text("tag").notNull(),
+    note: text("note").notNull(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.tag] }), check("memory_tag_notes_note_ck", sql`char_length(${t.note}) between 1 and 1000`)],
+);
+
 export const memoryTags = pgTable(
   "memory_tags",
   {

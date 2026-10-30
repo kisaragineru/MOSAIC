@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
+import { confirm } from "./confirm";
 
 test.use({ locale: "ja-JP", extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.58.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
 
@@ -107,4 +108,60 @@ test("Tử Vi and answers: how much each connection sees, set for many at once",
   await expect(who).toContainText("好み：相手は見せてくれている");
   await page.goto("/me/privacy/tuvi");
   await expect(page.getByTestId("level-row").filter({ hasText: "ミナ（テスト）" })).toContainText("あなた：命盤の詳細まで");
+});
+
+test("tags: # in the text with the tags already used offered, a cloud, a page per tag with a note, renaming, and similar tags pointed out", async ({ page }) => {
+  await page.goto("/register");
+  await page.getByLabel("なんと呼べばいいですか？").fill("ハナ");
+  await page.getByLabel("メールアドレス").fill(`${randomUUID().slice(0, 8)}@example.test`);
+  await page.getByLabel(/^パスワード/).fill("e2e correct horse battery");
+  await page.getByRole("button", { name: "アカウントを作成" }).click();
+  await page.waitForURL(/welcome/);
+
+  // "#tag" in the quick composer's text is a tag.
+  await page.goto("/memories");
+  await page.getByTestId("compose-fab").click();
+  const sheet = page.getByRole("dialog", { name: "新しい投稿" });
+  const box = sheet.getByLabel("あったこと・考えていること");
+  await box.fill("Georg Jensen #好きなブランド");
+  await sheet.getByRole("button", { name: "投稿する" }).click();
+  await expect(sheet).toBeHidden();
+  // The next time, "#" offers it.
+  await page.getByTestId("compose-fab").click();
+  await box.pressSequentially("Vivienne Westwood #好き");
+  await page.getByTestId("quick-tag-suggestions").getByRole("button", { name: /#好きなブランド/ }).click();
+  await expect(box).toHaveValue("Vivienne Westwood #好きなブランド ");
+  await sheet.getByRole("button", { name: "投稿する" }).click();
+  await expect(sheet).toBeHidden();
+
+  // The cloud, then the tag's own page.
+  await page.getByTestId("tags-link").click();
+  await page.waitForURL(/\/memories\/tags$/);
+  await page.getByTestId("tag-cloud").getByRole("link", { name: /#好きなブランド/ }).click();
+  await expect(page.getByTestId("tag-span")).toContainText("2件");
+  await expect(page.getByTestId("tag-records").getByRole("link")).toHaveCount(2);
+  await page.getByLabel("このタグのメモ").fill("プレゼント選びの参考");
+  await page.getByRole("button", { name: "メモを保存" }).click();
+  await page.waitForURL(/ok=saved/);
+  await expect(page.getByLabel("このタグのメモ")).toHaveValue("プレゼント選びの参考");
+
+  // A new tag that looks like one already used is pointed out.
+  await page.goto("/memories/new");
+  await page.getByText("詳しく書く（日付・タグ・人）").click();
+  await page.getByRole("textbox", { name: "タグ" }).fill("ぶらんど");
+  await expect(page.getByTestId("tag-similar")).toContainText("#好きなブランド");
+  await page.getByTestId("tag-similar").getByRole("button", { name: /#好きなブランド/ }).click();
+  await expect(page.getByTestId("tag-input").getByRole("listitem")).toHaveText(["#好きなブランド✕"]);
+
+  // Renamed on its page: the records follow, and a post's tag opens the page.
+  await page.goto("/memories/tags");
+  await page.getByTestId("tag-cloud").getByRole("link", { name: /#好きなブランド/ }).click();
+  await page.getByLabel("新しい名前").fill("ブランド");
+  await page.getByRole("button", { name: "名前を変える" }).click();
+  await confirm(page);
+  await page.waitForURL(/\/memories\/tags\/.+\?ok=saved/);
+  await expect(page.getByRole("heading", { name: "#ブランド" })).toBeVisible();
+  await page.getByTestId("tag-records").getByRole("link").first().click();
+  await page.getByTestId("post-tag").click();
+  await expect(page.getByRole("heading", { name: "#ブランド" })).toBeVisible();
 });

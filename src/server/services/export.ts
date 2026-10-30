@@ -28,6 +28,7 @@ export async function buildExport(userId: string) {
     const entries = await tx.select().from(s.memoryEntries).where(eq(s.memoryEntries.userId, userId)).orderBy(asc(s.memoryEntries.createdAt));
     const versions = await tx.select().from(s.memoryEntryVersions).where(eq(s.memoryEntryVersions.userId, userId)).orderBy(asc(s.memoryEntryVersions.version));
     const tags = await tx.select().from(s.memoryTags).where(eq(s.memoryTags.userId, userId));
+    const tagNotes = await tx.select({ tag: s.memoryTagNotes.tag, note: s.memoryTagNotes.note, updatedAt: s.memoryTagNotes.updatedAt }).from(s.memoryTagNotes).where(eq(s.memoryTagNotes.userId, userId));
     const mpeople = await tx.select().from(s.memoryPeople).where(eq(s.memoryPeople.userId, userId));
     const circles = await tx.select().from(s.memoryCircles).where(eq(s.memoryCircles.ownerId, userId));
 
@@ -121,6 +122,7 @@ export async function buildExport(userId: string) {
         personIds: mpeople.filter((m) => m.entryId === e.id).map((m) => m.personId),
         sharedWithCircles: circles.filter((c) => c.entryId === e.id).map((c) => c.circle),
       })),
+      tagNotes,
       questions: qdefs.map((d) => ({ ...d, versions: qversions.filter((v) => v.questionId === d.id) })),
       questionResponses: responses,
       questionFeedback: feedback,
