@@ -251,6 +251,47 @@ test("share with chosen people by name: only they see it", async ({ browser }) =
   await expect(ren.getByText("ソラにだけ話したいこと。")).toHaveCount(0);
 });
 
+test("records dated ahead wait above today, closed to one line, and on Home as one line", async ({ browser }) => {
+  const hana = await user(browser, "ハナ");
+  const next = `${new Date().getFullYear() + 1}-01-01`;
+  await hana.goto("/memories/new");
+  await hana.getByLabel("あったこと・考えていること").fill("正月の予定");
+  await hana.getByText("詳しく書く（日付・タグ・人）").click();
+  await setDate(hana, "いつのこと？", next);
+  await hana.getByRole("button", { name: "投稿する" }).click();
+  await hana.waitForURL(/ok=saved/);
+  await hana.goto("/memories/new");
+  await hana.getByLabel("あったこと・考えていること").fill("今日のこと");
+  await hana.getByRole("button", { name: "投稿する" }).click();
+  await hana.waitForURL(/ok=saved/);
+
+  await hana.goto("/memories");
+  const ahead = hana.getByTestId("ahead");
+  await expect(ahead).toContainText("これから");
+  await expect(ahead).toContainText("1件");
+  await expect(hana.getByTestId("ahead-today")).toContainText("今日");
+  // Closed at first: the record isn't on the timeline, only in the summary line.
+  await expect(hana.getByTestId("ahead-item")).toBeHidden();
+  await expect(hana.getByRole("link", { name: /正月の予定/ })).toBeHidden();
+  await expect(hana.getByRole("link", { name: /今日のこと/ })).toBeVisible();
+  await ahead.getByText("これから").click();
+  await expect(hana.getByTestId("ahead-item")).toContainText("正月の予定");
+  // Remembered as opened.
+  await hana.reload();
+  await expect(hana.getByTestId("ahead-item")).toBeVisible();
+  // A search finds it as usual.
+  await hana.goto("/memories?q=正月");
+  await expect(hana.getByTestId("ahead")).toHaveCount(0);
+  await expect(hana.getByRole("link", { name: /正月の予定/ })).toBeVisible();
+
+  await hana.goto("/home");
+  await expect(hana.getByTestId("home-ahead")).toContainText("これから 1件");
+  await expect(hana.getByTestId("home-ahead")).toContainText("正月の予定");
+  await hana.getByTestId("home-ahead").click();
+  await hana.waitForURL(/\/memories#ahead/);
+  await expect(hana.getByTestId("ahead-item")).toBeVisible();
+});
+
 test("someone written about before connecting: the connection attaches to them", async ({ browser }) => {
   const hana = await user(browser, "ハナ");
   const sora = await user(browser, "ソラ");

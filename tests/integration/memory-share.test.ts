@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { buildTimeline } from "@/lib/timeline";
 import { createMemory, getMemory, listMemories } from "@/server/services/memories";
-import { connectionFeed, feedForPage, recentTimeline, setMemoriesAudience, setMemoryAudience, shareTargets, visibleCount } from "@/server/services/memory-share";
+import { aheadTimeline, connectionFeed, feedForPage, recentTimeline, setMemoriesAudience, setMemoryAudience, shareTargets, visibleCount } from "@/server/services/memory-share";
 import { addPersonFromConnection, createShare, giveConsent, openComparison, revokeComparison } from "@/server/services/sharing";
 import { updatePerson } from "@/server/services/people";
 import { makeUser } from "../helpers/factory";
+import { getAccount } from "@/server/services/account";
+import { todayIn } from "@/lib/validation/common";
 
 async function connect(a: string, b: string) {
   const s = await createShare(a);
@@ -94,13 +96,13 @@ describe("records shared with connections", () => {
       await setMemoryAudience(b.userId, id, { visibility: "connections" });
     }
     // Pages of two of mine: [01-05, 01-03] then [01-01].
-    const p0 = await feedForPage(a.userId, { previousOldest: null, oldest: "2026-01-03", first: true, last: false });
-    const p1 = await feedForPage(a.userId, { previousOldest: "2026-01-03", oldest: "2026-01-01", first: false, last: true });
+    const p0 = await feedForPage(a.userId, { previousOldest: null, oldest: "2026-01-03", first: true, last: false, today: "2099-12-31" });
+    const p1 = await feedForPage(a.userId, { previousOldest: "2026-01-03", oldest: "2026-01-01", first: false, last: true, today: "2099-12-31" });
     expect(p0.map((x) => x.body)).toEqual(["sora 2026-01-06", "sora 2026-01-04"]);
     expect(p1.map((x) => x.body)).toEqual(["sora 2026-01-03", "sora 2026-01-02", "sora 2025-12-31"]);
     expect((await connectionFeed(a.userId, { offset: 1, limit: 2 })).map((x) => x.effectiveOn)).toEqual(["2026-01-04", "2026-01-03"]);
 
-    const recent = await recentTimeline(a.userId, 4);
+    const recent = await recentTimeline(a.userId, "2099-12-31", 4);
     expect(recent).toHaveLength(4);
     expect(recent.some((e) => !e.mine && e.ownerName === "Sora")).toBe(true);
     const days = buildTimeline(recent, "Asia/Tokyo");
@@ -188,5 +190,26 @@ describe("records shared with connections", () => {
     await revokeComparison(b.userId, ab);
     expect(await connectionFeed(b.userId)).toEqual([]);
     expect(await connectionFeed(stranger.userId)).toEqual([]);
+  });
+  it("keeps records dated after today ahead of the timeline, soonest first, mine and theirs", async () => {
+    const a = await makeUser();
+    const b = await makeUser("Sora");
+    await connect(a.userId, b.userId);
+    const today = todayIn((await getAccount(a.userId)).profile.timeZone);
+    const past = await createMemory(a.userId, { kind: "thought", body: "昔", occurredOn: "2020-06-14" });
+    const todays = await createMemory(a.userId, { kind: "thought", body: "今日", occurredOn: today });
+    const far = await createMemory(a.userId, { kind: "thought", body: "正月", occurredOn: "2099-01-01" });
+    const soon = await createMemory(a.userId, { kind: "thought", body: "期限", occurredOn: "2098-06-20" });
+    const theirs = await createMemory(b.userId, { kind: "thought", body: "ソラの予定", occurredOn: "2098-07-01" });
+    await setMemoryAudience(b.userId, theirs, { visibility: "connections" });
+
+    expect((await aheadTimeline(a.userId, today)).map((e) => e.id)).toEqual([soon, theirs, far]);
+    expect((await recentTimeline(a.userId, today, 10)).map((e) => e.id)).not.toContain(far);
+    expect((await recentTimeline(a.userId, today, 10)).map((e) => e.id)).not.toContain(theirs);
+    const pastIds = (await listMemories(a.userId, { when: "past" })).map((m) => m.id);
+    expect(pastIds).toEqual(expect.arrayContaining([past, todays]));
+    expect((await listMemories(a.userId, { when: "future" })).map((m) => m.id)).toEqual([soon, far]);
+    // Without "when" (search, filters) everything is found.
+    expect((await listMemories(a.userId)).map((m) => m.id)).toEqual(expect.arrayContaining([past, todays, soon, far]));
   });
 });

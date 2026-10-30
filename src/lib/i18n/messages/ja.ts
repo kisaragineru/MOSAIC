@@ -530,6 +530,15 @@ export const ja: Dict = {
       open: "開いて読む",
     },
     timeline: {
+      ahead: {
+        title: "これから",
+        count: (n: number) => `${n}件`,
+        next: (days: number, date: string, what: string) => `次は ${date} ${what}（あと${days}日）`,
+        daysLeft: (n: number) => (n === 1 ? "明日" : `あと${n}日`),
+        more: (n: number) => `さらに先の${n}件`,
+        today: (date: string) => `今日 ${date}`,
+        homeLine: (n: number, date: string, what: string, days: number) => `これから ${n}件 ・ 次は ${date} ${what}（${days === 1 ? "明日" : `あと${days}日`}）`,
+      },
       today: "今日",
       yesterday: "昨日",
       writtenOn: (s: string) => `${s} に記録`,

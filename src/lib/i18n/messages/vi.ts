@@ -530,6 +530,15 @@ export const vi: Dict = {
       open: "Mở và đọc",
     },
     timeline: {
+      ahead: {
+        title: "Sắp tới",
+        count: (n: number) => `${n} mục`,
+        next: (days: number, date: string, what: string) => `Tiếp theo: ${date} ${what} (còn ${days} ngày)`,
+        daysLeft: (n: number) => (n === 1 ? "Ngày mai" : `Còn ${n} ngày`),
+        more: (n: number) => `Thêm ${n} mục xa hơn`,
+        today: (date: string) => `Hôm nay ${date}`,
+        homeLine: (n: number, date: string, what: string, days: number) => `Sắp tới ${n} mục · tiếp theo ${date} ${what} (${days === 1 ? "ngày mai" : `còn ${days} ngày`})`,
+      },
       today: "Hôm nay",
       yesterday: "Hôm qua",
       writtenOn: (s: string) => `viết lúc ${s}`,

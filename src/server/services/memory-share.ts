@@ -210,15 +210,27 @@ export const feedToEntry = (f: FeedItem): TimelineEntry => ({
  * are those dated after page n's oldest day (none below it on the last page) up to and
  * including page n-1's oldest day (no upper bound on the first page).
  */
-export async function feedForPage(userId: string, page: { previousOldest: string | null; oldest: string | null; first: boolean; last: boolean }) {
-  return connectionFeed(userId, { after: page.last ? null : page.oldest, upto: page.first ? null : page.previousOldest, limit: 100 });
+export async function feedForPage(userId: string, page: { previousOldest: string | null; oldest: string | null; first: boolean; last: boolean; today: string }) {
+  return connectionFeed(userId, { after: page.last ? null : page.oldest, upto: page.first ? page.today : page.previousOldest, limit: 100 });
+}
+
+/**
+ * Records dated after today, mine and theirs, soonest first ("ahead" of the timeline). Kept out
+ * of the timeline until their day comes, then they sit on it like any other.
+ */
+export async function aheadTimeline(userId: string, today: string): Promise<TimelineEntry[]> {
+  const names = new Map((await shareTargets(userId)).map((x) => [x.otherId, x.name]));
+  const mine = (await listMemories(userId, { when: "future", limit: 100 })).map((m) => mineToEntry(m, names));
+  const theirs = (await connectionFeed(userId, { after: today, limit: 100 })).map(feedToEntry);
+  const day = (e: TimelineEntry) => timelineDay(e) ?? e.createdAt.toISOString().slice(0, 10);
+  return [...mine, ...theirs].sort((a, b) => (day(a) === day(b) ? a.createdAt.getTime() - b.createdAt.getTime() : day(a) < day(b) ? -1 : 1));
 }
 
 /** The newest few, mine and theirs together (Home). */
-export async function recentTimeline(userId: string, n = 6): Promise<TimelineEntry[]> {
+export async function recentTimeline(userId: string, today: string, n = 6): Promise<TimelineEntry[]> {
   const names = new Map((await shareTargets(userId)).map((x) => [x.otherId, x.name]));
-  const mine = (await listMemories(userId, { limit: n })).map((m) => mineToEntry(m, names));
-  const theirs = (await connectionFeed(userId, { limit: n })).map(feedToEntry);
+  const mine = (await listMemories(userId, { when: "past", limit: n })).map((m) => mineToEntry(m, names));
+  const theirs = (await connectionFeed(userId, { upto: today, limit: n })).map(feedToEntry);
   // Newest by the day each sits on (an opened letter counts from its opening day), then by time written.
   const day = (e: TimelineEntry) => timelineDay(e) ?? e.createdAt.toISOString().slice(0, 10);
   return [...mine, ...theirs].sort((a, b) => (day(a) === day(b) ? b.createdAt.getTime() - a.createdAt.getTime() : day(a) < day(b) ? 1 : -1)).slice(0, n);

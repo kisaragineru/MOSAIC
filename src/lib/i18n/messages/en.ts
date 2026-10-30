@@ -528,6 +528,15 @@ export const en = {
       open: "Open and read",
     },
     timeline: {
+      ahead: {
+        title: "Ahead",
+        count: (n: number) => `${n}`,
+        next: (days: number, date: string, what: string) => `Next: ${date} ${what} (in ${days} day${days === 1 ? "" : "s"})`,
+        daysLeft: (n: number) => (n === 1 ? "Tomorrow" : `In ${n} days`),
+        more: (n: number) => `${n} more further ahead`,
+        today: (date: string) => `Today ${date}`,
+        homeLine: (n: number, date: string, what: string, days: number) => `Ahead: ${n} · next ${date} ${what} (${days === 1 ? "tomorrow" : `in ${days} days`})`,
+      },
       today: "Today",
       yesterday: "Yesterday",
       writtenOn: (s: string) => `written ${s}`,

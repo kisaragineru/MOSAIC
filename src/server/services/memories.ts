@@ -203,6 +203,8 @@ export const memoryFilters = z.object({
   audience: z.preprocess((v) => (v === "" ? undefined : v), z.enum(["shared", "private"]).optional()),
   /** With audience "private": keep letters to the future too (the own timeline, kept as a diary). */
   letters: z.boolean().default(false),
+  /** past: up to today (the timeline); future: after today, soonest first ("ahead"). */
+  when: z.enum(["past", "future"]).optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).max(100_000).default(0),
 });
@@ -224,6 +226,8 @@ export async function listMemories(userId: string, filters: unknown = {}): Promi
       if (!(f.letters && f.audience === "private")) conds.push(sql`${memoryEntries.kind} <> 'letter_to_future'`);
       conds.push(f.audience === "shared" ? sql`${memoryEntries.visibility} <> 'private'` : eq(memoryEntries.visibility, "private"));
     }
+    if (f.when === "past") conds.push(lte(onTimeline, today));
+    if (f.when === "future") conds.push(sql`${onTimeline} > ${today}::date`);
     if (f.from) conds.push(gte(onTimeline, f.from));
     if (f.to) conds.push(lte(onTimeline, f.to));
     if (f.tag) {
@@ -258,7 +262,7 @@ export async function listMemories(userId: string, filters: unknown = {}): Promi
         and(eq(memoryEntryVersions.entryId, memoryEntries.id), eq(memoryEntryVersions.version, memoryEntries.currentVersion)),
       )
       .where(and(...conds))
-      .orderBy(desc(onTimeline), desc(memoryEntries.createdAt))
+      .orderBy(...(f.when === "future" ? [onTimeline, memoryEntries.createdAt] : [desc(onTimeline), desc(memoryEntries.createdAt)]))
       .limit(f.limit)
       .offset(f.offset);
     return hydrate(tx, rows, today);

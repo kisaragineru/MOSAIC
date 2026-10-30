@@ -1,3 +1,5 @@
+import { aheadSummary } from "@/components/ahead-line";
+import { todayIn } from "@/lib/validation/common";
 import Link from "next/link";
 import { myTint, typeTints } from "@/server/services/card";
 import { QuickComposer } from "@/components/quick-composer";
@@ -15,7 +17,7 @@ import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
 import { getAccount } from "@/server/services/account";
 import { getDaily } from "@/server/services/discovery";
-import { recentTimeline, shareTargets } from "@/server/services/memory-share";
+import { aheadTimeline, recentTimeline, shareTargets } from "@/server/services/memory-share";
 import { listTendencies } from "@/server/services/tendencies";
 import { AXIS_CHAPTER, PEER_POLES } from "@/content/axes";
 import { MANUAL_CHAPTERS } from "@/content/manual-text";
@@ -44,11 +46,13 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // For the writer: who connected through a story, who started their own (said once).
   // The story grows with the records: new pages are mentioned once; once grown, a single question.
   // notices — everything Home has to tell (see notices/items.tsx): the tray shows what isn't closed.
-  const [account, daily, dates, timeline, tv, pic, know, inbox, tendencies, notices, targets, boxes, myPic, myType] = await Promise.all([
+  const today = todayIn((await getAccount(uid)).profile.timeZone);
+  const [account, daily, dates, timeline, ahead, tv, pic, know, inbox, tendencies, notices, targets, boxes, myPic, myType] = await Promise.all([
     getAccount(uid),
     getDaily(uid),
     upcomingDates(uid, 366),
-    recentTimeline(uid, 3),
+    recentTimeline(uid, today, 3),
+    aheadTimeline(uid, today),
     getTuvi(uid, locale),
     portrait(uid),
     knowledge(uid),
@@ -61,6 +65,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     myTint(uid),
   ]);
   const recent = buildTimeline(timeline, account.profile.timeZone);
+  const soon = aheadSummary(ahead, today, locale);
   const first = daily.slots[0];
   const chart = tv.chart;
   const menhStars = chart && chart.menh !== null ? chart.palaces[chart.menh]!.mainStars.map((s) => STAR_INFO[s.id].vi) : [];
@@ -93,6 +98,14 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       {/* Posting: the same sheet as on records. */}
       <QuickComposer trigger="inline" knownTags={await listTags(uid)} audiencePeople={targets.map((x) => ({ id: x.otherId, name: x.name }))} tx={composerText(t)} canShare={targets.length > 0} giftBoxes={boxes.filter((b) => b.status === "open" && b.my_role !== "child").map((b) => ({ id: b.id, label: t.memories.composer.toGift(b.child_name) }))} />
       <Card title={t.home.recent}>
+        {/* Records dated ahead: one line here, the list on the records page. */}
+        {soon && (
+          <Link href="/memories#ahead" className="mb-3 flex items-center gap-2 rounded-xl bg-stone-50 px-3 py-2 text-xs text-stone-600 ring-1 ring-stone-100 hover:bg-white" data-testid="home-ahead">
+            <span aria-hidden className="h-4 border-l-2 border-dotted border-stone-300" />
+            <span className="min-w-0 flex-1 truncate">{t.memories.timeline.ahead.homeLine(soon.n, soon.date, soon.what, soon.days)}</span>
+            <span aria-hidden className="text-stone-400">›</span>
+          </Link>
+        )}
         {recent.length === 0 ? (
           <p className="text-sm text-stone-500">{t.memories.empty}</p>
         ) : (

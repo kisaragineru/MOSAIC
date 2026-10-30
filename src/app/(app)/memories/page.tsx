@@ -1,3 +1,4 @@
+import { AheadLine } from "@/components/ahead-line";
 import { DateSelect } from "@/components/date-select";
 import { dateText } from "@/lib/i18n/date-text";
 import Link from "next/link";
@@ -17,7 +18,7 @@ import { getAccount } from "@/server/services/account";
 import { arrivedLetters, listMemories, listTags, sealedLetters, type MemorySummary } from "@/server/services/memories";
 import { LetterShelf } from "@/components/letter-shelf";
 import { todayIn } from "@/lib/validation/common";
-import { shareTargets, connectionFeed, feedForPage, feedToEntry, mineToEntry } from "@/server/services/memory-share";
+import { aheadTimeline, shareTargets, connectionFeed, feedForPage, feedToEntry, mineToEntry } from "@/server/services/memory-share";
 import { listPeople } from "@/server/services/people";
 import { avatarUrls, myAvatarUrl } from "@/server/services/avatars";
 import { replyCounts, replyInbox, replyPreviews } from "@/server/services/replies";
@@ -40,19 +41,22 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
   const filtering = Object.values(filters).some((v) => v !== "");
   // ?with=<connection>: one person's shared records only.
   const withWho = view === "friends" && sp.with ? ((await shareTargets(uid)).find((x) => x.sessionId === sp.with) ?? null) : null;
+  const today = todayIn(tz);
+  // Dated after today: kept above the timeline ("ahead") unless searching or filtering, which find everything.
+  const when = filtering ? undefined : ("past" as const);
   const page = Math.min(Math.max(Number.parseInt(sp.page ?? "0", 10) || 0, 0), 2000);
   let entries: TimelineEntry[] = [];
   let hasOlder = false;
   let filterError = false;
   if (view === "friends") {
-    const feed = await connectionFeed(uid, { offset: page * PAGE_SIZE, limit: PAGE_SIZE + 1, sessionId: withWho?.sessionId ?? null });
+    const feed = await connectionFeed(uid, { upto: today, offset: page * PAGE_SIZE, limit: PAGE_SIZE + 1, sessionId: withWho?.sessionId ?? null });
     hasOlder = feed.length > PAGE_SIZE;
     entries = feed.slice(0, PAGE_SIZE).map(feedToEntry);
   } else {
     // One row before the page (where the previous page ended) and one after (is there an older page?).
     let rows: MemorySummary[] = [];
     try {
-      rows = await listMemories(uid, { ...filters, audience, letters: view === "mine", limit: PAGE_SIZE + (page > 0 ? 2 : 1), offset: Math.max(page * PAGE_SIZE - 1, 0) });
+      rows = await listMemories(uid, { ...filters, audience, letters: view === "mine", when, limit: PAGE_SIZE + (page > 0 ? 2 : 1), offset: Math.max(page * PAGE_SIZE - 1, 0) });
     } catch {
       filterError = true;
     }
@@ -63,11 +67,13 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
     entries = mine.map((m) => mineToEntry(m, names));
     if (view === "all" && !filtering) {
       const eff = (m: MemorySummary | undefined) => m?.timelineOn ?? null;
-      const theirs = await feedForPage(uid, { previousOldest: eff(before), oldest: eff(mine.at(-1)), first: page === 0, last: !hasOlder });
+      const theirs = await feedForPage(uid, { previousOldest: eff(before), oldest: eff(mine.at(-1)), first: page === 0, last: !hasOlder, today });
       entries = entries.concat(theirs.map(feedToEntry));
     }
   }
   const days = buildTimeline(entries, tz);
+  // Ahead: mine on "all" and "mine", theirs on "all" and "friends" (one person's with ?with=).
+  const ahead = page > 0 || filtering ? [] : (await aheadTimeline(uid, today)).filter((e) => (e.mine ? view !== "friends" : view !== "mine" && (!withWho || e.ownerId === withWho.otherId)));
   const { previews, counts: replyTotals } = await replyPreviews(uid, entries.filter((e) => !e.sealed).map((e) => e.id));
   const counts = replyCounts(replyTotals, await replyInbox(uid));
   const media = await mediaFor(uid, entries.filter((e) => !e.sealed).map((e) => e.id));
@@ -165,6 +171,7 @@ export default async function MemoriesPage({ searchParams }: { searchParams: Pro
       </Card>}
       {view === "all" && filtering && <Notice>{tl.filteredMineOnly}</Notice>}
       {onlyMeByDefault && <p className="px-1 text-xs leading-5 text-stone-500" data-testid="mine-only-me">{tm.mineOnlyMe}</p>}
+      <AheadLine entries={ahead} today={today} t={t} locale={locale} />
       {days.length === 0 ? (
         <Empty>{view === "friends" ? tl.friendsEmpty : t.memories.empty}</Empty>
       ) : (
