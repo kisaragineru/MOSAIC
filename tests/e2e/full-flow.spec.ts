@@ -193,13 +193,15 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   await pb.getByRole("button", { name: "Continue" }).click();
   await expect(pb).toHaveURL(/\/compare\/[0-9a-f-]+$/);
   const compareUrl = pb.url();
-  await expect(pb.getByText("Waiting for the other person to consent.")).toBeVisible();
+  await expect(pb.getByTestId("connect-choice")).toContainText("Connect with An?");
   // No result before consent
   await expect(pb.getByText("The two of you, side by side")).toHaveCount(0);
+  await pb.getByRole("button", { name: "Connect", exact: true }).click();
+  await expect(pb.getByText("Waiting for them to connect. They can take their time.")).toBeVisible();
   await pb.getByLabel(/Tử Vi —/).check();
   await pb.getByLabel(/Preferences —/).check();
   await pb.getByLabel(/I understand, and agree to connect/).check();
-  await pb.getByRole("button", { name: "Connect", exact: true }).click();
+  await pb.getByRole("button", { name: "Update what you show" }).click();
   await expect(pb.getByText(/You consented to: Tử Vi, Preferences/)).toBeVisible();
   await expect(pb.getByText("The two of you, side by side")).toHaveCount(0);
 
@@ -207,10 +209,11 @@ test("two users: profile, Tử Vi, questions, QR share, consent, comparison, rev
   await pa.goto("/share");
   await pa.getByRole("link", { name: /^Binh/ }).click();
   await expect(pa.getByText("The other person has consented.")).toBeVisible();
+  await pa.getByRole("button", { name: "Connect", exact: true }).click();
   await pa.getByLabel(/Tử Vi —/).check();
   await pa.getByLabel(/Preferences —/).check();
   await pa.getByLabel(/I understand, and agree to connect/).check();
-  await pa.getByRole("button", { name: "Connect", exact: true }).click();
+  await pa.getByRole("button", { name: "Update what you show" }).click();
   await expect(pa.getByRole("heading", { name: "The two of you, side by side" })).toBeVisible();
   const items = pa.getByTestId("pref-items");
   await expect(items.getByText("Your go-to drink?")).toBeVisible();
