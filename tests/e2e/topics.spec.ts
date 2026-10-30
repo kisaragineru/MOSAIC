@@ -24,7 +24,6 @@ async function connect(a: Page, b: Page) {
   const compare = new URL(b.url()).pathname;
   for (const p of [b, a]) {
     await p.goto(compare);
-    await p.locator('input[name="agree"]').check();
     await p.getByRole("button", { name: "つながる", exact: true }).click();
     await expect(p.getByRole("button", { name: "つながる", exact: true })).toHaveCount(0);
   }

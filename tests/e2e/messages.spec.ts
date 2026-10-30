@@ -25,9 +25,10 @@ async function connect(a: Page, b: Page) {
   const compare = b.url();
   for (const p of [b, a]) {
     await p.goto(compare);
+    await p.getByRole("button", { name: "つながる", exact: true }).click();
     await p.getByRole("checkbox", { name: /^好み/ }).check();
     await p.locator('input[name="agree"]').check();
-    await p.getByRole("button", { name: "つながる", exact: true }).click();
+    await p.getByRole("button", { name: "見せるものを更新" }).click();
     await expect(p.getByRole("button", { name: "つながる", exact: true })).toHaveCount(0);
   }
 }

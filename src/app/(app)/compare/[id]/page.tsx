@@ -205,13 +205,32 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
 
       {v.status === "revoked" && <Notice kind="warning">{cc.ended}</Notice>}
 
-      {/* Not connected yet: deciding what to share is the one thing to do here. */}
-      {v.status !== "revoked" && !r && (
-          <Card title={t.compare.consentTitle}>
+      {/* Not connected on my side yet: one question first, connect or decide later (never a "no" to feel bad about). */}
+      {v.status === "pending" && !v.myConsent && (
+        <section id="consent" className="scroll-mt-24 space-y-3 rounded-3xl bg-linear-to-br from-teal-50 via-white to-amber-50 p-5 shadow-sm ring-1 ring-teal-100" data-testid="connect-choice">
+          <h2 className="text-lg font-bold text-stone-900">🤝 {t.compare.connectAsk(v.otherName)}</h2>
+          <p className="text-sm leading-6 text-stone-700">{t.compare.connectLead}</p>
+          {v.otherConsented && <p className="text-xs font-semibold text-teal-800">✓ {t.compare.otherConsented}</p>}
+          <form action={consentAction}>
+            <input type="hidden" name="sessionId" value={v.id} />
+            <input type="hidden" name="agree" value="on" />
+            <button type="submit" className="flex min-h-12 w-full items-center justify-center rounded-full bg-teal-700 px-4 text-base font-bold text-white shadow-md transition hover:bg-teal-800 active:scale-[0.98]">
+              {t.compare.connectNow}
+            </button>
+          </form>
+          <p className="rounded-2xl bg-white/80 px-3 py-2 text-xs leading-5 text-stone-600">🌱 {t.compare.laterNote(v.otherName)}</p>
+          <Link href="/home" className="block text-center text-sm font-semibold text-stone-500 underline">{t.compare.later}</Link>
+        </section>
+      )}
+
+      {/* Connected on my side: what to show, now or later. */}
+      {v.status !== "revoked" && !r && v.myConsent && (
+          <Card title={t.compare.chooseTitle}>
+            <p className="mb-2 text-xs text-stone-500">{t.compare.chooseLater}</p>
             <p className="mb-3 text-sm text-stone-600">{PURPOSE_TEXT[locale]}</p>
             {v.myConsent && <p className="mb-2 text-sm"><Pill tone="teal">✓</Pill> {t.compare.yourConsent(scopeNames(v.myConsent.scopes))}</p>}
             <p className="mb-3 text-sm">{v.otherConsented ? `✓ ${t.compare.otherConsented}` : `⏳ ${t.compare.waiting}`}</p>
-            <form id="consent" action={consentAction} className="space-y-2 scroll-mt-24">
+            <form id="choose" action={consentAction} className="space-y-2 scroll-mt-24">
               <input type="hidden" name="sessionId" value={v.id} />
               <fieldset className="space-y-2">
                 <legend className="text-sm font-medium">{t.compare.scopes}</legend>

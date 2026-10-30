@@ -26,9 +26,10 @@ async function connect(a: Page, b: Page) {
   const compare = b.url();
   for (const p of [b, a]) {
     await p.goto(compare);
+    await p.getByRole("button", { name: "つながる", exact: true }).click();
     await p.getByRole("checkbox", { name: /^好み/ }).check();
     await p.locator('input[name="agree"]').check();
-    await p.getByRole("button", { name: "つながる", exact: true }).click();
+    await p.getByRole("button", { name: "見せるものを更新" }).click();
     await expect(p.getByRole("button", { name: "つながる", exact: true })).toHaveCount(0);
   }
 }
@@ -313,18 +314,20 @@ test("a connection not agreed by both yet: marked as waiting, with whose turn it
   await expect(hana.getByTestId("person-connect")).toHaveText("「つながる」を押すとメッセージできます →");
   await hana.getByTestId("person-connect").click();
   await hana.waitForURL(/\/compare\/[0-9a-f-]+#consent/);
-  await hana.locator('input[name="agree"]').check();
+  // One question first, with room to decide later and no guilt about it.
+  await expect(hana.getByTestId("connect-choice")).toContainText("ソラさんとつながりますか？");
+  await expect(hana.getByTestId("connect-choice")).toContainText("急がなくて大丈夫です");
+  await expect(hana.getByRole("checkbox", { name: /^好み/ })).toHaveCount(0);
   await hana.getByRole("button", { name: "つながる", exact: true }).click();
   await expect(hana.getByRole("button", { name: "つながる", exact: true })).toHaveCount(0);
 
   // Now Sora's turn.
   await hana.goto(person);
-  await expect(hana.getByTestId("person-waiting")).toContainText("ソラさんの同意を待っています");
+  await expect(hana.getByTestId("person-waiting")).toContainText("ソラさんがつながるのを待っています");
   await hana.goto("/people");
   await expect(hana.getByTestId("person-pending")).toHaveText("⏳ 同意待ち");
 
   await sora.goto(compare);
-  await sora.locator('input[name="agree"]').check();
   await sora.getByRole("button", { name: "つながる", exact: true }).click();
   await expect(sora.getByRole("button", { name: "つながる", exact: true })).toHaveCount(0);
   await hana.goto("/people");
