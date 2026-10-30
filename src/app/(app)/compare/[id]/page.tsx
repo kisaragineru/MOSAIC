@@ -489,6 +489,7 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                     />
                   </Card>
                   <Card title={t.compare.partnerReading(v.otherName)}>
+                    <p className="-mt-1 mb-3 text-xs leading-5 text-stone-500">{t.compare.partnerReadingLead(v.otherName)}</p>
                     <TuviThemes sections={together.themes} labels={themeLabels(t)} />
                   </Card>
                   <Card title={t.compare.partnerChart(v.otherName)}>

@@ -113,6 +113,7 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
           )}
           {on.has("tuvi_detail") && themes.length > 0 && (
             <PhoneCard title={t.compare.partnerReading(p.displayName)}>
+              <p className="mb-2 text-[11px] leading-4 text-stone-500">{t.compare.partnerReadingLead(p.displayName)}</p>
               <TuviThemes sections={themes} labels={themeLabels(t)} />
             </PhoneCard>
           )}

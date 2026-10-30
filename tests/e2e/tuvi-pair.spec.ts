@@ -54,8 +54,8 @@ test("full charts shared by both: partner chart, readings by relationship, no bi
   await a.getByRole("tab", { name: "友人", exact: true }).click();
   await expect(a.getByText(/ハナさんの奴僕宮の星と、ソラさんの命宮の星/)).toBeVisible();
   await expect(a.getByText(/ソラさん：数え\d+〜\d+歳/)).toBeVisible();
-  await expect(a.getByRole("heading", { name: "ソラさんの命盤" })).toBeVisible();
-  await expect(a.getByRole("heading", { name: "ソラさんの読み" })).toBeVisible();
+  await expect(a.getByRole("heading", { name: "ソラさんの命盤", exact: true })).toBeVisible();
+  await expect(a.getByRole("heading", { name: "ソラさんの命盤を分野ごとに読む" })).toBeVisible();
   // The partner's chart shows neither their lunar birth date nor their birth hour.
   const chart = a.getByTestId("tuvi-chart");
   await expect(chart).toBeVisible();
