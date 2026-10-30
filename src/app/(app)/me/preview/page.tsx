@@ -76,8 +76,8 @@ export default async function PreviewPage({ searchParams }: { searchParams: Prom
               <Avatar name={p.displayName} src={photo} type={await myTint(uid)} className="h-9 w-9 text-sm ring-2 ring-white" />
               <p className="truncate font-bold text-stone-900">{p.displayName}</p>
             </div>
-            <div aria-hidden className="mt-2 grid grid-cols-3 gap-1.5">
-              {[["💬", t.compare.actMessage], ["🎁", t.compare.actGift], ["💭", t.compare.actAsk]].map(([i, l]) => (
+            <div aria-hidden className="mt-2 grid grid-cols-4 gap-1.5">
+              {[["💬", t.compare.actMessage], ["🎁", t.compare.actGift], ["💭", t.compare.actAsk], ["🗨️", t.topics.action]].map(([i, l]) => (
                 <span key={l} className="flex flex-col items-center rounded-xl bg-white/90 py-1.5 text-[10px] font-semibold text-stone-700 ring-1 ring-stone-200"><span className="text-base">{i}</span>{l}</span>
               ))}
             </div>

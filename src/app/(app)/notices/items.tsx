@@ -19,6 +19,7 @@ import { noticeKey, questionClosedStreak, visibleNotices } from "@/server/servic
 import { recentAnniversaries } from "@/server/services/pair-history";
 import { listPeople, upcomingDates } from "@/server/services/people";
 import { myPeerRequests } from "@/server/services/peers";
+import { topicInbox } from "@/server/services/topics";
 import { replyInbox } from "@/server/services/replies";
 import { listComparisons } from "@/server/services/sharing";
 import { getTuvi } from "@/server/services/tuvi";
@@ -50,7 +51,7 @@ export async function noticeItems(uid: string, t: Dict, locale: Locale): Promise
     cookies(),
     listPeople(uid),
   ]);
-  const [birthday, anniversaries] = await Promise.all([yearStoryDue(uid, daily.day), recentAnniversaries(uid, account.profile.timeZone)]);
+  const [birthday, anniversaries, topics] = await Promise.all([yearStoryDue(uid, daily.day), recentAnniversaries(uid, account.profile.timeZone), topicInbox(uid, locale)]);
   await Promise.all([
     opens.length ? markOpensSeen(uid) : null,
     news.connected.length || news.started.length ? markWriterNewsSeen(uid) : null,
@@ -94,6 +95,17 @@ export async function noticeItems(uid: string, t: Dict, locale: Locale): Promise
       </div>
     ) }] : []),
     ...askedOfMe.map((r) => ({ ref: { key: noticeKey.peer(r.id), kind: "action" as const }, icon: "💭", body: <><p>{t.peers.homeAsked(r.otherName)}</p>{go(`/others/${r.id}`, t.peers.homeAnswer)}</> })),
+    // Topics: one sent to me waits for my answer; one we've both answered is news, once.
+    ...topics.map((x) => ({
+      ref: { key: `topic:${x.kind}:${x.id}`, kind: x.kind === "received" ? ("action" as const) : ("once" as const) },
+      icon: "🗨️",
+      body: (
+        <div data-testid={`topic-notice-${x.kind}`}>
+          <p>{x.kind === "received" ? t.topics.homeReceived(x.otherName, x.prompt) : t.topics.homeMatched(x.otherName, x.prompt)}</p>
+          {go(`/compare/${x.sessionId}#topics`, t.topics.homeOpen)}
+        </div>
+      ),
+    })),
     ...waiting.map((c) => ({ ref: { key: noticeKey.conn(c.id), kind: "action" as const }, icon: "🔗", body: <><p>{t.home.connectionPending(c.otherName)}</p>{go(`/compare/${c.id}`, t.home.review)}</> })),
     ...newReplies.slice(0, 5).map((x) => ({ ref: { key: noticeKey.reply(x.entryId, x.lastAt), kind: "action" as const }, icon: "💬", body: (
       <Link href={x.iOwn ? `/memories/${x.entryId}#replies` : `/memories/shared/${x.entryId}#replies`} className="block">

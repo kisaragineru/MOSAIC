@@ -906,6 +906,58 @@ export const peerResponses = pgTable(
 );
 
 /**
+ * A topic sent to someone I'm connected with ("#the most embarrassing story"), to answer each
+ * other. The sender answers when sending; each answer is the writer's own record (private, tagged
+ * with the topic). Read and written only through the topic_* functions (migration 0090): the other
+ * person's answer shows only once both have answered.
+ */
+export const topicPrompts = pgTable(
+  "topic_prompts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => comparisonSessions.id, { onDelete: "cascade" }),
+    fromUser: uuid("from_user")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    toUser: uuid("to_user")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    prompt: text("prompt").notNull(),
+    /** One of MOSAIC's topics (src/content/topics.ts), shown in the reader's language; null = written by the sender. */
+    preset: text("preset"),
+    /** The tag both answers carry. */
+    tag: text("tag").notNull(),
+    status: text("status").notNull().default("open"),
+    createdAt: createdAt(),
+    closedAt: ts("closed_at"),
+  },
+  (t) => [
+    index("topic_prompts_to_idx").on(t.toUser, t.status),
+    index("topic_prompts_session_idx").on(t.sessionId),
+    check("topic_prompts_status_ck", sql`${t.status} in ('open','answered','passed','canceled')`),
+    check("topic_prompts_prompt_ck", sql`char_length(${t.prompt}) between 1 and 80`),
+    check("topic_prompts_tag_ck", sql`char_length(${t.tag}) between 1 and 40`),
+  ],
+);
+
+export const topicAnswers = pgTable(
+  "topic_answers",
+  {
+    promptId: uuid("prompt_id")
+      .notNull()
+      .references(() => topicPrompts.id, { onDelete: "cascade" }),
+    userId: userRef(),
+    entryId: uuid("entry_id")
+      .notNull()
+      .references(() => memoryEntries.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.promptId, t.userId] })],
+);
+
+/**
  * "Show my manual to this person": one row per (connection, owner). Only the owner writes it,
  * through manual_share_set(); the other participant reads the shared parts through
  * manual_shared_with_me(), which applies the preset (friend / partner) on the database side.

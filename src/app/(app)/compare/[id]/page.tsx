@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { TopicsSection } from "@/components/topics-section";
+import { listTopics } from "@/server/services/topics";
 import { TypePortraits } from "@/components/tuvi-type";
 import { connectionCard } from "@/server/services/card";
 import { consentAction, recomputeAction } from "@/app/actions/sharing";
@@ -175,7 +177,7 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
           </Link>
         )}
         {active && (
-          <div className="mt-4 grid grid-cols-3 gap-2" data-testid="connection-actions">
+          <div className="mt-4 grid grid-cols-4 gap-2" data-testid="connection-actions">
             <form action={dmOpenForConnectionAction}>
               <input type="hidden" name="sessionId" value={v.id} />
               <input type="hidden" name="back" value={`/compare/${v.id}`} />
@@ -191,11 +193,15 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
               <input type="hidden" name="back" value="/me/others" />
               <button type="submit" className={ACTION}><span aria-hidden className="text-xl">💭</span>{cc.actAsk}</button>
             </form>
+            {/* Answer a topic together: a way into a conversation. */}
+            <a href="#topics" className={ACTION}><span aria-hidden className="text-xl">🗨️</span>{t.topics.action}</a>
           </div>
         )}
       </section>
 
       {story && <PairHistoryCard h={story} t={t} locale={locale} />}
+
+      {active && <TopicsSection t={t} locale={locale} sessionId={v.id} otherName={v.otherName} topics={await listTopics(uid, v.id, locale)} back={`/compare/${v.id}`} />}
 
       {v.status === "revoked" && <Notice kind="warning">{cc.ended}</Notice>}
 
