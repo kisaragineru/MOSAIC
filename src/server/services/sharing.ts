@@ -513,6 +513,7 @@ async function ownConnection(tx: Tx, userId: string, sessionId: string) {
   return {
     id,
     status: s.status,
+    revokedAt: s.revokedAt,
     otherName: parts.rows.find((p) => p.user_id !== userId)?.display_name ?? "?",
     otherId: parts.rows.find((p) => p.user_id !== userId)?.user_id ?? null,
     otherBio: bio.rows[0]?.bio ?? null,

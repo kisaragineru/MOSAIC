@@ -148,6 +148,8 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
         <ConnectedMoment
           t={t}
           kind={sp.ok === "connected" && active ? "connected" : "reached"}
+          chooseHref={!r ? "#choose" : personId ? `/people/${personId}/settings` : "#settings"}
+          again={(await listComparisons(uid)).some((c) => c.id !== v.id && c.status === "revoked" && c.otherId === other)}
           sessionId={v.id}
           me={{ name: myName || (await getAccount(uid)).profile.displayName, src: pics.get(uid), type: await myTint(uid) }}
           other={{ name: v.otherName, src: pics.get(other ?? ""), type: (await typeTints(uid, [other])).get(other ?? "") }}

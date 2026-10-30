@@ -12,7 +12,7 @@ const SPARKS: [number, number, number][] = [[18, 20, 0.7], [80, 16, 0.85], [10, 
  * Right after saying yes: when both have, the two faces come together with rings and sparkles
  * and a way to say hello; when only I have, a quieter note that it reached them.
  */
-export function ConnectedMoment({ t, kind, sessionId, me, other }: { t: Dict; kind: "connected" | "reached"; sessionId: string; me: Face; other: Face }) {
+export function ConnectedMoment({ t, kind, sessionId, me, other, again = false, chooseHref = "#choose" }: { t: Dict; /** Where what to show is chosen. */ chooseHref?: string; kind: "connected" | "reached"; sessionId: string; me: Face; other: Face; /** Connected before, and the connection had ended. */ again?: boolean }) {
   const c = t.compare;
   const done = kind === "connected";
   return (
@@ -37,7 +37,7 @@ export function ConnectedMoment({ t, kind, sessionId, me, other }: { t: Dict; ki
         </div>
         {done && <span aria-hidden className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-2xl animate-[popIn_.6s_ease-out_.7s_both]">🤝</span>}
       </div>
-      <h2 className="mt-3 text-xl font-bold text-stone-900 [text-wrap:balance] animate-[riseIn_.6s_ease-out_.5s_both]">{done ? c.momentTitle(other.name) : c.reachedTitle}</h2>
+      <h2 className="mt-3 text-xl font-bold text-stone-900 [text-wrap:balance] animate-[riseIn_.6s_ease-out_.5s_both]">{done ? (again ? c.momentAgain(other.name) : c.momentTitle(other.name)) : c.reachedTitle}</h2>
       <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-stone-700 animate-[riseIn_.6s_ease-out_.7s_both]">{done ? c.momentLead : c.reachedLead(other.name)}</p>
       {done && (
         <div className="mt-5 space-y-2 animate-[riseIn_.6s_ease-out_.9s_both]">
@@ -46,7 +46,7 @@ export function ConnectedMoment({ t, kind, sessionId, me, other }: { t: Dict; ki
             <input type="hidden" name="back" value={`/compare/${sessionId}`} />
             <button type="submit" className="flex min-h-12 w-full items-center justify-center rounded-full bg-teal-700 px-4 text-base font-bold text-white shadow-md transition hover:bg-teal-800 active:scale-[0.98]">{c.momentMessage}</button>
           </form>
-          <a href="#choose" className="block text-sm font-semibold text-teal-800 underline">{c.momentChoose}</a>
+          <a href={chooseHref} className="block text-sm font-semibold text-teal-800 underline">{c.momentChoose}</a>
         </div>
       )}
     </section>

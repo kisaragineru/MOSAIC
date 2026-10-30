@@ -97,7 +97,7 @@ export default async function PersonSettingsPage({ params, searchParams }: { par
         {view && <ConnectionSettings t={t} locale={locale} v={view} myShare={myShare} back={here} />}
 
         {others.length > 0 && (
-          <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200/70 text-sm">
+          <div id="merge" className="scroll-mt-24 rounded-2xl bg-white p-4 ring-1 ring-stone-200/70 text-sm">
             <h3 className="mb-1 text-sm font-semibold text-stone-800">🔀 {t.people.mergeTitle}</h3>
             <p className="mb-2 text-xs leading-5 text-stone-600">{t.people.mergeHelp}</p>
             <form action={mergePeopleAction} className="flex flex-wrap gap-2">

@@ -341,6 +341,44 @@ test("a connection not agreed by both yet: marked as waiting, with whose turn it
   await expect(hana.getByRole("button", { name: "メッセージ" })).toBeVisible();
 });
 
+test("ending a connection keeps my card as notes; connecting again comes back to it", async ({ browser }) => {
+  const hana = await user(browser, "ハナ");
+  const sora = await user(browser, "ソラ");
+  await connect(hana, sora);
+  await hana.goto("/people");
+  await hana.getByLabel("関係").first().selectOption("friend");
+  await hana.getByRole("button", { name: /大切な人に追加/ }).click();
+  await hana.waitForURL(/\/people\/[0-9a-f-]+/);
+  const person = new URL(hana.url()).pathname;
+  await hana.goto(`${person}/settings`);
+  await hana.getByRole("button", { name: "つながりを解除する" }).click();
+  await confirm(hana);
+  await expect(hana.getByText("ソラさんとのつながりは解除されています")).toBeVisible();
+
+  await hana.goto("/people");
+  await expect(hana.getByTestId("person-ended-pill")).toContainText("つながり終了");
+  await hana.goto(person);
+  await expect(hana.getByTestId("person-ended")).toContainText("つながりは終わりました");
+
+  // Again: back to the same card, with a moment of its own.
+  await hana.goto("/share");
+  await hana.getByRole("button", { name: "QRを表示" }).click();
+  const url = await hana.getByTestId("share-url").first().inputValue();
+  await sora.goto(url.replace(/^https?:\/\/[^/]+/, ""));
+  await sora.getByRole("button", { name: "続ける" }).click();
+  await sora.waitForURL(/\/compare\//);
+  await sora.getByRole("button", { name: "つながる", exact: true }).click();
+  await expect(sora.getByTestId("connected-moment")).toContainText("あなたの気持ちは届きました");
+  await hana.goto(new URL(sora.url()).pathname);
+  await hana.getByRole("button", { name: "つながる", exact: true }).click();
+  await expect(hana.getByTestId("connected-moment")).toContainText("ソラさんと、またつながりました");
+  await hana.goto("/people");
+  await expect(hana.getByText("QRでつながった人")).toHaveCount(0);
+  await expect(hana.getByRole("list", { name: "大切な人" }).getByRole("listitem").filter({ hasText: "ソラ" })).toHaveCount(1);
+  await expect(hana.getByTestId("person-ended-pill")).toHaveCount(0);
+  await expect(hana.getByText(/^🔗\s*つながっている$/)).toBeVisible();
+});
+
 test("someone written about before connecting: the connection attaches to them", async ({ browser }) => {
   const hana = await user(browser, "ハナ");
   const sora = await user(browser, "ソラ");

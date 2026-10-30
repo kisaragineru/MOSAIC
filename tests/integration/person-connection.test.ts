@@ -117,4 +117,27 @@ describe("bio between connected people", () => {
     }
     expect((await getComparison(b.userId, sessionId)).otherBio).toBeNull();
   });
+  it("connecting again brings each side back to their own card, never a second one", async () => {
+    const { a, b, sessionId } = await connected();
+    const aCard = await addPersonFromConnection(a.userId, sessionId, "friend");
+    const bCard = await addPersonFromConnection(b.userId, sessionId, "family");
+    const other = await makeUser("X");
+    const xs = await createShare(other.userId);
+    const unrelated = await openComparison(a.userId, xs.token);
+    const xCard = await addPersonFromConnection(a.userId, unrelated, "friend");
+    await revokeComparison(a.userId, sessionId);
+    expect((await getPerson(a.userId, aCard)).person.connectionSessionId).toBe(sessionId); // kept as my notes
+
+    for (let round = 0; round < 2; round++) {
+      const again = await openComparison(b.userId, (await createShare(a.userId)).token);
+      expect(again).not.toBe(sessionId);
+      expect((await getPerson(a.userId, aCard)).person.connectionSessionId).toBe(again);
+      expect((await getPerson(b.userId, bCard)).person.connectionSessionId).toBe(again);
+      expect((await listPeople(a.userId)).length).toBe(2);
+      expect((await listPeople(b.userId)).length).toBe(1);
+      // Someone else's card is left alone.
+      expect((await getPerson(a.userId, xCard)).person.connectionSessionId).toBe(unrelated);
+      await revokeComparison(b.userId, again);
+    }
+  });
 });

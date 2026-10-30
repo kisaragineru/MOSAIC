@@ -122,7 +122,13 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           <div className="min-w-0 flex-1 space-y-1">
             <Pill tone="teal">{t.people.relationships[person.relationship as (typeof RELS)[number]] ?? person.relationship}</Pill>
             {together && <p className="text-xs font-semibold text-teal-800" data-testid="pair-line">🌱 {t.pair.personLine(together.days, together.messages)}</p>}
-            {!live && <p className="text-xs text-stone-500">{t.people.notConnectedYet}</p>}
+            {!live && connection?.status === "revoked" && (
+              <div data-testid="person-ended">
+                <p className="text-xs font-semibold text-stone-600">🕊 {t.people.endedOn(connection.revokedAt ? fmt(connection.revokedAt.getUTCFullYear(), connection.revokedAt.getUTCMonth() + 1, connection.revokedAt.getUTCDate()) : "")}</p>
+                <p className="text-[11px] leading-4 text-stone-500">{t.people.endedNote}</p>
+              </div>
+            )}
+            {!live && connection?.status !== "revoked" && <p className="text-xs text-stone-500">{t.people.notConnectedYet}</p>}
           </div>
         </div>
         {live && (live.otherBio || live.otherIntro) && (

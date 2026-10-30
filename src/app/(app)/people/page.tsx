@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ConnectionPersonForm } from "@/components/connection-person-form";
 import { avatarUrls } from "@/server/services/avatars";
 import { Flash } from "@/components/flash";
-import { Button, Card, Empty, Field, Input, Pill, Select } from "@/components/ui";
+import { Button, Card, Empty, Field, Input, Notice, Pill, Select } from "@/components/ui";
 import { Page } from "@/components/page";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
@@ -38,6 +38,12 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
   const live = new Set(connections.filter((c) => c.status !== "revoked" && c.personId).map((c) => c.personId));
   // Linked to a connection that isn't agreed by both yet.
   const waiting = new Set(connections.filter((c) => c.status === "pending" && c.personId).map((c) => c.personId));
+  // Ended connections: the card stays as my own notes, marked as such.
+  const ended = new Set(connections.filter((c) => c.status === "revoked" && c.personId).map((c) => c.personId));
+  // More than one card for the same person (from before cards came back on reconnecting).
+  const byOther = new Map<string, string[]>();
+  for (const c of connections) if (c.personId && c.otherId) byOther.set(c.otherId, [...new Set([...(byOther.get(c.otherId) ?? []), c.personId])]);
+  const dups = [...byOther.values()].filter((ids) => ids.length > 1).map((ids) => people.filter((p) => ids.includes(p.id))).filter((ps) => ps.length > 1);
   const unlinked = connections.filter((c) => c.status !== "revoked" && !c.personId);
   // Connected people show their own photo (when they have one).
   const pics = await avatarUrls(uid, connections.filter((c) => c.status === "active").map((c) => c.otherId));
@@ -69,6 +75,13 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
           </ul>
         </Card>
       )}
+      {dups.map((ps) => (
+        <Notice key={ps[0]!.id}>
+          <span className="block font-semibold" data-testid="people-dup">{t.people.dupTitle}</span>
+          <span className="block text-xs">{t.people.dupHelp(ps[0]!.nickname)}</span>
+          <Link href={`/people/${ps[0]!.id}/settings#merge`} className="mt-1 inline-block text-sm font-semibold text-teal-800 underline">{t.people.dupMerge}</Link>
+        </Notice>
+      ))}
       {people.length > 0 && (
         <nav aria-label={t.people.relationship} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
           {(["all", ...RELS] as const).filter((r) => r === "all" || summaries.some((x) => x.relationship === r)).map((r) => {
@@ -113,6 +126,9 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
                           <span aria-hidden>⏳ </span>
                           {t.people.pending}
                         </span>
+                      )}
+                      {!p.connected && ended.has(p.id) && !waiting.has(p.id) && (
+                        <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-semibold text-stone-500" data-testid="person-ended-pill">🕊 {t.people.endedPill}</span>
                       )}
                       {p.connected && (
                         <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[11px] font-bold text-teal-800">
