@@ -211,7 +211,7 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
             <p className="mb-3 text-sm text-stone-600">{PURPOSE_TEXT[locale]}</p>
             {v.myConsent && <p className="mb-2 text-sm"><Pill tone="teal">✓</Pill> {t.compare.yourConsent(scopeNames(v.myConsent.scopes))}</p>}
             <p className="mb-3 text-sm">{v.otherConsented ? `✓ ${t.compare.otherConsented}` : `⏳ ${t.compare.waiting}`}</p>
-            <form action={consentAction} className="space-y-2">
+            <form id="consent" action={consentAction} className="space-y-2 scroll-mt-24">
               <input type="hidden" name="sessionId" value={v.id} />
               <fieldset className="space-y-2">
                 <legend className="text-sm font-medium">{t.compare.scopes}</legend>

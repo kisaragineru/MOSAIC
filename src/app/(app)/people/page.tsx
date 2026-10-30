@@ -36,6 +36,8 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
   const md = (d: string) => new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`));
   const connections = await listComparisons(uid);
   const live = new Set(connections.filter((c) => c.status !== "revoked" && c.personId).map((c) => c.personId));
+  // Linked to a connection that isn't agreed by both yet.
+  const waiting = new Set(connections.filter((c) => c.status === "pending" && c.personId).map((c) => c.personId));
   const unlinked = connections.filter((c) => c.status !== "revoked" && !c.personId);
   // Connected people show their own photo (when they have one).
   const pics = await avatarUrls(uid, connections.filter((c) => c.status === "active").map((c) => c.otherId));
@@ -106,6 +108,12 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
                     <span className="flex flex-wrap items-center gap-1.5">
                       <span className="truncate text-base font-bold text-stone-900">{p.nickname}</span>
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${tone.pill}`}>{t.people.relationships[p.relationship as (typeof RELS)[number]] ?? p.relationship}</span>
+                      {!p.connected && waiting.has(p.id) && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-900" data-testid="person-pending">
+                          <span aria-hidden>⏳ </span>
+                          {t.people.pending}
+                        </span>
+                      )}
                       {p.connected && (
                         <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[11px] font-bold text-teal-800">
                           <span aria-hidden>🔗 </span>

@@ -293,6 +293,47 @@ test("records dated ahead wait above today, closed to one line, and on Home as o
   await expect(hana.getByTestId("ahead-item")).toBeVisible();
 });
 
+test("a connection not agreed by both yet: marked as waiting, with whose turn it is", async ({ browser }) => {
+  const hana = await user(browser, "ハナ");
+  const sora = await user(browser, "ソラ");
+  await hana.goto("/share");
+  await hana.getByRole("button", { name: "QRを表示" }).click();
+  const url = await hana.getByTestId("share-url").first().inputValue();
+  await sora.goto(url.replace(/^https?:\/\/[^/]+/, ""));
+  await sora.getByRole("button", { name: "続ける" }).click();
+  await sora.waitForURL(/\/compare\//);
+  const compare = new URL(sora.url()).pathname;
+
+  // Hana files Sora before either has agreed: her turn first.
+  await hana.goto("/people");
+  await hana.getByLabel("関係").first().selectOption("friend");
+  await hana.getByRole("button", { name: /大切な人に追加/ }).click();
+  await hana.waitForURL(/\/people\/[0-9a-f-]+/);
+  const person = new URL(hana.url()).pathname;
+  await expect(hana.getByTestId("person-connect")).toHaveText("「つながる」を押すとメッセージできます →");
+  await hana.getByTestId("person-connect").click();
+  await hana.waitForURL(/\/compare\/[0-9a-f-]+#consent/);
+  await hana.locator('input[name="agree"]').check();
+  await hana.getByRole("button", { name: "つながる", exact: true }).click();
+  await expect(hana.getByRole("button", { name: "つながる", exact: true })).toHaveCount(0);
+
+  // Now Sora's turn.
+  await hana.goto(person);
+  await expect(hana.getByTestId("person-waiting")).toContainText("ソラさんの同意を待っています");
+  await hana.goto("/people");
+  await expect(hana.getByTestId("person-pending")).toHaveText("⏳ 同意待ち");
+
+  await sora.goto(compare);
+  await sora.locator('input[name="agree"]').check();
+  await sora.getByRole("button", { name: "つながる", exact: true }).click();
+  await expect(sora.getByRole("button", { name: "つながる", exact: true })).toHaveCount(0);
+  await hana.goto("/people");
+  await expect(hana.getByTestId("person-pending")).toHaveCount(0);
+  await expect(hana.getByText(/^🔗\s*つながっている$/)).toBeVisible();
+  await hana.goto(person);
+  await expect(hana.getByRole("button", { name: "メッセージ" })).toBeVisible();
+});
+
 test("someone written about before connecting: the connection attaches to them", async ({ browser }) => {
   const hana = await user(browser, "ハナ");
   const sora = await user(browser, "ソラ");

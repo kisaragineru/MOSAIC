@@ -28,7 +28,7 @@ import { Avatar } from "@/components/avatar";
 import { avatarUrls } from "@/server/services/avatars";
 import { normalizeCurrency, suggestGifts } from "@/server/services/gifts";
 import { getPerson, listCategories, nextOccurrence } from "@/server/services/people";
-import { connectionForPerson } from "@/server/services/sharing";
+import { connectionForPerson, getComparison } from "@/server/services/sharing";
 import { myTint, typeTints } from "@/server/services/card";
 
 const RELS = ["partner", "family", "friend", "colleague", "other"] as const;
@@ -96,6 +96,8 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
   // A birthday with a year gives the age, so the age group isn't asked for.
   // Connected (or waiting to be): their face, words and page come with it.
   const live = connection && connection.status !== "revoked" ? connection : null;
+  // Not agreed by both yet: whether it's my turn (on our page) or theirs.
+  const myTurn = live?.status === "pending" ? !(await getComparison(uid, live.id)).myConsent : false;
   const pic = live ? ((await avatarUrls(uid, [live.otherId])).get(live.otherId ?? "") ?? null) : null;
   const tint = live ? ((await typeTints(uid, [live.otherId])).get(live.otherId ?? "") ?? null) : null;
   const born = dates.find((d) => d.kind === "birthday" && d.year !== null);
@@ -138,8 +140,14 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
                   {t.messages.message}
                 </button>
               </form>
+            ) : myTurn ? (
+              <Link href={`/compare/${live.id}#consent`} className="flex min-h-12 items-center justify-center rounded-full bg-amber-100 px-3 text-center text-xs font-bold leading-4 text-amber-950 ring-1 ring-amber-300" data-testid="person-connect">
+                {t.people.connectToMessage}
+              </Link>
             ) : (
-              <span />
+              <p className="flex min-h-12 items-center justify-center rounded-full bg-amber-50 px-3 text-center text-xs font-semibold leading-4 text-amber-900 ring-1 ring-amber-200" data-testid="person-waiting">
+                ⏳ {t.people.waitingFor(live.otherName)}
+              </p>
             )}
             <Link href={`/compare/${live.id}`} className="flex min-h-12 items-center justify-center gap-1.5 rounded-full bg-white px-3 text-sm font-bold text-teal-800 ring-1 ring-teal-200 transition hover:ring-teal-400">
               📖 {t.people.theirPage(live.otherName)}
