@@ -5,7 +5,7 @@ import { TopicsSection } from "@/components/topics-section";
 import { listTopics } from "@/server/services/topics";
 import { TypePortraits } from "@/components/tuvi-type";
 import { connectionCard } from "@/server/services/card";
-import { consentAction, recomputeAction } from "@/app/actions/sharing";
+import { askTuviAction, consentAction, recomputeAction } from "@/app/actions/sharing";
 import { SHARED_TEXT } from "@/content/manual-text";
 import { myManualShare, sharedManualFor } from "@/server/services/manual-share";
 import { askPeerAction } from "@/app/actions/peers";
@@ -26,7 +26,7 @@ import { LOCALIZED_BANK } from "@/content/questions-i18n";
 import { answerLabel } from "@/lib/discovery/format";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/server/auth/session";
-import { getComparison, listComparisons, PURPOSE_TEXT, SCOPE_DESCRIPTIONS } from "@/server/services/sharing";
+import { connectionAsks, getComparison, listComparisons, PURPOSE_TEXT, SCOPE_DESCRIPTIONS } from "@/server/services/sharing";
 import { currentLunarYearFor } from "@/server/services/tuvi";
 import { TuviChart } from "@/components/tuvi-chart";
 import { TuviPair } from "@/components/tuvi-pair";
@@ -148,6 +148,7 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
         <ConnectedMoment
           t={t}
           kind={sp.ok === "connected" && active ? "connected" : "reached"}
+          tuviHref={v.myConsent?.scopes.includes("tuvi") ? null : `/compare/${v.id}/start`}
           chooseHref={!r ? "#choose" : personId ? `/people/${personId}/settings` : "#settings"}
           again={(await listComparisons(uid)).some((c) => c.id !== v.id && c.status === "revoked" && c.otherId === other)}
           sessionId={v.id}
@@ -444,6 +445,32 @@ export default async function ComparePage({ params, searchParams }: { params: Pr
                   <ul className="list-disc space-y-1 pl-5 text-sm">{r.hints.map((h) => <li key={h.ruleId}>{tr(h.text)}</li>)}</ul>
                 </Card>
               )}
+        </section>
+      )}
+
+      {/* Not side by side yet: the way there, or waiting for them (asked once, if I like). */}
+      {active && !(r?.tuvi || together || detail) && (
+        <section id="tuvi" className="scroll-mt-20" data-testid="tuvi-waiting">
+          <Card title={`✦ ${cc.tuviSection}`}>
+            {!v.myConsent?.scopes.includes("tuvi") ? (
+              <div className="space-y-3">
+                <p className="text-sm leading-6 text-stone-700">{cc.tuviWaitYou(v.otherName)}</p>
+                <Link href={`/compare/${v.id}/start`} className="flex min-h-11 items-center justify-center rounded-full bg-linear-to-r from-violet-600 to-teal-700 px-4 text-sm font-bold text-white shadow-sm">{cc.momentTuvi}</Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm leading-6 text-stone-700">{cc.tuviWaitThem(v.otherName)}</p>
+                {(await connectionAsks(uid)).some((a) => a.sessionId === v.id && a.fromMe && a.kind === "tuvi") ? (
+                  <p className="text-xs font-semibold text-teal-800" data-testid="tuvi-asked">✓ {cc.tuviAsked(v.otherName)}</p>
+                ) : (
+                  <form action={askTuviAction}>
+                    <input type="hidden" name="sessionId" value={v.id} />
+                    <Button type="submit" variant="secondary">🙏 {cc.tuviAsk(v.otherName)}</Button>
+                  </form>
+                )}
+              </div>
+            )}
+          </Card>
         </section>
       )}
 

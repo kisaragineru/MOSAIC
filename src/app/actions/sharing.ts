@@ -9,6 +9,8 @@ import {
   addPersonFromConnection,
   createShare,
   getComparison,
+  askConnection,
+  connectFromShare,
   giveConsent,
   linkPersonToConnection,
   lookupShare,
@@ -25,7 +27,14 @@ export type ShareState = { url: string; qr: string; expiresAt: string } | { erro
 export async function createShareAction(_prev: ShareState, form: FormData): Promise<ShareState> {
   const uid = await requireUser();
   const r = await attempt("share.create", () =>
-    createShare(uid, { label: str(form, "label"), expiresInDays: str(form, "expiresInDays") || "7", maxUses: str(form, "maxUses") }),
+    // The one-tap QR is for one person, for a day; the options below it can say otherwise.
+    createShare(uid, {
+      label: str(form, "label"),
+      expiresInDays: str(form, "expiresInDays") || (bool(form, "quick") ? "1" : "7"),
+      maxUses: str(form, "maxUses") || (bool(form, "quick") ? "1" : ""),
+      inPerson: true,
+      showTuvi: bool(form, "showTuvi"),
+    }),
   );
   if (!r.ok) return { error: r.error };
   const svg = await QRCode.toString(r.value.url, { type: "svg", errorCorrectionLevel: "M", margin: 2 });
@@ -56,10 +65,30 @@ export async function openComparisonAction(token: string): Promise<{ id: string 
   return r.ok ? { id: r.value } : { error: r.error };
 }
 
+/** The invitation's one button: open it and say yes. */
+export async function connectFromShareAction(token: string): Promise<{ id: string; status: string } | { error: string }> {
+  const uid = await currentUserId();
+  if (!uid) return { error: "unauthorized" };
+  const r = await attempt("comparison.connect", () => connectFromShare(uid, token));
+  if (r.ok) revalidatePath("/people");
+  return r.ok ? r.value : { error: r.error };
+}
+
+/** Ask once for their Tử Vi. */
+export async function askTuviAction(form: FormData) {
+  const uid = await requireUser();
+  const id = str(form, "sessionId");
+  const r = await attempt("connection.ask", () => askConnection(uid, id, "tuvi"));
+  revalidatePath(`/compare/${id}`);
+  redirect(`${withParam(`/compare/${id}`, r.ok ? "ok" : "e", r.ok ? "asked" : r.error)}#tuvi`);
+}
+
 export async function consentAction(form: FormData) {
   const uid = await requireUser();
   const id = str(form, "sessionId");
   const scopes = form.getAll("scopes").filter((x): x is string => typeof x === "string");
+  // "Show my Tử Vi" in one tick: the chart's summary and the whole chart (never the birth date or hour).
+  if (bool(form, "showTuvi")) scopes.push("tuvi", "tuvi_detail");
   const r = await attempt("comparison.consent", () => giveConsent(uid, id, { scopes, agree: bool(form, "agree") }));
   revalidatePath(`/compare/${id}`);
   const back = safeNext(str(form, "back"), `/compare/${id}`);

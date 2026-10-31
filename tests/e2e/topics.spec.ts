@@ -16,15 +16,15 @@ async function user(browser: Browser, name: string) {
 /** Connect the two; the connection page's address. */
 async function connect(a: Page, b: Page) {
   await a.goto("/share");
+  await a.getByRole("checkbox", { name: /つながった人に Tử Vi を見せる/ }).first().uncheck();
   await a.getByRole("button", { name: "QRを表示" }).click();
   const url = await a.getByTestId("share-url").first().inputValue();
   await b.goto(url.replace(/^https?:\/\/[^/]+/, ""));
-  await b.getByRole("button", { name: "続ける" }).click();
+  await b.getByRole("button", { name: /さんとつながる$/ }).click();
   await b.waitForURL(/\/compare\//);
   const compare = new URL(b.url()).pathname;
   for (const p of [b, a]) {
     await p.goto(compare);
-    await p.getByRole("button", { name: "つながる", exact: true }).click();
     await expect(p.getByRole("button", { name: "つながる", exact: true })).toHaveCount(0);
   }
   return compare;

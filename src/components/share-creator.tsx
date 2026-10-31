@@ -11,6 +11,11 @@ export interface ShareCreatorText {
   expires: string;
   maxUses: string;
   once: string;
+  /** The owner's choice made with the QR: their Tử Vi shown to whoever connects. */
+  showTuvi: string;
+  showTuviNote: string;
+  /** Under the one-tap QR: for one person, until tomorrow, connected at their yes. */
+  quickNote: string;
   qrAlt: string;
   copy: string;
   copied: string;
@@ -91,7 +96,9 @@ export function ShareCreator({ tx, name }: { tx: ShareCreatorText; name: string 
       {state && "url" in state ? (
         <ShareResult url={state.url} qr={state.qr} expiresAt={state.expiresAt} name={name} tx={tx} note={tx.once} />
       ) : (
-        <form action={action}>
+        <form action={action} className="space-y-3">
+          <input type="hidden" name="quick" value="on" />
+          <TuviChoice tx={tx} />
           <button
             disabled={pending}
             className="flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-linear-to-r from-teal-600 to-teal-700 text-base font-bold text-white shadow-md transition hover:shadow-lg disabled:opacity-50"
@@ -104,6 +111,7 @@ export function ShareCreator({ tx, name }: { tx: ShareCreatorText; name: string 
             </svg>
             {tx.create}
           </button>
+          <p className="text-xs leading-5 text-stone-500">{tx.quickNote}</p>
         </form>
       )}
       {state && "error" in state && <p role="alert" className="rounded-2xl bg-rose-50 p-2 text-sm text-rose-900">{tx.errors[state.error] ?? tx.errors.generic}</p>}
@@ -114,6 +122,7 @@ export function ShareCreator({ tx, name }: { tx: ShareCreatorText; name: string 
             <label className="col-span-2">{tx.label}<input name="label" maxLength={80} className={input} /></label>
             <label>{tx.expires}<input type="number" name="expiresInDays" min={1} max={30} defaultValue={7} className={input} /></label>
             <label>{tx.maxUses}<input type="number" name="maxUses" min={1} max={100} className={input} /></label>
+            <div className="col-span-2"><TuviChoice tx={tx} /></div>
             <button disabled={pending} className="col-span-2 min-h-10 rounded-full border border-teal-700 bg-white px-4 py-2 font-medium text-teal-800 disabled:opacity-50">
               {tx.createCustom}
             </button>
@@ -121,5 +130,18 @@ export function ShareCreator({ tx, name }: { tx: ShareCreatorText; name: string 
         </details>
       )}
     </div>
+  );
+}
+
+/** Checked to start with: showing the QR is already a yes to this person, Tử Vi included unless unticked. */
+function TuviChoice({ tx }: { tx: ShareCreatorText }) {
+  return (
+    <label className="flex items-start gap-2 rounded-2xl bg-violet-50/70 px-3 py-2 text-left text-sm text-stone-800 ring-1 ring-violet-100">
+      <input type="checkbox" name="showTuvi" defaultChecked className="mt-1 h-4 w-4 accent-teal-700" />
+      <span>
+        <span className="block font-semibold">✦ {tx.showTuvi}</span>
+        <span className="block text-xs text-stone-500">{tx.showTuviNote}</span>
+      </span>
+    </label>
   );
 }

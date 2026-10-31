@@ -14,7 +14,7 @@ import { withUser } from "../db/tx";
 import { myCard } from "./card";
 import { myPeerRequests } from "./peers";
 import { replyInbox } from "./replies";
-import { listComparisons } from "./sharing";
+import { connectionAsks, listComparisons } from "./sharing";
 import { myOffers, newOpens, writerNews } from "./works";
 
 export type NoticeKind = "action" | "dated" | "once" | "habit" | "nudge";
@@ -70,6 +70,7 @@ export const noticeKey = {
   offer: (id: string) => `offer:${id}`,
   peer: (id: string) => `peer:${id}`,
   conn: (id: string) => `conn:${id}`,
+  ask: (sessionId: string, kind: string) => `ask:${kind}:${sessionId}`,
   // A new reply makes a new notice.
   reply: (entryId: string, lastAt: Date | null) => `reply:${entryId}:${lastAt?.getTime() ?? 0}`,
 };
@@ -88,6 +89,7 @@ export async function hasWaitingNotices(userId: string): Promise<boolean> {
     ...(await myPeerRequests(userId)).filter((r) => r.role === "responder" && r.status === "pending").map((r) => ({ key: noticeKey.peer(r.id), kind: "action" as const })),
     ...(await listComparisons(userId)).filter((c) => c.waitingOn === "you").map((c) => ({ key: noticeKey.conn(c.id), kind: "action" as const })),
     ...(await replyInbox(userId)).filter((x) => x.unread > 0).map((x) => ({ key: noticeKey.reply(x.entryId, x.lastAt), kind: "action" as const })),
+    ...(await connectionAsks(userId)).filter((a) => !a.fromMe && !a.done).map((a) => ({ key: noticeKey.ask(a.sessionId, a.kind), kind: "action" as const })),
   ];
   return (await visibleNotices(userId, refs)).size > 0;
 }

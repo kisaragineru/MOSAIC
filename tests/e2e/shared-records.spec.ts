@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { devices, expect, test, type Browser, type Page } from "@playwright/test";
 import { confirm } from "./confirm";
 import { setDate } from "./date";
+import { makeLegacyLink } from "./legacy-link";
 
 async function user(browser: Browser, name: string) {
   const ctx = await browser.newContext({ locale: "ja-JP", timezoneId: "Asia/Tokyo", viewport: { width: 412, height: 860 }, extraHTTPHeaders: { "Accept-Language": "ja-JP,ja;q=0.9", "x-e2e-client-ip": `10.6.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` } });
@@ -18,15 +19,15 @@ async function user(browser: Browser, name: string) {
 
 async function connect(a: Page, b: Page) {
   await a.goto("/share");
+  await a.getByRole("checkbox", { name: /つながった人に Tử Vi を見せる/ }).first().uncheck();
   await a.getByRole("button", { name: "QRを表示" }).click();
   const url = await a.getByTestId("share-url").first().inputValue();
   await b.goto(url.replace(/^https?:\/\/[^/]+/, ""));
-  await b.getByRole("button", { name: "続ける" }).click();
+  await b.getByRole("button", { name: /さんとつながる$/ }).click();
   await b.waitForURL(/\/compare\//);
   const compare = b.url();
   for (const p of [b, a]) {
     await p.goto(compare);
-    await p.getByRole("button", { name: "つながる", exact: true }).click();
     await p.getByRole("checkbox", { name: /^好み/ }).check();
     await p.locator('input[name="agree"]').check();
     await p.getByRole("button", { name: "見せるものを更新" }).click();
@@ -294,18 +295,30 @@ test("records dated ahead wait above today, closed to one line, and on Home as o
   await expect(hana.getByTestId("ahead-item")).toBeVisible();
 });
 
-test("a connection not agreed by both yet: marked as waiting, with whose turn it is", async ({ browser }) => {
+test("a link from before: waiting for the owner, marked as such, with whose turn it is", async ({ browser }) => {
   const hana = await user(browser, "ハナ");
   const sora = await user(browser, "ソラ");
   await hana.goto("/share");
+  await hana.getByRole("checkbox", { name: /つながった人に Tử Vi を見せる/ }).first().uncheck();
   await hana.getByRole("button", { name: "QRを表示" }).click();
   const url = await hana.getByTestId("share-url").first().inputValue();
+  await makeLegacyLink(url);
   await sora.goto(url.replace(/^https?:\/\/[^/]+/, ""));
-  await sora.getByRole("button", { name: "続ける" }).click();
-  await sora.waitForURL(/\/compare\//);
-  const compare = new URL(sora.url()).pathname;
+  await sora.getByRole("button", { name: /さんとつながる$/ }).click();
+  await sora.waitForURL(/\/compare\/[0-9a-f-]+\?ok=reached/);
+  await expect(sora.getByTestId("connected-moment")).toContainText("あなたの気持ちは届きました");
+  await expect(sora.getByText("保存しました。")).toHaveCount(0);
 
-  // Hana files Sora before either has agreed: her turn first.
+  // Sora files Hana: waiting for her.
+  await sora.goto("/people");
+  await sora.getByLabel("関係").first().selectOption("friend");
+  await sora.getByRole("button", { name: /大切な人に追加/ }).click();
+  await sora.waitForURL(/\/people\/[0-9a-f-]+/);
+  await expect(sora.getByTestId("person-waiting")).toContainText("ハナさんがつながるのを待っています");
+  await sora.goto("/people");
+  await expect(sora.getByTestId("person-pending")).toHaveText("⏳ 同意待ち");
+
+  // Hana files Sora: her turn.
   await hana.goto("/people");
   await hana.getByLabel("関係").first().selectOption("friend");
   await hana.getByRole("button", { name: /大切な人に追加/ }).click();
@@ -319,20 +332,9 @@ test("a connection not agreed by both yet: marked as waiting, with whose turn it
   await expect(hana.getByTestId("connect-choice")).toContainText("急がなくて大丈夫です");
   await expect(hana.getByRole("checkbox", { name: /^好み/ })).toHaveCount(0);
   await hana.getByRole("button", { name: "つながる", exact: true }).click();
-  await expect(hana.getByTestId("connected-moment")).toContainText("あなたの気持ちは届きました");
-  await expect(hana.getByText("保存しました。")).toHaveCount(0);
-
-  // Now Sora's turn.
-  await hana.goto(person);
-  await expect(hana.getByTestId("person-waiting")).toContainText("ソラさんがつながるのを待っています");
-  await hana.goto("/people");
-  await expect(hana.getByTestId("person-pending")).toHaveText("⏳ 同意待ち");
-
-  await sora.goto(compare);
-  await sora.getByRole("button", { name: "つながる", exact: true }).click();
   // Both said yes: the moment, and a way to say hello.
-  const moment = sora.getByTestId("connected-moment");
-  await expect(moment).toContainText("ハナさんとつながりました");
+  const moment = hana.getByTestId("connected-moment");
+  await expect(moment).toContainText("ソラさんとつながりました");
   await expect(moment.getByRole("button", { name: "💬 最初のメッセージを送る" })).toBeVisible();
   await hana.goto("/people");
   await expect(hana.getByTestId("person-pending")).toHaveCount(0);
@@ -362,16 +364,13 @@ test("ending a connection keeps my card as notes; connecting again comes back to
 
   // Again: back to the same card, with a moment of its own.
   await hana.goto("/share");
+  await hana.getByRole("checkbox", { name: /つながった人に Tử Vi を見せる/ }).first().uncheck();
   await hana.getByRole("button", { name: "QRを表示" }).click();
   const url = await hana.getByTestId("share-url").first().inputValue();
   await sora.goto(url.replace(/^https?:\/\/[^/]+/, ""));
-  await sora.getByRole("button", { name: "続ける" }).click();
+  await sora.getByRole("button", { name: /さんとつながる$/ }).click();
   await sora.waitForURL(/\/compare\//);
-  await sora.getByRole("button", { name: "つながる", exact: true }).click();
-  await expect(sora.getByTestId("connected-moment")).toContainText("あなたの気持ちは届きました");
-  await hana.goto(new URL(sora.url()).pathname);
-  await hana.getByRole("button", { name: "つながる", exact: true }).click();
-  await expect(hana.getByTestId("connected-moment")).toContainText("ソラさんと、またつながりました");
+  await expect(sora.getByTestId("connected-moment")).toContainText("ハナさんと、またつながりました");
   await hana.goto("/people");
   await expect(hana.getByText("QRでつながった人")).toHaveCount(0);
   await expect(hana.getByRole("list", { name: "大切な人" }).getByRole("listitem").filter({ hasText: "ソラ" })).toHaveCount(1);

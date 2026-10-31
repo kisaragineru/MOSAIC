@@ -31,5 +31,7 @@ export function safeNext(v: string | null | undefined, fallback = "/home") {
 }
 
 export function withParam(path: string, key: string, value: string) {
-  return `${path}${path.includes("?") ? "&" : "?"}${key}=${encodeURIComponent(value)}`;
+  // Before any "#…", so the page still opens where it was asked to.
+  const [base, hash] = path.split("#", 2) as [string, string | undefined];
+  return `${base}${base.includes("?") ? "&" : "?"}${key}=${encodeURIComponent(value)}${hash ? `#${hash}` : ""}`;
 }

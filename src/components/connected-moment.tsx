@@ -12,7 +12,7 @@ const SPARKS: [number, number, number][] = [[18, 20, 0.7], [80, 16, 0.85], [10, 
  * Right after saying yes: when both have, the two faces come together with rings and sparkles
  * and a way to say hello; when only I have, a quieter note that it reached them.
  */
-export function ConnectedMoment({ t, kind, sessionId, me, other, again = false, chooseHref = "#choose" }: { t: Dict; /** Where what to show is chosen. */ chooseHref?: string; kind: "connected" | "reached"; sessionId: string; me: Face; other: Face; /** Connected before, and the connection had ended. */ again?: boolean }) {
+export function ConnectedMoment({ t, kind, sessionId, me, other, again = false, chooseHref = "#choose", tuviHref = null }: { t: Dict; /** Our Tử Vi isn't side by side yet: the way there comes first. */ tuviHref?: string | null; /** Where what to show is chosen. */ chooseHref?: string; kind: "connected" | "reached"; sessionId: string; me: Face; other: Face; /** Connected before, and the connection had ended. */ again?: boolean }) {
   const c = t.compare;
   const done = kind === "connected";
   return (
@@ -41,12 +41,15 @@ export function ConnectedMoment({ t, kind, sessionId, me, other, again = false, 
       <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-stone-700 animate-[riseIn_.6s_ease-out_.7s_both]">{done ? c.momentLead : c.reachedLead(other.name)}</p>
       {done && (
         <div className="mt-5 space-y-2 animate-[riseIn_.6s_ease-out_.9s_both]">
+          {tuviHref && (
+            <a href={tuviHref} className="flex min-h-12 w-full items-center justify-center rounded-full bg-linear-to-r from-violet-600 to-teal-700 px-4 text-base font-bold text-white shadow-md transition hover:opacity-95 active:scale-[0.98]" data-testid="moment-tuvi">{c.momentTuvi}</a>
+          )}
           <form action={dmOpenForConnectionAction}>
             <input type="hidden" name="sessionId" value={sessionId} />
             <input type="hidden" name="back" value={`/compare/${sessionId}`} />
-            <button type="submit" className="flex min-h-12 w-full items-center justify-center rounded-full bg-teal-700 px-4 text-base font-bold text-white shadow-md transition hover:bg-teal-800 active:scale-[0.98]">{c.momentMessage}</button>
+            <button type="submit" className={tuviHref ? "flex min-h-11 w-full items-center justify-center rounded-full bg-white px-4 text-sm font-bold text-teal-800 ring-1 ring-teal-200" : "flex min-h-12 w-full items-center justify-center rounded-full bg-teal-700 px-4 text-base font-bold text-white shadow-md transition hover:bg-teal-800 active:scale-[0.98]"}>{c.momentMessage}</button>
           </form>
-          <a href={chooseHref} className="block text-sm font-semibold text-teal-800 underline">{c.momentChoose}</a>
+          {!tuviHref && <a href={chooseHref} className="block text-sm font-semibold text-teal-800 underline">{c.momentChoose}</a>}
         </div>
       )}
     </section>

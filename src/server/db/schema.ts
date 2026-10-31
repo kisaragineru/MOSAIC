@@ -748,6 +748,12 @@ export const profileShares = pgTable(
     maxUses: integer("max_uses"),
     useCount: integer("use_count").notNull().default(0),
     revokedAt: ts("revoked_at"),
+    /**
+     * Shown to someone in person, the QR is its owner's yes: whoever opens it and says yes too is
+     * connected at once, with these shown to them (null: links made before, which still ask both).
+     */
+    connectScopes: text("connect_scopes").array(),
+    connectTextVersion: text("connect_text_version"),
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex("profile_shares_token_uq").on(t.tokenHash), index("profile_shares_user_idx").on(t.userId)],
@@ -1714,4 +1720,26 @@ export const inviteCodes = pgTable(
     check("invite_codes_code_ck", sql`${t.code} ~ '^[A-Z0-9]{4}-[A-Z0-9]{4}$'`),
     check("invite_codes_label_ck", sql`${t.label} is null or char_length(${t.label}) between 1 and 60`),
   ],
+);
+
+/**
+ * A one-time ask between two connected people (now: "show me your Tử Vi"), sent once and shown
+ * to the other until they do. Read and written only through connection_ask* (migration 0093).
+ */
+export const connectionAsks = pgTable(
+  "connection_asks",
+  {
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => comparisonSessions.id, { onDelete: "cascade" }),
+    fromUser: uuid("from_user")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    toUser: uuid("to_user")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.sessionId, t.fromUser, t.kind] }), index("connection_asks_to_idx").on(t.toUser), check("connection_asks_kind_ck", sql`${t.kind} in ('tuvi')`)],
 );

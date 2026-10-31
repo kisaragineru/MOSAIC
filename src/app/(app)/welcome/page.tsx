@@ -1,3 +1,4 @@
+import { getComparison } from "@/server/services/sharing";
 import type { TuviView } from "@/server/services/tuvi";
 import { cookies } from "next/headers";
 import { TRY_COOKIE, triedBirth } from "@/server/services/tuvi-try";
@@ -47,6 +48,12 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
   const acc = await getAccount(uid);
   const st = await onboardingState(uid);
   const tv = step === 2 || step === 3 ? await getTuvi(uid, locale) : null;
+  // ?with=<connection>: come here right after connecting, to see our Tử Vi side by side. The chart
+  // steps are the same; after them comes showing it to that person, not the rest of the guide.
+  const withId = /^[0-9a-f-]{36}$/.test(sp.with ?? "") ? sp.with! : null;
+  const withName = withId ? await getComparison(uid, withId).then((v) => (v.status === "active" ? v.otherName : null), () => null) : null;
+  const q = withName ? `&with=${withId}` : "";
+  const after = withName ? `/compare/${withId}/start` : "/welcome?step=4";
 
   // The guide can be ended at any step; what is left stays on Home's checklist.
   const skip = (
@@ -79,6 +86,7 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
       {(step === 2 || (step === 3 && !tv?.chart)) && tv && (
         <section className="space-y-4">
           <Flash t={t} sp={sp} />
+          {withName && <p className="rounded-2xl bg-teal-50 px-4 py-3 text-sm font-semibold leading-6 text-teal-900 ring-1 ring-teal-100" data-testid="with-banner">🤝 {w.withLead(withName)}</p>}
           <div>
             <h1 className="text-2xl font-bold text-stone-900">{w.tuviTitle}</h1>
             <p className="mt-2 text-sm leading-7 text-stone-600">{w.tuviLead}</p>
@@ -109,12 +117,12 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
           <Card>
             <p className="mb-1 text-sm font-semibold text-stone-800">⏱ {w.tuviQuick}</p>
             <p className="mb-4 text-xs leading-5 text-stone-500">{w.tuviPrivacy}</p>
-            <BirthForm t={t} p={tv.profile ?? (await triedProfile(uid))} needs={tv.needs} back="/welcome?step=3" simple />
+            <BirthForm t={t} p={tv.profile ?? (await triedProfile(uid))} needs={tv.needs} back={`/welcome?step=3${q}`} simple />
           </Card>
         </section>
       )}
 
-      {step === 3 && tv?.chart && <ChartResult uid={uid} t={t} locale={locale} tv={tv} error={sp.e} />}
+      {step === 3 && tv?.chart && <ChartResult uid={uid} t={t} locale={locale} tv={tv} error={sp.e} q={q} after={after} />}
 
       {step === 4 && (st.left.length > 0 ? (
         <SeedQuestion id={st.left[0]!} answered={3 - st.left.length} t={t} locale={locale} />
@@ -173,7 +181,7 @@ async function SeedQuestion({ id, answered, t, locale }: { id: string; answered:
 }
 
 /** The chart's first result in a sentence, then the board itself with a hands-on tour. */
-async function ChartResult({ uid, t, locale, tv, error }: { error?: string; uid: string; t: Awaited<ReturnType<typeof getT>>["t"]; locale: Awaited<ReturnType<typeof getT>>["locale"]; tv: Awaited<ReturnType<typeof getTuvi>> }) {
+async function ChartResult({ uid, t, locale, tv, error, q = "", after = "/welcome?step=4" }: { error?: string; /** "&with=<connection>", kept on the guide's own links. */ q?: string; /** Where the guide goes next. */ after?: string; uid: string; t: Awaited<ReturnType<typeof getT>>["t"]; locale: Awaited<ReturnType<typeof getT>>["locale"]; tv: Awaited<ReturnType<typeof getTuvi>> }) {
   const w = t.welcome;
   const c = tv.chart!;
   const view = chartView(c, locale, t, { birth: true });
@@ -201,7 +209,7 @@ async function ChartResult({ uid, t, locale, tv, error }: { error?: string; uid:
       {c.menh !== null ? (
         <>
           <h2 className="text-lg font-bold text-stone-900">{w.tourTitle}</h2>
-          <ChartTour steps={w.tourSteps} hasNow={hasNow} closeLabel={view.labels.close} done={w.tourDone} next={w.tourNext} nextHref="/welcome?step=4">
+          <ChartTour steps={w.tourSteps} hasNow={hasNow} closeLabel={view.labels.close} done={w.tourDone} next={q ? w.tourNextWith : w.tourNext} nextHref={after}>
             <TuviChart chart={c} details={view.details} center={view.center} currentAge={tv.currentAge} cells={view.cells} labels={view.labels} />
           </ChartTour>
         </>
@@ -209,10 +217,10 @@ async function ChartResult({ uid, t, locale, tv, error }: { error?: string; uid:
         <>
           {insight && (
             <section className="rounded-3xl bg-white/85 p-4 shadow-sm ring-1 ring-violet-100">
-              <TypeStatus t={t} all={allTypes(locale)} judged={typesById(insight.types, locale)} provisional={typesById(insight.provisional, locale)} progress={insight.progress} picked={insight.selfTypes} suggested={insight.selfTypes.length ? [] : await triedPick()} addTimeHref="/welcome?step=2" back="/welcome?step=3" guide error={error} />
+              <TypeStatus t={t} all={allTypes(locale)} judged={typesById(insight.types, locale)} provisional={typesById(insight.provisional, locale)} progress={insight.progress} picked={insight.selfTypes} suggested={insight.selfTypes.length ? [] : await triedPick()} addTimeHref={`/welcome?step=2${q}`} back={`/welcome?step=3${q}`} guide error={error} />
             </section>
           )}
-          <Link href="/welcome?step=4" className="block rounded-full bg-teal-700 py-3 text-center font-semibold text-white">{w.tourNext} →</Link>
+          <Link href={after} className="block rounded-full bg-teal-700 py-3 text-center font-semibold text-white">{q ? w.tourNextWith : w.tourNext} →</Link>
         </>
       )}
     </section>

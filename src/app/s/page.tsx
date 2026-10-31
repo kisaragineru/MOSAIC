@@ -36,7 +36,7 @@ export default async function ShareLandingPage() {
           register: t.auth.submitRegister,
           invitedBy: t.landing.invitedBy("{name}"),
           explain: t.landing.explain,
-          start: t.landing.start,
+          start: t.landing.start("{name}"),
           checking: t.landing.checking,
           own: t.landing.own,
           errors: t.errors,

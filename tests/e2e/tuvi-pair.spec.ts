@@ -25,7 +25,6 @@ async function user(browser: Browser, name: string, birth: { date: string; time:
 }
 
 async function agree(page: import("@playwright/test").Page) {
-  await page.getByRole("button", { name: "つながる", exact: true }).click();
   await page.getByRole("checkbox", { name: /^Tử Vi —/ }).check();
   await page.getByRole("checkbox", { name: /^Tử Vi 命盤の詳細/ }).check();
   await page.locator('input[name="agree"]').check();
@@ -36,10 +35,11 @@ test("full charts shared by both: partner chart, readings by relationship, no bi
   const a = await user(browser, "ハナ", { date: "1990-06-07", time: "06:30", sex: "female" });
   const b = await user(browser, "ソラ", { date: "1992-03-15", time: "21:10", sex: "male" });
   await a.goto("/share");
+  await a.getByRole("checkbox", { name: /つながった人に Tử Vi を見せる/ }).first().uncheck();
   await a.getByRole("button", { name: "QRを表示" }).click();
   const url = await a.getByTestId("share-url").first().inputValue();
   await b.goto(url.replace(/^https?:\/\/[^/]+/, ""));
-  await b.getByRole("button", { name: "続ける" }).click();
+  await b.getByRole("button", { name: /さんとつながる$/ }).click();
   await b.waitForURL(/\/compare\//);
   await agree(b);
   await a.goto("/share");

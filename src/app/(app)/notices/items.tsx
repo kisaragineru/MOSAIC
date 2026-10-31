@@ -21,7 +21,7 @@ import { listPeople, upcomingDates } from "@/server/services/people";
 import { myPeerRequests } from "@/server/services/peers";
 import { topicInbox } from "@/server/services/topics";
 import { replyInbox } from "@/server/services/replies";
-import { listComparisons } from "@/server/services/sharing";
+import { connectionAsks, listComparisons } from "@/server/services/sharing";
 import { getTuvi } from "@/server/services/tuvi";
 import { yearStoryDue } from "@/server/services/year-story";
 import { markOpensSeen, markStoryPagesSeen, markWriterNewsSeen, myOffers, newOpens, storyGrowth, writerNews } from "@/server/services/works";
@@ -51,7 +51,7 @@ export async function noticeItems(uid: string, t: Dict, locale: Locale): Promise
     cookies(),
     listPeople(uid),
   ]);
-  const [birthday, anniversaries, topics] = await Promise.all([yearStoryDue(uid, daily.day), recentAnniversaries(uid, account.profile.timeZone), topicInbox(uid, locale)]);
+  const [birthday, anniversaries, topics, asks] = await Promise.all([yearStoryDue(uid, daily.day), recentAnniversaries(uid, account.profile.timeZone), topicInbox(uid, locale), connectionAsks(uid)]);
   await Promise.all([
     opens.length ? markOpensSeen(uid) : null,
     news.connected.length || news.started.length ? markWriterNewsSeen(uid) : null,
@@ -105,6 +105,12 @@ export async function noticeItems(uid: string, t: Dict, locale: Locale): Promise
           {go(`/compare/${x.sessionId}#topics`, t.topics.homeOpen)}
         </div>
       ),
+    })),
+    // Asked to show Tử Vi: until it is shown.
+    ...asks.filter((a) => !a.fromMe && !a.done).map((a) => ({
+      ref: { key: noticeKey.ask(a.sessionId, a.kind), kind: "action" as const },
+      icon: "✦",
+      body: <div data-testid="ask-notice"><p>{t.compare.tuviAskedYou(a.otherName)}</p>{go(`/compare/${a.sessionId}/start`, t.compare.momentTuvi)}</div>,
     })),
     ...waiting.map((c) => ({ ref: { key: noticeKey.conn(c.id), kind: "action" as const }, icon: "🔗", body: <><p>{t.home.connectionPending(c.otherName)}</p>{go(`/compare/${c.id}`, t.home.review)}</> })),
     ...newReplies.slice(0, 5).map((x) => ({ ref: { key: noticeKey.reply(x.entryId, x.lastAt), kind: "action" as const }, icon: "💬", body: (

@@ -85,6 +85,10 @@ const createShareSchema = z.object({
   label: z.preprocess((v) => (v === "" ? undefined : v), z.string().trim().max(80).optional()),
   expiresInDays: z.coerce.number().int().min(1).max(30).default(7),
   maxUses: z.preprocess((v) => (v === "" || v === null ? undefined : v), z.coerce.number().int().min(1).max(100).optional()),
+  /** Shown in person: showing it is the owner's yes, so whoever opens it and says yes is connected at once. */
+  inPerson: z.boolean().default(false),
+  /** With inPerson: Tử Vi (chart and readings, never the birth date or hour) shown to whoever connects. */
+  showTuvi: z.boolean().default(false),
 });
 
 export async function createShare(userId: string, input: unknown = {}) {
@@ -100,6 +104,8 @@ export async function createShare(userId: string, input: unknown = {}) {
         label: d.label ?? null,
         expiresAt: new Date(Date.now() + d.expiresInDays * 86400_000),
         maxUses: d.maxUses ?? null,
+        connectScopes: d.inPerson ? (d.showTuvi ? ["tuvi", "tuvi_detail"] : []) : null,
+        connectTextVersion: d.inPerson ? CONSENT_TEXT_VERSION : null,
       })
       .returning();
     await audit(tx, userId, "share.created", "profile_share", row!.id);
@@ -583,4 +589,47 @@ export async function activeConnectionsWith(userId: string, otherIds: string[]):
       ),
   );
   return new Map(rows.map((r) => [r.a === userId ? r.b! : r.a, r.id]));
+}
+
+/**
+ * Opening a link and saying yes in one: the reader's yes (nothing shown beyond the introduction
+ * yet), kept as it is if they had already said yes here. Connected at once when the owner's yes
+ * came with the link (a QR shown in person), else waiting for theirs.
+ */
+export async function connectFromShare(userId: string, token: unknown): Promise<{ id: string; status: string }> {
+  const id = await openComparison(userId, token);
+  const view = await getComparison(userId, id);
+  if (view.myConsent) return { id, status: view.status };
+  return { id, status: await giveConsent(userId, id, { scopes: [], agree: true }) };
+}
+
+export interface ConnectionAsk {
+  sessionId: string;
+  fromMe: boolean;
+  kind: "tuvi";
+  createdAt: Date;
+  otherName: string;
+  /** What was asked for is shown now. */
+  done: boolean;
+}
+
+/** Ask the other person, once, to show their Tử Vi. False when already asked. */
+export async function askConnection(userId: string, sessionId: string, kind: "tuvi" = "tuvi"): Promise<boolean> {
+  const id = uuid.parse(sessionId);
+  return withUser(userId, async (tx) => {
+    try {
+      const r = await tx.execute<{ ok: boolean }>(sql`select connection_ask(${id}, ${kind}) as ok`);
+      return r.rows[0]!.ok;
+    } catch (e) {
+      mapDbError(e);
+    }
+  });
+}
+
+/** Asks I sent or received on connections still active. */
+export async function connectionAsks(userId: string): Promise<ConnectionAsk[]> {
+  return withUser(userId, async (tx) => {
+    const r = await tx.execute<{ session_id: string; from_me: boolean; kind: "tuvi"; created_at: string | Date; other_name: string; done: boolean }>(sql`select * from connection_asks_mine()`);
+    return r.rows.map((x) => ({ sessionId: x.session_id, fromMe: x.from_me, kind: x.kind, createdAt: new Date(x.created_at), otherName: x.other_name, done: x.done }));
+  });
 }

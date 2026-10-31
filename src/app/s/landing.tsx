@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { lookupShareAction, openComparisonAction } from "@/app/actions/sharing";
+import { connectFromShareAction, lookupShareAction } from "@/app/actions/sharing";
 
 const KEY = "mosaic_share_token";
 
@@ -23,6 +23,7 @@ export interface LandingText {
   register: string;
   invitedBy: string; // contains {name}
   explain: string;
+  /** The one button: open and say yes ({name}). */
   start: string;
   checking: string;
   own: string;
@@ -71,16 +72,16 @@ export function Landing({ tx, signedIn }: { tx: LandingText; signedIn: boolean }
       <p className="text-sm text-stone-600">{tx.explain}</p>
       <button
         disabled={state.busy}
-        className="min-h-10 w-full rounded-xl bg-teal-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+        className="min-h-12 w-full rounded-full bg-teal-700 px-4 py-2 text-base font-bold text-white shadow-md disabled:opacity-50"
         onClick={async () => {
           setState((s) => ({ ...s, busy: true }));
-          const r = await openComparisonAction(token);
+          const r = await connectFromShareAction(token);
           sessionStorage.removeItem(KEY);
           if ("error" in r) setState({ error: r.error });
-          else router.push(`/compare/${r.id}`);
+          else router.push(`/compare/${r.id}?ok=${r.status === "active" ? "connected" : "reached"}`);
         }}
       >
-        {tx.start}
+        {tx.start.replace("{name}", state.owner)}
       </button>
     </div>
   );

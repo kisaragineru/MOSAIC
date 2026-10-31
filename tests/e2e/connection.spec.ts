@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { makeLegacyLink } from "./legacy-link";
 import { expect, test, type Browser } from "@playwright/test";
 
 async function user(browser: Browser, name: string) {
@@ -48,6 +49,8 @@ test("QR connection: preview of what others see, who is waiting, results first",
   await a.goto("/share");
   await a.getByRole("button", { name: "QRを表示" }).click();
   const url = await a.getByTestId("share-url").first().inputValue();
+  // A link from before showing a QR counted as its owner's yes: each says yes in turn.
+  await makeLegacyLink(url);
   // The QR can be kept as a picture, made on the phone: MOSAIC's, and from Hana.
   const [download] = await Promise.all([a.waitForEvent("download"), a.getByTestId("qr-save").first().click()]);
   expect(download.suggestedFilename()).toMatch(/^MOSAIC-QR-\d{4}-\d{2}-\d{2}\.png$/);
@@ -62,9 +65,8 @@ test("QR connection: preview of what others see, who is waiting, results first",
   await b.getByTestId("qr-from-image").locator("input[type=file]").setInputFiles((await download.path())!);
   await b.waitForURL(/\/s#/);
   await expect(b.getByText("ハナさんからつながりの招待が届いています。")).toBeVisible();
-  await b.getByRole("button", { name: "続ける" }).click();
+  await b.getByRole("button", { name: "ハナさんとつながる" }).click();
   await b.waitForURL(/\/compare\//);
-  await b.getByRole("button", { name: "つながる", exact: true }).click();
   await b.getByRole("checkbox", { name: /^好み/ }).check();
   await b.locator('input[name="agree"]').check();
   await b.getByRole("button", { name: "見せるものを更新" }).click();

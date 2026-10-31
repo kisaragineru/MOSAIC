@@ -52,15 +52,15 @@ test("profile photo: choose, place by dragging and zooming, save, shown to conne
 
   // Connected people can.
   await hana.goto("/share");
+  await hana.getByRole("checkbox", { name: /つながった人に Tử Vi を見せる/ }).first().uncheck();
   await hana.getByRole("button", { name: "QRを表示" }).click();
   const url = await hana.getByTestId("share-url").first().inputValue();
   await sora.goto(url.replace(/^https?:\/\/[^/]+/, ""));
-  await sora.getByRole("button", { name: "続ける" }).click();
+  await sora.getByRole("button", { name: /さんとつながる$/ }).click();
   await sora.waitForURL(/\/compare\//);
   const compare = sora.url();
   for (const p of [sora, hana]) {
     await p.goto(compare);
-    await p.getByRole("button", { name: "つながる", exact: true }).click();
     await p.getByRole("checkbox", { name: /^好み/ }).check();
     await p.locator('input[name="agree"]').check();
     await p.getByRole("button", { name: "見せるものを更新" }).click();
